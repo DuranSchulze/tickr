@@ -419,37 +419,35 @@ export async function acceptInvite(token: string) {
     )
   }
 
-  const result = await db.transaction(async (tx) => {
-    const [member] = await tx
-      .insert(workspaceMembers)
-      .values({
-        workspaceId: invite.workspaceId,
-        email: invite.email,
+  const [member] = await db
+    .insert(workspaceMembers)
+    .values({
+      workspaceId: invite.workspaceId,
+      email: invite.email,
+      userId: session.user.id,
+      workspaceRoleId: invite.workspaceRoleId,
+      departmentId: invite.departmentId,
+      invitedById: invite.invitedById,
+      status: 'ACTIVE',
+    })
+    .onConflictDoUpdate({
+      target: [workspaceMembers.workspaceId, workspaceMembers.email],
+      set: {
         userId: session.user.id,
         workspaceRoleId: invite.workspaceRoleId,
         departmentId: invite.departmentId,
         invitedById: invite.invitedById,
         status: 'ACTIVE',
-      })
-      .onConflictDoUpdate({
-        target: [workspaceMembers.workspaceId, workspaceMembers.email],
-        set: {
-          userId: session.user.id,
-          workspaceRoleId: invite.workspaceRoleId,
-          departmentId: invite.departmentId,
-          invitedById: invite.invitedById,
-          status: 'ACTIVE',
-        },
-      })
-      .returning()
+      },
+    })
+    .returning()
 
-    await tx
-      .update(workspaceInvites)
-      .set({ acceptedAt: new Date() })
-      .where(eq(workspaceInvites.id, invite.id))
+  await db
+    .update(workspaceInvites)
+    .set({ acceptedAt: new Date() })
+    .where(eq(workspaceInvites.id, invite.id))
 
-    return member
-  })
+  const result = member
 
   setActiveWorkspaceCookie(invite.workspace.slug)
 
@@ -522,37 +520,35 @@ export async function redeemInviteByCode(code: string) {
     )
   }
 
-  const result = await db.transaction(async (tx) => {
-    const [member] = await tx
-      .insert(workspaceMembers)
-      .values({
-        workspaceId: invite.workspaceId,
-        email: invite.email,
+  const [member] = await db
+    .insert(workspaceMembers)
+    .values({
+      workspaceId: invite.workspaceId,
+      email: invite.email,
+      userId: session.user.id,
+      workspaceRoleId: invite.workspaceRoleId,
+      departmentId: invite.departmentId,
+      invitedById: invite.invitedById,
+      status: 'ACTIVE',
+    })
+    .onConflictDoUpdate({
+      target: [workspaceMembers.workspaceId, workspaceMembers.email],
+      set: {
         userId: session.user.id,
         workspaceRoleId: invite.workspaceRoleId,
         departmentId: invite.departmentId,
         invitedById: invite.invitedById,
         status: 'ACTIVE',
-      })
-      .onConflictDoUpdate({
-        target: [workspaceMembers.workspaceId, workspaceMembers.email],
-        set: {
-          userId: session.user.id,
-          workspaceRoleId: invite.workspaceRoleId,
-          departmentId: invite.departmentId,
-          invitedById: invite.invitedById,
-          status: 'ACTIVE',
-        },
-      })
-      .returning()
+      },
+    })
+    .returning()
 
-    await tx
-      .update(workspaceInvites)
-      .set({ acceptedAt: new Date() })
-      .where(eq(workspaceInvites.id, invite.id))
+  await db
+    .update(workspaceInvites)
+    .set({ acceptedAt: new Date() })
+    .where(eq(workspaceInvites.id, invite.id))
 
-    return member
-  })
+  const result = member
 
   setActiveWorkspaceCookie(row.workspace.slug)
 
