@@ -87,18 +87,32 @@ export async function sendInviteEmail(params: {
   inviterName: string
   roleName: string
   inviteUrl: string
+  joinCode?: string
 }): Promise<void> {
-  const { to, workspaceName, inviterName, roleName, inviteUrl } = params
+  const { to, workspaceName, inviterName, roleName, inviteUrl, joinCode } =
+    params
   const subject = `${inviterName} invited you to ${workspaceName} on ${BRAND.name}`
+  const codeLines = joinCode
+    ? [``, `Or use this join code on the sign-in page: ${joinCode}`]
+    : []
   const text = [
     `Hi,`,
     ``,
     `${inviterName} invited you to join "${workspaceName}" as ${roleName}.`,
     ``,
     `Accept the invite: ${inviteUrl}`,
+    ...codeLines,
     ``,
     `This link expires in 7 days. If you weren't expecting this, you can ignore it.`,
   ].join('\n')
+  const codeBlock = joinCode
+    ? `
+      <div style="margin:20px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;text-align:center;">
+        <p style="margin:0 0 6px;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Or use this join code</p>
+        <span style="font-size:28px;font-weight:800;letter-spacing:0.15em;color:#1e293b;font-family:monospace;">${escapeHtml(joinCode)}</span>
+        <p style="margin:6px 0 0;font-size:12px;color:#94a3b8;">Enter this code on the sign-in page</p>
+      </div>`
+    : ''
   const html = `
     <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px;">
       <h2 style="margin:0 0 12px;font-size:20px;">You've been invited to ${escapeHtml(workspaceName)}</h2>
@@ -109,6 +123,7 @@ export async function sendInviteEmail(params: {
       <p style="margin:24px 0;">
         <a href="${inviteUrl}" style="background:#4f46e5;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Accept invitation</a>
       </p>
+      ${codeBlock}
       <p style="margin:16px 0 0;color:#64748b;font-size:13px;">Link expires in 7 days. If you weren't expecting this, ignore this email.</p>
     </div>
   `

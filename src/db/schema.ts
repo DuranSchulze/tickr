@@ -371,6 +371,7 @@ export const workspaceInvites = pgTable(
       { onDelete: 'set null' },
     ),
     tokenHash: varchar('token_hash', { length: 128 }).notNull().unique(),
+    joinCode: varchar('join_code', { length: 10 }).unique(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
     revokedAt: timestamp('revoked_at', { withTimezone: true }),

@@ -37,6 +37,7 @@ export const listWorkspaceInvitesFn = createServerFn({ method: 'GET' }).handler(
       roleName: r.workspaceRole?.name ?? null,
       roleColor: r.workspaceRole?.color ?? null,
       departmentName: r.department?.name ?? null,
+      joinCode: r.joinCode ?? null,
       expiresAt: r.expiresAt.toISOString(),
       createdAt: r.createdAt.toISOString(),
     }))
@@ -55,4 +56,11 @@ export const acceptInviteFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { acceptInvite } = await import('./workspace-invites.server')
     return acceptInvite(data.token)
+  })
+
+export const redeemInviteByCodeFn = createServerFn({ method: 'POST' })
+  .inputValidator((input: { code: string }) => input)
+  .handler(async ({ data }) => {
+    const { redeemInviteByCode } = await import('./workspace-invites.server')
+    return redeemInviteByCode(data.code)
   })

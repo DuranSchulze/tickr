@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
+import { Copy, Check } from 'lucide-react'
 import {
   listWorkspaceInvitesFn,
   resendWorkspaceInviteFn,
@@ -16,6 +17,13 @@ export function PendingInvitesPanel() {
     staleTime: 30 * 1000,
   })
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  async function handleCopyCode(id: string, code: string) {
+    await navigator.clipboard.writeText(code)
+    setCopiedId(id)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
 
   if (invites.length === 0) return null
 
@@ -85,6 +93,28 @@ export function PendingInvitesPanel() {
                     <>Expires {expires.toLocaleDateString()}</>
                   )}
                 </p>
+                {invite.joinCode && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">Code:</span>
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground">
+                      {invite.joinCode}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void handleCopyCode(invite.id, invite.joinCode!)
+                      }
+                      className="grid h-5 w-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                      title="Copy join code"
+                    >
+                      {copiedId === invite.id ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button

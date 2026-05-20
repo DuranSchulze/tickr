@@ -5,13 +5,21 @@ import {
   useNavigate,
 } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Building2, MailCheck, Sparkles, LogOut } from 'lucide-react'
+import {
+  Building2,
+  Hash,
+  Loader2,
+  MailCheck,
+  Sparkles,
+  LogOut,
+} from 'lucide-react'
 import { BRAND } from '#/lib/brand'
 import { gooeyToast } from 'goey-toast'
 import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { listUserWorkspacesFn } from '#/lib/server/workspace-access'
 import { createWorkspaceFn } from '#/lib/server/workspaces'
+import { redeemInviteByCodeFn } from '#/lib/server/workspace-invites'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { TimezoneSelect } from '#/components/ui/TimezoneSelect'
 
@@ -42,6 +50,8 @@ function OnboardingPage() {
     Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila',
   )
   const [loading, setLoading] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joiningByCode, setJoiningByCode] = useState(false)
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -64,6 +74,30 @@ function OnboardingPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleJoinByCode(e: React.FormEvent) {
+    e.preventDefault()
+    if (joinCode.trim().length < 4) return
+    setJoiningByCode(true)
+    try {
+      const result = await redeemInviteByCodeFn({
+        data: { code: joinCode.trim() },
+      })
+      gooeyToast.success('Joined workspace', {
+        description: `Welcome to ${result.name}!`,
+      })
+      await navigate({ to: '/app/time-tracker' })
+    } catch (err) {
+      gooeyToast.error('Invalid code', {
+        description:
+          err instanceof Error
+            ? err.message
+            : 'Please check the code and try again.',
+      })
+    } finally {
+      setJoiningByCode(false)
     }
   }
 
@@ -141,6 +175,36 @@ function OnboardingPage() {
                 </span>
                 . You'll get an email with a link to join.
               </p>
+
+              <div className="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800">
+                <p className="m-0 mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <Hash className="h-3.5 w-3.5" />
+                  Have a join code?
+                </p>
+                <form onSubmit={handleJoinByCode} className="flex gap-2">
+                  <input
+                    value={joinCode}
+                    onChange={(e) =>
+                      setJoinCode(
+                        e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+                      )
+                    }
+                    placeholder="A3K9X2"
+                    maxLength={10}
+                    className="h-10 flex-1 rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold tracking-widest text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={joiningByCode || joinCode.trim().length < 4}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-teal-600 px-4 text-sm font-bold text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {joiningByCode ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : null}
+                    Join
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         ) : (

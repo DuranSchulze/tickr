@@ -47,6 +47,16 @@ function generateToken(): string {
   return crypto.randomBytes(32).toString('base64url')
 }
 
+// Unambiguous uppercase alphanumeric (no 0/O, 1/I/L)
+const JOIN_CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+function generateJoinCode(): string {
+  const bytes = crypto.randomBytes(6)
+  return Array.from(bytes)
+    .map((b) => JOIN_CODE_CHARS[b % JOIN_CODE_CHARS.length])
+    .join('')
+}
+
 function getAppUrl(): string {
   return (
     process.env.APP_URL ??
@@ -149,6 +159,7 @@ export async function createWorkspaceInvite(input: {
 
   const token = generateToken()
   const tokenHash = hashToken(token)
+  const joinCode = generateJoinCode()
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000)
 
   const [invite] = await db
@@ -160,6 +171,7 @@ export async function createWorkspaceInvite(input: {
       departmentId: input.departmentId ?? null,
       invitedById: access.member.id,
       tokenHash,
+      joinCode,
       expiresAt,
     })
     .onConflictDoUpdate({
@@ -169,6 +181,7 @@ export async function createWorkspaceInvite(input: {
         departmentId: input.departmentId ?? null,
         invitedById: access.member.id,
         tokenHash,
+        joinCode,
         expiresAt,
         acceptedAt: null,
         revokedAt: null,
@@ -182,6 +195,7 @@ export async function createWorkspaceInvite(input: {
     inviterName: access.user.name || access.user.email,
     roleName: role.name,
     inviteUrl: `${getAppUrl()}/invite/${token}`,
+    joinCode: invite.joinCode ?? joinCode,
   })
 
   void createAuditLog({
@@ -233,11 +247,12 @@ export async function resendWorkspaceInvite(input: { inviteId: string }) {
 
   const token = generateToken()
   const tokenHash = hashToken(token)
+  const joinCode = generateJoinCode()
   const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000)
 
   const [updated] = await db
     .update(workspaceInvites)
-    .set({ tokenHash, expiresAt, revokedAt: null })
+    .set({ tokenHash, joinCode, expiresAt, revokedAt: null })
     .where(eq(workspaceInvites.id, inviteRow.invite.id))
     .returning()
 
@@ -247,6 +262,7 @@ export async function resendWorkspaceInvite(input: { inviteId: string }) {
     inviterName: access.user.name || access.user.email,
     roleName: inviteRow.workspaceRole?.name ?? 'Member',
     inviteUrl: `${getAppUrl()}/invite/${token}`,
+    joinCode: updated.joinCode ?? joinCode,
   })
 
   void createAuditLog({
@@ -451,6 +467,109 @@ export async function acceptInvite(token: string) {
     workspaceId: invite.workspaceId,
     slug: invite.workspace.slug,
     name: invite.workspace.name,
+    memberId: result.id,
+  }
+}
+
+export async function redeemInviteByCode(code: string) {
+  const session = await getAuthSession()
+  if (!session?.user) {
+    throw new WorkspaceInviteError(
+      'forbidden',
+      'Please sign in to use a join code.',
+    )
+  }
+
+  const normalised = code.trim().toUpperCase()
+
+  const [row] = await db
+    .select({
+      invite: workspaceInvites,
+      workspace: workspaces,
+      workspaceRole: workspaceRoles,
+    })
+    .from(workspaceInvites)
+    .leftJoin(workspaces, eq(workspaceInvites.workspaceId, workspaces.id))
+    .leftJoin(
+      workspaceRoles,
+      eq(workspaceInvites.workspaceRoleId, workspaceRoles.id),
+    )
+    .where(eq(workspaceInvites.joinCode, normalised))
+    .limit(1)
+
+  if (!row || !row.workspace)
+    throw new WorkspaceInviteError(
+      'not_found',
+      'No invite found for that code.',
+    )
+  const invite = row.invite
+
+  if (invite.revokedAt)
+    throw new WorkspaceInviteError('revoked', 'This invitation was revoked.')
+  if (invite.acceptedAt)
+    throw new WorkspaceInviteError(
+      'already_accepted',
+      'This invitation was already accepted.',
+    )
+  if (invite.expiresAt < new Date())
+    throw new WorkspaceInviteError('expired', 'This invitation has expired.')
+
+  const userEmail = session.user.email.toLowerCase()
+  if (userEmail !== invite.email.toLowerCase()) {
+    throw new WorkspaceInviteError(
+      'wrong_account',
+      `This code is for ${invite.email}. You are signed in as ${session.user.email}.`,
+    )
+  }
+
+  const result = await db.transaction(async (tx) => {
+    const [member] = await tx
+      .insert(workspaceMembers)
+      .values({
+        workspaceId: invite.workspaceId,
+        email: invite.email,
+        userId: session.user.id,
+        workspaceRoleId: invite.workspaceRoleId,
+        departmentId: invite.departmentId,
+        invitedById: invite.invitedById,
+        status: 'ACTIVE',
+      })
+      .onConflictDoUpdate({
+        target: [workspaceMembers.workspaceId, workspaceMembers.email],
+        set: {
+          userId: session.user.id,
+          workspaceRoleId: invite.workspaceRoleId,
+          departmentId: invite.departmentId,
+          invitedById: invite.invitedById,
+          status: 'ACTIVE',
+        },
+      })
+      .returning()
+
+    await tx
+      .update(workspaceInvites)
+      .set({ acceptedAt: new Date() })
+      .where(eq(workspaceInvites.id, invite.id))
+
+    return member
+  })
+
+  setActiveWorkspaceCookie(row.workspace.slug)
+
+  void createAuditLog({
+    workspaceId: invite.workspaceId,
+    actorId: session.user.id,
+    actorEmail: session.user.email,
+    action: 'MEMBER_INVITE_ACCEPT',
+    targetType: 'member',
+    targetId: result.id,
+    details: `${invite.email} (via join code)`,
+  })
+
+  return {
+    workspaceId: invite.workspaceId,
+    slug: row.workspace.slug,
+    name: row.workspace.name,
     memberId: result.id,
   }
 }
