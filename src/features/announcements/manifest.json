@@ -1,0 +1,85 @@
+{
+  "appVersion": "1.3.0",
+  "onboarding": {
+    "enabled": true,
+    "title": "Welcome to Tickr!",
+    "subtitle": "Let's get you up to speed with the essentials.",
+    "steps": [
+      {
+        "id": "track-time",
+        "title": "Track Your Time",
+        "description": "Click the timer button in the sidebar to start logging hours against any project or client. Every entry is saved in real time.",
+        "image": null,
+        "action": {
+          "label": "Open Time Tracker",
+          "to": "/app/time-tracker"
+        }
+      },
+      {
+        "id": "analytics",
+        "title": "Explore Analytics",
+        "description": "Dive into your productivity trends with interactive charts, heatmaps, and exportable reports.",
+        "image": null,
+        "action": {
+          "label": "View Analytics",
+          "to": "/app/analytics"
+        }
+      },
+      {
+        "id": "performance",
+        "title": "My Performance",
+        "description": "View your attendance grade, activity heatmap, and personal performance metrics at a glance.",
+        "image": null,
+        "action": {
+          "label": "See My Performance",
+          "to": "/app/my-performance"
+        }
+      },
+      {
+        "id": "catalogs",
+        "title": "Manage Catalogs",
+        "description": "Organise your clients, projects, and tags. Archive or activate items in bulk with the new selection tools.",
+        "image": null,
+        "action": {
+          "label": "Open Catalogs",
+          "to": "/app/workspace/catalogs"
+        }
+      }
+    ]
+  },
+  "updates": [
+    {
+      "version": "1.3.0",
+      "publishedAt": "2025-06-10",
+      "title": "Bulk Actions & Performance Page",
+      "body": "This release brings two major improvements — bulk archive/activate for catalog items and a dedicated My Performance dashboard.",
+      "features": [
+        {
+          "title": "Bulk Archive / Activate",
+          "description": "Select multiple rows in Clients, Projects, or Tags and update their status in one action. Look for the checkboxes on the left of each table row.",
+          "image": null
+        },
+        {
+          "title": "My Performance Dashboard",
+          "description": "A new page that shows your attendance grade, a yearly activity heatmap, grade history, and detailed charts with a period selector.",
+          "image": null
+        },
+        {
+          "title": "Compact Share Button",
+          "description": "Share your performance page with a single click. The new Share button sits right on your profile card — no more scrolling to the bottom.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Try Bulk Actions",
+          "to": "/app/workspace/catalogs"
+        },
+        {
+          "label": "View My Performance",
+          "to": "/app/my-performance"
+        }
+      ]
+    }
+  ]
+}

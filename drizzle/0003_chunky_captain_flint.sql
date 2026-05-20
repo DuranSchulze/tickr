@@ -1,0 +1,1 @@
+CREATE INDEX "time_entries_workspace_started_idx" ON "time_entries" USING btree ("workspace_id","started_at");

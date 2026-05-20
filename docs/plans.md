@@ -1,0 +1,2 @@
+- [] catalog import for client, project, and task adding a realtime view like progress bar and showing in realtime the data that are being inserted
+- [] projects are not being imported properly needed to test and recheck logic

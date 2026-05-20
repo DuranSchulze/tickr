@@ -1,0 +1,18 @@
+import { QueryClient } from '@tanstack/react-query'
+
+export function getContext() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 30_000,
+        gcTime: 10 * 60 * 1000,
+        networkMode: 'offlineFirst',
+      },
+    },
+  })
+
+  return {
+    queryClient,
+  }
+}
+export default function TanstackQueryProvider() {}
