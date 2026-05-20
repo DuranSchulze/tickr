@@ -191,13 +191,11 @@ export function useTimerCore({
       setTimerTagIds(activeEntryBase.tagIds)
       setTimerBillable(activeEntryBase.billable)
     } else if (lastSyncedEntryIdRef.current && timerOperation.kind === 'idle') {
+      // Reset the sync reference so the next active entry is treated as new.
+      // Deliberately do NOT clear the form here — the user may already be typing
+      // their next entry, and clearing would race against any server response timing.
+      // startTimer() captures whatever is in the form when the user presses Start.
       lastSyncedEntryIdRef.current = null
-      timerInputDirtyRef.current = false
-      setTimerDescription('')
-      setTimerClientId('')
-      setTimerProjectId('')
-      setTimerTagIds([])
-      setTimerBillable(false)
     }
   }, [activeEntryBase, state.projects, timerOperation.kind])
 
@@ -387,7 +385,16 @@ export function useTimerCore({
   }
 
   // --- Timer actions ---
-  function performOptimisticStop(entryToStop: TimeEntry, token?: number) {
+  function performOptimisticStop(
+    entryToStop: TimeEntry,
+    token?: number,
+    fields?: {
+      description: string
+      projectId: string
+      tagIds: string[]
+      billable: boolean
+    },
+  ) {
     const operationToken = token ?? nextOperationToken()
     const stoppedEntry = buildStoppedEntry(entryToStop)
 
@@ -411,7 +418,7 @@ export function useTimerCore({
       return
     }
 
-    void stopTimerFn({ data: { id: entryToStop.id } })
+    void stopTimerFn({ data: { id: entryToStop.id, ...fields } })
       .then((confirmedEntry) => {
         const op = timerOperationRef.current
         if (
@@ -427,7 +434,7 @@ export function useTimerCore({
         } else {
           removeOptimisticStoppedEntry(entryToStop.id)
         }
-        setTimeout(() => void router.invalidate(), 800)
+        void router.invalidate()
       })
       .catch((err: unknown) => {
         const op = timerOperationRef.current
@@ -701,7 +708,15 @@ export function useTimerCore({
 
   function stopTimer() {
     if (!activeEntry) return
-    flushDescriptionSave()
+
+    // Cancel any pending debounced autosave — the final field values are sent
+    // atomically as part of the stop payload instead, avoiding a race between
+    // updateActiveTimerFn and stopTimerFn over the same row.
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+
     const entryToStop = activeEntry
     const currentOp = timerOperationRef.current
 
@@ -718,7 +733,12 @@ export function useTimerCore({
       return
     }
 
-    performOptimisticStop(entryToStop)
+    performOptimisticStop(entryToStop, undefined, {
+      description: timerDescription.trim(),
+      projectId: timerProjectId,
+      tagIds: timerTagIds.filter(Boolean),
+      billable: timerBillable,
+    })
   }
 
   return {

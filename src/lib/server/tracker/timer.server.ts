@@ -10,6 +10,7 @@ import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import type {
   entryIdSchema,
   startTimerSchema,
+  stopTimerSchema,
   updateActiveTimerSchema,
 } from './shared/schemas'
 
@@ -155,7 +156,7 @@ export async function updateActiveTimer(
   return serializeTimeEntry(updatedEntry, tags)
 }
 
-export async function stopTimer(data: z.infer<typeof entryIdSchema>) {
+export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
   const access = await requireWorkspaceAccess()
   const [entry] = await db
     .select()
@@ -172,31 +173,94 @@ export async function stopTimer(data: z.infer<typeof entryIdSchema>) {
 
   if (!entry) return null
 
-  if (!entry.description.trim()) {
+  const existingTags = await getEntryTags(entry.id)
+
+  // Resolve effective values — prefer the override from the client, fall back to DB
+  const effectiveDescription =
+    data.description !== undefined
+      ? data.description.trim()
+      : entry.description.trim()
+  const effectiveProjectId =
+    data.projectId !== undefined
+      ? data.projectId.trim() || null
+      : entry.projectId
+  const effectiveTagIds =
+    data.tagIds !== undefined
+      ? [...new Set(data.tagIds.filter(Boolean))]
+      : existingTags.map((t) => t.tagId)
+
+  if (!effectiveDescription) {
     throw new Error('Add a task description before stopping the timer.')
   }
-  if (!entry.projectId) {
+  if (!effectiveProjectId) {
     throw new Error('Pick a client and project before stopping the timer.')
   }
-
-  const tags = await getEntryTags(entry.id)
-  if (tags.length === 0) {
+  if (effectiveTagIds.length === 0) {
     throw new Error('Add at least one tag before stopping the timer.')
   }
 
   const endedAt = new Date()
-  const [updatedEntry] = await db
-    .update(timeEntries)
-    .set({
-      endedAt,
-      durationSeconds: calculateDuration(entry.startedAt, endedAt),
-    })
-    .where(eq(timeEntries.id, entry.id))
-    .returning()
+  const hasOverrides =
+    data.description !== undefined ||
+    data.projectId !== undefined ||
+    data.tagIds !== undefined ||
+    data.billable !== undefined
+
+  let updatedEntry: typeof entry
+  let finalTags: Array<{ tagId: string }>
+
+  if (hasOverrides) {
+    // neon-http uses the HTTP driver which does not support interactive transactions.
+    // Run the writes as sequential HTTP queries instead. The entry update happens
+    // first so the stop timestamp is persisted even if the tag writes fail.
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        ...(data.description !== undefined
+          ? { description: effectiveDescription }
+          : {}),
+        ...(data.projectId !== undefined
+          ? { projectId: effectiveProjectId }
+          : {}),
+        ...(data.billable !== undefined ? { billable: data.billable } : {}),
+        endedAt,
+        durationSeconds: calculateDuration(entry.startedAt, endedAt),
+      })
+      .where(eq(timeEntries.id, entry.id))
+      .returning()
+
+    updatedEntry = updated
+
+    if (data.tagIds !== undefined) {
+      await db
+        .delete(timeEntryTags)
+        .where(eq(timeEntryTags.timeEntryId, entry.id))
+      if (effectiveTagIds.length) {
+        await db
+          .insert(timeEntryTags)
+          .values(
+            effectiveTagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })),
+          )
+      }
+    }
+
+    finalTags = effectiveTagIds.map((id) => ({ tagId: id }))
+  } else {
+    const [updated] = await db
+      .update(timeEntries)
+      .set({
+        endedAt,
+        durationSeconds: calculateDuration(entry.startedAt, endedAt),
+      })
+      .where(eq(timeEntries.id, entry.id))
+      .returning()
+    updatedEntry = updated
+    finalTags = existingTags
+  }
 
   await enqueueTimeEntry(access.workspace.id, updatedEntry.id)
 
-  return serializeTimeEntry(updatedEntry, tags)
+  return serializeTimeEntry(updatedEntry, finalTags)
 }
 
 export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {

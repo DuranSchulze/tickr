@@ -44,6 +44,14 @@ const entryIdSchema = z.object({
   id: z.string().min(1),
 })
 
+const stopTimerSchema = z.object({
+  id: z.string().min(1),
+  description: z.string().trim().optional(),
+  projectId: z.string().optional(),
+  tagIds: z.array(z.string().min(1)).optional(),
+  billable: z.boolean().optional(),
+})
+
 const updateEntrySchema = entryInputSchema.extend({
   id: z.string().min(1),
 })
@@ -143,7 +151,7 @@ export const startTimerFn = createServerFn({ method: 'POST' })
   })
 
 export const stopTimerFn = createServerFn({ method: 'POST' })
-  .inputValidator((input) => entryIdSchema.parse(input))
+  .inputValidator((input) => stopTimerSchema.parse(input))
   .handler(async ({ data }) => {
     const { stopTimer } = await import('./tracker.server')
     return stopTimer(data)

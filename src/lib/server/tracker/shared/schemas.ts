@@ -33,6 +33,14 @@ export const entryIdSchema = z.object({
   id: z.string().min(1),
 })
 
+export const stopTimerSchema = z.object({
+  id: z.string().min(1),
+  description: z.string().trim().optional(),
+  projectId: z.string().optional(),
+  tagIds: z.array(z.string().min(1)).optional(),
+  billable: z.boolean().optional(),
+})
+
 export const updateEntrySchema = entryInputSchema.extend({
   id: z.string().min(1),
 })
