@@ -24,7 +24,9 @@ export const Route = createFileRoute('/api/import/stream')({
         // Parse request body
         const body: { type?: string } = await request.json().catch(() => ({}))
         const type = body.type ?? 'all'
-        if (!['clients', 'projects', 'tags', 'all'].includes(type)) {
+        if (
+          !['clients', 'projects', 'tags', 'departments', 'all'].includes(type)
+        ) {
           return new Response(JSON.stringify({ error: 'Invalid type' }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
@@ -65,6 +67,7 @@ export const Route = createFileRoute('/api/import/stream')({
                       clients: event.clients,
                       projects: event.projects,
                       tags: event.tags,
+                      departments: event.departments,
                       warnings: event.warnings,
                     }),
                   )
@@ -79,7 +82,7 @@ export const Route = createFileRoute('/api/import/stream')({
 
             try {
               await runStreamingImport(
-                type as 'clients' | 'projects' | 'tags' | 'all',
+                type as 'clients' | 'projects' | 'tags' | 'departments' | 'all',
                 emit,
               )
             } catch (err) {

@@ -1,6 +1,6 @@
 import '@tanstack/react-start/server-only'
 import { db } from '#/db'
-import { clients, projects, tags } from '#/db/schema'
+import { clients, departments, projects, tags } from '#/db/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertAtLeastManager } from './shared/role-gates.server'
@@ -8,8 +8,10 @@ import { getSheetsClient } from '../gsheets/auth.server'
 import { extractSheetId } from '../gsheets/extract-sheet-id'
 import {
   CATALOG_TAB_CLIENTS,
+  CATALOG_TAB_DEPARTMENTS,
   CATALOG_TAB_PROJECTS,
   CATALOG_TAB_TAGS,
+  parseDepartmentRows,
   parseClientRows,
   parseProjectRows,
   parseTagRows,
@@ -25,7 +27,7 @@ export type ImportItem = {
   detail?: string
 }
 
-export type ImportPhase = 'clients' | 'projects' | 'tags'
+export type ImportPhase = 'clients' | 'projects' | 'tags' | 'departments'
 
 export type ImportProgressEvent =
   | { type: 'phase'; phase: ImportPhase; total: number }
@@ -47,6 +49,7 @@ export type ImportProgressEvent =
       clients: number
       projects: number
       tags: number
+      departments: number
       warnings: string[]
     }
   | { type: 'error'; message: string }
@@ -519,9 +522,157 @@ async function streamImportTags(
   return { count: parsed.length, warnings }
 }
 
+// ── Streaming import: Departments ─────────────────────────────────────────────
+
+async function streamImportDepartments(
+  emit: Emitter,
+  {
+    workspace,
+    sheetId,
+    sheets,
+  }: Awaited<ReturnType<typeof resolveWorkspaceSheet>>,
+): Promise<{ count: number; warnings: string[] }> {
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${CATALOG_TAB_DEPARTMENTS}!A2:D`,
+  })
+  const parsed = parseDepartmentRows(res.data.values ?? [])
+  if (parsed.length === 0) {
+    emit({ type: 'phase', phase: 'departments', total: 0 })
+    emit({
+      type: 'phase_complete',
+      phase: 'departments',
+      count: 0,
+      warnings: [],
+    })
+    return { count: 0, warnings: [] }
+  }
+
+  emit({ type: 'phase', phase: 'departments', total: parsed.length })
+
+  const knownIds = parsed.map((d) => d.id).filter(Boolean)
+  const [byIdRows, allRows] = await Promise.all([
+    knownIds.length > 0
+      ? db
+          .select()
+          .from(departments)
+          .where(
+            and(
+              inArray(departments.id, knownIds),
+              eq(departments.workspaceId, workspace.id),
+            ),
+          )
+      : Promise.resolve([] as (typeof departments.$inferSelect)[]),
+    db
+      .select()
+      .from(departments)
+      .where(eq(departments.workspaceId, workspace.id)),
+  ])
+  const byIdMap = new Map(byIdRows.map((d) => [d.id, d]))
+  const byNameMap = new Map(allRows.map((d) => [d.name.toLowerCase(), d]))
+
+  const warnings: string[] = []
+  const resolvedIds = new Map<number, string>()
+  let current = 0
+
+  for (const d of parsed) {
+    current++
+    const existing =
+      (d.id ? byIdMap.get(d.id) : null) ??
+      byNameMap.get(d.name.toLowerCase()) ??
+      null
+
+    if (existing) {
+      await db
+        .update(departments)
+        .set({
+          name: d.name,
+          color: d.color,
+          description: d.description || null,
+        })
+        .where(eq(departments.id, existing.id))
+      resolvedIds.set(d.sheetRow, existing.id)
+      emit({
+        type: 'item',
+        phase: 'departments',
+        item: { name: d.name, action: 'updated' },
+        current,
+        total: parsed.length,
+      })
+    } else {
+      try {
+        const [created] = await db
+          .insert(departments)
+          .values({
+            workspaceId: workspace.id,
+            name: d.name,
+            color: d.color,
+            description: d.description || null,
+          })
+          .onConflictDoUpdate({
+            target: [departments.workspaceId, departments.name],
+            set: {
+              color: sql`excluded.color`,
+              description: sql`excluded.description`,
+            },
+          })
+          .returning({ id: departments.id, name: departments.name })
+        resolvedIds.set(d.sheetRow, created.id)
+        emit({
+          type: 'item',
+          phase: 'departments',
+          item: { name: d.name, action: 'created' },
+          current,
+          total: parsed.length,
+        })
+      } catch (err) {
+        warnings.push(
+          `Department "${d.name}" — ${err instanceof Error ? err.message : 'insert failed'}`,
+        )
+        emit({
+          type: 'item',
+          phase: 'departments',
+          item: { name: d.name, action: 'skipped', detail: 'Insert failed' },
+          current,
+          total: parsed.length,
+        })
+      }
+    }
+  }
+
+  // Write back IDs
+  const writebacks: Array<{ row: number; id: string }> = []
+  for (const d of parsed) {
+    const resultId = resolvedIds.get(d.sheetRow)
+    if (resultId && d.id !== resultId) {
+      writebacks.push({ row: d.sheetRow, id: resultId })
+    }
+  }
+  if (writebacks.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: writebacks.map(({ row, id }) => ({
+          range: `${CATALOG_TAB_DEPARTMENTS}!D${row}`,
+          values: [[id]],
+        })),
+      },
+    })
+  }
+
+  emit({
+    type: 'phase_complete',
+    phase: 'departments',
+    count: parsed.length,
+    warnings,
+  })
+  return { count: parsed.length, warnings }
+}
+
 // ── Public entry points ───────────────────────────────────────────────────────
 
-export type ImportType = 'clients' | 'projects' | 'tags' | 'all'
+export type ImportType = 'clients' | 'projects' | 'tags' | 'departments' | 'all'
 
 export async function runStreamingImport(
   type: ImportType,
@@ -533,6 +684,7 @@ export async function runStreamingImport(
     let totalClients = 0
     let totalProjects = 0
     let totalTags = 0
+    let totalDepartments = 0
     const allWarnings: string[] = []
 
     if (type === 'all' || type === 'clients') {
@@ -553,11 +705,18 @@ export async function runStreamingImport(
       allWarnings.push(...result.warnings)
     }
 
+    if (type === 'all' || type === 'departments') {
+      const result = await streamImportDepartments(emit, sheet)
+      totalDepartments = result.count
+      allWarnings.push(...result.warnings)
+    }
+
     emit({
       type: 'complete',
       clients: totalClients,
       projects: totalProjects,
       tags: totalTags,
+      departments: totalDepartments,
       warnings: allWarnings,
     })
   } catch (err) {

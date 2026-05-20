@@ -110,6 +110,8 @@ Org-scope analytics filters on `workspaceId + startedAt range` without a `worksp
 
 ---
 
+---
+
 ## Summary Table
 
 | #   | Item                             | File(s)                      | Effort | Impact |

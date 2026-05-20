@@ -1,6 +1,7 @@
 export const CATALOG_TAB_CLIENTS = 'Clients'
 export const CATALOG_TAB_PROJECTS = 'Projects'
 export const CATALOG_TAB_TAGS = 'Tags'
+export const CATALOG_TAB_DEPARTMENTS = 'Departments'
 
 export const CLIENTS_HEADERS = ['Name', 'Status', 'ID'] as const
 export const PROJECTS_HEADERS = [
@@ -11,6 +12,12 @@ export const PROJECTS_HEADERS = [
   'ID',
 ] as const
 export const TAGS_HEADERS = ['Name', 'Color', 'Archived', 'ID'] as const
+export const DEPARTMENTS_HEADERS = [
+  'Name',
+  'Color',
+  'Description',
+  'ID',
+] as const
 
 // --- Row builders (DB → Sheet) ---
 
@@ -47,6 +54,15 @@ export function buildTagRow(t: {
   return [t.name, t.color, t.archived ? 'true' : 'false', t.id ?? '']
 }
 
+export function buildDepartmentRow(d: {
+  name: string
+  color: string
+  description?: string | null
+  id?: string
+}): string[] {
+  return [d.name, d.color, d.description ?? '', d.id ?? '']
+}
+
 // --- Row parsers (Sheet → DB) ---
 
 export type ParsedClientRow = {
@@ -69,6 +85,14 @@ export type ParsedTagRow = {
   name: string
   color: string
   archived: boolean
+  id: string
+  sheetRow: number
+}
+
+export type ParsedDepartmentRow = {
+  name: string
+  color: string
+  description: string
   id: string
   sheetRow: number
 }
@@ -124,6 +148,22 @@ export function parseTagRows(
       name: r[0].trim(),
       color: isValidColor(r[1] ?? '') ? r[1].trim() : '#14b8a6',
       archived: r[2]?.trim().toLowerCase() === 'true',
+      id: r[3]?.trim() ?? '',
+      sheetRow: rawIndex + headerOffset,
+    }))
+}
+
+export function parseDepartmentRows(
+  rows: string[][],
+  headerOffset = 2,
+): ParsedDepartmentRow[] {
+  return rows
+    .map((r, i) => ({ r, rawIndex: i }))
+    .filter(({ r }) => r[0]?.trim())
+    .map(({ r, rawIndex }) => ({
+      name: r[0].trim(),
+      color: isValidColor(r[1] ?? '') ? r[1].trim() : '#6366f1',
+      description: r[2]?.trim() ?? '',
       id: r[3]?.trim() ?? '',
       sheetRow: rawIndex + headerOffset,
     }))

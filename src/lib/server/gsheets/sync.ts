@@ -35,6 +35,13 @@ export const importTagsFromSheetFn = createServerFn({
   return importTagsFromSheet()
 })
 
+export const importDepartmentsFromSheetFn = createServerFn({
+  method: 'POST',
+}).handler(async () => {
+  const { importDepartmentsFromSheet } = await import('./catalog-sync.server')
+  return importDepartmentsFromSheet()
+})
+
 export const ensureCatalogTabsFn = createServerFn({
   method: 'POST',
 }).handler(async () => {

@@ -1,5 +1,5 @@
 import { db } from '#/db'
-import { clients, projects, tags, workspaces } from '#/db/schema'
+import { clients, departments, projects, tags, workspaces } from '#/db/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertAtLeastManager } from '../tracker/shared/role-gates.server'
@@ -8,14 +8,18 @@ import { getSheetsClient } from './auth.server'
 import { extractSheetId } from './extract-sheet-id'
 import {
   CATALOG_TAB_CLIENTS,
+  CATALOG_TAB_DEPARTMENTS,
   CATALOG_TAB_PROJECTS,
   CATALOG_TAB_TAGS,
   CLIENTS_HEADERS,
+  DEPARTMENTS_HEADERS,
   PROJECTS_HEADERS,
   TAGS_HEADERS,
   buildClientRow,
+  buildDepartmentRow,
   buildProjectRow,
   buildTagRow,
+  parseDepartmentRows,
   parseClientRows,
   parseProjectRows,
   parseTagRows,
@@ -36,6 +40,7 @@ export async function ensureCatalogTabs(
     CATALOG_TAB_CLIENTS,
     CATALOG_TAB_PROJECTS,
     CATALOG_TAB_TAGS,
+    CATALOG_TAB_DEPARTMENTS,
   ].filter((title) => !existing.has(title))
 
   if (toCreate.length === 0) return
@@ -58,6 +63,7 @@ export async function ensureAllCatalogHeaders(
     { tab: CATALOG_TAB_CLIENTS, headers: CLIENTS_HEADERS },
     { tab: CATALOG_TAB_PROJECTS, headers: PROJECTS_HEADERS },
     { tab: CATALOG_TAB_TAGS, headers: TAGS_HEADERS },
+    { tab: CATALOG_TAB_DEPARTMENTS, headers: DEPARTMENTS_HEADERS },
   ]
 
   const meta = await sheets.spreadsheets.get({ spreadsheetId: sheetId })
@@ -646,6 +652,148 @@ export async function importTagsFromSheet(): Promise<ImportStepResult> {
   return { count: parsed.length, warnings: [] }
 }
 
+// ── Step 4: Departments ───────────────────────────────────────────────────────
+
+export async function importDepartmentsFromSheet(): Promise<ImportStepResult> {
+  const { workspace, sheetId, sheets } = await resolveWorkspaceSheet()
+
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: `${CATALOG_TAB_DEPARTMENTS}!A2:D`,
+  })
+  const parsed = parseDepartmentRows(res.data.values ?? [])
+  if (parsed.length === 0) return { count: 0, warnings: [] }
+
+  const knownIds = parsed.map((d) => d.id).filter((id): id is string => !!id)
+  const [byId, all] = await Promise.all([
+    knownIds.length > 0
+      ? db
+          .select()
+          .from(departments)
+          .where(
+            and(
+              inArray(departments.id, knownIds),
+              eq(departments.workspaceId, workspace.id),
+            ),
+          )
+      : Promise.resolve([]),
+    db
+      .select()
+      .from(departments)
+      .where(eq(departments.workspaceId, workspace.id)),
+  ])
+  const byIdMap = new Map(byId.map((d) => [d.id, d]))
+  const byNameMap = new Map(all.map((d) => [d.name.toLowerCase(), d]))
+
+  type ToUpdate = {
+    id: string
+    name: string
+    color: string
+    description: string | null
+  }
+  type ToInsert = {
+    workspaceId: string
+    name: string
+    color: string
+    description: string | null
+    sheetRow: number
+  }
+  const toUpdate: ToUpdate[] = []
+  const toInsert: ToInsert[] = []
+  const resolvedIds = new Map<number, string>()
+
+  for (const d of parsed) {
+    const { sheetRow } = d
+    const existing =
+      (d.id ? byIdMap.get(d.id) : null) ??
+      byNameMap.get(d.name.toLowerCase()) ??
+      null
+    if (existing) {
+      toUpdate.push({
+        id: existing.id,
+        name: d.name,
+        color: d.color,
+        description: d.description || null,
+      })
+      resolvedIds.set(sheetRow, existing.id)
+    } else {
+      toInsert.push({
+        workspaceId: workspace.id,
+        name: d.name,
+        color: d.color,
+        description: d.description || null,
+        sheetRow,
+      })
+    }
+  }
+
+  await runInBatches(toUpdate, ({ id, name, color, description }) =>
+    db
+      .update(departments)
+      .set({ name, color, description })
+      .where(eq(departments.id, id))
+      .then(() => undefined),
+  )
+
+  if (toInsert.length > 0) {
+    const deduped = [
+      ...new Map(toInsert.map((r) => [r.name.toLowerCase(), r])).values(),
+    ]
+    let created: { id: string; name: string }[]
+    try {
+      created = await db
+        .insert(departments)
+        .values(
+          deduped.map(({ workspaceId, name, color, description }) => ({
+            workspaceId,
+            name,
+            color,
+            description,
+          })),
+        )
+        .onConflictDoUpdate({
+          target: [departments.workspaceId, departments.name],
+          set: {
+            color: sql`excluded.color`,
+            description: sql`excluded.description`,
+          },
+        })
+        .returning({ id: departments.id, name: departments.name })
+    } catch (err) {
+      throw friendlyDbError(err, 'department')
+    }
+    const createdByName = new Map(
+      created.map((d) => [d.name.toLowerCase(), d.id]),
+    )
+    for (const row of toInsert) {
+      const newId = createdByName.get(row.name.toLowerCase())
+      if (newId) resolvedIds.set(row.sheetRow, newId)
+    }
+  }
+
+  const writebacks: Array<{ row: number; id: string }> = []
+  for (const d of parsed) {
+    const resultId = resolvedIds.get(d.sheetRow)
+    if (resultId && d.id !== resultId) {
+      writebacks.push({ row: d.sheetRow, id: resultId })
+    }
+  }
+  if (writebacks.length > 0) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: sheetId,
+      requestBody: {
+        valueInputOption: 'RAW',
+        data: writebacks.map(({ row, id }) => ({
+          range: `${CATALOG_TAB_DEPARTMENTS}!D${row}`,
+          values: [[id]],
+        })),
+      },
+    })
+  }
+
+  return { count: parsed.length, warnings: [] }
+}
+
 // ── Sync (sheet is source of truth) ──────────────────────────────────────────
 // Reads every row from the sheet, upserts into the DB using the ID column as
 // the link, and writes back any newly-generated IDs for rows that had none.
@@ -655,6 +803,7 @@ export type SyncResult = {
   clients: number
   projects: number
   tags: number
+  departments: number
   warnings: string[]
 }
 
@@ -665,6 +814,7 @@ export async function syncCatalogsWithSheet(): Promise<SyncResult> {
   const clientsResult = await importClientsFromSheet()
   const projectsResult = await importProjectsFromSheet()
   const tagsResult = await importTagsFromSheet()
+  const departmentsResult = await importDepartmentsFromSheet()
 
   void createAuditLog({
     workspaceId: workspace.id,
@@ -673,17 +823,19 @@ export async function syncCatalogsWithSheet(): Promise<SyncResult> {
     action: 'GSHEET_SYNC',
     targetType: 'workspace',
     targetId: workspace.id,
-    details: `sync: ${clientsResult.count} clients, ${projectsResult.count} projects, ${tagsResult.count} tags`,
+    details: `sync: ${clientsResult.count} clients, ${projectsResult.count} projects, ${tagsResult.count} tags, ${departmentsResult.count} departments`,
   })
 
   return {
     clients: clientsResult.count,
     projects: projectsResult.count,
     tags: tagsResult.count,
+    departments: departmentsResult.count,
     warnings: [
       ...clientsResult.warnings,
       ...projectsResult.warnings,
       ...tagsResult.warnings,
+      ...departmentsResult.warnings,
     ],
   }
 }
@@ -694,28 +846,21 @@ export type ImportResult = {
   clients: number
   projects: number
   tags: number
+  departments: number
   warnings: string[]
 }
 
 export async function importCatalogsFromSheet(): Promise<ImportResult> {
-  const [clientsResult, projectsResult, tagsResult] = await [
-    importClientsFromSheet(),
-  ]
-    .reduce<Promise<ImportStepResult[]>>(async (accP, step) => {
-      const acc = await accP
-      acc.push(await step)
-      return acc
-    }, Promise.resolve([]))
-    .then(async (acc) => {
-      acc.push(await importProjectsFromSheet())
-      acc.push(await importTagsFromSheet())
-      return acc
-    })
+  const clientsResult = await importClientsFromSheet()
+  const projectsResult = await importProjectsFromSheet()
+  const tagsResult = await importTagsFromSheet()
+  const departmentsResult = await importDepartmentsFromSheet()
 
   return {
     clients: clientsResult.count,
     projects: projectsResult.count,
     tags: tagsResult.count,
+    departments: departmentsResult.count,
     warnings: [...projectsResult.warnings],
   }
 }
@@ -877,6 +1022,47 @@ export async function exportTagToSheet(
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
       range: `${CATALOG_TAB_TAGS}!A:D`,
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [row] },
+    })
+  }
+}
+
+export async function exportDepartmentToSheet(
+  workspaceId: string,
+  department: {
+    id: string
+    name: string
+    color: string
+    description?: string | null
+  },
+): Promise<void> {
+  const sheetId = await getSheetIdForWorkspace(workspaceId)
+  if (!sheetId) return
+
+  const sheets = await getSheetsClient()
+  const row = buildDepartmentRow(department)
+  const rowIndex = await getRowIndexForRecord(
+    sheets,
+    sheetId,
+    CATALOG_TAB_DEPARTMENTS,
+    department.id,
+    department.name,
+    'D',
+  )
+
+  if (rowIndex !== null) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: sheetId,
+      range: `${CATALOG_TAB_DEPARTMENTS}!A${rowIndex}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [row] },
+    })
+  } else {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: `${CATALOG_TAB_DEPARTMENTS}!A:D`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [row] },

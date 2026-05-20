@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 
-type ImportType = 'clients' | 'projects' | 'tags' | 'all'
+type ImportType = 'clients' | 'projects' | 'tags' | 'departments' | 'all'
 
 type ItemRecord = {
   name: string
@@ -28,6 +28,7 @@ type CompleteResult = {
   clients: number
   projects: number
   tags: number
+  departments: number
   warnings: string[]
 }
 
@@ -35,9 +36,10 @@ const PHASE_LABELS: Partial<Record<ImportType, string>> = {
   clients: 'Clients',
   projects: 'Projects',
   tags: 'Tags',
+  departments: 'Departments',
 }
 
-const PHASE_ORDER: ImportType[] = ['clients', 'projects', 'tags']
+const PHASE_ORDER: ImportType[] = ['clients', 'projects', 'tags', 'departments']
 
 export function SyncSheetDialog({
   open,
@@ -475,8 +477,13 @@ function CompleteState({
               `${result.projects} project${result.projects !== 1 ? 's' : ''} `}
             {result.tags > 0 &&
               `${result.tags} tag${result.tags !== 1 ? 's' : ''} `}
+            {result.departments > 0 &&
+              `${result.departments} department${result.departments !== 1 ? 's' : ''} `}
             synced
-            {!result.clients && !result.projects && !result.tags
+            {!result.clients &&
+            !result.projects &&
+            !result.tags &&
+            !result.departments
               ? ' — no new records found'
               : ''}
             .
