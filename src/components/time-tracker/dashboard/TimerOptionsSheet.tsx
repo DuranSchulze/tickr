@@ -40,7 +40,7 @@ export function TimerOptionsSheet({
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative grid w-full max-w-sm gap-4 rounded-2xl border border-border bg-card p-5 shadow-xl">
+      <div className="relative grid w-full max-w-sm gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xl">
         <div className="flex items-center justify-between">
           <h3 className="m-0 text-base font-bold text-foreground">
             Timer options

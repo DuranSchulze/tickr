@@ -67,8 +67,8 @@ export function EditEntryDrawer({
               <DrawerTitle>Edit Entry</DrawerTitle>
             </DrawerHeader>
 
-            <div className="p-4 overflow-y-auto">
-              <div className="mb-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+            <div className="overflow-y-auto p-3 sm:p-4">
+              <div className="mb-3 sm:mb-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
                 <p className="m-0">
                   Editing entry from{' '}
                   <span className="font-semibold text-foreground">
@@ -90,14 +90,23 @@ export function EditEntryDrawer({
               />
             </div>
 
-            <div className="border-t border-border p-4 flex justify-end gap-2">
+            <div className="border-t border-border p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2">
               <DrawerClose asChild>
-                <Button variant="outline" onClick={onCancel} disabled={pending}>
+                <Button
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={pending}
+                  className="w-full sm:w-auto"
+                >
                   <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
               </DrawerClose>
-              <Button onClick={onSave} disabled={pending}>
+              <Button
+                onClick={onSave}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
                 <Save className="mr-2 h-4 w-4" />
                 Save Changes
               </Button>

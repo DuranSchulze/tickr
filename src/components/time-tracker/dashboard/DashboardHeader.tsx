@@ -87,16 +87,16 @@ export function DashboardHeader({
               <PopoverTrigger asChild>
                 <button
                   type="button"
-                  className="min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-left transition-colors hover:bg-accent"
+                  className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-left transition-colors hover:bg-accent sm:px-3 sm:py-2"
                   aria-label="Open calendar to pick a date"
                 >
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div>
-                      <p className="m-0 text-sm font-semibold text-foreground">
+                    <div className="min-w-0">
+                      <p className="m-0 max-w-40 truncate text-sm font-semibold text-foreground sm:max-w-none">
                         {selectedRangeLabel}
                       </p>
-                      <p className="m-0 text-xs text-muted-foreground">
+                      <p className="m-0 max-w-40 truncate text-xs text-muted-foreground sm:max-w-none">
                         {selectedDate}
                       </p>
                     </div>
@@ -152,7 +152,7 @@ export function DashboardHeader({
               </Button>
             ))}
           </div>
-          <div className="rounded-lg border border-border bg-muted px-4 py-3 text-left sm:text-right">
+          <div className="w-full rounded-lg border border-border bg-muted px-4 py-3 text-left sm:w-auto sm:text-right">
             <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {view} total
             </p>

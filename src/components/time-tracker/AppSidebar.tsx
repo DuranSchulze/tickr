@@ -66,16 +66,34 @@ export const AppSidebar = memo(function ({
     >
       <div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
         {collapsed ? (
-          <div className="mb-3 flex justify-center">
+          <div className="mb-3 flex flex-col items-center gap-3">
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              title="Expand sidebar"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
             <div className="flex h-9 w-9 items-center justify-center border border-primary/30 bg-primary/10">
               <BriefcaseBusiness className="h-4 w-4 text-primary" />
             </div>
           </div>
         ) : (
           <div className="mb-3 border border-primary/30 bg-primary/10 px-3 py-2.5">
-            <p className="m-0 text-xs font-semibold uppercase tracking-wide text-primary">
-              Workspace
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-primary">
+                Workspace
+              </p>
+              <button
+                type="button"
+                onClick={onToggleCollapsed}
+                title="Collapse sidebar"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </button>
+            </div>
             <p className="m-0 mt-0.5 truncate text-sm font-bold text-foreground">
               {workspaceName}
             </p>
@@ -225,24 +243,6 @@ export const AppSidebar = memo(function ({
             </>
           )}
         </nav>
-      </div>
-
-      <div className="border-t border-border p-2">
-        <button
-          type="button"
-          onClick={onToggleCollapsed}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="flex h-9 w-full items-center justify-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="h-4 w-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="h-4 w-4" />
-              <span>Collapse</span>
-            </>
-          )}
-        </button>
       </div>
     </aside>
   )

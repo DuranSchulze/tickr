@@ -197,27 +197,27 @@ function useMembersColumns(canManage: boolean) {
         id: 'member',
         header: 'Member',
         size: 220,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
       }),
       columnHelper.accessor('roleName', {
         header: 'Role',
         size: 150,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
       }),
       columnHelper.accessor('departmentId', {
         header: 'Department',
         size: 160,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
       }),
       columnHelper.accessor('cohortIds', {
         header: 'Groups / cohorts',
         size: 220,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
       }),
       columnHelper.accessor('status', {
         header: 'Status',
         size: 120,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
       }),
     ]
 
@@ -228,19 +228,19 @@ function useMembersColumns(canManage: boolean) {
       columnHelper.accessor('billableRate', {
         header: 'Rate',
         size: 160,
-        meta: { headerClassName: 'px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'thisWeek',
         header: 'This week',
         size: 110,
-        meta: { headerClassName: 'px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'total',
         header: 'Total',
         size: 110,
-        meta: { headerClassName: 'px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'billable',

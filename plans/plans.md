@@ -1,124 +1,236 @@
-# Flow Track — Performance Improvement Plans
+# Time Tracker Entries Table — Redesign Plan
 
-> Based on performance audit conducted 2026-05-20.
-> Target: support 100–300 users on a single workspace.
+## Motivation
 
----
+The current entries table is dense and overwhelming. Each row contains inline ProjectPicker, TagPicker, BillableToggle, inline time editing, description editing, and action buttons. The nested collapsible day groups and task groups create two layers of toggling. The `SearchableCreatePopover` dropdowns cause cells to visually shift/resize when opened because the absolutely-positioned dropdown is mounted inside the `<td>`.
 
-## Priority 1 — Critical (must fix before scaling)
-
-### 1.1 Fix GSheets sync queue reliability ✅ DONE
-
-**Files changed:**
-
-- `src/db/schema.ts` — added `pending_gsheets_syncs` table
-- `src/lib/server/gsheets/sync-queue.ts` — replaced in-memory queue with DB insert
-- `src/lib/server/tracker/timer.server.ts` — await enqueue calls
-- `src/lib/server/tracker/manual-entries.server.ts` — await enqueue calls
-- `src/routes/api/cron/sync-gsheets.ts` — process pending workspaces, delete row on success (retry on failure)
-- `vercel.json` — cron schedule changed from daily (`0 15 * * *`) to every 5 min (`*/5 * * * *`)
-- `drizzle/0002_heavy_revanche.sql` — migration applied
-
-**How it works now:**
-
-1. `enqueueTimeEntry()` inserts a row into `pending_gsheets_syncs` (workspace_id PK — idempotent)
-2. Cron fires every 5 minutes, finds all pending workspaces with a sheet URL, runs a full sync, then deletes the row
-3. On sync failure the row stays — it will be retried on the next cron tick
-4. The entire in-memory queue (`setTimeout`, retries, `Map`) has been removed
+Goal: A clean, simple table using shadcn `Table` primitives, with a single day as the default view, preserved task grouping, and zero cell-resizing when interacting with inline controls.
 
 ---
 
-### 1.2 Switch DB driver to Neon Serverless ✅ DONE
+## Part 1 — Default View: Day
 
-**Files changed:**
+### Current behavior
 
-- `src/db.ts` — replaced `pg.Pool` + `drizzle-orm/node-postgres` with `neon()` + `drizzle-orm/neon-http`
-- `package.json` — added `@neondatabase/serverless`
+- The `DashboardHeader` has Day / Week / Month toggle, defaulting to `week`
+- `TimeTrackerDashboard` receives `view` from URL search params, defaults to `'week'`
+- `EntriesSection` always groups entries by day, even in week/month view
+- The day-group collapse/expand adds visual complexity
 
-**How it works now:**
+### Proposed change
 
-- Each DB call is an HTTP request — zero persistent connections, zero connection pool exhaustion
-- `globalThis.__db` dev hack removed (not needed with stateless HTTP driver)
-- `drizzle.config.ts` uses `DIRECT_URL` for migrations and is unchanged
+1. **Change the default view from `'week'` to `'day'`** in `TimeTrackerDashboard`
+2. **Keep the Day/Week/Month toggle** in `DashboardHeader` — user can still switch
+3. **Simplify `EntriesSection` when view is `'day'`:**
+   - Only 1 day group is shown (today or the selected date)
+   - Remove the day-group collapse/expand toggle (it's just one day)
+   - Remove the "Collapse all" / "Expand all" button (irrelevant for single day)
+   - Remove the "Show N more days" pagination (irrelevant for single day)
+4. **When view is `'week'` or `'month'`, keep day-group headers** but simpler (no separate entry count per day — just date label + total)
 
----
+### Files affected
 
-## Priority 2 — High (will degrade under real usage)
-
-### 2.1 Move analytics aggregation to SQL ✅ DONE
-
-**Files changed:**
-
-- `src/lib/server/tracker/analytics.server.ts` — full rewrite of aggregation layer
-
-**Problem solved:** `aggRows` was fetching every time entry in the date range (up to 30k rows) into JS memory, then running a second `inArray` with all those entry IDs to fetch tags.
-
-**How it works now:** 9 queries run in parallel via `Promise.all`:
-
-1. **Summary totals** — single aggregate row (`SUM`, `CASE WHEN billable`)
-2. **Daily totals** — `GROUP BY DATE(started_at)` → backfill zeros in JS for empty dates
-3. **Project totals** — `GROUP BY project_id` with LEFT JOIN to projects
-4. **Top tags** — `GROUP BY tag_id` with INNER JOIN through `time_entry_tags` + `LIMIT 5`
-5. **Department totals** — `GROUP BY department_id` with `COUNT(DISTINCT member_id)` + `LIMIT 5` (skipped for personal scope)
-6. **Top tasks** — `GROUP BY description` with `CASE WHEN TRIM = ''` + `LIMIT 8` (personal scope only)
-7. **Paginated entries** — unchanged (50/page with tag fetch for those 50 IDs only)
-8. **Count** — unchanged
-9. **Active member count** — unchanged
-
-Zero unbounded row fetches. The largest query now returns at most a few hundred aggregate rows regardless of workspace size.
+- `TimeTrackerDashboard.tsx` — change default view
+- `EntriesSection.tsx` — conditionally render day-group toggles based on view mode
 
 ---
 
-### 2.2 Add composite index for org-wide analytics ✅ DONE
+## Part 2 — Simplified Table Layout
 
-**Files changed:**
+### Current structure
 
-- `src/db/schema.ts` — added `time_entries_workspace_started_idx`
-- `drizzle/0003_chunky_captain_flint.sql` — migration applied
+```
+┌─────────┬──────────┬────────┬────────────┬──────────────┬──────────┐
+│  Task   │ Project  │  Tags  │  Billable  │   Duration   │ Actions  │
+│  (desc  │ (picker  │ (picker│ (toggle    │  (inline     │ (resume, │
+│  +date) │ dropdown)│ popover│  button)   │  time edit)  │  ...,del)│
+├─────────┼──────────┼────────┼────────────┼──────────────┼──────────┤
+│  entry1 │          │        │            │              │          │
+│  entry2 │          │        │            │              │          │
+└─────────┴──────────┴────────┴────────────┴──────────────┴──────────┘
+```
 
-**Index added:** `(workspace_id, started_at)` on `time_entries`
+Each row has too many interactive controls, making the table feel heavy.
 
-Org-scope analytics filters on `workspaceId + startedAt range` without a `workspaceMemberId`. The existing `(workspaceId, workspaceMemberId, startedAt)` index still applies via prefix, but the new index is a tighter fit and reduces I/O for the new SQL GROUP BY queries.
+### Proposed structure
+
+```
+┌──────────────────────────┬───────────────────┬───────────┬──────────┐
+│         Task             │     Project       │  Duration │          │
+│  (description + tags     │  (color badge +   │  (time +  │ Actions  │
+│   + billable badge)      │   name, click to  │  earnings)│  (menu)  │
+│                          │   change)         │           │          │
+├──────────────────────────┼───────────────────┼───────────┼──────────┤
+│  entry1                  │                   │           │          │
+│  entry2                  │                   │           │          │
+└──────────────────────────┴───────────────────┴───────────┴──────────┘
+```
+
+**Columns reduced from 6 to 4:**
+| Column | Content |
+|---|---|
+| **Task** | Description (inline editable on click), small tag chips, billable badge. No separate Tags or Billable columns. |
+| **Project** | Color dot + project name. Clicking opens a **popover** (not an inline dropdown that shifts the cell). The popover is rendered at the document root via portal so it never affects cell sizing. |
+| **Duration** | Formatted time. Start → end time below (inline editable). Revenue below if billable. |
+| **Actions** | A single `...` dropdown menu with: Edit date/time, Duplicate, Delete. Resume button shown inline when entry is ended. |
+
+### Why this is better
+
+- **3 data columns + 1 action column** vs current 5 + 1
+- Tags and billable are **chips inside the Task cell** — no separate columns, no extra pickers
+- Project picker uses a **popover/portal** — no cell resizing
+- The `SearchableCreatePopover` dropdown issue is eliminated from the table entirely
+
+### Files affected
+
+- `EntryRow.tsx` — complete rewrite to use shadcn `Table` components and simplified columns
+- New inline project popover component (or reuse `ClientProjectPicker` with portal)
+- `TaskGroupHeaderRow` — simplify to match new column structure
 
 ---
 
-## Priority 3 — Medium (nice to have, reduces DB load)
+## Part 3 — Task Grouping (Preserved)
 
-### 3.1 Slim down `requireWorkspaceAccess` payload
+### Current behavior
 
-**File:** `src/lib/server/workspace-access.server.ts` — `fetchMembersWithRelations` (line 62)
+- Entries with the same description + project + tags + billable are grouped
+- `TaskGroupHeaderRow` shows a collapsible header row with description, project, tags, billable, total duration, and a resume button
+- Sub-entries show only time range and compact actions
 
-**Problem:** Every server function call loads employee profiles + government IDs via 5 parallel queries. Almost no route needs this data in the auth context.
+### Proposed behavior
 
-**Fix:**
+- **Keep grouping logic** (`groupEntriesByTask` function unchanged)
+- **Group header row** becomes simpler — shows description, project, total duration, and a count badge. No separate tags/billable display (those appear on sub-entries).
+- **Sub-entries** when expanded show the same simplified row format, but with a left indent and time-only in the Task cell
+- The collapsible toggle uses a chevron icon at the start of the row
 
-- [ ] Split into two functions: `requireWorkspaceAccess()` (lightweight — no employee data) and `requireWorkspaceAccessWithProfile()` (full payload for profile/HR screens)
-- [ ] Only call the heavy version in routes that actually need it
+### Files affected
 
----
-
-### 3.2 Add explicit staleTime to TanStack Query
-
-**File:** `src/integrations/tanstack-query/root-provider.tsx` and individual query hooks
-
-**Problem:** Without explicit `staleTime`, TanStack Query refetches on every window focus. For slow queries (analytics), this triggers unnecessary round trips.
-
-**Fix:**
-
-- [ ] Set a global default `staleTime: 30_000` (30s) in the QueryClient config
-- [ ] Override with shorter staleTime for the live timer state query
+- `TaskGroupHeaderRow` — simplify columns to match new 4-column layout
+- `EntryRow` — sub-entry (`isSubEntry`) path simplified
 
 ---
 
+## Part 4 — Fix "Cell Expands When Dropdown Activated" Bug
+
+### Root cause
+
+The `SearchableCreatePopover` component renders its dropdown as an absolutely-positioned `<div>` mounted **inside** the relative parent `<div>` which sits inside the `<td>`. Even though the dropdown is `position: absolute`, the `<td>` still recalculates its size because:
+
+- The trigger button's content changes when selected state changes
+- Some table rendering engines (especially with `table-layout: auto`) measure all child content
+
+### Fix
+
+Replace the inline `SearchableCreatePopover` in the table rows with a **portal-based popover**:
+
+- Use shadcn's `Popover` component which renders into `document.body` via portal
+- The popover trigger is just the project name (text button), not a full picker button
+- When clicked, the popover appears at the trigger's position, completely detached from the table cell DOM
+- This guarantees zero cell resizing
+
+For **tag selection** in the table: tags are displayed as chips. Clicking a "+" or "edit" icon opens a popover with tag checkboxes (also portal-based).
+
+For **billable toggling**: use a simple muted/colored text indicator or a small inline icon that toggles on click.
+
+### Files affected
+
+- `EntryRow.tsx` — replace `ProjectPicker` + `TagPicker` + `BillableToggleButton` with simple text triggers + portal popovers
+- New `InlineProjectPopover.tsx` — small popover component for changing project from table row
+- New `InlineTagPopover.tsx` — small popover for adding/removing tags from table row
+
 ---
 
-## Summary Table
+## Part 5 — Use shadcn `Table` Primitives
 
-| #   | Item                             | File(s)                      | Effort | Impact |
-| --- | -------------------------------- | ---------------------------- | ------ | ------ | ------- |
-| 1.1 | GSheets sync queue reliability   | `gsheets/sync-queue.ts`      | Medium | High   | ✅ Done |
-| 1.2 | Switch to Neon serverless driver | `src/db.ts`                  | Low    | High   | ✅ Done |
-| 2.1 | Analytics SQL aggregation        | `analytics.server.ts`        | High   | High   | ✅ Done |
-| 2.2 | Add org-analytics index          | `schema.ts`                  | Low    | Medium | ✅ Done |
-| 3.1 | Slim workspace access payload    | `workspace-access.server.ts` | Medium | Medium |
-| 3.2 | TanStack Query staleTime         | `root-provider.tsx` + hooks  | Low    | Low    |
+### Current
+
+Raw `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>` elements with manual styling.
+
+### Proposed
+
+Wrap the entries table with shadcn `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` from `src/components/ui/table.tsx`.
+
+Benefits:
+
+- Consistent styling with the rest of the app (MembersTable already uses these)
+- Built-in `overflow-x-auto` wrapper for responsive horizontal scroll
+- Standardized padding, hover states, border behavior
+- Removes the need for manual `w-* min-w-*` width management
+
+### Implementation
+
+```tsx
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '#/components/ui/table'
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead className="w-[55%]">Task</TableHead>
+      <TableHead className="w-[20%]">Project</TableHead>
+      <TableHead className="w-[15%]">Duration</TableHead>
+      <TableHead className="w-[10%]"></TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    {rows.map(...)}
+  </TableBody>
+</Table>
+```
+
+---
+
+## Implementation Order
+
+| Step | What                                                              | Files                        |
+| ---- | ----------------------------------------------------------------- | ---------------------------- |
+| 1    | Change default view to `'day'`                                    | `TimeTrackerDashboard.tsx`   |
+| 2    | Build `InlineProjectPopover` (portal-based)                       | New file                     |
+| 3    | Build `InlineTagPopover` (portal-based)                           | New file                     |
+| 4    | Rewrite `EntryRow.tsx` — 4 columns, shadcn Table, inline popovers | `EntryRow.tsx`               |
+| 5    | Simplify `TaskGroupHeaderRow` — match new columns                 | `EntriesSection.tsx`         |
+| 6    | Conditionally hide day-group controls in day view                 | `EntriesSection.tsx`         |
+| 7    | Clean up unused code                                              | Remove old import references |
+
+---
+
+## What Stays the Same
+
+- All server functions (`stopTimerFn`, `updateEntryFn`, etc.)
+- All hook logic (`useTimerCore`, `useDraftAndEdit`, `useTrackerMutations`)
+- `EntryCard` (mobile) — already clean, no changes needed
+- `EntriesFilters` — unchanged
+- `EditEntryDrawer` — unchanged
+- Grouping logic (`groupEntriesByTask`, `groupEntriesByDay`, `taskGroupKey`)
+- Props interface of `EntriesSection`
+
+---
+
+## Visual Mock (Text)
+
+```
+Day view: Mon, Jan 15 — 4 entries
+
+┌─────────────────────────────────────────────────────────────┐
+│  Task                              Project    Duration  ⚙️  │
+├─────────────────────────────────────────────────────────────┤
+│  🞃 Design landing page (×3)       🟣 Design   3h 12m   ▶️  │
+│    ↳ 9:00 AM → 10:30 AM                                              │
+│    ↳ 10:30 AM → 11:45 AM                                             │
+│    ↳ 1:00 PM → 2:15 PM                                               │
+├─────────────────────────────────────────────────────────────┤
+│  📝 Write API docs                🔵 Backend   1h 30m   ▶️  │
+│  $ 💰 Billable                    [9:00→10:30]                      │
+├─────────────────────────────────────────────────────────────┤
+│  🐛 Fix login bug                 🔵 Backend   45m      ▶️  │
+│  🏷️ bug, urgent  $ 💰 Billable   [10:30→11:15]                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Notes:
+
+- Grouped tasks show a chevron + count badge, expandable inline
+- Single tasks show full detail in one row
+- Tags and billable are chips inside the Task cell
+- Project is a simple colored badge, clickable to change
+- All popovers use portals (no cell resizing)

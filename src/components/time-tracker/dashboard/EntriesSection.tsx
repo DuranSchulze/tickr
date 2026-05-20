@@ -486,11 +486,13 @@ export function EntriesSection({
   return (
     <section className="rounded-lg border border-border bg-card shadow-sm">
       {/* Section header */}
-      <div className="border-b border-border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="m-0 text-lg font-bold text-foreground">Entries</h2>
-            <p className="m-0 mt-1 text-sm text-muted-foreground">
+      <div className="border-b border-border p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="min-w-0">
+            <h2 className="m-0 text-base sm:text-lg font-bold text-foreground">
+              Entries
+            </h2>
+            <p className="m-0 mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground truncate sm:whitespace-normal">
               {range.start.toLocaleDateString()} –{' '}
               {new Date(range.end.getTime() - 1).toLocaleDateString()}
               {filteredEntries.length !== baseFiltered.length && (
@@ -619,19 +621,19 @@ export function EntriesSection({
                     <table className="w-full min-w-[860px] border-collapse text-left text-sm">
                       <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
                         <tr>
-                          <th className="px-4 py-2.5 w-full min-w-[180px]">
+                          <th className="whitespace-nowrap px-4 py-2.5 w-full min-w-[180px]">
                             Task
                           </th>
-                          <th className="px-4 py-2.5 w-40 min-w-[120px]">
+                          <th className="whitespace-nowrap px-4 py-2.5 w-40 min-w-[120px]">
                             Project
                           </th>
-                          <th className="px-4 py-2.5 w-44 min-w-[130px]">
+                          <th className="whitespace-nowrap px-4 py-2.5 w-44 min-w-[130px]">
                             Tags
                           </th>
-                          <th className="px-4 py-2.5 w-20 text-center">
+                          <th className="whitespace-nowrap px-4 py-2.5 w-20 text-center">
                             Billable
                           </th>
-                          <th className="px-4 py-2.5 w-48 min-w-[170px]">
+                          <th className="whitespace-nowrap px-4 py-2.5 w-48 min-w-[170px]">
                             Duration
                           </th>
                           <th className="px-4 py-2.5 w-24 shrink-0"></th>

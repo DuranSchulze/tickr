@@ -234,17 +234,15 @@ export const EntryRow = memo(function EntryRow({
 
       {/* Billable */}
       <td className="px-4 py-3 w-20 text-center">
-        {!isSubEntry && (
-          <div
-            className={actionsDisabled ? 'pointer-events-none opacity-50' : ''}
-          >
-            <BillableToggleButton
-              pressed={entry.billable}
-              onPressedChange={(b) => onUpdate({ billable: b })}
-              className="h-8 w-8 p-1"
-            />
-          </div>
-        )}
+        <div
+          className={actionsDisabled ? 'pointer-events-none opacity-50' : ''}
+        >
+          <BillableToggleButton
+            pressed={entry.billable}
+            onPressedChange={(b) => onUpdate({ billable: b })}
+            className="h-8 w-8"
+          />
+        </div>
       </td>
 
       {/* Duration */}

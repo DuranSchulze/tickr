@@ -181,7 +181,7 @@ export function ClientProjectPicker({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 w-72 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+        <div className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
           {/* Search */}
           <div className="border-b border-border p-2">
             <input

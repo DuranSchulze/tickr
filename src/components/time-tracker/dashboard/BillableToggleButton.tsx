@@ -18,10 +18,10 @@ export function BillableToggleButton({
         pressed ? 'Mark timer as non-billable' : 'Mark timer as billable'
       }
       title={pressed ? 'Billable' : 'Non-billable'}
-      className={`inline-flex h-11 w-11 items-center justify-center rounded-lg border text-sm font-bold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 ${className} ${
+      className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 ${className} ${
         pressed
-          ? 'border-primary bg-primary text-primary-foreground hover:brightness-110'
-          : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground'
+          ? 'bg-primary/10 text-primary hover:bg-primary/15'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       }`}
     >
       <DollarSign className="h-4 w-4" />
