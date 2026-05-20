@@ -31,7 +31,6 @@ export function TimerPanel({
   onCreateTag,
   canManageCatalog = true,
   activeEntry,
-  pending,
   startPending,
   stopPending,
   formatTime,
@@ -60,7 +59,6 @@ export function TimerPanel({
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   activeEntry: TimeEntry | undefined
-  pending: boolean
   startPending: boolean
   stopPending: boolean
   formatTime: (seconds: number) => string
@@ -195,9 +193,7 @@ export function TimerPanel({
         <button
           type="button"
           onClick={activeEntry ? onStop : onStart}
-          disabled={
-            activeEntry ? stopPending || stopBlocked : startPending || pending
-          }
+          disabled={activeEntry ? stopPending || stopBlocked : startPending}
           title={stopBlocked ? stopBlockedReason : undefined}
           className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[130px] sm:w-auto ${
             activeEntry
@@ -211,7 +207,7 @@ export function TimerPanel({
             ) : (
               <Square className="h-4 w-4 fill-current" />
             )
-          ) : startPending || pending ? (
+          ) : startPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Play className="h-4 w-4" />

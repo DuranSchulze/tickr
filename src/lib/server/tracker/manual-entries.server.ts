@@ -81,32 +81,28 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
 
   if (!existingEntry) throw new Error('Time entry not found.')
 
-  await db.transaction(async (tx) => {
-    await tx
-      .delete(timeEntryTags)
-      .where(eq(timeEntryTags.timeEntryId, existingEntry.id))
+  await db
+    .delete(timeEntryTags)
+    .where(eq(timeEntryTags.timeEntryId, existingEntry.id))
 
-    await tx
-      .update(timeEntries)
-      .set({
-        description: data.description,
-        projectId: data.projectId,
-        billable: data.billable,
-        startedAt,
-        endedAt,
-        durationSeconds: calculateDuration(startedAt, endedAt),
-        notes: data.notes,
-      })
-      .where(eq(timeEntries.id, existingEntry.id))
+  await db
+    .update(timeEntries)
+    .set({
+      description: data.description,
+      projectId: data.projectId,
+      billable: data.billable,
+      startedAt,
+      endedAt,
+      durationSeconds: calculateDuration(startedAt, endedAt),
+      notes: data.notes,
+    })
+    .where(eq(timeEntries.id, existingEntry.id))
 
-    if (tagIds.length) {
-      await tx
-        .insert(timeEntryTags)
-        .values(
-          tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })),
-        )
-    }
-  })
+  if (tagIds.length) {
+    await db
+      .insert(timeEntryTags)
+      .values(tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })))
+  }
 
   if (endedAt && !existingEntry.endedAt) {
     await enqueueTimeEntry(access.workspace.id, existingEntry.id)

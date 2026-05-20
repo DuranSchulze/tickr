@@ -83,6 +83,8 @@ export function TimeTrackerDashboard({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    isTimerStarting,
+    isTimerStopping,
     descriptionSuggestions,
     changeTimerDescription,
     applyDescriptionSuggestion,
@@ -305,8 +307,8 @@ export function TimeTrackerDashboard({
     onCreateTag: mutations.createTag,
     canManageCatalog,
     pending: mutations.pending,
-    startPending: mutations.startTimerPending,
-    stopPending: mutations.stopTimerPending,
+    startPending: isTimerStarting,
+    stopPending: isTimerStopping,
     formatTime,
   }
 

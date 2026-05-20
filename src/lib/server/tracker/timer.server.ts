@@ -127,30 +127,24 @@ export async function updateActiveTimer(
     await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
   }
 
-  const updatedEntry = await db.transaction(async (tx) => {
-    await tx
-      .delete(timeEntryTags)
-      .where(eq(timeEntryTags.timeEntryId, entry.id))
+  await db.delete(timeEntryTags).where(eq(timeEntryTags.timeEntryId, entry.id))
 
-    const [updated] = await tx
-      .update(timeEntries)
-      .set({
-        description: data.description,
-        projectId,
-        billable: data.billable,
-        ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
-      })
-      .where(eq(timeEntries.id, entry.id))
-      .returning()
+  const [updatedEntry] = await db
+    .update(timeEntries)
+    .set({
+      description: data.description,
+      projectId,
+      billable: data.billable,
+      ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
+    })
+    .where(eq(timeEntries.id, entry.id))
+    .returning()
 
-    if (tagIds.length) {
-      await tx
-        .insert(timeEntryTags)
-        .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
-    }
-
-    return updated
-  })
+  if (tagIds.length) {
+    await db
+      .insert(timeEntryTags)
+      .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
+  }
 
   const tags = await getEntryTags(updatedEntry.id)
   return serializeTimeEntry(updatedEntry, tags)

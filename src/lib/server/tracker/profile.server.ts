@@ -23,16 +23,26 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
   const gender = data.gender || null
   const maritalStatus = data.maritalStatus ? data.maritalStatus : null
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(users)
-      .set({ name: data.name, image: data.avatarUrl || null })
-      .where(eq(users.id, access.user.id))
+  await db
+    .update(users)
+    .set({ name: data.name, image: data.avatarUrl || null })
+    .where(eq(users.id, access.user.id))
 
-    const [profile] = await tx
-      .insert(userProfiles)
-      .values({
-        userId: access.user.id,
+  const [profile] = await db
+    .insert(userProfiles)
+    .values({
+      userId: access.user.id,
+      firstName: data.firstName,
+      middleName: emptyToNull(data.middleName),
+      lastName: data.lastName,
+      contactNumber: emptyToNull(data.contactNumber),
+      birthDate: birthDate as unknown as string,
+      gender,
+      maritalStatus,
+    })
+    .onConflictDoUpdate({
+      target: userProfiles.userId,
+      set: {
         firstName: data.firstName,
         middleName: emptyToNull(data.middleName),
         lastName: data.lastName,
@@ -40,47 +50,35 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
         birthDate: birthDate as unknown as string,
         gender,
         maritalStatus,
+      },
+    })
+    .returning()
+
+  if (data.address) {
+    const a = data.address
+    await db
+      .insert(userAddresses)
+      .values({
+        userProfileId: profile.id,
+        buildingNo: emptyToNull(a.buildingNo),
+        street: emptyToNull(a.street),
+        city: emptyToNull(a.city),
+        province: emptyToNull(a.province),
+        postalCode: emptyToNull(a.postalCode),
+        country: a.country || 'Philippines',
       })
       .onConflictDoUpdate({
-        target: userProfiles.userId,
+        target: userAddresses.userProfileId,
         set: {
-          firstName: data.firstName,
-          middleName: emptyToNull(data.middleName),
-          lastName: data.lastName,
-          contactNumber: emptyToNull(data.contactNumber),
-          birthDate: birthDate as unknown as string,
-          gender,
-          maritalStatus,
-        },
-      })
-      .returning()
-
-    if (data.address) {
-      const a = data.address
-      await tx
-        .insert(userAddresses)
-        .values({
-          userProfileId: profile.id,
           buildingNo: emptyToNull(a.buildingNo),
           street: emptyToNull(a.street),
           city: emptyToNull(a.city),
           province: emptyToNull(a.province),
           postalCode: emptyToNull(a.postalCode),
           country: a.country || 'Philippines',
-        })
-        .onConflictDoUpdate({
-          target: userAddresses.userProfileId,
-          set: {
-            buildingNo: emptyToNull(a.buildingNo),
-            street: emptyToNull(a.street),
-            city: emptyToNull(a.city),
-            province: emptyToNull(a.province),
-            postalCode: emptyToNull(a.postalCode),
-            country: a.country || 'Philippines',
-          },
-        })
-    }
-  })
+        },
+      })
+  }
 }
 
 export async function getSelfProfile() {

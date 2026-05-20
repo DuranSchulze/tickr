@@ -136,37 +136,35 @@ export async function updateWorkspaceMember(
     }
   }
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(workspaceMembers)
-      .set({
-        ...(data.workspaceRoleId !== undefined && {
-          workspaceRoleId: data.workspaceRoleId,
-        }),
-        ...(data.departmentId !== undefined && {
-          departmentId: data.departmentId || null,
-        }),
-      })
-      .where(eq(workspaceMembers.id, data.memberId))
+  await db
+    .update(workspaceMembers)
+    .set({
+      ...(data.workspaceRoleId !== undefined && {
+        workspaceRoleId: data.workspaceRoleId,
+      }),
+      ...(data.departmentId !== undefined && {
+        departmentId: data.departmentId || null,
+      }),
+    })
+    .where(eq(workspaceMembers.id, data.memberId))
 
-    if (data.cohortIds !== undefined) {
-      await tx
-        .delete(cohortMembers)
-        .where(eq(cohortMembers.memberId, data.memberId))
-      if (data.cohortIds.length > 0) {
-        await tx.insert(cohortMembers).values(
-          data.cohortIds.map((cohortId) => ({
-            cohortId,
-            memberId: data.memberId,
-          })),
-        )
-      }
-    } else if (data.departmentId !== undefined) {
-      await tx
-        .delete(cohortMembers)
-        .where(eq(cohortMembers.memberId, data.memberId))
+  if (data.cohortIds !== undefined) {
+    await db
+      .delete(cohortMembers)
+      .where(eq(cohortMembers.memberId, data.memberId))
+    if (data.cohortIds.length > 0) {
+      await db.insert(cohortMembers).values(
+        data.cohortIds.map((cohortId) => ({
+          cohortId,
+          memberId: data.memberId,
+        })),
+      )
     }
-  })
+  } else if (data.departmentId !== undefined) {
+    await db
+      .delete(cohortMembers)
+      .where(eq(cohortMembers.memberId, data.memberId))
+  }
 
   void createAuditLog({
     workspaceId: access.workspace.id,

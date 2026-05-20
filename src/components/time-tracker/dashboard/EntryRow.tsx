@@ -58,6 +58,7 @@ export const EntryRow = memo(function EntryRow({
   isPending,
   formatTime,
   hasActiveTimer,
+  isSubEntry,
   onStartEdit,
   onUpdate,
   onResume,
@@ -73,6 +74,7 @@ export const EntryRow = memo(function EntryRow({
   isPending?: boolean
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
+  isSubEntry?: boolean
   onStartEdit: () => void
   onUpdate: (patch: InlinePatch) => void
   onResume: () => void
@@ -135,82 +137,114 @@ export const EntryRow = memo(function EntryRow({
   }
 
   return (
-    <tr className="border-t border-border">
+    <tr className={`border-t border-border ${isSubEntry ? 'bg-muted/20' : ''}`}>
       {/* Task */}
       <td className="px-4 py-3 w-full min-w-[180px]">
-        {editDesc ? (
-          <input
-            ref={descInputRef}
-            className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-            value={draftDesc}
-            onChange={(e) => setDraftDesc(e.target.value)}
-            onBlur={commitDesc}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') commitDesc()
-              if (e.key === 'Escape') {
-                setDraftDesc(entry.description)
-                setEditDesc(false)
-              }
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className="m-0 block max-w-[260px] cursor-text truncate border-0 bg-transparent p-0 text-left font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
-            title={entry.description}
-            onClick={() => {
-              setDraftDesc(entry.description)
-              setEditDesc(true)
-            }}
+        {isSubEntry ? (
+          <div
+            className="flex items-center gap-1.5 pl-5 text-xs text-muted-foreground"
+            suppressHydrationWarning
           >
-            {entry.description || (
-              <span className="text-muted-foreground">No description</span>
+            <span className="text-muted-foreground/40">↳</span>
+            <span>
+              {new Date(entry.startedAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+            <span>→</span>
+            <span>
+              {entry.endedAt
+                ? new Date(entry.endedAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'now'}
+            </span>
+          </div>
+        ) : (
+          <>
+            {editDesc ? (
+              <input
+                ref={descInputRef}
+                className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                value={draftDesc}
+                onChange={(e) => setDraftDesc(e.target.value)}
+                onBlur={commitDesc}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitDesc()
+                  if (e.key === 'Escape') {
+                    setDraftDesc(entry.description)
+                    setEditDesc(false)
+                  }
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="m-0 block max-w-[260px] cursor-text truncate border-0 bg-transparent p-0 text-left font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
+                title={entry.description}
+                onClick={() => {
+                  setDraftDesc(entry.description)
+                  setEditDesc(true)
+                }}
+              >
+                {entry.description || (
+                  <span className="text-muted-foreground">No description</span>
+                )}
+              </button>
             )}
-          </button>
+            <p
+              className="m-0 mt-1 text-xs text-muted-foreground"
+              suppressHydrationWarning
+            >
+              {new Date(entry.startedAt).toLocaleString()}
+            </p>
+          </>
         )}
-        <p
-          className="m-0 mt-1 text-xs text-muted-foreground"
-          suppressHydrationWarning
-        >
-          {new Date(entry.startedAt).toLocaleString()}
-        </p>
       </td>
 
       {/* Project */}
       <td className="px-4 py-3 w-40 min-w-[120px]">
-        <ProjectPicker
-          projects={projectItems}
-          value={entry.projectId}
-          onChange={(id) => onUpdate({ projectId: id })}
-          onCreate={async () => {}}
-          canCreate={false}
-          disabled={actionsDisabled}
-        />
+        {!isSubEntry && (
+          <ProjectPicker
+            projects={projectItems}
+            value={entry.projectId}
+            onChange={(id) => onUpdate({ projectId: id })}
+            onCreate={async () => {}}
+            canCreate={false}
+            disabled={actionsDisabled}
+          />
+        )}
       </td>
 
       {/* Tags */}
       <td className="px-4 py-3 w-44 min-w-[130px]">
-        <TagPicker
-          tags={tags}
-          value={entry.tagIds}
-          onChange={(ids) => onUpdate({ tagIds: ids })}
-          onCreate={async () => {}}
-          canCreate={false}
-          disabled={actionsDisabled}
-        />
+        {!isSubEntry && (
+          <TagPicker
+            tags={tags}
+            value={entry.tagIds}
+            onChange={(ids) => onUpdate({ tagIds: ids })}
+            onCreate={async () => {}}
+            canCreate={false}
+            disabled={actionsDisabled}
+          />
+        )}
       </td>
 
       {/* Billable */}
       <td className="px-4 py-3 w-20 text-center">
-        <div
-          className={actionsDisabled ? 'pointer-events-none opacity-50' : ''}
-        >
-          <BillableToggleButton
-            pressed={entry.billable}
-            onPressedChange={(b) => onUpdate({ billable: b })}
-            className="h-8 w-8 p-1"
-          />
-        </div>
+        {!isSubEntry && (
+          <div
+            className={actionsDisabled ? 'pointer-events-none opacity-50' : ''}
+          >
+            <BillableToggleButton
+              pressed={entry.billable}
+              onPressedChange={(b) => onUpdate({ billable: b })}
+              className="h-8 w-8 p-1"
+            />
+          </div>
+        )}
       </td>
 
       {/* Duration */}
@@ -316,8 +350,8 @@ export const EntryRow = memo(function EntryRow({
       {/* Actions */}
       <td className="px-4 py-3 w-24 shrink-0">
         <div className="flex items-center gap-1.5">
-          {/* Resume — standalone */}
-          {entry.endedAt && (
+          {/* Resume — only on standalone rows, not sub-entries (group header has Resume) */}
+          {entry.endedAt && !isSubEntry && (
             <button
               type="button"
               onClick={onResume}

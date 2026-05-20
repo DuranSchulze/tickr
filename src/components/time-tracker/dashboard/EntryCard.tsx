@@ -17,6 +17,7 @@ export const EntryCard = memo(function EntryCard({
   isPending,
   formatTime,
   hasActiveTimer,
+  isSubEntry,
   onStartEdit,
   onResume,
   onDuplicate,
@@ -31,6 +32,7 @@ export const EntryCard = memo(function EntryCard({
   isPending?: boolean
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
+  isSubEntry?: boolean
   onStartEdit: () => void
   onResume: () => void
   onDuplicate: () => void
@@ -58,6 +60,64 @@ export const EntryCard = memo(function EntryCard({
   const timeRange = end
     ? `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – now`
+
+  // Sub-entries (inside a grouped set) show only the time range + actions
+  if (isSubEntry) {
+    return (
+      <div className="rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
+        <div className="flex items-center justify-between gap-2">
+          <div
+            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            suppressHydrationWarning
+          >
+            <span className="text-muted-foreground/40">↳</span>
+            <span>{timeRange}</span>
+            {isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-bold tabular-nums text-foreground">
+              {formatTime(seconds)}
+            </span>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={onStartEdit}
+                disabled={actionsDisabled}
+                className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                aria-label="Edit entry"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={actionsDisabled}
+                className="rounded-md border border-destructive/30 p-1 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                aria-label="Delete entry"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Delete Entry"
+          description={`Delete this entry? This action cannot be undone.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="destructive"
+          onConfirm={() => {
+            if (actionsDisabled) return
+            onDelete()
+            setShowDeleteDialog(false)
+          }}
+          pending={pending}
+        />
+      </div>
+    )
+  }
 
   return (
     <div

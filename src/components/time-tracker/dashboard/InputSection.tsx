@@ -140,7 +140,6 @@ export function InputSection({
             onCreateTag={onCreateTag}
             canManageCatalog={canManageCatalog}
             activeEntry={activeEntry}
-            pending={pending}
             startPending={startPending}
             stopPending={stopPending}
             formatTime={formatTime}

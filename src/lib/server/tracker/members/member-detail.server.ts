@@ -256,15 +256,27 @@ export async function updateMemberDetail(
 
   if (!target) throw new Error('Member not found in this workspace.')
 
-  await db.transaction(async (tx) => {
-    let employeeProfileId: string | null = null
+  let employeeProfileId: string | null = null
 
-    if (data.employeeProfile) {
-      const e = data.employeeProfile
-      const [profile] = await tx
-        .insert(employeeProfiles)
-        .values({
-          workspaceMemberId: data.memberId,
+  if (data.employeeProfile) {
+    const e = data.employeeProfile
+    const [profile] = await db
+      .insert(employeeProfiles)
+      .values({
+        workspaceMemberId: data.memberId,
+        employeeNumber: emptyToNull(e.employeeNumber),
+        positionTitle: emptyToNull(e.positionTitle),
+        employmentType: e.employmentType ?? 'FULL_TIME',
+        employmentStatus: e.employmentStatus ?? 'ACTIVE',
+        hireDate: toDateOnly(e.hireDate) as unknown as string,
+        regularizationDate: toDateOnly(
+          e.regularizationDate,
+        ) as unknown as string,
+        separationDate: toDateOnly(e.separationDate) as unknown as string,
+      })
+      .onConflictDoUpdate({
+        target: employeeProfiles.workspaceMemberId,
+        set: {
           employeeNumber: emptyToNull(e.employeeNumber),
           positionTitle: emptyToNull(e.positionTitle),
           employmentType: e.employmentType ?? 'FULL_TIME',
@@ -274,60 +286,46 @@ export async function updateMemberDetail(
             e.regularizationDate,
           ) as unknown as string,
           separationDate: toDateOnly(e.separationDate) as unknown as string,
-        })
-        .onConflictDoUpdate({
-          target: employeeProfiles.workspaceMemberId,
-          set: {
-            employeeNumber: emptyToNull(e.employeeNumber),
-            positionTitle: emptyToNull(e.positionTitle),
-            employmentType: e.employmentType ?? 'FULL_TIME',
-            employmentStatus: e.employmentStatus ?? 'ACTIVE',
-            hireDate: toDateOnly(e.hireDate) as unknown as string,
-            regularizationDate: toDateOnly(
-              e.regularizationDate,
-            ) as unknown as string,
-            separationDate: toDateOnly(e.separationDate) as unknown as string,
-          },
-        })
+        },
+      })
+      .returning()
+    employeeProfileId = profile.id
+  } else {
+    const existing = await db
+      .select({ id: employeeProfiles.id })
+      .from(employeeProfiles)
+      .where(eq(employeeProfiles.workspaceMemberId, data.memberId))
+      .limit(1)
+    employeeProfileId = existing[0]?.id ?? null
+  }
+
+  if (data.governmentIds) {
+    if (!employeeProfileId) {
+      const [profile] = await db
+        .insert(employeeProfiles)
+        .values({ workspaceMemberId: data.memberId })
         .returning()
       employeeProfileId = profile.id
-    } else {
-      const existing = await tx
-        .select({ id: employeeProfiles.id })
-        .from(employeeProfiles)
-        .where(eq(employeeProfiles.workspaceMemberId, data.memberId))
-        .limit(1)
-      employeeProfileId = existing[0]?.id ?? null
     }
 
-    if (data.governmentIds) {
-      if (!employeeProfileId) {
-        const [profile] = await tx
-          .insert(employeeProfiles)
-          .values({ workspaceMemberId: data.memberId })
-          .returning()
-        employeeProfileId = profile.id
-      }
-
-      const g = data.governmentIds
-      await tx
-        .insert(employeeGovernmentIds)
-        .values({
-          employeeProfileId,
+    const g = data.governmentIds
+    await db
+      .insert(employeeGovernmentIds)
+      .values({
+        employeeProfileId,
+        sssNumber: emptyToNull(g.sssNumber),
+        philHealthNumber: emptyToNull(g.philHealthNumber),
+        tinNumber: emptyToNull(g.tinNumber),
+        pagIbigNumber: emptyToNull(g.pagIbigNumber),
+      })
+      .onConflictDoUpdate({
+        target: employeeGovernmentIds.employeeProfileId,
+        set: {
           sssNumber: emptyToNull(g.sssNumber),
           philHealthNumber: emptyToNull(g.philHealthNumber),
           tinNumber: emptyToNull(g.tinNumber),
           pagIbigNumber: emptyToNull(g.pagIbigNumber),
-        })
-        .onConflictDoUpdate({
-          target: employeeGovernmentIds.employeeProfileId,
-          set: {
-            sssNumber: emptyToNull(g.sssNumber),
-            philHealthNumber: emptyToNull(g.philHealthNumber),
-            tinNumber: emptyToNull(g.tinNumber),
-            pagIbigNumber: emptyToNull(g.pagIbigNumber),
-          },
-        })
-    }
-  })
+        },
+      })
+  }
 }

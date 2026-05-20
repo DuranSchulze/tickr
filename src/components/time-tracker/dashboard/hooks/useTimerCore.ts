@@ -552,7 +552,10 @@ export function useTimerCore({
 
   function discardTimer() {
     if (!activeEntryBase) return
-    flushDescriptionSave()
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
     const entryToDiscard = activeEntryBase
     const currentOp = timerOperationRef.current
 
@@ -752,6 +755,11 @@ export function useTimerCore({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    // State machine pending flags — keyed off the operation state, not raw network calls
+    isTimerStarting: timerOperation.kind === 'starting',
+    isTimerStopping:
+      timerOperation.kind === 'stopping' ||
+      timerOperation.kind === 'discarding',
     // Suggestions
     descriptionSuggestions,
     // Change handlers

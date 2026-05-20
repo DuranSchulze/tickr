@@ -57,40 +57,38 @@ export async function createWorkspaceForCurrentUser(input: {
   const userId = session.user.id
   const email = session.user.email.toLowerCase()
 
-  const result = await db.transaction(async (tx) => {
-    const [workspace] = await tx
-      .insert(workspaces)
-      .values({ name: trimmedName, slug, timezone })
-      .returning()
+  const [workspace] = await db
+    .insert(workspaces)
+    .values({ name: trimmedName, slug, timezone })
+    .returning()
 
-    const createdRoles = await tx
-      .insert(workspaceRoles)
-      .values(
-        DEFAULT_WORKSPACE_ROLES.map((def) => ({
-          workspaceId: workspace.id,
-          name: def.name,
-          permissionLevel: def.permissionLevel,
-          color: def.color,
-        })),
-      )
-      .returning()
-
-    const ownerRole = createdRoles.find((r) => r.permissionLevel === 'OWNER')
-    if (!ownerRole) throw new WorkspaceCreationError('Owner role missing.')
-
-    const [member] = await tx
-      .insert(workspaceMembers)
-      .values({
+  const createdRoles = await db
+    .insert(workspaceRoles)
+    .values(
+      DEFAULT_WORKSPACE_ROLES.map((def) => ({
         workspaceId: workspace.id,
-        userId,
-        email,
-        workspaceRoleId: ownerRole.id,
-        status: 'ACTIVE',
-      })
-      .returning()
+        name: def.name,
+        permissionLevel: def.permissionLevel,
+        color: def.color,
+      })),
+    )
+    .returning()
 
-    return { workspace, member }
-  })
+  const ownerRole = createdRoles.find((r) => r.permissionLevel === 'OWNER')
+  if (!ownerRole) throw new WorkspaceCreationError('Owner role missing.')
+
+  const [member] = await db
+    .insert(workspaceMembers)
+    .values({
+      workspaceId: workspace.id,
+      userId,
+      email,
+      workspaceRoleId: ownerRole.id,
+      status: 'ACTIVE',
+    })
+    .returning()
+
+  const result = { workspace, member }
 
   setActiveWorkspaceCookie(result.workspace.slug)
   return {
