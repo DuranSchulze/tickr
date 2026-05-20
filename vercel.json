@@ -6,7 +6,7 @@
   "crons": [
     {
       "path": "/api/cron/sync-gsheets",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [
