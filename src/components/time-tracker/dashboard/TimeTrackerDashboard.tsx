@@ -27,7 +27,6 @@ import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
 import { EntriesSection } from './EntriesSection'
 import { EditEntryDrawer } from './EditEntryDrawer'
-import { TimeFormatPicker } from './TimeFormatPicker'
 import { useNowTick } from './hooks/useNowTick'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
@@ -44,7 +43,7 @@ import { BRAND } from '#/lib/brand'
 
 export function TimeTrackerDashboard({
   state,
-  view = 'week',
+  view = 'day',
   date,
 }: {
   state: TrackerState
@@ -56,7 +55,7 @@ export function TimeTrackerDashboard({
   const mutations = useTrackerMutations()
   const { isOnline } = useNetworkStatus()
   const tick = useNowTick(1000)
-  const { format, setFormat, formatTime } = useTimeFormat(state.workspace.id)
+  const { formatTime } = useTimeFormat(state.workspace.id)
 
   const {
     draft,
@@ -338,7 +337,6 @@ export function TimeTrackerDashboard({
         onSelectDate={changeDate}
         selectedTotalSeconds={totals.selectedTotal}
         formatTime={formatTime}
-        trailing={<TimeFormatPicker format={format} onChange={setFormat} />}
       />
 
       {/* Desktop: inline input section */}
@@ -347,12 +345,14 @@ export function TimeTrackerDashboard({
       </div>
 
       <EntriesSection
+        view={view}
         range={selectedRange}
         baseFiltered={mergedBaseFiltered}
         filteredEntries={filteredEntries}
         activeFilterCount={activeFilterCount}
         clearFilters={clearFilters}
         filterControls={filterControls}
+        clients={state.clients}
         projects={state.projects}
         tags={state.tags}
         currency={currency}

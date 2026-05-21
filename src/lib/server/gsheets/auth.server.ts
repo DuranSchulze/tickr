@@ -90,7 +90,10 @@ type TokenCache = {
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const GOOGLE_SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets'
-const GOOGLE_SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets'
+const GOOGLE_DRIVE_API = 'https://www.googleapis.com/drive/v3/files'
+// Drive scope required to manage sheet permissions (share with users)
+const GOOGLE_COMBINED_SCOPE =
+  'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive'
 
 let cachedCreds: ServiceAccountJson | null = null
 let cachedToken: TokenCache | null = null
@@ -159,6 +162,26 @@ function loadCredentials(): ServiceAccountJson {
 
 export function getServiceAccountEmail(): string {
   return loadCredentials().client_email
+}
+
+export async function shareSheetWithUser(
+  sheetId: string,
+  email: string,
+): Promise<void> {
+  const token = await getAccessToken()
+  const url = `${GOOGLE_DRIVE_API}/${sheetId}/permissions?sendNotificationEmail=true`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ type: 'user', role: 'writer', emailAddress: email }),
+  })
+  if (!response.ok) {
+    const data = await parseJsonResponse(response)
+    throw new Error(getGoogleErrorMessage(response.status, data))
+  }
 }
 
 export function getSheetsClient(): SheetsClient {
@@ -275,7 +298,7 @@ async function createJwtAssertion(
   const header = { alg: 'RS256', typ: 'JWT' }
   const payload = {
     iss: creds.client_email,
-    scope: GOOGLE_SHEETS_SCOPE,
+    scope: GOOGLE_COMBINED_SCOPE,
     aud: GOOGLE_TOKEN_URL,
     exp: now + 3600,
     iat: now,

@@ -9,8 +9,15 @@ import {
   X,
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
-import type { Project, TimeEntry } from '#/lib/time-tracker/types'
+import type { Project, TimeEntry, ViewMode } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '#/components/ui/table'
 import { EntriesFilters } from './EntriesFilters'
 import { EntryCard } from './EntryCard'
 import { EntryRow } from './EntryRow'
@@ -150,8 +157,6 @@ function LiveGroupTotal({
 function TaskGroupHeaderRow({
   group,
   projects,
-  tags,
-  formatTime,
   hasActiveTimer,
   isExpanded,
   onToggle,
@@ -159,32 +164,31 @@ function TaskGroupHeaderRow({
 }: {
   group: TaskGroup
   projects: Project[]
-  tags: SearchableItem[]
-  formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isExpanded: boolean
   onToggle: () => void
   onResume: () => void
 }) {
   const project = projects.find((p) => p.id === group.projectId)
-  const entryTags = tags.filter((t) => group.tagIds.includes(t.id))
 
   return (
-    <tr
-      className="border-t border-border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+    <TableRow
+      className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={onToggle}
     >
       {/* Description + count + expand toggle */}
-      <td className="px-4 py-3 w-full min-w-[180px]">
+      <td className="px-4 py-3 w-[32%]">
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
             <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           ) : (
             <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           )}
-          <span className="truncate font-semibold text-foreground max-w-[220px]">
+          <span className="truncate text-sm font-semibold text-foreground">
             {group.description || (
-              <span className="text-muted-foreground">No description</span>
+              <span className="text-muted-foreground font-normal">
+                No description
+              </span>
             )}
           </span>
           <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
@@ -194,7 +198,7 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Project */}
-      <td className="px-4 py-3 w-40 min-w-[120px]">
+      <td className="px-4 py-3 w-[22%]">
         {project ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span
@@ -209,65 +213,39 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Tags */}
-      <td className="px-4 py-3 w-44 min-w-[130px]">
-        <div className="flex flex-wrap gap-1">
-          {entryTags.slice(0, 2).map((tag) => (
-            <span
-              key={tag.id}
-              className="rounded px-1.5 py-0.5 text-xs font-medium"
-              style={{
-                backgroundColor: tag.color ? `${tag.color}22` : undefined,
-                color: tag.color,
-                border: `1px solid ${tag.color}`,
-              }}
-            >
-              {tag.name}
-            </span>
-          ))}
-          {entryTags.length > 2 && (
-            <span className="text-xs text-muted-foreground">
-              +{entryTags.length - 2}
-            </span>
-          )}
-        </div>
+      <td className="px-4 py-3 w-[18%]">
+        <span className="text-xs text-muted-foreground">
+          {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
+        </span>
       </td>
 
       {/* Billable */}
-      <td className="px-4 py-3 w-20 text-center">
+      <td className="px-4 py-3 w-[10%] text-center">
         {group.billable && (
-          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            $
-          </span>
+          <span className="text-xs font-bold text-primary">$</span>
         )}
       </td>
 
-      {/* Total duration */}
-      <td
-        className="px-4 py-3 w-48 min-w-[170px] font-mono font-bold tabular-nums text-foreground"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {formatTime(group.totalSeconds)}
+      {/* Resume */}
+      <td className="px-4 py-3 w-[18%]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onResume}
+            disabled={hasActiveTimer}
+            title={
+              hasActiveTimer
+                ? 'Stop the running timer first'
+                : 'Resume this task'
+            }
+            className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Resume task"
+          >
+            <Play className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </td>
-
-      {/* Actions */}
-      <td
-        className="px-4 py-3 w-24 shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={onResume}
-          disabled={hasActiveTimer}
-          title={
-            hasActiveTimer ? 'Stop the running timer first' : 'Resume this task'
-          }
-          className="rounded-lg border border-primary/40 p-2 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Resume task"
-        >
-          <Play className="h-4 w-4" />
-        </button>
-      </td>
-    </tr>
+    </TableRow>
   )
 }
 
@@ -368,12 +346,14 @@ function TaskGroupHeaderCard({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function EntriesSection({
+  view,
   range,
   baseFiltered,
   filteredEntries,
   activeFilterCount,
   clearFilters,
   filterControls,
+  clients,
   projects,
   tags,
   currency,
@@ -388,6 +368,7 @@ export function EntriesSection({
   onDuplicate,
   onDelete,
 }: {
+  view?: ViewMode
   range: { start: Date; end: Date }
   baseFiltered: TimeEntry[]
   filteredEntries: TimeEntry[]
@@ -403,6 +384,7 @@ export function EntriesSection({
     sortKey: SortKey
     setSortKey: (v: SortKey) => void
   }
+  clients: Array<{ id: string; name: string; clientStatus: string }>
   projects: Project[]
   tags: SearchableItem[]
   currency: string
@@ -504,7 +486,7 @@ export function EntriesSection({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {groups.length > 1 && (
+            {groups.length > 1 && view !== 'day' && (
               <button
                 type="button"
                 onClick={toggleAll}
@@ -573,73 +555,97 @@ export function EntriesSection({
           const isDayCollapsed = collapsedDates.has(group.dateKey)
           return (
             <div key={group.dateKey}>
-              {/* Day group header */}
-              <button
-                type="button"
-                onClick={() => toggleDayGroup(group.dateKey)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {isDayCollapsed ? (
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className="text-sm font-bold text-foreground">
-                    {group.label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {group.taskGroups.reduce(
-                      (n, tg) => n + tg.entries.length,
-                      0,
-                    )}{' '}
-                    {group.taskGroups.reduce(
-                      (n, tg) => n + tg.entries.length,
-                      0,
-                    ) === 1
-                      ? 'entry'
-                      : 'entries'}
-                    {group.taskGroups.length > 1 && (
-                      <span className="ml-1 text-muted-foreground/60">
-                        · {group.taskGroups.length} tasks
-                      </span>
-                    )}
-                  </span>
+              {/* Day group header — static in day view, collapsible in week/month */}
+              {view === 'day' ? (
+                <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-sm font-bold text-foreground">
+                      {group.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {group.taskGroups.reduce(
+                        (n, tg) => n + tg.entries.length,
+                        0,
+                      )}{' '}
+                      {group.taskGroups.reduce(
+                        (n, tg) => n + tg.entries.length,
+                        0,
+                      ) === 1
+                        ? 'entry'
+                        : 'entries'}
+                    </span>
+                  </div>
+                  <LiveGroupTotal
+                    completedSeconds={group.completedSeconds}
+                    runningEntry={group.runningEntry}
+                    formatTime={formatTime}
+                  />
                 </div>
-                <LiveGroupTotal
-                  completedSeconds={group.completedSeconds}
-                  runningEntry={group.runningEntry}
-                  formatTime={formatTime}
-                />
-              </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => toggleDayGroup(group.dateKey)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {isDayCollapsed ? (
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="text-sm font-bold text-foreground">
+                      {group.label}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {group.taskGroups.reduce(
+                        (n, tg) => n + tg.entries.length,
+                        0,
+                      )}{' '}
+                      {group.taskGroups.reduce(
+                        (n, tg) => n + tg.entries.length,
+                        0,
+                      ) === 1
+                        ? 'entry'
+                        : 'entries'}
+                      {group.taskGroups.length > 1 && (
+                        <span className="ml-1 text-muted-foreground/60">
+                          · {group.taskGroups.length} tasks
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <LiveGroupTotal
+                    completedSeconds={group.completedSeconds}
+                    runningEntry={group.runningEntry}
+                    formatTime={formatTime}
+                  />
+                </button>
+              )}
 
-              {/* Expanded day content */}
-              {!isDayCollapsed && (
+              {/* Expanded day content — always visible in day view */}
+              {(view === 'day' || !isDayCollapsed) && (
                 <>
                   {/* Desktop table */}
-                  <div className="hidden overflow-x-auto border-t border-border/40 sm:block">
-                    <table className="w-full min-w-[860px] border-collapse text-left text-sm">
-                      <thead className="bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
-                        <tr>
-                          <th className="whitespace-nowrap px-4 py-2.5 w-full min-w-[180px]">
+                  <div className="hidden border-t border-border/40 sm:block">
+                    <Table>
+                      <TableHeader className="bg-muted/60">
+                        <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
+                          <TableHead className="px-4 py-2.5 w-[32%] text-muted-foreground font-medium">
                             Task
-                          </th>
-                          <th className="whitespace-nowrap px-4 py-2.5 w-40 min-w-[120px]">
-                            Project
-                          </th>
-                          <th className="whitespace-nowrap px-4 py-2.5 w-44 min-w-[130px]">
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[22%] text-muted-foreground font-medium">
+                            Client / Project
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
                             Tags
-                          </th>
-                          <th className="whitespace-nowrap px-4 py-2.5 w-20 text-center">
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[10%] text-center text-muted-foreground font-medium">
                             Billable
-                          </th>
-                          <th className="whitespace-nowrap px-4 py-2.5 w-48 min-w-[170px]">
-                            Duration
-                          </th>
-                          <th className="px-4 py-2.5 w-24 shrink-0"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[18%]" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {group.taskGroups.map((taskGroup) => {
                           const isGrouped = taskGroup.entries.length > 1
                           const expanded = isTaskGroupExpanded(
@@ -648,16 +654,14 @@ export function EntriesSection({
                           )
 
                           if (!isGrouped) {
-                            // Single entry — render the full row directly
                             const entry = taskGroup.entries[0]
                             return (
                               <EntryRow
                                 key={entry.id}
                                 entry={entry}
+                                clients={clients}
                                 projects={projects}
                                 tags={tags}
-                                currency={currency}
-                                rateLookup={rateLookup}
                                 pending={pending}
                                 isPending={pendingEntryIds?.has(entry.id)}
                                 formatTime={formatTime}
@@ -671,15 +675,12 @@ export function EntriesSection({
                             )
                           }
 
-                          // Multiple entries — group header + collapsible sub-rows
                           return (
                             <>
                               <TaskGroupHeaderRow
                                 key={`header-${taskGroup.key}`}
                                 group={taskGroup}
                                 projects={projects}
-                                tags={tags}
-                                formatTime={formatTime}
                                 hasActiveTimer={hasActiveTimer}
                                 isExpanded={expanded}
                                 onToggle={() =>
@@ -692,10 +693,9 @@ export function EntriesSection({
                                   <EntryRow
                                     key={entry.id}
                                     entry={entry}
+                                    clients={clients}
                                     projects={projects}
                                     tags={tags}
-                                    currency={currency}
-                                    rateLookup={rateLookup}
                                     pending={pending}
                                     isPending={pendingEntryIds?.has(entry.id)}
                                     formatTime={formatTime}
@@ -713,8 +713,8 @@ export function EntriesSection({
                             </>
                           )
                         })}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
 
                   {/* Mobile cards */}
@@ -796,8 +796,8 @@ export function EntriesSection({
         })}
       </div>
 
-      {/* Load more days */}
-      {hiddenGroupCount > 0 && (
+      {/* Load more days — not relevant in single-day view */}
+      {hiddenGroupCount > 0 && view !== 'day' && (
         <div className="border-t border-border p-4 text-center">
           <button
             type="button"

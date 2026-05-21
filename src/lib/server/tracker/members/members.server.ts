@@ -6,16 +6,21 @@ import {
   departments,
   cohorts,
   cohortMembers,
+  workspaces,
 } from '#/db/schema'
 import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { assertOwnerOrAdmin } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
+import { shareSheetWithUser } from '../../gsheets/auth.server'
+import { extractSheetId } from '../../gsheets/extract-sheet-id'
 import type {
   inviteMemberSchema,
   setMemberStatusSchema,
   updateWorkspaceMemberSchema,
 } from '../shared/schemas'
+
+const SHEET_SHARED_ROLES = new Set(['OWNER', 'ADMIN'])
 
 export async function createWorkspaceMember(
   data: z.infer<typeof inviteMemberSchema>,
@@ -178,6 +183,38 @@ export async function updateWorkspaceMember(
     targetId: data.memberId,
     details: data.workspaceRoleId ?? data.departmentId ?? null,
   })
+
+  // If role changed to OWNER or ADMIN, grant sheet access automatically
+  if (data.workspaceRoleId !== undefined) {
+    void (async () => {
+      try {
+        const [newRole] = await db
+          .select()
+          .from(workspaceRoles)
+          .where(
+            and(
+              eq(workspaceRoles.id, data.workspaceRoleId!),
+              eq(workspaceRoles.workspaceId, access.workspace.id),
+            ),
+          )
+          .limit(1)
+        if (!newRole || !SHEET_SHARED_ROLES.has(newRole.permissionLevel ?? ''))
+          return
+
+        const [workspace] = await db
+          .select()
+          .from(workspaces)
+          .where(eq(workspaces.id, access.workspace.id))
+          .limit(1)
+        if (!workspace?.googleSheetUrl) return
+
+        const sheetId = extractSheetId(workspace.googleSheetUrl)
+        await shareSheetWithUser(sheetId, target.email)
+      } catch {
+        // Non-fatal
+      }
+    })()
+  }
 }
 
 export async function setMemberStatus(

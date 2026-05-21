@@ -180,17 +180,17 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '#
 
 ---
 
-## Implementation Order
+## Implementation Status — ✅ Complete
 
-| Step | What                                                              | Files                        |
-| ---- | ----------------------------------------------------------------- | ---------------------------- |
-| 1    | Change default view to `'day'`                                    | `TimeTrackerDashboard.tsx`   |
-| 2    | Build `InlineProjectPopover` (portal-based)                       | New file                     |
-| 3    | Build `InlineTagPopover` (portal-based)                           | New file                     |
-| 4    | Rewrite `EntryRow.tsx` — 4 columns, shadcn Table, inline popovers | `EntryRow.tsx`               |
-| 5    | Simplify `TaskGroupHeaderRow` — match new columns                 | `EntriesSection.tsx`         |
-| 6    | Conditionally hide day-group controls in day view                 | `EntriesSection.tsx`         |
-| 7    | Clean up unused code                                              | Remove old import references |
+| Step | What                                                                                           | Status  |
+| ---- | ---------------------------------------------------------------------------------------------- | ------- |
+| 1    | Change default view to `'day'`                                                                 | ✅ Done |
+| 2    | Build `InlineProjectPopover` (portal-based)                                                    | ✅ Done |
+| 3    | Build `InlineTagPopover` (portal-based)                                                        | ✅ Done |
+| 4    | Rewrite `EntryRow.tsx` — 4 columns, shadcn Table, inline popovers                              | ✅ Done |
+| 5    | Simplify `TaskGroupHeaderRow` — match new columns                                              | ✅ Done |
+| 6    | Conditionally hide day-group controls in day view                                              | ✅ Done |
+| 7    | Clean up unused code (removed `ProjectPicker`, `TagPicker`, `BillableToggleButton` from table) | ✅ Done |
 
 ---
 

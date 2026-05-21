@@ -8,7 +8,6 @@ import {
   Trash2,
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
-import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import {
@@ -18,10 +17,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import { TableCell, TableRow } from '#/components/ui/table'
 import { BillableToggleButton } from './BillableToggleButton'
 import { ConfirmDialog } from './ConfirmDialog'
-import { ProjectPicker } from '../pickers/ProjectPicker'
-import { TagPicker } from '../pickers/TagPicker'
+import { InlineClientProjectPopover } from './InlineClientProjectPopover'
+import { InlineTagPopover } from './InlineTagPopover'
 import { useNowTick } from './hooks/useNowTick'
 
 type InlinePatch = Partial<
@@ -35,6 +35,8 @@ type InlinePatch = Partial<
     | 'endedAt'
   >
 >
+
+type ClientItem = { id: string; name: string; clientStatus: string }
 
 function toTimeInput(isoStr: string): string {
   const d = new Date(isoStr)
@@ -50,10 +52,9 @@ function patchTime(isoStr: string, timeInput: string): string {
 
 export const EntryRow = memo(function EntryRow({
   entry,
+  clients,
   projects,
   tags,
-  currency,
-  rateLookup,
   pending,
   isPending,
   formatTime,
@@ -66,10 +67,9 @@ export const EntryRow = memo(function EntryRow({
   onDelete,
 }: {
   entry: TimeEntry
+  clients: ClientItem[]
   projects: Project[]
   tags: SearchableItem[]
-  currency: string
-  rateLookup: (memberId: string) => number
   pending: boolean
   isPending?: boolean
   formatTime: (seconds: number) => string
@@ -101,9 +101,13 @@ export const EntryRow = memo(function EntryRow({
   const startTimeInputRef = useRef<HTMLInputElement>(null)
   const endTimeInputRef = useRef<HTMLInputElement>(null)
 
-  const projectItems: SearchableItem[] = useMemo(
-    () => projects.map((p) => ({ id: p.id, name: p.name, color: p.color })),
-    [projects],
+  const activeClients = useMemo(
+    () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
+    [clients],
+  )
+  const entryProject = useMemo(
+    () => projects.find((p) => p.id === entry.projectId),
+    [projects, entry.projectId],
   )
   const actionsDisabled = pending || !!isPending
 
@@ -136,178 +140,71 @@ export const EntryRow = memo(function EntryRow({
     setEditEndTime(false)
   }
 
+  const startTime = new Date(entry.startedAt).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const endTime = entry.endedAt
+    ? new Date(entry.endedAt).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null
+
   return (
-    <tr className={`border-t border-border ${isSubEntry ? 'bg-muted/20' : ''}`}>
-      {/* Task */}
-      <td className="px-4 py-3 w-full min-w-[180px]">
-        {isSubEntry ? (
-          <div
-            className="flex items-center gap-1.5 pl-5 text-xs text-muted-foreground"
-            suppressHydrationWarning
-          >
-            <span className="text-muted-foreground/40">↳</span>
-            <span>
-              {new Date(entry.startedAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </span>
-            <span>→</span>
-            <span>
-              {entry.endedAt
-                ? new Date(entry.endedAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : 'now'}
-            </span>
-          </div>
-        ) : (
-          <>
-            {editDesc ? (
-              <input
-                ref={descInputRef}
-                className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-                value={draftDesc}
-                onChange={(e) => setDraftDesc(e.target.value)}
-                onBlur={commitDesc}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitDesc()
-                  if (e.key === 'Escape') {
-                    setDraftDesc(entry.description)
-                    setEditDesc(false)
-                  }
-                }}
-              />
-            ) : (
-              <button
-                type="button"
-                className="m-0 block max-w-[260px] cursor-text truncate border-0 bg-transparent p-0 text-left font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
-                title={entry.description}
-                onClick={() => {
-                  setDraftDesc(entry.description)
-                  setEditDesc(true)
-                }}
-              >
-                {entry.description || (
-                  <span className="text-muted-foreground">No description</span>
-                )}
-              </button>
-            )}
-            <p
-              className="m-0 mt-1 text-xs text-muted-foreground"
-              suppressHydrationWarning
-            >
-              {new Date(entry.startedAt).toLocaleString()}
-            </p>
-          </>
-        )}
-      </td>
-
-      {/* Project */}
-      <td className="px-4 py-3 w-40 min-w-[120px]">
-        {!isSubEntry && (
-          <ProjectPicker
-            projects={projectItems}
-            value={entry.projectId}
-            onChange={(id) => onUpdate({ projectId: id })}
-            onCreate={async () => {}}
-            canCreate={false}
-            disabled={actionsDisabled}
-          />
-        )}
-      </td>
-
-      {/* Tags */}
-      <td className="px-4 py-3 w-44 min-w-[130px]">
-        {!isSubEntry && (
-          <TagPicker
-            tags={tags}
-            value={entry.tagIds}
-            onChange={(ids) => onUpdate({ tagIds: ids })}
-            onCreate={async () => {}}
-            canCreate={false}
-            disabled={actionsDisabled}
-          />
-        )}
-      </td>
-
-      {/* Billable */}
-      <td className="px-4 py-3 w-20 text-center">
-        <div
-          className={actionsDisabled ? 'pointer-events-none opacity-50' : ''}
-        >
-          <BillableToggleButton
-            pressed={entry.billable}
-            onPressedChange={(b) => onUpdate({ billable: b })}
-            className="h-8 w-8"
-          />
-        </div>
-      </td>
-
-      {/* Duration */}
-      <td className="px-4 py-3 w-48 min-w-[170px] font-mono font-bold tabular-nums text-foreground">
-        <div className="flex items-center gap-1.5">
-          {formatTime(seconds)}
-          {isPending && (
-            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-          )}
-        </div>
-
-        {/* Inline start → end time editing */}
-        <div className="mt-0.5 flex items-center gap-1 font-sans text-xs text-muted-foreground tabular-nums">
-          {editStartTime ? (
+    <TableRow className={isSubEntry ? 'bg-muted/20' : ''}>
+      {/* Task — description + time range + duration */}
+      <TableCell className="py-2.5 px-4 w-[32%]">
+        <div className="flex flex-col gap-0.5 min-w-0">
+          {/* Description */}
+          {editDesc ? (
             <input
-              type="time"
-              ref={startTimeInputRef}
-              className="w-[72px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-              value={draftStartTime}
-              onChange={(e) => setDraftStartTime(e.target.value)}
-              onBlur={commitStartTime}
+              ref={descInputRef}
+              className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              value={draftDesc}
+              onChange={(e) => setDraftDesc(e.target.value)}
+              onBlur={commitDesc}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') commitStartTime()
+                if (e.key === 'Enter') commitDesc()
                 if (e.key === 'Escape') {
-                  setDraftStartTime(toTimeInput(entry.startedAt))
-                  setEditStartTime(false)
+                  setDraftDesc(entry.description)
+                  setEditDesc(false)
                 }
               }}
             />
           ) : (
             <button
               type="button"
-              className="cursor-text rounded border-0 bg-transparent px-0.5 py-0 font-inherit text-inherit hover:bg-accent hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              title="Click to edit start time"
-              suppressHydrationWarning
+              className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
+              title={entry.description}
               onClick={() => {
-                setDraftStartTime(toTimeInput(entry.startedAt))
-                setEditStartTime(true)
+                setDraftDesc(entry.description)
+                setEditDesc(true)
               }}
             >
-              {new Date(entry.startedAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {entry.description || (
+                <span className="text-muted-foreground font-normal">
+                  No description
+                </span>
+              )}
             </button>
           )}
 
-          <span>→</span>
-
-          {entry.endedAt ? (
-            editEndTime ? (
+          {/* Time range + duration */}
+          <div className="flex items-center gap-1.5 font-sans text-xs text-muted-foreground">
+            {editStartTime ? (
               <input
                 type="time"
-                ref={endTimeInputRef}
-                className="w-[72px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                value={draftEndTime}
-                onChange={(e) => setDraftEndTime(e.target.value)}
-                onBlur={commitEndTime}
+                ref={startTimeInputRef}
+                className="w-[68px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                value={draftStartTime}
+                onChange={(e) => setDraftStartTime(e.target.value)}
+                onBlur={commitStartTime}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitEndTime()
+                  if (e.key === 'Enter') commitStartTime()
                   if (e.key === 'Escape') {
-                    setDraftEndTime(
-                      entry.endedAt ? toTimeInput(entry.endedAt) : '',
-                    )
-                    setEditEndTime(false)
+                    setDraftStartTime(toTimeInput(entry.startedAt))
+                    setEditStartTime(false)
                   }
                 }}
               />
@@ -315,41 +212,104 @@ export const EntryRow = memo(function EntryRow({
               <button
                 type="button"
                 className="cursor-text rounded border-0 bg-transparent px-0.5 py-0 font-inherit text-inherit hover:bg-accent hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                title="Click to edit end time"
+                title="Click to edit start time"
                 suppressHydrationWarning
                 onClick={() => {
-                  setDraftEndTime(
-                    entry.endedAt ? toTimeInput(entry.endedAt) : '',
-                  )
-                  setEditEndTime(true)
+                  setDraftStartTime(toTimeInput(entry.startedAt))
+                  setEditStartTime(true)
                 }}
               >
-                {new Date(entry.endedAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {startTime}
               </button>
-            )
-          ) : (
-            <span className="italic">now</span>
-          )}
-        </div>
+            )}
 
-        {entry.billable && (
-          <div className="mt-0.5 font-sans text-xs font-semibold text-muted-foreground tabular-nums">
-            {formatCurrency(
-              (seconds / 3600) * rateLookup(entry.workspaceMemberId),
-              currency,
+            <span>→</span>
+
+            {entry.endedAt ? (
+              editEndTime ? (
+                <input
+                  type="time"
+                  ref={endTimeInputRef}
+                  className="w-[68px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  value={draftEndTime}
+                  onChange={(e) => setDraftEndTime(e.target.value)}
+                  onBlur={commitEndTime}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitEndTime()
+                    if (e.key === 'Escape') {
+                      setDraftEndTime(
+                        entry.endedAt ? toTimeInput(entry.endedAt) : '',
+                      )
+                      setEditEndTime(false)
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="cursor-text rounded border-0 bg-transparent px-0.5 py-0 font-inherit text-inherit hover:bg-accent hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  title="Click to edit end time"
+                  suppressHydrationWarning
+                  onClick={() => {
+                    setDraftEndTime(
+                      entry.endedAt ? toTimeInput(entry.endedAt) : '',
+                    )
+                    setEditEndTime(true)
+                  }}
+                >
+                  {endTime}
+                </button>
+              )
+            ) : (
+              <span className="italic">now</span>
+            )}
+
+            <span className="font-mono font-bold tabular-nums text-foreground">
+              {formatTime(seconds)}
+            </span>
+
+            {isPending && (
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
             )}
           </div>
-        )}
-      </td>
+        </div>
+      </TableCell>
+
+      {/* Client + Project */}
+      <TableCell className="py-2.5 px-4 w-[22%]">
+        <InlineClientProjectPopover
+          clients={activeClients}
+          projects={projects}
+          clientId={entryProject?.clientId ?? ''}
+          projectId={entry.projectId}
+          onChange={(_clientId, projectId) => onUpdate({ projectId })}
+          disabled={actionsDisabled}
+        />
+      </TableCell>
+
+      {/* Tags */}
+      <TableCell className="py-2.5 px-4 w-[18%]">
+        <InlineTagPopover
+          tags={tags}
+          value={entry.tagIds}
+          onChange={(ids) => onUpdate({ tagIds: ids })}
+          disabled={actionsDisabled}
+        />
+      </TableCell>
+
+      {/* Billable */}
+      <TableCell className="py-2.5 px-4 w-[10%] text-center">
+        <BillableToggleButton
+          pressed={entry.billable}
+          onPressedChange={(b) => onUpdate({ billable: b })}
+          className="h-8 w-8 mx-auto"
+        />
+      </TableCell>
 
       {/* Actions */}
-      <td className="px-4 py-3 w-24 shrink-0">
-        <div className="flex items-center gap-1.5">
-          {/* Resume — only on standalone rows, not sub-entries (group header has Resume) */}
-          {entry.endedAt && !isSubEntry && (
+      <TableCell className="py-2.5 px-4 w-[18%]">
+        <div className="flex items-center justify-end gap-1">
+          {entry.endedAt && (
             <button
               type="button"
               onClick={onResume}
@@ -359,21 +319,20 @@ export const EntryRow = memo(function EntryRow({
                   ? 'Stop the running timer first'
                   : 'Resume this task'
               }
-              className="rounded-lg border border-primary/40 p-2 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Resume entry"
             >
-              <Play className="h-4 w-4" />
+              <Play className="h-3.5 w-3.5" />
             </button>
           )}
 
-          {/* More actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger
               disabled={actionsDisabled}
-              className="rounded-lg border border-border p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg border border-border p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="More actions"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-3.5 w-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onStartEdit}>
@@ -395,7 +354,7 @@ export const EntryRow = memo(function EntryRow({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </td>
+      </TableCell>
 
       <ConfirmDialog
         open={showDuplicateDialog}
@@ -426,6 +385,6 @@ export const EntryRow = memo(function EntryRow({
         }}
         pending={pending}
       />
-    </tr>
+    </TableRow>
   )
 })

@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 export const entryInputSchema = z.object({
   description: z.string().trim().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
   startedAt: z.string().datetime(),
