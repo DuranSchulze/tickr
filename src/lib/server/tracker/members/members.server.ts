@@ -60,6 +60,19 @@ export async function createWorkspaceMember(
     throw new Error('Selected role does not exist in this workspace.')
   }
 
+  // Only Owners can assign Owner or Admin roles to others
+  const inviterLevel =
+    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  if (
+    inviterLevel !== 'OWNER' &&
+    (roleExists.permissionLevel === 'OWNER' ||
+      roleExists.permissionLevel === 'ADMIN')
+  ) {
+    throw new Error(
+      'Only the workspace Owner can assign the Owner or Admin role.',
+    )
+  }
+
   await db.insert(workspaceMembers).values({
     workspaceId: access.workspace.id,
     email,
@@ -101,6 +114,19 @@ export async function updateWorkspaceMember(
       .limit(1)
     if (!roleExists)
       throw new Error('Selected role does not exist in this workspace.')
+
+    // Only Owners can assign Owner or Admin roles to others
+    const inviterLevel =
+      access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+    if (
+      inviterLevel !== 'OWNER' &&
+      (roleExists.permissionLevel === 'OWNER' ||
+        roleExists.permissionLevel === 'ADMIN')
+    ) {
+      throw new Error(
+        'Only the workspace Owner can assign the Owner or Admin role.',
+      )
+    }
   }
 
   const effectiveDepartmentId =

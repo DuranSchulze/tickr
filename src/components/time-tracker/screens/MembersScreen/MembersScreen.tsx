@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
-import { UserPlus, X } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import type { Member, TrackerState } from '#/lib/time-tracker/types'
 import { exportMembersCsvFn } from '#/lib/server/tracker'
 import {
   ExportMenu,
   downloadCsv,
 } from '#/components/time-tracker/shared/ExportMenu'
-import { InviteMemberForm } from '../../InviteMemberForm'
+import { InviteMemberDialog } from '../../InviteMemberDialog'
 import { MembersTable } from '../../MembersTable'
 import type { MemberStat } from '../../MembersTable'
 import { PendingInvitesPanel } from '../../PendingInvitesPanel'
@@ -57,7 +57,6 @@ export function MembersScreen({
   const canManage =
     currentMember.permissionLevel === 'OWNER' ||
     currentMember.permissionLevel === 'ADMIN'
-  const canView = canManage || currentMember.permissionLevel === 'MANAGER'
 
   const [showForm, setShowForm] = useState(false)
 
@@ -117,25 +116,22 @@ export function MembersScreen({
             {canManage && (
               <button
                 type="button"
-                onClick={() => setShowForm((prev) => !prev)}
+                onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
               >
-                {showForm ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )}
-                {showForm ? 'Cancel' : 'Invite member'}
+                <UserPlus className="h-4 w-4" />
+                Invite member
               </button>
             )}
           </div>
         </div>
 
-        {showForm && (
-          <InviteMemberForm
+        {canManage && (
+          <InviteMemberDialog
+            open={showForm}
+            onOpenChange={setShowForm}
             roles={state.roles}
             departments={state.departments}
-            onInvited={() => setShowForm(false)}
           />
         )}
 
@@ -183,7 +179,6 @@ export function MembersScreen({
           members={members}
           state={state}
           canManage={canManage}
-          canView={canView}
           statsMap={statsMap}
           page={page}
           pageSize={pageSize}

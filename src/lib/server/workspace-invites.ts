@@ -1,27 +1,32 @@
 import { createServerFn } from '@tanstack/react-start'
+import { z } from 'zod'
+
+const createWorkspaceInviteSchema = z.object({
+  email: z.string().trim().email(),
+  workspaceRoleId: z.string().min(1),
+  departmentId: z.string().optional().nullable(),
+})
+
+const inviteIdSchema = z.object({
+  inviteId: z.string().min(1),
+})
 
 export const createWorkspaceInviteFn = createServerFn({ method: 'POST' })
-  .inputValidator(
-    (input: {
-      email: string
-      workspaceRoleId: string
-      departmentId?: string | null
-    }) => input,
-  )
+  .inputValidator((input) => createWorkspaceInviteSchema.parse(input))
   .handler(async ({ data }) => {
     const { createWorkspaceInvite } = await import('./workspace-invites.server')
     return createWorkspaceInvite(data)
   })
 
 export const resendWorkspaceInviteFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: { inviteId: string }) => input)
+  .inputValidator((input) => inviteIdSchema.parse(input))
   .handler(async ({ data }) => {
     const { resendWorkspaceInvite } = await import('./workspace-invites.server')
     return resendWorkspaceInvite(data)
   })
 
 export const revokeWorkspaceInviteFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: { inviteId: string }) => input)
+  .inputValidator((input) => inviteIdSchema.parse(input))
   .handler(async ({ data }) => {
     const { revokeWorkspaceInvite } = await import('./workspace-invites.server')
     return revokeWorkspaceInvite(data)

@@ -9,10 +9,11 @@ import {
 import type { TrackerState } from '#/lib/time-tracker/types'
 
 type Member = TrackerState['members'][number]
+export type EditingField = 'role' | 'dept' | 'cohorts' | 'rate' | null
 
 export function useMemberRow(member: Member) {
   const router = useRouter()
-  const [editing, setEditing] = useState(false)
+  const [editingField, setEditingField] = useState<EditingField>(null)
   const [showAnalytics, setShowAnalytics] = useState(false)
   const [roleId, setRoleId] = useState(member.workspaceRoleId)
   const [deptId, setDeptId] = useState(member.departmentId)
@@ -27,15 +28,44 @@ export function useMemberRow(member: Member) {
   const rateInputInvalid =
     parsedRate !== null && (!Number.isFinite(parsedRate) || parsedRate < 0)
 
-  function resetEditState() {
+  function cancelEdit() {
     setRoleId(member.workspaceRoleId)
     setDeptId(member.departmentId)
     setCohortIds(member.cohortIds)
     setRate(member.billableRate == null ? '' : String(member.billableRate))
-    setEditing(false)
+    setEditingField(null)
   }
 
-  async function handleSave() {
+  async function saveMemberFields(fields: {
+    roleId?: string
+    deptId?: string
+    cohortIds?: string[]
+  }) {
+    setPending(true)
+    try {
+      await updateWorkspaceMemberFn({
+        data: {
+          memberId: member.id,
+          workspaceRoleId: (fields.roleId ?? roleId) || undefined,
+          departmentId: (fields.deptId ?? deptId) || undefined,
+          cohortIds: fields.cohortIds ?? cohortIds,
+        },
+      })
+      await router.invalidate()
+      gooeyToast.success('Member updated')
+    } catch (err) {
+      gooeyToast.error('Could not update member', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function saveRate() {
+    const currentRate =
+      member.billableRate == null ? '' : String(member.billableRate)
+    if (rate.trim() === currentRate) return
     if (rateInputInvalid) {
       gooeyToast.error('Enter a valid hourly rate', {
         description: 'Use a positive number, or leave it blank for default.',
@@ -44,25 +74,13 @@ export function useMemberRow(member: Member) {
     }
     setPending(true)
     try {
-      await Promise.all([
-        updateWorkspaceMemberFn({
-          data: {
-            memberId: member.id,
-            workspaceRoleId: roleId || undefined,
-            departmentId: deptId || undefined,
-            cohortIds,
-          },
-        }),
-        updateMemberBillableRateFn({
-          data: { memberId: member.id, billableRate: parsedRate },
-        }),
-      ])
+      await updateMemberBillableRateFn({
+        data: { memberId: member.id, billableRate: parsedRate },
+      })
       await router.invalidate()
-      setRate(parsedRate == null ? '' : String(parsedRate))
-      gooeyToast.success('Member updated')
-      setEditing(false)
+      gooeyToast.success('Rate updated')
     } catch (err) {
-      gooeyToast.error('Could not update member', {
+      gooeyToast.error('Could not update rate', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -95,8 +113,8 @@ export function useMemberRow(member: Member) {
   }
 
   return {
-    editing,
-    setEditing,
+    editingField,
+    setEditingField,
     showAnalytics,
     setShowAnalytics,
     roleId,
@@ -110,8 +128,9 @@ export function useMemberRow(member: Member) {
     pending,
     parsedRate,
     rateInputInvalid,
-    resetEditState,
-    handleSave,
+    cancelEdit,
+    saveMemberFields,
+    saveRate,
     handleToggleStatus,
     toggleCohort,
   }

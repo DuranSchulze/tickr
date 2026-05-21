@@ -158,6 +158,19 @@ export async function createWorkspaceInvite(input: {
     )
   }
 
+  // Only Owners can assign Owner or Admin roles to others
+  const inviterLevel =
+    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  if (
+    inviterLevel !== 'OWNER' &&
+    (role.permissionLevel === 'OWNER' || role.permissionLevel === 'ADMIN')
+  ) {
+    throw new WorkspaceInviteError(
+      'forbidden',
+      'Only the workspace Owner can assign the Owner or Admin role.',
+    )
+  }
+
   const [existingMember] = await db
     .select()
     .from(workspaceMembers)

@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Loader2, Play, SlidersHorizontal, Square, Trash2 } from 'lucide-react'
+import {
+  Loader2,
+  Pencil,
+  Play,
+  SlidersHorizontal,
+  Square,
+  Trash2,
+} from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { Client, Project, TimeEntry, Tag } from '#/lib/time-tracker/types'
@@ -314,17 +321,22 @@ export function TimerPanel({
                     }}
                   />
                 ) : (
-                  <button
-                    type="button"
-                    onClick={openStartedEdit}
-                    className="rounded px-1 py-px font-semibold text-foreground underline-offset-2 hover:bg-accent hover:underline"
-                    title="Click to correct start time"
-                  >
-                    {new Date(activeEntry.startedAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </button>
+                  <span className="flex items-center gap-1">
+                    <span className="font-semibold text-foreground">
+                      {new Date(activeEntry.startedAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={openStartedEdit}
+                      className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      title="Edit start time"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  </span>
                 )}
               </div>
             </div>

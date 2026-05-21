@@ -251,7 +251,7 @@ function useMembersColumns(canManage: boolean) {
       columnHelper.display({
         id: 'actions',
         header: '',
-        size: 150,
+        size: 60,
         meta: { headerClassName: 'px-5 py-3' },
       }),
     ]
