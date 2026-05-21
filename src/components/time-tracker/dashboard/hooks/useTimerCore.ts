@@ -253,6 +253,17 @@ export function useTimerCore({
     )
   }
 
+  // --- Clear all timer inputs (called on stop so the form feels instantly fresh) ---
+  function clearTimerInputs() {
+    setTimerDescription('')
+    setTimerClientId('')
+    setTimerProjectId('')
+    setTimerTagIds([])
+    setTimerBillable(false)
+    // Mark as not-dirty so the sync effect correctly treats the next entry as new.
+    timerInputDirtyRef.current = false
+  }
+
   // --- Timer input change handlers ---
   function changeTimerDescription(value: string) {
     timerInputDirtyRef.current = true
@@ -733,7 +744,7 @@ export function useTimerCore({
         entryId: entryToStop.id,
       })
       upsertOptimisticStoppedEntry(buildStoppedEntry(entryToStop))
-      setTimerDescription('')
+      clearTimerInputs()
       return
     }
 
@@ -743,7 +754,7 @@ export function useTimerCore({
       tagIds: timerTagIds.filter(Boolean),
       billable: timerBillable,
     })
-    setTimerDescription('')
+    clearTimerInputs()
   }
 
   return {
