@@ -733,6 +733,7 @@ export function useTimerCore({
         entryId: entryToStop.id,
       })
       upsertOptimisticStoppedEntry(buildStoppedEntry(entryToStop))
+      setTimerDescription('')
       return
     }
 
@@ -742,6 +743,7 @@ export function useTimerCore({
       tagIds: timerTagIds.filter(Boolean),
       billable: timerBillable,
     })
+    setTimerDescription('')
   }
 
   return {
