@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
 import { BarChart2, Pencil } from 'lucide-react'
@@ -74,7 +75,7 @@ function MemberStatusControl({
   )
 }
 
-export function MemberRow({
+export const MemberRow = memo(function MemberRow({
   member,
   state,
   canManage,
@@ -397,4 +398,4 @@ export function MemberRow({
       )}
     </>
   )
-}
+})

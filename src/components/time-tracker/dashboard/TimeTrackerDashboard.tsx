@@ -27,7 +27,6 @@ import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
 import { EntriesSection } from './EntriesSection'
 import { EditEntryDrawer } from './EditEntryDrawer'
-import { useNowTick } from './hooks/useNowTick'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
 import { useDraftAndEdit } from './hooks/useDraftAndEdit'
@@ -54,7 +53,6 @@ export function TimeTrackerDashboard({
   const router = useRouter()
   const mutations = useTrackerMutations()
   const { isOnline } = useNetworkStatus()
-  const tick = useNowTick(1000)
   const { formatTime } = useTimeFormat(state.workspace.id)
 
   const {
@@ -163,36 +161,50 @@ export function TimeTrackerDashboard({
   }, [isOnline])
 
   // Update the browser tab title and emit state to the Chrome extension side panel.
+  // Owns its own interval so the dashboard doesn't re-render every second.
   useEffect(() => {
-    const elapsedSeconds = activeEntry ? getEntrySeconds(activeEntry, tick) : 0
+    function update() {
+      const elapsedSeconds = activeEntry
+        ? getEntrySeconds(activeEntry, Date.now())
+        : 0
 
-    if (activeEntry) {
-      const elapsed = formatDuration(elapsedSeconds)
-      const desc = activeEntry.description.trim() || 'Timer running'
-      document.title = `${elapsed} · ${desc} — ${BRAND.name}`
-    } else {
-      const now = new Date()
-      const timeString = now.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      })
-      document.title = `${timeString} — ${BRAND.name}`
+      if (activeEntry) {
+        const elapsed = formatDuration(elapsedSeconds)
+        const desc = activeEntry.description.trim() || 'Timer running'
+        document.title = `${elapsed} · ${desc} — ${BRAND.name}`
+      } else {
+        const now = new Date()
+        const timeString = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+        document.title = `${timeString} — ${BRAND.name}`
+      }
+
+      if (typeof window !== 'undefined' && window.parent !== window) {
+        window.parent.postMessage(
+          {
+            type: 'CLOCKIFY_TIMER_STATE',
+            running: !!activeEntry,
+            elapsedSeconds,
+          },
+          '*',
+        )
+      }
     }
 
-    if (typeof window === 'undefined' || window.parent === window) return
-    window.parent.postMessage(
-      { type: 'CLOCKIFY_TIMER_STATE', running: !!activeEntry, elapsedSeconds },
-      '*',
-    )
-  }, [activeEntry, tick])
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [activeEntry])
 
   const {
     filteredEntries: serverFilteredEntries,
     activeFilterCount,
     clearFilters,
     controls: filterControls,
-  } = useEntriesFilterSort(baseFiltered, tick)
+  } = useEntriesFilterSort(baseFiltered)
 
   const pendingEntryIds = useMemo(
     () => new Set(optimisticStoppedEntries.map((e) => e.id)),
@@ -247,11 +259,11 @@ export function TimeTrackerDashboard({
       .reduce((sum, e) => sum + e.durationSeconds, 0)
   }, [mergedBaseFiltered])
 
-  // The single running entry's live contribution — only this part ticks.
-  const runningEntry = mergedBaseFiltered.find((e) => !e.endedAt)
-  const runningSeconds = runningEntry ? getEntrySeconds(runningEntry, tick) : 0
-
-  const totals = { selectedTotal: completedTotals + runningSeconds }
+  // Passed to DashboardHeader which owns the live tick for the running total.
+  const runningEntry = useMemo(
+    () => mergedBaseFiltered.find((e) => !e.endedAt) ?? null,
+    [mergedBaseFiltered],
+  )
 
   function changeView(nextView: ViewMode) {
     void navigate({
@@ -335,7 +347,8 @@ export function TimeTrackerDashboard({
         onNextPeriod={() => moveSelectedDate(1)}
         onCurrentPeriod={resetSelectedDate}
         onSelectDate={changeDate}
-        selectedTotalSeconds={totals.selectedTotal}
+        completedTotalSeconds={completedTotals}
+        runningEntry={runningEntry}
         formatTime={formatTime}
       />
 

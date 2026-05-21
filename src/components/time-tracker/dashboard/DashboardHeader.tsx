@@ -8,7 +8,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '#/components/ui/popover'
-import type { ViewMode } from '#/lib/time-tracker/types'
+import { getEntrySeconds } from '#/lib/time-tracker/store'
+import type { TimeEntry, ViewMode } from '#/lib/time-tracker/types'
+import { useNowTick } from './hooks/useNowTick'
 
 const VIEW_OPTIONS = [
   { value: 'day', label: 'Day' },
@@ -28,7 +30,8 @@ export function DashboardHeader({
   onNextPeriod,
   onCurrentPeriod,
   onSelectDate,
-  selectedTotalSeconds,
+  completedTotalSeconds,
+  runningEntry,
   formatTime,
   trailing,
 }: {
@@ -43,11 +46,16 @@ export function DashboardHeader({
   onNextPeriod: () => void
   onCurrentPeriod: () => void
   onSelectDate: (dateKey: string) => void
-  selectedTotalSeconds: number
+  completedTotalSeconds: number
+  runningEntry: TimeEntry | null
   formatTime: (seconds: number) => string
   trailing?: ReactNode
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const tick = useNowTick(runningEntry ? 1000 : null)
+  const selectedTotalSeconds =
+    completedTotalSeconds +
+    (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)
 
   const [y, m, d] = selectedDate.split('-').map(Number)
   const selectedDateObj = new Date(y, m - 1, d)

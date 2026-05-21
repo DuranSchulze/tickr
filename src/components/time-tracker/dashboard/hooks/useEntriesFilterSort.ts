@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import type { TimeEntry } from '#/lib/time-tracker/types'
+import { useNowTick } from './useNowTick'
 
 export type SortKey = 'newest' | 'oldest' | 'longest' | 'shortest'
 export type BillableFilter = 'all' | 'yes' | 'no'
 
-export function useEntriesFilterSort(entries: TimeEntry[], tick: number) {
+export function useEntriesFilterSort(entries: TimeEntry[]) {
   const [filterProject, setFilterProject] = useState('')
   const [filterTag, setFilterTag] = useState('')
   const [filterBillable, setFilterBillable] = useState<BillableFilter>('all')
   const [sortKey, setSortKey] = useState<SortKey>('newest')
 
-  // Only re-sort on every tick when the selected sort actually depends on live
-  // durations. For time-based sorts (newest/oldest) tick has no effect.
-  const tickForSort = sortKey === 'longest' || sortKey === 'shortest' ? tick : 0
+  // Only tick when the selected sort depends on live durations.
+  const isDurationSort = sortKey === 'longest' || sortKey === 'shortest'
+  const tick = useNowTick(isDurationSort ? 1000 : null)
+  const tickForSort = isDurationSort ? tick : 0
 
   const filteredEntries = useMemo(() => {
     let result = [...entries]
