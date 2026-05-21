@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
@@ -224,6 +225,9 @@ export function SyncSheetDialog({
       >
         <DialogHeader>
           <DialogTitle>Sync from Google Sheet</DialogTitle>
+          <DialogDescription>
+            Import projects and clients from your connected Google Sheet.
+          </DialogDescription>
         </DialogHeader>
 
         {error ? (

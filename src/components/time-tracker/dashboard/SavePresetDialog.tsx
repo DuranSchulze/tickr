@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
@@ -81,6 +82,9 @@ export function SavePresetDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Save Timer Preset</DialogTitle>
+          <DialogDescription>
+            Give this timer configuration a name to reuse it later.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">

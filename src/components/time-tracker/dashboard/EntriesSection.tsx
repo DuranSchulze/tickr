@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import {
   ChevronDown,
   ChevronRight,
@@ -676,7 +676,7 @@ export function EntriesSection({
                           }
 
                           return (
-                            <>
+                            <Fragment key={taskGroup.key}>
                               <TaskGroupHeaderRow
                                 key={`header-${taskGroup.key}`}
                                 group={taskGroup}
@@ -710,7 +710,7 @@ export function EntriesSection({
                                     onDelete={() => onDelete(entry.id)}
                                   />
                                 ))}
-                            </>
+                            </Fragment>
                           )
                         })}
                       </TableBody>

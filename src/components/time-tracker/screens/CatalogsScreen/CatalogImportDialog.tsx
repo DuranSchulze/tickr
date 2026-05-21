@@ -8,6 +8,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
@@ -65,6 +66,13 @@ export function CatalogImportDialog({
                 ? 'Import complete'
                 : 'Importing from Google Sheet'}
           </DialogTitle>
+          <DialogDescription>
+            {hasError
+              ? 'An error occurred during the import process.'
+              : done
+                ? 'All items have been imported successfully.'
+                : 'Importing projects, clients, and tags from your Google Sheet.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-1">
