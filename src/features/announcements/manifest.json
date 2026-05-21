@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.3.1",
+  "appVersion": "1.3.2",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,35 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.3.2",
+      "publishedAt": "2026-05-21",
+      "title": "Invite Flow & Role Permissions",
+      "body": "Fixed an error when inviting users with Admin role and added proper role assignment restrictions.",
+      "features": [
+        {
+          "title": "Admin Role Assignment Restricted to Owner",
+          "description": "Only the workspace Owner can now invite or promote someone to Admin. Previously, any Admin could assign the Admin role to another person, which could lead to unexpected permission errors.",
+          "image": null
+        },
+        {
+          "title": "Better Error Visibility on Failed Invites",
+          "description": "When an invitation fails, the error message is now shown directly in the toast instead of a generic 'something failed' message. This makes it easier to diagnose issues like invalid emails or missing roles.",
+          "image": null
+        },
+        {
+          "title": "Input Validation on Invite Server Functions",
+          "description": "All invite-related server functions now validate their inputs with Zod schemas, catching malformed data before it reaches database operations.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Manage Members",
+          "to": "/app/workspace/members"
+        }
+      ]
+    },
     {
       "version": "1.3.1",
       "publishedAt": "2026-05-20",

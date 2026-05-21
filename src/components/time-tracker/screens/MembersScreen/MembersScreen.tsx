@@ -96,7 +96,7 @@ export function MembersScreen({
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
           <div>
             <h2 className="m-0 text-lg font-bold text-foreground">
-              Managed user list
+              Managed user listz
             </h2>
             <p className="m-0 mt-1 text-sm text-muted-foreground">
               Employees join this private workspace when their account email

@@ -8,6 +8,8 @@ import { Loader2 } from 'lucide-react'
 
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { getContext } from './integrations/tanstack-query/root-provider'
+import * as Sentry from '@sentry/react'
+import './sentry.client.config'
 
 function DefaultNotFoundComponent() {
   return (
@@ -53,6 +55,12 @@ export function getRouter() {
   })
 
   setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient })
+
+  if (typeof window !== 'undefined') {
+    Sentry.getClient()?.addIntegration(
+      Sentry.tanstackRouterBrowserTracingIntegration(router),
+    )
+  }
 
   return router
 }
