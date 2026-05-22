@@ -1,20 +1,15 @@
-import { useEffect, useState } from 'react'
 import {
   Briefcase,
   Building,
   Building2,
-  Download,
   ShieldCheck,
-  Sheet,
   Tags,
   UsersRound,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { Link, useRouter } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import type { TrackerState } from '#/lib/time-tracker/types'
-import { ensureCatalogTabsFn } from '#/lib/server/gsheets/sync'
 import type { CatalogAccent } from './CatalogDialog'
-import { SyncSheetDialog } from './SyncSheetDialog'
 
 type CatalogNav = {
   key: string
@@ -28,25 +23,6 @@ type CatalogNav = {
 }
 
 export function CatalogsScreen({ state }: { state: TrackerState }) {
-  const router = useRouter()
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
-  const currentMember = state.members.find(
-    (member) => member.id === state.currentMemberId,
-  )
-  const canManage =
-    currentMember?.permissionLevel === 'OWNER' ||
-    currentMember?.permissionLevel === 'ADMIN'
-  const hasSheet = !!state.workspace.googleSheetUrl
-
-  useEffect(() => {
-    if (!hasSheet || !canManage) return
-    void ensureCatalogTabsFn().catch(() => {})
-  }, [hasSheet, canManage])
-
-  function handleImport() {
-    setShowSyncDialog(true)
-  }
-
   const catalogs: CatalogNav[] = [
     {
       key: 'roles',
@@ -140,52 +116,11 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
         </div>
       </section>
 
-      {hasSheet && canManage && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-emerald-500/20 bg-emerald-500/10 text-emerald-600">
-                <Sheet className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <h2 className="m-0 text-base font-bold text-foreground">
-                  Google Sheet sync
-                </h2>
-                <p className="m-0 mt-1 text-sm leading-6 text-muted-foreground">
-                  Your linked sheet has <strong>Clients</strong>,{' '}
-                  <strong>Projects</strong>, and <strong>Tags</strong> tabs
-                  ready. Fill them in the sheet and import here, or create
-                  records using the catalog pages — they sync to the sheet
-                  automatically.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleImport}
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-            >
-              <Download className="h-4 w-4" />
-              Import from Sheet
-            </button>
-          </div>
-        </section>
-      )}
-
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {catalogs.map((catalog) => (
           <CatalogNavCard key={catalog.key} catalog={catalog} />
         ))}
       </section>
-
-      <SyncSheetDialog
-        open={showSyncDialog}
-        onClose={async () => {
-          setShowSyncDialog(false)
-          await router.invalidate()
-        }}
-        type="all"
-      />
     </div>
   )
 }

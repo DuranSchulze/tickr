@@ -5,6 +5,7 @@ import { AppSidebar } from './AppSidebar'
 import { MobileNav } from './MobileNav'
 import { Navbar } from './Navbar'
 import { AnnouncementProvider } from '#/features/announcements/AnnouncementProvider'
+import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
 
 type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
@@ -39,6 +40,26 @@ export function AppShell({
       fetch('/api/health', { keepalive: true }).catch(() => undefined)
     }
   }, [])
+
+  // ── Auto-sync every 2 hours ────────────────────────────────────────────
+  useEffect(() => {
+    const isManagerOrAbove =
+      permissionLevel === 'OWNER' ||
+      permissionLevel === 'ADMIN' ||
+      permissionLevel === 'MANAGER'
+
+    if (!isManagerOrAbove) return
+
+    const interval = setInterval(async () => {
+      try {
+        await syncWorkspaceToGoogleSheetsFn()
+      } catch {
+        // Silently handle — no sheet URL, role mismatch, etc.
+      }
+    }, 7_200_000) // 2 hours
+
+    return () => clearInterval(interval)
+  }, [permissionLevel])
 
   // Two separate primitive selectors so TanStack Router uses Object.is correctly.
   // A single selector returning `{ pathname, search }` creates a new object on

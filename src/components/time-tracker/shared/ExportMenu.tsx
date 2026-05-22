@@ -1,9 +1,16 @@
 import { useState } from 'react'
-import { ChevronDown, FileText, Loader2, Printer } from 'lucide-react'
+import {
+  ChevronDown,
+  FileText,
+  Loader2,
+  Printer,
+  RefreshCcw,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 
@@ -21,12 +28,15 @@ export function downloadCsv(csv: string, filename: string) {
 
 export function ExportMenu({
   onExportCsv,
+  onSyncToSheet,
   disabled = false,
 }: {
   onExportCsv: () => Promise<void>
+  onSyncToSheet?: () => Promise<void>
   disabled?: boolean
 }) {
   const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState(false)
 
   async function handleCsv() {
     setLoading(true)
@@ -37,13 +47,25 @@ export function ExportMenu({
     }
   }
 
+  async function handleSync() {
+    if (!onSyncToSheet) return
+    setSyncing(true)
+    try {
+      await onSyncToSheet()
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const isBusy = loading || syncing
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        disabled={disabled || loading}
+        disabled={disabled || isBusy}
         className="no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? (
+        {isBusy ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <FileText className="h-4 w-4" />
@@ -51,8 +73,8 @@ export function ExportMenu({
         Export
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={handleCsv} disabled={loading}>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem onClick={handleCsv} disabled={isBusy}>
           <FileText className="mr-2 h-4 w-4" />
           Export CSV
         </DropdownMenuItem>
@@ -60,6 +82,17 @@ export function ExportMenu({
           <Printer className="mr-2 h-4 w-4" />
           Print / Save as PDF
         </DropdownMenuItem>
+        {onSyncToSheet && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSync} disabled={isBusy}>
+              <RefreshCcw
+                className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`}
+              />
+              Sync to sheet
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

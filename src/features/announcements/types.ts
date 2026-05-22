@@ -47,5 +47,5 @@ export interface FeatureManifest {
  */
 export const STORAGE_KEYS = {
   ONBOARDING_DISMISSED: 'tickr_onboarding_dismissed',
-  CHANGELOG_SEEN_DATE: 'tickr_changelog_seen_date',
+  CHANGELOG_VERSION: 'tickr_changelog_version',
 } as const

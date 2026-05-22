@@ -42,11 +42,12 @@ export function useAnnouncements() {
   const unseenChangelog = useCallback((): ChangelogEntry | null => {
     const latest = manifest.updates.at(0)
     if (!latest) return null
-    const seenDate = localStorage.getItem(STORAGE_KEYS.CHANGELOG_SEEN_DATE)
-    // Show if the user has never seen any changelog, or the latest entry
-    // was published after the last-seen date.
-    if (!seenDate) return latest
-    return latest.publishedAt > seenDate ? latest : null
+    const seenVersion = localStorage.getItem(STORAGE_KEYS.CHANGELOG_VERSION)
+    // Show if the user has never seen any changelog, or the latest version
+    // is newer than the last-seen version.
+    if (!seenVersion) return latest
+    // Compare versions using the manifest's appVersion ordering
+    return latest.version !== seenVersion ? latest : null
   }, [])
 
   // ── Auto-show on first load ─────────────────────────────────────────────
@@ -79,7 +80,7 @@ export function useAnnouncements() {
   const dismissChangelog = useCallback(() => {
     const latest = manifest.updates.at(0)
     if (latest) {
-      localStorage.setItem(STORAGE_KEYS.CHANGELOG_SEEN_DATE, latest.publishedAt)
+      localStorage.setItem(STORAGE_KEYS.CHANGELOG_VERSION, latest.version)
     }
     setState({ type: 'none' })
   }, [])

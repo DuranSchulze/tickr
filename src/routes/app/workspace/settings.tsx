@@ -11,7 +11,7 @@ export const Route = createFileRoute('/app/workspace/settings')({
       staleTime: 5 * 60 * 1000,
     })
     const level = access.member.permissionLevel
-    if (level !== 'OWNER' && level !== 'ADMIN') {
+    if (level !== 'OWNER' && level !== 'ADMIN' && level !== 'MANAGER') {
       throw redirect({ to: '/app/time-tracker' })
     }
   },

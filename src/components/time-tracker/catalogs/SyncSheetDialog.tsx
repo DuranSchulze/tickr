@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react'
+import {
+  AlertTriangle,
+  Archive,
+  ArrowUpCircle,
+  CheckCircle2,
+  Circle,
+  Loader2,
+  XCircle,
+} from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +20,14 @@ type ImportType = 'clients' | 'projects' | 'tags' | 'departments' | 'all'
 
 type ItemRecord = {
   name: string
-  action: 'created' | 'updated' | 'skipped'
+  action:
+    | 'created'
+    | 'updated'
+    | 'skipped'
+    | 'synced'
+    | 'exported'
+    | 'archived'
+    | 'warning'
   detail?: string
 }
 
@@ -42,6 +57,27 @@ const PHASE_LABELS: Partial<Record<ImportType, string>> = {
 
 const PHASE_ORDER: ImportType[] = ['clients', 'projects', 'tags', 'departments']
 
+const ACTION_ICONS: Record<
+  ItemRecord['action'],
+  { icon: typeof CheckCircle2; className: string; label: string }
+> = {
+  created: {
+    icon: CheckCircle2,
+    className: 'text-emerald-500',
+    label: 'Created',
+  },
+  updated: { icon: Loader2, className: 'text-blue-500', label: 'Updated' },
+  skipped: { icon: XCircle, className: 'text-amber-500', label: 'Skipped' },
+  synced: { icon: CheckCircle2, className: 'text-sky-500', label: 'In sync' },
+  exported: {
+    icon: ArrowUpCircle,
+    className: 'text-violet-500',
+    label: 'Exported',
+  },
+  archived: { icon: Archive, className: 'text-amber-500', label: 'Archived' },
+  warning: { icon: AlertTriangle, className: 'text-red-500', label: 'Warning' },
+}
+
 export function SyncSheetDialog({
   open,
   onClose,
@@ -67,6 +103,19 @@ export function SyncSheetDialog({
     setResult(null)
     setError(null)
   }, [])
+
+  // ── Tab-close warning during active sync ────────────────────────────
+  useEffect(() => {
+    if (!open) return
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [open])
 
   useEffect(() => {
     if (!open) {
@@ -223,10 +272,17 @@ export function SyncSheetDialog({
         className="sm:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
         showCloseButton={false}
       >
+        {!result && !error && (
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 mx-6 mt-4">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            Do not close this tab while sync is in progress.
+          </div>
+        )}
+
         <DialogHeader>
-          <DialogTitle>Sync from Google Sheet</DialogTitle>
+          <DialogTitle>Sync with Google Sheet</DialogTitle>
           <DialogDescription>
-            Import projects and clients from your connected Google Sheet.
+            Synchronise projects and clients with your connected Google Sheet.
           </DialogDescription>
         </DialogHeader>
 
@@ -330,38 +386,34 @@ function ProgressState({
             </span>
           </div>
           <div className="max-h-48 overflow-y-auto p-1">
-            {visibleItems.map((item, i) => (
-              <div
-                key={`${item.name}-${i}`}
-                className="flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/50"
-              >
-                {item.action === 'created' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                ) : item.action === 'updated' ? (
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-blue-500" />
-                ) : (
-                  <XCircle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                )}
-                <span className="truncate font-medium text-foreground">
-                  {item.name}
-                </span>
-                <span className="shrink-0 text-muted-foreground">
-                  {item.action === 'created'
-                    ? 'Created'
-                    : item.action === 'updated'
-                      ? 'Updated'
-                      : 'Skipped'}
-                </span>
-                {item.detail && (
-                  <span
-                    className="shrink-0 truncate text-muted-foreground/70 max-w-50"
-                    title={item.detail}
-                  >
-                    — {item.detail}
+            {visibleItems.map((item, i) => {
+              const actionDef = ACTION_ICONS[item.action]
+              const Icon = actionDef.icon
+              return (
+                <div
+                  key={`${item.name}-${i}`}
+                  className="flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/50"
+                >
+                  <Icon
+                    className={`h-3.5 w-3.5 shrink-0 ${actionDef.className} ${item.action === 'updated' ? 'animate-spin' : ''}`}
+                  />
+                  <span className="truncate font-medium text-foreground">
+                    {item.name}
                   </span>
-                )}
-              </div>
-            ))}
+                  <span className="shrink-0 text-muted-foreground">
+                    {actionDef.label}
+                  </span>
+                  {item.detail && (
+                    <span
+                      className="shrink-0 truncate text-muted-foreground/70 max-w-50"
+                      title={item.detail}
+                    >
+                      — {item.detail}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

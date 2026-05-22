@@ -1,4 +1,5 @@
 import { AlertTriangle, BarChart3 } from 'lucide-react'
+import { gooeyToast } from 'goey-toast'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -6,6 +7,7 @@ import {
   downloadCsv,
 } from '#/components/time-tracker/shared/ExportMenu'
 import { exportAnalyticsCsvFn } from '#/lib/server/tracker'
+import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
 import type { AnalyticsFilters } from './AnalyticsFilterBar'
@@ -63,6 +65,21 @@ export function AnalyticsScreen({
   }
 
   const page = currentFilters.page ?? 1
+
+  const currentMember = state.members.find(
+    (m) => m.id === state.currentMemberId,
+  )
+  const isManagerOrAbove =
+    currentMember?.permissionLevel === 'OWNER' ||
+    currentMember?.permissionLevel === 'ADMIN' ||
+    currentMember?.permissionLevel === 'MANAGER'
+  const hasSheet = !!state.workspace.googleSheetUrl
+  async function handleSyncToSheet() {
+    const result = await syncWorkspaceToGoogleSheetsFn()
+    gooeyToast.success('Synced to Google Sheets', {
+      description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
+    })
+  }
 
   async function handleExportCsv() {
     const csv = await exportAnalyticsCsvFn({
@@ -133,7 +150,12 @@ export function AnalyticsScreen({
                   onChangeQuery({ ...range, scope: analytics.selectedScope })
                 }
               />
-              <ExportMenu onExportCsv={handleExportCsv} />
+              <ExportMenu
+                onExportCsv={handleExportCsv}
+                onSyncToSheet={
+                  hasSheet && isManagerOrAbove ? handleSyncToSheet : undefined
+                }
+              />
             </div>
           </div>
         </div>
@@ -189,8 +211,79 @@ export function AnalyticsScreen({
         page={page}
         onPageChange={(p) => onChangeQuery({ page: p })}
       />
+
+      {/* ── Print-only table ────────────────────────────────────────── */}
+      <div className="hidden print:block">
+        <div className="mb-4 text-center">
+          <h2 className="m-0 text-lg font-bold">
+            {analytics.scopeLabel} — Time Entries
+          </h2>
+          <p className="m-0 mt-1 text-xs text-muted-foreground">
+            {formatRange(analytics.startDate, analytics.endDate)} ·{' '}
+            {analytics.entriesTotal} entr
+            {analytics.entriesTotal === 1 ? 'y' : 'ies'}
+          </p>
+        </div>
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="px-2 py-1.5 text-left font-bold">Date</th>
+              <th className="px-2 py-1.5 text-left font-bold">Member</th>
+              <th className="px-2 py-1.5 text-left font-bold">Project</th>
+              <th className="px-2 py-1.5 text-left font-bold">Client</th>
+              <th className="px-2 py-1.5 text-left font-bold">Tags</th>
+              <th className="px-2 py-1.5 text-left font-bold">Description</th>
+              <th className="px-2 py-1.5 text-right font-bold">Hours</th>
+              <th className="px-2 py-1.5 text-center font-bold">Billable</th>
+            </tr>
+          </thead>
+          <tbody>
+            {analytics.entries.map((entry) => (
+              <tr key={entry.id} className="border-b border-border/50">
+                <td className="px-2 py-1.5 whitespace-nowrap">{entry.date}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap">
+                  {entry.memberName}
+                </td>
+                <td className="px-2 py-1.5">{entry.projectName ?? '—'}</td>
+                <td className="px-2 py-1.5">{entry.clientName ?? '—'}</td>
+                <td className="px-2 py-1.5">
+                  {entry.tagNames.join(', ') || '—'}
+                </td>
+                <td className="px-2 py-1.5 max-w-[300px] truncate">
+                  {entry.description || '—'}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                  {formatDuration(entry.durationSeconds)}
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  {entry.billable ? 'Yes' : 'No'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {analytics.entries.length === 0 && (
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            No entries match your current filters
+          </p>
+        )}
+      </div>
+
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          @page { margin: 1.5cm; }
+        }
+      `}</style>
     </div>
   )
+}
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return `${h}:${String(m).padStart(2, '0')}`
 }
 
 function ClientAnalyticsCharts({

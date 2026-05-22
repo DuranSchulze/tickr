@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
 import { gooeyToast } from 'goey-toast'
 import { useRouter } from '@tanstack/react-router'
-import { Download, ExternalLink, Save } from 'lucide-react'
+import { ExternalLink, Save } from 'lucide-react'
 import {
   getServiceAccountEmailFn,
   updateWorkspaceGoogleSheetFn,
 } from '#/lib/server/gsheets/settings'
 import type { Workspace } from '#/lib/time-tracker/types'
-import { SyncSheetDialog } from './catalogs/SyncSheetDialog'
 
 export function WorkspaceGoogleSheetPanel({
   workspace,
@@ -19,7 +18,6 @@ export function WorkspaceGoogleSheetPanel({
   const router = useRouter()
   const [url, setUrl] = useState(workspace.googleSheetUrl ?? '')
   const [pending, setPending] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
   const [serviceEmail, setServiceEmail] = useState<string | null>(null)
   const [emailError, setEmailError] = useState(false)
 
@@ -64,10 +62,6 @@ export function WorkspaceGoogleSheetPanel({
     } finally {
       setPending(false)
     }
-  }
-
-  function handleImport() {
-    setShowSyncDialog(true)
   }
 
   const dirty = url.trim() !== (workspace.googleSheetUrl ?? '').trim()
@@ -147,37 +141,7 @@ export function WorkspaceGoogleSheetPanel({
             {new Date(workspace.googleSheetSyncedAt).toLocaleString()}.
           </p>
         )}
-
-        {workspace.googleSheetUrl && isAtLeastManager && (
-          <div className="mt-5 border-t border-border pt-5">
-            <h3 className="m-0 text-sm font-bold text-foreground">
-              Import catalogs from sheet
-            </h3>
-            <p className="m-0 mt-1 text-sm text-muted-foreground">
-              Reads the &quot;Clients&quot;, &quot;Projects&quot;, and
-              &quot;Tags&quot; tabs and creates or updates matching records.
-              Tabs are created automatically if they don&apos;t exist yet.
-            </p>
-            <button
-              type="button"
-              onClick={handleImport}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Import catalogs
-            </button>
-          </div>
-        )}
       </section>
-
-      <SyncSheetDialog
-        open={showSyncDialog}
-        onClose={async () => {
-          setShowSyncDialog(false)
-          await router.invalidate()
-        }}
-        type="all"
-      />
     </>
   )
 }

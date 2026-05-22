@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.3.2",
+  "appVersion": "1.4.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,44 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.4.0",
+      "publishedAt": "2026-05-22",
+      "title": "Google Sheet Bidirectional Sync & Feature Announcements",
+      "body": "Major improvements to the Google Sheet integration: bidirectional catalog sync, auto-archive of deleted rows, and automatic export of app-created records. Plus a new feature announcements module to keep everyone in the loop.",
+      "features": [
+        {
+          "title": "Bidirectional Catalog Sync",
+          "description": "Catalog sync is now three-phase: (1) Sheet → DB imports new/changed records, (2) rows removed from the sheet are archived in the DB, (3) records created in the app are automatically exported to the sheet. No more manual copying.",
+          "image": null
+        },
+        {
+          "title": "Feature Announcements & Onboarding Tour",
+          "description": "First-time visitors now see a guided walkthrough of the app. After updates, the What's New dialog highlights what changed. Access both anytime from the new Info button in the navbar.",
+          "image": null
+        },
+        {
+          "title": "Auto-Sync Every 2 Hours",
+          "description": "Time entries are now automatically pushed to the linked Google Sheet every two hours for Owners, Admins, and Managers — no manual sync needed.",
+          "image": null
+        },
+        {
+          "title": "Catalog & Settings Reorganization",
+          "description": "The catalogs page now shows only catalog navigation cards. Google Sheet sync controls have moved to workspace settings alongside a new Sync time entries button and last-sync timestamp.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Try Catalog Sync",
+          "to": "/app/workspace/catalogs"
+        },
+        {
+          "label": "Open Workspace Settings",
+          "to": "/app/workspace/settings"
+        }
+      ]
+    },
     {
       "version": "1.3.2",
       "publishedAt": "2026-05-21",

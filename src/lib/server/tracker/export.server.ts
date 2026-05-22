@@ -2,6 +2,7 @@ import '@tanstack/react-start/server-only'
 import type { z } from 'zod'
 import { db } from '#/db'
 import {
+  workspaces,
   workspaceMembers,
   users,
   workspaceRoles,
@@ -16,8 +17,12 @@ import { and, asc, desc, eq, inArray, isNotNull, lt, gte } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import { getAnalyticsDateRange, toDateKey } from './shared/dates'
+import { getAnalyticsDateRange } from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
+import {
+  computeEffectiveRate,
+  formatCurrency,
+} from '#/lib/time-tracker/billing'
 
 function escapeCsv(value: string | number | null | undefined): string {
   const s = String(value ?? '')
@@ -270,18 +275,36 @@ export async function exportAnalyticsCsv(
     entryConditions.push(eq(timeEntries.billable, false))
   }
 
+  // Fetch workspace defaults for billing
+  const workspaceRow = await db
+    .select({
+      defaultBillableRate: workspaces.defaultBillableRate,
+      billableCurrency: workspaces.billableCurrency,
+    })
+    .from(workspaces)
+    .where(eq(workspaces.id, access.workspace.id))
+    .then((r) => r[0])
+
+  const defaultRate = workspaceRow
+    ? Number(workspaceRow.defaultBillableRate)
+    : 0
+  const currency = workspaceRow?.billableCurrency ?? 'PHP'
+
   // Main query — join projects, clients, workspace members, users
   const rawEntries = await db
     .select({
       id: timeEntries.id,
       description: timeEntries.description,
+      notes: timeEntries.notes,
       startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
       durationSeconds: timeEntries.durationSeconds,
       billable: timeEntries.billable,
       projectName: projects.name,
       clientName: clients.name,
       memberEmail: workspaceMembers.email,
       memberUserName: users.name,
+      billableRate: workspaceMembers.billableRate,
     })
     .from(timeEntries)
     .leftJoin(projects, eq(timeEntries.projectId, projects.id))
@@ -315,6 +338,11 @@ export async function exportAnalyticsCsv(
     tagsByEntry.set(row.timeEntryId, list)
   }
 
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const fmtDate = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const fmtDT = (d: Date) =>
+    `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   const fh = (s: number) => (s / 3600).toFixed(2)
 
   const rows: (string | number | null | undefined)[][] = [
@@ -326,25 +354,44 @@ export async function exportAnalyticsCsv(
     [
       'Date',
       'Member',
+      'Email',
       'Project',
       'Client',
       'Tags',
       'Description',
-      'Duration (h)',
+      'Started',
+      'Ended',
+      'Hours',
       'Billable',
+      'Rate/hr',
+      'Amount',
+      'Notes',
     ],
   ]
 
   for (const e of rawEntries) {
+    const effectiveRate = computeEffectiveRate(
+      e.billableRate ? Number(e.billableRate) : null,
+      defaultRate,
+    )
+    const hours = fh(e.durationSeconds)
+    const amount = e.billable ? Number(hours) * effectiveRate : null
+
     rows.push([
-      toDateKey(e.startedAt),
+      fmtDate(e.startedAt),
       e.memberUserName ?? e.memberEmail ?? '',
+      e.memberEmail ?? '',
       e.projectName ?? '',
       e.clientName ?? '',
       (tagsByEntry.get(e.id) ?? []).join('; '),
       e.description,
-      fh(e.durationSeconds),
+      fmtDT(e.startedAt),
+      e.endedAt ? fmtDT(e.endedAt) : '',
+      hours,
       e.billable ? 'Yes' : 'No',
+      e.billable ? formatCurrency(effectiveRate, currency) : '',
+      amount === null ? '' : formatCurrency(amount, currency),
+      e.notes ?? '',
     ])
   }
 
