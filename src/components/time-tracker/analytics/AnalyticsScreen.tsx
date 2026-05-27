@@ -75,10 +75,17 @@ export function AnalyticsScreen({
     currentMember?.permissionLevel === 'MANAGER'
   const hasSheet = !!state.workspace.googleSheetUrl
   async function handleSyncToSheet() {
-    const result = await syncWorkspaceToGoogleSheetsFn()
-    gooeyToast.success('Synced to Google Sheets', {
-      description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
-    })
+    try {
+      const result = await syncWorkspaceToGoogleSheetsFn()
+      gooeyToast.success('Synced to Google Sheets', {
+        description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
+      })
+    } catch (err) {
+      gooeyToast.error('Sync failed', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+      throw err // re-throw so the ExportMenu can manage its loading state
+    }
   }
 
   async function handleExportCsv() {

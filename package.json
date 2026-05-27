@@ -1,13 +1,18 @@
 {
-  "name": "clockify-timer",
+  "name": "tickr",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.10.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "imports": {
     "#/*": "./src/*"
   },
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
+    "start": "node .output/server/index.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -21,7 +26,7 @@
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:seed": "dotenv -e .env.local -- tsx src/db/seed.ts",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@better-auth/infra": "^0.2.3",
@@ -95,13 +100,6 @@
     "typescript": "^5.7.2",
     "vite": "^8.0.0",
     "vitest": "^3.0.5"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "lightningcss",
-      "@sentry/cli"
-    ]
   },
   "lint-staged": {
     "*.{ts,tsx}": [

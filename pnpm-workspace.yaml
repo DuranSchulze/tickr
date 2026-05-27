@@ -1,8 +1,4 @@
-allowBuilds:
-  '@prisma/engines': true
-  '@sentry-internal/node-cpu-profiler': set this to true or false
-  '@sentry/cli': true
-  esbuild: true
-  msw: true
-  prisma: true
-  unrs-resolver: true
+onlyBuiltDependencies:
+  - esbuild
+  - lightningcss
+  - '@sentry/cli'

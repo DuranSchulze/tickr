@@ -15,12 +15,16 @@ const config = defineConfig(({ mode }) => ({
     tailwindcss(),
     tanstackStart(),
     nitro({
-      preset: 'vercel',
-      vercel: {
-        functions: {
-          maxDuration: 30,
-        },
-      },
+      preset: process.env.VERCEL ? 'vercel' : 'node-server',
+      ...(process.env.VERCEL
+        ? {
+            vercel: {
+              functions: {
+                maxDuration: 30,
+              },
+            },
+          }
+        : {}),
       routeRules: {
         '/**': {
           headers: { 'Document-Policy': 'js-profiling' },

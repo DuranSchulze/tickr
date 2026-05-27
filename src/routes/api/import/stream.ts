@@ -42,6 +42,16 @@ export const Route = createFileRoute('/api/import/stream')({
                     sse('phase', { phase: event.phase, total: event.total }),
                   )
                   break
+                case 'phase_sub':
+                  controller.enqueue(
+                    sse('phase_sub', {
+                      phase: event.phase,
+                      sub: event.sub,
+                      current: event.current,
+                      total: event.total,
+                    }),
+                  )
+                  break
                 case 'item':
                   controller.enqueue(
                     sse('item', {
@@ -58,6 +68,8 @@ export const Route = createFileRoute('/api/import/stream')({
                       phase: event.phase,
                       count: event.count,
                       warnings: event.warnings,
+                      archived: event.archived,
+                      exported: event.exported,
                     }),
                   )
                   break

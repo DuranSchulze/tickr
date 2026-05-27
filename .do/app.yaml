@@ -1,0 +1,18 @@
+name: tickr
+version: 3
+services:
+  - name: web
+    build_command: npm install -g pnpm@10.10.0 && pnpm install --frozen-lockfile && pnpm build
+    run_command: node .output/server/index.mjs
+    environment_slug: node-js
+    http_port: 3000
+    instance_size_slug: apps-s-1vcpu-1gb
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+      - key: NODE_VERSION
+        value: '20'
+        scope: BUILD_TIME
