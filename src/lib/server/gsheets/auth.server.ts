@@ -316,9 +316,9 @@ async function createJwtAssertion(
 async function importPrivateKey(privateKeyPem: string): Promise<CryptoKey> {
   const keyData = base64ToBytes(
     privateKeyPem
-      .replace('-----BEGIN PRIVATE KEY-----', '')
-      .replace('-----END PRIVATE KEY-----', '')
-      .replace(/\s/g, ''),
+      .replace(/-----BEGIN [A-Z ]+ KEY-----/g, '')
+      .replace(/-----END [A-Z ]+ KEY-----/g, '')
+      .replace(/[^A-Za-z0-9+/=]/g, ''),
   )
   return crypto.subtle.importKey(
     'pkcs8',
