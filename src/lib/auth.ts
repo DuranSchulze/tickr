@@ -23,16 +23,12 @@ export const auth = betterAuth({
       ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
     ]
 
-    // Vercel auto-provides the deployment URL — add it for production deploys.
     if (process.env.VERCEL_URL) {
       origins.push(`https://${process.env.VERCEL_URL}`)
     }
-    // VERCEL_PROJECT_PRODUCTION_URL is the stable custom-domain URL (e.g. yourdomain.com).
-    // VERCEL_URL changes per deployment so it won't cover custom domains.
     if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
       origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
     }
-    // VERCEL_BRANCH_URL covers preview branch deployments.
     if (process.env.VERCEL_BRANCH_URL) {
       origins.push(`https://${process.env.VERCEL_BRANCH_URL}`)
     }
