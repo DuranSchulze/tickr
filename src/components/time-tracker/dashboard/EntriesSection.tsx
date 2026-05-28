@@ -639,10 +639,13 @@ export function EntriesSection({
                           <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
                             Tags
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[10%] text-center text-muted-foreground font-medium">
+                          <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
                             Billable
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[18%]" />
+                          <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
+                            Amount
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[16%]" />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -666,6 +669,8 @@ export function EntriesSection({
                                 isPending={pendingEntryIds?.has(entry.id)}
                                 formatTime={formatTime}
                                 hasActiveTimer={hasActiveTimer}
+                                currency={currency}
+                                rateLookup={rateLookup}
                                 onStartEdit={() => onStartEdit(entry)}
                                 onUpdate={(patch) => onUpdate(entry.id, patch)}
                                 onResume={() => onResume(entry)}
@@ -701,6 +706,8 @@ export function EntriesSection({
                                     formatTime={formatTime}
                                     hasActiveTimer={hasActiveTimer}
                                     isSubEntry
+                                    currency={currency}
+                                    rateLookup={rateLookup}
                                     onStartEdit={() => onStartEdit(entry)}
                                     onUpdate={(patch) =>
                                       onUpdate(entry.id, patch)

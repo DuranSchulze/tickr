@@ -101,6 +101,7 @@ export function useTimerCore({
   const [timerProjectId, setTimerProjectId] = useState('')
   const [timerTagIds, setTimerTagIds] = useState<string[]>([])
   const [timerBillable, setTimerBillable] = useState(false)
+  const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null)
 
   const lastSyncedEntryIdRef = useRef<string | null>(null)
   const timerInputDirtyRef = useRef(false)
@@ -115,6 +116,7 @@ export function useTimerCore({
           projectId: timerProjectId,
           tagIds: timerTagIds.filter(Boolean),
           billable: timerBillable,
+          ...(timerStartedAt ? { startedAt: timerStartedAt } : {}),
         }
       : activeEntryBase
 
@@ -190,6 +192,7 @@ export function useTimerCore({
       setTimerProjectId(activeEntryBase.projectId)
       setTimerTagIds(activeEntryBase.tagIds)
       setTimerBillable(activeEntryBase.billable)
+      setTimerStartedAt(null)
     } else if (lastSyncedEntryIdRef.current && timerOperation.kind === 'idle') {
       // Reset the sync reference so the next active entry is treated as new.
       // Deliberately do NOT clear the form here — the user may already be typing
@@ -260,6 +263,7 @@ export function useTimerCore({
     setTimerProjectId('')
     setTimerTagIds([])
     setTimerBillable(false)
+    setTimerStartedAt(null)
     // Mark as not-dirty so the sync effect correctly treats the next entry as new.
     timerInputDirtyRef.current = false
   }
@@ -793,6 +797,7 @@ export function useTimerCore({
     persistActiveTimerStartedAt: (iso: string) => {
       if (!activeEntryBase || activeEntryBase.id.startsWith('optimistic-'))
         return
+      setTimerStartedAt(iso)
       void mutations.updateActiveTimer(
         {
           id: activeEntryBase.id,

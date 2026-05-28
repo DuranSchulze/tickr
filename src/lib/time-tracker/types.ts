@@ -1,6 +1,6 @@
 export type RolePermission = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 
-export type ViewMode = 'day' | 'week' | 'month'
+export type ViewMode = 'day' | 'week' | 'month' | 'all'
 
 export type Workspace = {
   id: string

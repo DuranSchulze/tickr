@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { Play, Square } from 'lucide-react'
 import { gooeyToast } from 'goey-toast'
@@ -16,7 +16,11 @@ import {
   computeEffectiveRate,
   normalizeCurrency,
 } from '#/lib/time-tracker/billing'
-import type { TrackerState, ViewMode } from '#/lib/time-tracker/types'
+import type {
+  TimeEntry,
+  TrackerState,
+  ViewMode,
+} from '#/lib/time-tracker/types'
 import {
   Drawer,
   DrawerContent,
@@ -26,6 +30,7 @@ import {
 import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
 import { EntriesSection } from './EntriesSection'
+import { AllEntriesSection } from './AllEntriesSection'
 import { EditEntryDrawer } from './EditEntryDrawer'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
@@ -33,7 +38,12 @@ import { useDraftAndEdit } from './hooks/useDraftAndEdit'
 import { useTimerCore } from './hooks/useTimerCore'
 import { useTimerKeyboard } from './hooks/useTimerKeyboard'
 import { useNetworkStatus } from '#/lib/time-tracker/useNetworkStatus'
-import { startTimerFn, stopTimerFn, deleteEntryFn } from '#/lib/server/tracker'
+import {
+  startTimerFn,
+  stopTimerFn,
+  deleteEntryFn,
+  getPaginatedEntriesFn,
+} from '#/lib/server/tracker'
 import {
   loadOfflineQueue,
   removeOfflineQueueItem,
@@ -109,6 +119,51 @@ export function TimeTrackerDashboard({
   const canManageCatalog =
     currentUser.permissionLevel === 'OWNER' ||
     currentUser.permissionLevel === 'ADMIN'
+
+  // ── "All entries" paginated state ────────────────────────────────────────────
+  const [allEntries, setAllEntries] = useState<TimeEntry[]>([])
+  const [allEntriesCursor, setAllEntriesCursor] = useState<string | null>(null)
+  const [allEntriesLoading, setAllEntriesLoading] = useState(false)
+  const [allEntriesHasMore, setAllEntriesHasMore] = useState(false)
+  const [allEntriesTotalCount, setAllEntriesTotalCount] = useState(0)
+  const allEntriesInitialized = useRef(false)
+
+  const loadAllEntries = useCallback(
+    async (reset = false) => {
+      if (allEntriesLoading) return
+      setAllEntriesLoading(true)
+      try {
+        const cursor = reset ? undefined : (allEntriesCursor ?? undefined)
+        const result = await getPaginatedEntriesFn({
+          data: { cursor, limit: 50 },
+        })
+        if (reset) {
+          setAllEntries(result.entries)
+        } else {
+          setAllEntries((prev) => [...prev, ...result.entries])
+        }
+        setAllEntriesCursor(result.nextCursor)
+        setAllEntriesHasMore(result.nextCursor !== null)
+        setAllEntriesTotalCount(result.totalCount)
+      } catch {
+        // silently fail — user can retry via "Load more"
+      } finally {
+        setAllEntriesLoading(false)
+      }
+    },
+    [allEntriesLoading, allEntriesCursor],
+  )
+
+  useEffect(() => {
+    if (view === 'all') {
+      if (!allEntriesInitialized.current) {
+        allEntriesInitialized.current = true
+        void loadAllEntries(true)
+      }
+    } else {
+      allEntriesInitialized.current = false
+    }
+  }, [view])
 
   const baseFiltered = useFilteredEntries(
     state.entries,
@@ -204,7 +259,7 @@ export function TimeTrackerDashboard({
     activeFilterCount,
     clearFilters,
     controls: filterControls,
-  } = useEntriesFilterSort(baseFiltered)
+  } = useEntriesFilterSort(view === 'all' ? allEntries : baseFiltered)
 
   const pendingEntryIds = useMemo(
     () => new Set(optimisticStoppedEntries.map((e) => e.id)),
@@ -357,29 +412,56 @@ export function TimeTrackerDashboard({
         <InputSection {...inputSectionProps} />
       </div>
 
-      <EntriesSection
-        view={view}
-        range={selectedRange}
-        baseFiltered={mergedBaseFiltered}
-        filteredEntries={filteredEntries}
-        activeFilterCount={activeFilterCount}
-        clearFilters={clearFilters}
-        filterControls={filterControls}
-        clients={state.clients}
-        projects={state.projects}
-        tags={state.tags}
-        currency={currency}
-        rateLookup={rateLookup}
-        pending={mutations.pending}
-        pendingEntryIds={pendingEntryIds}
-        formatTime={formatTime}
-        hasActiveTimer={!!activeEntry}
-        onStartEdit={startEdit}
-        onUpdate={handleInlineUpdate}
-        onResume={resumeEntry}
-        onDuplicate={mutations.duplicateEntry}
-        onDelete={mutations.deleteEntry}
-      />
+      {view === 'all' ? (
+        <AllEntriesSection
+          entries={serverFilteredEntries}
+          totalCount={allEntriesTotalCount}
+          hasMore={allEntriesHasMore}
+          loadingMore={allEntriesLoading}
+          onLoadMore={() => void loadAllEntries(false)}
+          activeFilterCount={activeFilterCount}
+          clearFilters={clearFilters}
+          filterControls={filterControls}
+          clients={state.clients}
+          projects={state.projects}
+          tags={state.tags}
+          currency={currency}
+          rateLookup={rateLookup}
+          pending={mutations.pending}
+          pendingEntryIds={pendingEntryIds}
+          formatTime={formatTime}
+          hasActiveTimer={!!activeEntry}
+          onStartEdit={startEdit}
+          onUpdate={handleInlineUpdate}
+          onResume={resumeEntry}
+          onDuplicate={mutations.duplicateEntry}
+          onDelete={mutations.deleteEntry}
+        />
+      ) : (
+        <EntriesSection
+          view={view}
+          range={selectedRange}
+          baseFiltered={mergedBaseFiltered}
+          filteredEntries={filteredEntries}
+          activeFilterCount={activeFilterCount}
+          clearFilters={clearFilters}
+          filterControls={filterControls}
+          clients={state.clients}
+          projects={state.projects}
+          tags={state.tags}
+          currency={currency}
+          rateLookup={rateLookup}
+          pending={mutations.pending}
+          pendingEntryIds={pendingEntryIds}
+          formatTime={formatTime}
+          hasActiveTimer={!!activeEntry}
+          onStartEdit={startEdit}
+          onUpdate={handleInlineUpdate}
+          onResume={resumeEntry}
+          onDuplicate={mutations.duplicateEntry}
+          onDelete={mutations.deleteEntry}
+        />
+      )}
 
       <EditEntryDrawer
         open={!!editingId}

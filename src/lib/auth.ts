@@ -12,16 +12,33 @@ const RESET_PASSWORD_EXPIRES_IN_SECONDS = 60 * 15
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL,
-  trustedOrigins: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'https://flow-track-theta.vercel.app',
-    ...(process.env.NGROK_URL ? [process.env.NGROK_URL] : []),
-    ...(process.env.CHROME_EXTENSION_ORIGIN
-      ? [process.env.CHROME_EXTENSION_ORIGIN]
-      : []),
-    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
-  ],
+  trustedOrigins: (() => {
+    const origins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      ...(process.env.NGROK_URL ? [process.env.NGROK_URL] : []),
+      ...(process.env.CHROME_EXTENSION_ORIGIN
+        ? [process.env.CHROME_EXTENSION_ORIGIN]
+        : []),
+      ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+    ]
+
+    // Vercel auto-provides the deployment URL — add it for production deploys.
+    if (process.env.VERCEL_URL) {
+      origins.push(`https://${process.env.VERCEL_URL}`)
+    }
+    // VERCEL_PROJECT_PRODUCTION_URL is the stable custom-domain URL (e.g. yourdomain.com).
+    // VERCEL_URL changes per deployment so it won't cover custom domains.
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+      origins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`)
+    }
+    // VERCEL_BRANCH_URL covers preview branch deployments.
+    if (process.env.VERCEL_BRANCH_URL) {
+      origins.push(`https://${process.env.VERCEL_BRANCH_URL}`)
+    }
+
+    return origins
+  })(),
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {

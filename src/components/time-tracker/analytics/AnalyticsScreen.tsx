@@ -1,4 +1,5 @@
 import { AlertTriangle, BarChart3 } from 'lucide-react'
+import { formatCurrency } from '#/lib/time-tracker/billing'
 import { gooeyToast } from 'goey-toast'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
@@ -217,6 +218,7 @@ export function AnalyticsScreen({
         entriesTotal={analytics.entriesTotal}
         page={page}
         onPageChange={(p) => onChangeQuery({ page: p })}
+        currency={analytics.currency}
       />
 
       {/* ── Print-only table ────────────────────────────────────────── */}
@@ -241,6 +243,8 @@ export function AnalyticsScreen({
               <th className="px-2 py-1.5 text-left font-bold">Tags</th>
               <th className="px-2 py-1.5 text-left font-bold">Description</th>
               <th className="px-2 py-1.5 text-right font-bold">Hours</th>
+              <th className="px-2 py-1.5 text-right font-bold">Rate/hr</th>
+              <th className="px-2 py-1.5 text-right font-bold">Amount</th>
               <th className="px-2 py-1.5 text-center font-bold">Billable</th>
             </tr>
           </thead>
@@ -261,6 +265,16 @@ export function AnalyticsScreen({
                 </td>
                 <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
                   {formatDuration(entry.durationSeconds)}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                  {entry.billable && entry.effectiveRate != null
+                    ? formatCurrency(entry.effectiveRate, analytics.currency)
+                    : '—'}
+                </td>
+                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                  {entry.billable && entry.billableAmount != null
+                    ? formatCurrency(entry.billableAmount, analytics.currency)
+                    : '—'}
                 </td>
                 <td className="px-2 py-1.5 text-center">
                   {entry.billable ? 'Yes' : 'No'}

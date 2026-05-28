@@ -13,7 +13,9 @@ type TimeTrackerSearch = {
 const datePattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
 
 function isViewMode(value: unknown): value is ViewMode {
-  return value === 'day' || value === 'week' || value === 'month'
+  return (
+    value === 'day' || value === 'week' || value === 'month' || value === 'all'
+  )
 }
 
 export const Route = createFileRoute('/app/time-tracker/')({

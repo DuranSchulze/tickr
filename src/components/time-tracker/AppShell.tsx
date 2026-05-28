@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useRouterState } from '@tanstack/react-router'
-import { ClipboardList, Cog, ExternalLink, Tags, Users } from 'lucide-react'
+import {
+  Building2,
+  ClipboardList,
+  Cog,
+  ExternalLink,
+  Tags,
+  Users,
+} from 'lucide-react'
 import { AppSidebar } from './AppSidebar'
 import { MobileNav } from './MobileNav'
 import { Navbar } from './Navbar'
@@ -81,7 +88,8 @@ export function AppShell({
   const settingsActive =
     (pathname.startsWith('/app/workspace') &&
       !pathname.startsWith('/app/workspace/activity')) ||
-    pathname.startsWith('/app/audit-logs')
+    pathname.startsWith('/app/audit-logs') ||
+    pathname.startsWith('/app/department-analytics')
 
   const [settingsOpen, setSettingsOpen] = useState(settingsActive)
   const [collapsed, setCollapsed] = useState(false)
@@ -89,9 +97,17 @@ export function AppShell({
   const isOwnerOrAdmin =
     permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const canAccessSettings = permissionLevel !== 'EMPLOYEE'
+  const isManagerOrAbove = permissionLevel === 'MANAGER' || isOwnerOrAdmin
 
   const settingsChildren = useMemo(() => {
     const items = []
+    if (isManagerOrAbove) {
+      items.push({
+        to: '/app/department-analytics' as const,
+        label: 'Department',
+        icon: Building2,
+      })
+    }
     if (canAccessSettings) {
       items.push({
         to: '/app/workspace/members' as const,
@@ -117,7 +133,7 @@ export function AppShell({
       })
     }
     return items
-  }, [canAccessSettings, isOwnerOrAdmin])
+  }, [canAccessSettings, isOwnerOrAdmin, isManagerOrAbove])
 
   return (
     <AnnouncementProvider>

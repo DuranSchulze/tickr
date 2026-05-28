@@ -72,6 +72,16 @@ const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
 
+const paginatedEntriesSchema = z.object({
+  cursor: z.string().datetime().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+})
+
+const departmentDashboardSchema = z.object({
+  startDate: z.string().date(),
+  endDate: z.string().date(),
+})
+
 const paginatedMembersSchema = z.object({
   page: z.number().int().min(0),
   pageSize: z.number().int().min(1).max(100),
@@ -127,6 +137,20 @@ export const getCalendarEntriesFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getCalendarEntries } = await import('./tracker.server')
     return getCalendarEntries(data)
+  })
+
+export const getPaginatedEntriesFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => paginatedEntriesSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getPaginatedEntries } = await import('./tracker.server')
+    return getPaginatedEntries(data)
+  })
+
+export const getDepartmentDashboardFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => departmentDashboardSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getDepartmentDashboard } = await import('./tracker.server')
+    return getDepartmentDashboard(data)
   })
 
 export const exportMembersCsvFn = createServerFn({ method: 'POST' }).handler(

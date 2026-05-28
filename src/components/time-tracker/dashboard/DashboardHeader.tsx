@@ -16,6 +16,7 @@ const VIEW_OPTIONS = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
+  { value: 'all', label: 'All' },
 ] as const satisfies readonly { value: ViewMode; label: string }[]
 
 export function DashboardHeader({
@@ -81,64 +82,68 @@ export function DashboardHeader({
             {userName} · {userRoleName}
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onPreviousPeriod}
-              aria-label={`Previous ${view}`}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <button
+            {view !== 'all' && (
+              <>
+                <Button
                   type="button"
-                  className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-left transition-colors hover:bg-accent sm:px-3 sm:py-2"
-                  aria-label="Open calendar to pick a date"
+                  variant="outline"
+                  size="sm"
+                  onClick={onPreviousPeriod}
+                  aria-label={`Previous ${view}`}
                 >
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <p className="m-0 max-w-40 truncate text-sm font-semibold text-foreground sm:max-w-none">
-                        {selectedRangeLabel}
-                      </p>
-                      <p className="m-0 max-w-40 truncate text-xs text-muted-foreground sm:max-w-none">
-                        {selectedDate}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDateObj}
-                  defaultMonth={selectedDateObj}
-                  onSelect={handleCalendarSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onNextPeriod}
-              aria-label={`Next ${view}`}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onCurrentPeriod}
-            >
-              Today
-            </Button>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-left transition-colors hover:bg-accent sm:px-3 sm:py-2"
+                      aria-label="Open calendar to pick a date"
+                    >
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <div className="min-w-0">
+                          <p className="m-0 max-w-40 truncate text-sm font-semibold text-foreground sm:max-w-none">
+                            {selectedRangeLabel}
+                          </p>
+                          <p className="m-0 max-w-40 truncate text-xs text-muted-foreground sm:max-w-none">
+                            {selectedDate}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDateObj}
+                      defaultMonth={selectedDateObj}
+                      onSelect={handleCalendarSelect}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onNextPeriod}
+                  aria-label={`Next ${view}`}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onCurrentPeriod}
+                >
+                  Today
+                </Button>
+              </>
+            )}
           </div>
         </div>
         <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
@@ -162,7 +167,7 @@ export function DashboardHeader({
           </div>
           <div className="w-full rounded-lg border border-border bg-muted px-4 py-3 text-left sm:w-auto sm:text-right">
             <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {view} total
+              {view === 'all' ? 'loaded total' : `${view} total`}
             </p>
             <p className="m-0 mt-1 text-2xl font-bold text-foreground">
               {formatTime(selectedTotalSeconds)}

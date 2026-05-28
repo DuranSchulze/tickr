@@ -21,6 +21,7 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppMyWorkspacesRouteImport } from './routes/app/my-workspaces'
 import { Route as AppMyPerformanceRouteImport } from './routes/app/my-performance'
+import { Route as AppDepartmentAnalyticsRouteImport } from './routes/app/department-analytics'
 import { Route as AppChangelogRouteImport } from './routes/app/changelog'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
@@ -103,6 +104,11 @@ const AppMyWorkspacesRoute = AppMyWorkspacesRouteImport.update({
 const AppMyPerformanceRoute = AppMyPerformanceRouteImport.update({
   id: '/my-performance',
   path: '/my-performance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDepartmentAnalyticsRoute = AppDepartmentAnalyticsRouteImport.update({
+  id: '/department-analytics',
+  path: '/department-analytics',
   getParentRoute: () => AppRoute,
 } as any)
 const AppChangelogRoute = AppChangelogRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
+  '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
+  '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
+  '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
@@ -352,6 +361,7 @@ export interface FileRouteTypes {
     | '/app/audit-logs'
     | '/app/calendar'
     | '/app/changelog'
+    | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
     | '/app/profile'
@@ -389,6 +399,7 @@ export interface FileRouteTypes {
     | '/app/audit-logs'
     | '/app/calendar'
     | '/app/changelog'
+    | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
     | '/app/profile'
@@ -426,6 +437,7 @@ export interface FileRouteTypes {
     | '/app/audit-logs'
     | '/app/calendar'
     | '/app/changelog'
+    | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
     | '/app/profile'
@@ -554,6 +566,13 @@ declare module '@tanstack/react-router' {
       path: '/my-performance'
       fullPath: '/app/my-performance'
       preLoaderRoute: typeof AppMyPerformanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/department-analytics': {
+      id: '/app/department-analytics'
+      path: '/department-analytics'
+      fullPath: '/app/department-analytics'
+      preLoaderRoute: typeof AppDepartmentAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/changelog': {
@@ -757,6 +776,7 @@ interface AppRouteChildren {
   AppAuditLogsRoute: typeof AppAuditLogsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppChangelogRoute: typeof AppChangelogRoute
+  AppDepartmentAnalyticsRoute: typeof AppDepartmentAnalyticsRoute
   AppMyPerformanceRoute: typeof AppMyPerformanceRoute
   AppMyWorkspacesRoute: typeof AppMyWorkspacesRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -775,6 +795,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAuditLogsRoute: AppAuditLogsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppChangelogRoute: AppChangelogRoute,
+  AppDepartmentAnalyticsRoute: AppDepartmentAnalyticsRoute,
   AppMyPerformanceRoute: AppMyPerformanceRoute,
   AppMyWorkspacesRoute: AppMyWorkspacesRoute,
   AppProfileRoute: AppProfileRoute,

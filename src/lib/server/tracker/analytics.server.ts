@@ -10,6 +10,7 @@ import {
   departments,
   users,
 } from '#/db/schema'
+import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
@@ -29,6 +30,8 @@ export type AnalyticsTimeEntryRow = {
   description: string
   durationSeconds: number
   billable: boolean
+  billableAmount: number | null
+  effectiveRate: number | null
 }
 
 export type AnalyticsPayload = {
@@ -73,6 +76,7 @@ export type AnalyticsPayload = {
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
   permissionLevel: string
+  currency: string
 }
 
 export async function getAnalytics(
@@ -339,6 +343,7 @@ export async function getAnalytics(
         clientName: clients.name,
         memberEmail: workspaceMembers.email,
         memberUserName: users.name,
+        memberBillableRate: workspaceMembers.billableRate,
       })
       .from(timeEntries)
       .leftJoin(projects, eq(timeEntries.projectId, projects.id))
@@ -410,17 +415,31 @@ export async function getAnalytics(
     tagNamesByRawEntry.set(row.timeEntryId, list)
   }
 
-  const entryRows: AnalyticsTimeEntryRow[] = rawRows.map((e) => ({
-    id: e.id,
-    date: toDateKey(e.startedAt),
-    memberName: e.memberUserName ?? e.memberEmail ?? '',
-    projectName: e.projectName ?? null,
-    clientName: e.clientName ?? null,
-    tagNames: tagNamesByRawEntry.get(e.id) ?? [],
-    description: e.description,
-    durationSeconds: e.durationSeconds,
-    billable: e.billable,
-  }))
+  const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
+  const currency = access.workspace.billableCurrency ?? 'PHP'
+
+  const entryRows: AnalyticsTimeEntryRow[] = rawRows.map((e) => {
+    const memberRate = e.memberBillableRate
+      ? Number(e.memberBillableRate)
+      : null
+    const effectiveRate = computeEffectiveRate(memberRate, defaultRate)
+    const billableAmount = e.billable
+      ? (e.durationSeconds / 3600) * effectiveRate
+      : null
+    return {
+      id: e.id,
+      date: toDateKey(e.startedAt),
+      memberName: e.memberUserName ?? e.memberEmail ?? '',
+      projectName: e.projectName ?? null,
+      clientName: e.clientName ?? null,
+      tagNames: tagNamesByRawEntry.get(e.id) ?? [],
+      description: e.description,
+      durationSeconds: e.durationSeconds,
+      billable: e.billable,
+      billableAmount,
+      effectiveRate: e.billable ? effectiveRate : null,
+    }
+  })
 
   return {
     scope,
@@ -456,5 +475,6 @@ export async function getAnalytics(
     entries: entryRows,
     entriesTotal,
     permissionLevel: level,
+    currency,
   }
 }

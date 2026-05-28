@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
+import { formatCurrency } from '#/lib/time-tracker/billing'
 
 const PAGE_SIZE = 50
 
@@ -14,11 +15,13 @@ export function AnalyticsEntriesTable({
   entriesTotal,
   page,
   onPageChange,
+  currency,
 }: {
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
   page: number
   onPageChange: (page: number) => void
+  currency: string
 }) {
   const totalPages = Math.max(1, Math.ceil(entriesTotal / PAGE_SIZE))
 
@@ -60,6 +63,9 @@ export function AnalyticsEntriesTable({
                 </th>
                 <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Duration
+                </th>
+                <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Amount
                 </th>
                 <th className="whitespace-nowrap px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Billable
@@ -115,6 +121,13 @@ export function AnalyticsEntriesTable({
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono font-semibold text-foreground">
                     {formatDuration(entry.durationSeconds)}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono text-foreground">
+                    {entry.billableAmount != null ? (
+                      formatCurrency(entry.billableAmount, currency)
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-center">
                     {entry.billable ? (

@@ -1,7 +1,7 @@
 import '@tanstack/react-start/server-only'
 import { db } from '#/db'
 import { workspaces, workspaceRoles, workspaceMembers } from '#/db/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, ne, count } from 'drizzle-orm'
 import {
   DEFAULT_WORKSPACE_ROLES,
   DEFAULT_WORKSPACE_TIMEZONE,
@@ -102,10 +102,13 @@ export async function deleteWorkspaceForCurrentUser(workspaceId: string) {
   const session = await getAuthSession()
   if (!session?.user) throw new Error('Please sign in.')
 
-  // Verify the caller is an OWNER of this workspace
   const [membership] = await db
-    .select({ workspaceRoleId: workspaceMembers.workspaceRoleId })
+    .select({ permissionLevel: workspaceRoles.permissionLevel })
     .from(workspaceMembers)
+    .innerJoin(
+      workspaceRoles,
+      eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+    )
     .where(
       and(
         eq(workspaceMembers.workspaceId, workspaceId),
@@ -116,18 +119,7 @@ export async function deleteWorkspaceForCurrentUser(workspaceId: string) {
     .limit(1)
 
   if (!membership) throw new Error('You are not a member of this workspace.')
-
-  if (membership.workspaceRoleId) {
-    const [role] = await db
-      .select({ permissionLevel: workspaceRoles.permissionLevel })
-      .from(workspaceRoles)
-      .where(eq(workspaceRoles.id, membership.workspaceRoleId))
-      .limit(1)
-
-    if (role?.permissionLevel !== 'OWNER') {
-      throw new Error('Only the workspace owner can delete a workspace.')
-    }
-  } else {
+  if (membership.permissionLevel !== 'OWNER') {
     throw new Error('Only the workspace owner can delete a workspace.')
   }
 
@@ -142,9 +134,13 @@ export async function leaveWorkspaceForCurrentUser(workspaceId: string) {
   const [membership] = await db
     .select({
       id: workspaceMembers.id,
-      workspaceRoleId: workspaceMembers.workspaceRoleId,
+      permissionLevel: workspaceRoles.permissionLevel,
     })
     .from(workspaceMembers)
+    .innerJoin(
+      workspaceRoles,
+      eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+    )
     .where(
       and(
         eq(workspaceMembers.workspaceId, workspaceId),
@@ -156,40 +152,27 @@ export async function leaveWorkspaceForCurrentUser(workspaceId: string) {
 
   if (!membership) throw new Error('You are not a member of this workspace.')
 
-  // Prevent leaving if you're the sole owner
-  if (membership.workspaceRoleId) {
-    const [role] = await db
-      .select({ permissionLevel: workspaceRoles.permissionLevel })
-      .from(workspaceRoles)
-      .where(eq(workspaceRoles.id, membership.workspaceRoleId))
-      .limit(1)
+  if (membership.permissionLevel === 'OWNER') {
+    const [{ otherOwnerCount }] = await db
+      .select({ otherOwnerCount: count() })
+      .from(workspaceMembers)
+      .innerJoin(
+        workspaceRoles,
+        eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+      )
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, workspaceId),
+          eq(workspaceMembers.status, 'ACTIVE'),
+          eq(workspaceRoles.permissionLevel, 'OWNER'),
+          ne(workspaceMembers.id, membership.id),
+        ),
+      )
 
-    if (role?.permissionLevel === 'OWNER') {
-      // Count other active owners
-      const otherOwners = await db
-        .select({ id: workspaceMembers.id })
-        .from(workspaceMembers)
-        .innerJoin(
-          workspaceRoles,
-          eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
-        )
-        .where(
-          and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.status, 'ACTIVE'),
-            eq(workspaceRoles.permissionLevel, 'OWNER'),
-          ),
-        )
-
-      const otherOwnerCount = otherOwners.filter(
-        (m) => m.id !== membership.id,
-      ).length
-
-      if (otherOwnerCount === 0) {
-        throw new Error(
-          'You are the only owner. Transfer ownership or delete the workspace instead.',
-        )
-      }
+    if (otherOwnerCount === 0) {
+      throw new Error(
+        'You are the only owner. Transfer ownership or delete the workspace instead.',
+      )
     }
   }
 

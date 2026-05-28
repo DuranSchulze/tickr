@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
+import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import {
   DropdownMenu,
@@ -60,6 +61,8 @@ export const EntryRow = memo(function EntryRow({
   formatTime,
   hasActiveTimer,
   isSubEntry,
+  currency,
+  rateLookup,
   onStartEdit,
   onUpdate,
   onResume,
@@ -75,6 +78,8 @@ export const EntryRow = memo(function EntryRow({
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isSubEntry?: boolean
+  currency?: string
+  rateLookup?: (memberId: string) => number
   onStartEdit: () => void
   onUpdate: (patch: InlinePatch) => void
   onResume: () => void
@@ -298,12 +303,24 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Billable */}
-      <TableCell className="py-2.5 px-4 w-[10%] text-center">
+      <TableCell className="py-2.5 px-4 w-[8%] text-center">
         <BillableToggleButton
           pressed={entry.billable}
           onPressedChange={(b) => onUpdate({ billable: b })}
           className="h-8 w-8 mx-auto"
         />
+      </TableCell>
+
+      {/* Amount */}
+      <TableCell className="py-2.5 px-4 w-[10%] text-right text-xs font-mono text-foreground whitespace-nowrap">
+        {entry.billable && currency && rateLookup ? (
+          formatCurrency(
+            (seconds / 3600) * rateLookup(entry.workspaceMemberId),
+            currency,
+          )
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
       </TableCell>
 
       {/* Actions */}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import {
@@ -54,10 +54,16 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
   const [newWsName, setNewWsName] = useState('')
   const [creating, setCreating] = useState(false)
 
-  const owned = workspaces.filter((ws) => ws.role?.permissionLevel === 'OWNER')
-  const joined = workspaces.filter((ws) => ws.role?.permissionLevel !== 'OWNER')
+  const owned = useMemo(
+    () => workspaces.filter((ws) => ws.role?.permissionLevel === 'OWNER'),
+    [workspaces],
+  )
+  const joined = useMemo(
+    () => workspaces.filter((ws) => ws.role?.permissionLevel !== 'OWNER'),
+    [workspaces],
+  )
 
-  async function handleSwitch(slug: string) {
+  const handleSwitch = useCallback(async (slug: string) => {
     try {
       await setActiveWorkspaceFn({ data: { slug } })
       window.location.assign('/app/time-tracker')
@@ -66,7 +72,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     }
-  }
+  }, [])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -378,7 +384,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
   )
 }
 
-function WorkspaceCard({
+const WorkspaceCard = memo(function WorkspaceCard({
   workspace,
   isCurrent,
   onSwitch,
@@ -436,4 +442,4 @@ function WorkspaceCard({
       </div>
     </li>
   )
-}
+})

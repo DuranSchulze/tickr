@@ -94,13 +94,14 @@ export function TimerPanel({
   }
 
   function commitStartedAt() {
+    setEditStarted(false)
     if (!activeEntry || !draftStarted) return
     const [h, m] = draftStarted.split(':').map(Number)
+    if (isNaN(h) || isNaN(m)) return
     const updated = new Date(activeEntry.startedAt)
     updated.setHours(h, m, 0, 0)
     if (updated >= new Date()) return
     onUpdateStartedAt(updated.toISOString())
-    setEditStarted(false)
   }
   const activeClients = useMemo(
     () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
