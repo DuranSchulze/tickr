@@ -20,6 +20,7 @@ export const auth = betterAuth({
     ...(process.env.CHROME_EXTENSION_ORIGIN
       ? [process.env.CHROME_EXTENSION_ORIGIN]
       : []),
+    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
   ],
   database: drizzleAdapter(db, {
     provider: 'pg',

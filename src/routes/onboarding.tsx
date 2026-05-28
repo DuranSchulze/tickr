@@ -3,6 +3,7 @@ import {
   Link,
   redirect,
   useNavigate,
+  useRouter,
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import {
@@ -53,6 +54,8 @@ function OnboardingPage() {
   const [joinCode, setJoinCode] = useState('')
   const [joiningByCode, setJoiningByCode] = useState(false)
 
+  const router = useRouter()
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (wsName.trim().length < 2) {
@@ -67,11 +70,17 @@ function OnboardingPage() {
       gooeyToast.success('Workspace created', {
         description: 'Welcome aboard!',
       })
+      // Invalidate cached queries so the /app route picks up the new workspace
+      await router.invalidate()
       await navigate({ to: '/app/time-tracker' })
     } catch (err) {
-      gooeyToast.error('Could not create workspace', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
+      // TanStack Router redirects (from route guards) are not real errors
+      const isRedirect = err && typeof err === 'object' && 'code' in err
+      if (!isRedirect) {
+        gooeyToast.error('Could not create workspace', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -88,14 +97,19 @@ function OnboardingPage() {
       gooeyToast.success('Joined workspace', {
         description: `Welcome to ${result.name}!`,
       })
+      await router.invalidate()
       await navigate({ to: '/app/time-tracker' })
     } catch (err) {
-      gooeyToast.error('Invalid code', {
-        description:
-          err instanceof Error
-            ? err.message
-            : 'Please check the code and try again.',
-      })
+      // TanStack Router redirects are not real errors
+      const isRedirect = err && typeof err === 'object' && 'code' in err
+      if (!isRedirect) {
+        gooeyToast.error('Invalid code', {
+          description:
+            err instanceof Error
+              ? err.message
+              : 'Please check the code and try again.',
+        })
+      }
     } finally {
       setJoiningByCode(false)
     }

@@ -140,13 +140,17 @@ export function SyncSheetDialog({
           const err = await response
             .json()
             .catch(() => ({ error: 'Request failed' }))
-          setError(err.error ?? `HTTP ${response.status}`)
+          const errorMsg = err.error ?? `HTTP ${response.status}`
+          console.error('[SyncSheetDialog] Request failed:', errorMsg)
+          setError(errorMsg)
           return
         }
 
         const reader = response.body?.getReader()
         if (!reader) {
-          setError('Stream not available')
+          const errorMsg = 'Stream not available'
+          console.error('[SyncSheetDialog] No reader:', errorMsg)
+          setError(errorMsg)
           return
         }
 
@@ -177,8 +181,13 @@ export function SyncSheetDialog({
                 try {
                   const parsed = JSON.parse(currentData)
                   handleEvent(currentEvent, parsed)
-                } catch {
-                  // skip malformed events
+                } catch (parseErr) {
+                  console.error(
+                    '[SyncSheetDialog] Failed to parse SSE event:',
+                    currentEvent,
+                    currentData,
+                    parseErr,
+                  )
                 }
               }
               currentEvent = ''
@@ -188,7 +197,12 @@ export function SyncSheetDialog({
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return
-        setError(err instanceof Error ? err.message : 'Connection lost')
+        const errorMsg = err instanceof Error ? err.message : 'Connection lost'
+        console.error(
+          '[SyncSheetDialog] Stream error:',
+          err instanceof Error ? err.stack : err,
+        )
+        setError(errorMsg)
       }
     }
 
@@ -250,7 +264,10 @@ export function SyncSheetDialog({
           break
         }
         case 'error': {
-          setError((data.message as string | undefined) ?? 'Import failed')
+          const errorMsg =
+            (data.message as string | undefined) ?? 'Import failed'
+          console.error('[SyncSheetDialog] Sync error from server:', errorMsg)
+          setError(errorMsg)
           break
         }
       }

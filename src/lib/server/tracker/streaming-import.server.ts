@@ -234,18 +234,31 @@ async function streamImportClients(
     }
 
     // Data differs or row has no ID — update DB
-    await db
-      .update(clients)
-      .set({ name: c.name, clientStatus: c.clientStatus })
-      .where(eq(clients.id, existing.id))
-    resolvedIds.set(c.sheetRow, existing.id)
-    emit({
-      type: 'item',
-      phase: 'clients',
-      item: { name: c.name, action: 'updated' },
-      current,
-      total: parsed.length,
-    })
+    try {
+      await db
+        .update(clients)
+        .set({ name: c.name, clientStatus: c.clientStatus })
+        .where(eq(clients.id, existing.id))
+      resolvedIds.set(c.sheetRow, existing.id)
+      emit({
+        type: 'item',
+        phase: 'clients',
+        item: { name: c.name, action: 'updated' },
+        current,
+        total: parsed.length,
+      })
+    } catch (err) {
+      warnings.push(
+        `Client "${c.name}" — ${err instanceof Error ? err.message : 'update failed'}`,
+      )
+      emit({
+        type: 'item',
+        phase: 'clients',
+        item: { name: c.name, action: 'skipped', detail: 'Update failed' },
+        current,
+        total: parsed.length,
+      })
+    }
   }
 
   // Write back IDs to sheet for newly created / newly matched records
@@ -257,16 +270,22 @@ async function streamImportClients(
     }
   }
   if (writebacks.length > 0) {
-    await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: {
-        valueInputOption: 'RAW',
-        data: writebacks.map(({ row, id }) => ({
-          range: `${CATALOG_TAB_CLIENTS}!C${row}`,
-          values: [[id]],
-        })),
-      },
-    })
+    try {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: writebacks.map(({ row, id }) => ({
+            range: `${CATALOG_TAB_CLIENTS}!C${row}`,
+            values: [[id]],
+          })),
+        },
+      })
+    } catch (err) {
+      warnings.push(
+        `Failed to write back client IDs to sheet: ${err instanceof Error ? err.message : 'unknown error'}`,
+      )
+    }
   }
 
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
@@ -613,27 +632,40 @@ async function streamImportProjects(
     }
 
     // Data differs or row has no ID — update DB
-    await db
-      .update(projects)
-      .set({
-        name: p.name,
-        color: p.color,
-        archived: p.archived,
-        clientId: sheetClientId,
+    try {
+      await db
+        .update(projects)
+        .set({
+          name: p.name,
+          color: p.color,
+          archived: p.archived,
+          clientId: sheetClientId,
+        })
+        .where(eq(projects.id, existing.id))
+      resolvedIds.set(p.sheetRow, existing.id)
+      emit({
+        type: 'item',
+        phase: 'projects',
+        item: {
+          name: p.name,
+          action: 'updated',
+          detail: `Client: ${p.clientName}`,
+        },
+        current,
+        total: parsed.length,
       })
-      .where(eq(projects.id, existing.id))
-    resolvedIds.set(p.sheetRow, existing.id)
-    emit({
-      type: 'item',
-      phase: 'projects',
-      item: {
-        name: p.name,
-        action: 'updated',
-        detail: `Client: ${p.clientName}`,
-      },
-      current,
-      total: parsed.length,
-    })
+    } catch (err) {
+      warnings.push(
+        `Project "${p.name}" — ${err instanceof Error ? err.message : 'update failed'}`,
+      )
+      emit({
+        type: 'item',
+        phase: 'projects',
+        item: { name: p.name, action: 'skipped', detail: 'Update failed' },
+        current,
+        total: parsed.length,
+      })
+    }
   }
 
   // Write back IDs
@@ -645,16 +677,22 @@ async function streamImportProjects(
     }
   }
   if (writebacks.length > 0) {
-    await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: {
-        valueInputOption: 'RAW',
-        data: writebacks.map(({ row, id }) => ({
-          range: `${CATALOG_TAB_PROJECTS}!E${row}`,
-          values: [[id]],
-        })),
-      },
-    })
+    try {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: writebacks.map(({ row, id }) => ({
+            range: `${CATALOG_TAB_PROJECTS}!E${row}`,
+            values: [[id]],
+          })),
+        },
+      })
+    } catch (err) {
+      warnings.push(
+        `Failed to write back project IDs to sheet: ${err instanceof Error ? err.message : 'unknown error'}`,
+      )
+    }
   }
 
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
@@ -972,18 +1010,31 @@ async function streamImportTags(
     }
 
     // Data differs or row has no ID — update DB
-    await db
-      .update(tags)
-      .set({ name: t.name, color: t.color, archived: t.archived })
-      .where(eq(tags.id, existing.id))
-    resolvedIds.set(t.sheetRow, existing.id)
-    emit({
-      type: 'item',
-      phase: 'tags',
-      item: { name: t.name, action: 'updated' },
-      current,
-      total: parsed.length,
-    })
+    try {
+      await db
+        .update(tags)
+        .set({ name: t.name, color: t.color, archived: t.archived })
+        .where(eq(tags.id, existing.id))
+      resolvedIds.set(t.sheetRow, existing.id)
+      emit({
+        type: 'item',
+        phase: 'tags',
+        item: { name: t.name, action: 'updated' },
+        current,
+        total: parsed.length,
+      })
+    } catch (err) {
+      warnings.push(
+        `Tag "${t.name}" — ${err instanceof Error ? err.message : 'update failed'}`,
+      )
+      emit({
+        type: 'item',
+        phase: 'tags',
+        item: { name: t.name, action: 'skipped', detail: 'Update failed' },
+        current,
+        total: parsed.length,
+      })
+    }
   }
 
   // Write back IDs
@@ -995,16 +1046,22 @@ async function streamImportTags(
     }
   }
   if (writebacks.length > 0) {
-    await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: {
-        valueInputOption: 'RAW',
-        data: writebacks.map(({ row, id }) => ({
-          range: `${CATALOG_TAB_TAGS}!D${row}`,
-          values: [[id]],
-        })),
-      },
-    })
+    try {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: writebacks.map(({ row, id }) => ({
+            range: `${CATALOG_TAB_TAGS}!D${row}`,
+            values: [[id]],
+          })),
+        },
+      })
+    } catch (err) {
+      warnings.push(
+        `Failed to write back tag IDs to sheet: ${err instanceof Error ? err.message : 'unknown error'}`,
+      )
+    }
   }
 
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
@@ -1310,22 +1367,35 @@ async function streamImportDepartments(
     }
 
     // Data differs or row has no ID — update DB
-    await db
-      .update(departments)
-      .set({
-        name: d.name,
-        color: d.color,
-        description: d.description || null,
+    try {
+      await db
+        .update(departments)
+        .set({
+          name: d.name,
+          color: d.color,
+          description: d.description || null,
+        })
+        .where(eq(departments.id, existing.id))
+      resolvedIds.set(d.sheetRow, existing.id)
+      emit({
+        type: 'item',
+        phase: 'departments',
+        item: { name: d.name, action: 'updated' },
+        current,
+        total: parsed.length,
       })
-      .where(eq(departments.id, existing.id))
-    resolvedIds.set(d.sheetRow, existing.id)
-    emit({
-      type: 'item',
-      phase: 'departments',
-      item: { name: d.name, action: 'updated' },
-      current,
-      total: parsed.length,
-    })
+    } catch (err) {
+      warnings.push(
+        `Department "${d.name}" — ${err instanceof Error ? err.message : 'update failed'}`,
+      )
+      emit({
+        type: 'item',
+        phase: 'departments',
+        item: { name: d.name, action: 'skipped', detail: 'Update failed' },
+        current,
+        total: parsed.length,
+      })
+    }
   }
 
   // Write back IDs
@@ -1337,16 +1407,22 @@ async function streamImportDepartments(
     }
   }
   if (writebacks.length > 0) {
-    await sheets.spreadsheets.values.batchUpdate({
-      spreadsheetId: sheetId,
-      requestBody: {
-        valueInputOption: 'RAW',
-        data: writebacks.map(({ row, id }) => ({
-          range: `${CATALOG_TAB_DEPARTMENTS}!D${row}`,
-          values: [[id]],
-        })),
-      },
-    })
+    try {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: sheetId,
+        requestBody: {
+          valueInputOption: 'RAW',
+          data: writebacks.map(({ row, id }) => ({
+            range: `${CATALOG_TAB_DEPARTMENTS}!D${row}`,
+            values: [[id]],
+          })),
+        },
+      })
+    } catch (err) {
+      warnings.push(
+        `Failed to write back department IDs to sheet: ${err instanceof Error ? err.message : 'unknown error'}`,
+      )
+    }
   }
 
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
@@ -1443,27 +1519,91 @@ export async function runStreamingImport(
     const allWarnings: string[] = []
 
     if (type === 'all' || type === 'clients') {
-      const result = await streamImportClients(emit, sheet)
-      totalClients = result.count
-      allWarnings.push(...result.warnings)
+      try {
+        const result = await streamImportClients(emit, sheet)
+        totalClients = result.count
+        allWarnings.push(...result.warnings)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(
+          '[streaming-import] Clients sync failed:',
+          err instanceof Error ? err.stack : err,
+        )
+        const warning = `Clients sync error: ${msg}`
+        allWarnings.push(warning)
+        emit({
+          type: 'phase_complete',
+          phase: 'clients',
+          count: 0,
+          warnings: [warning],
+        })
+      }
     }
 
     if (type === 'all' || type === 'projects') {
-      const result = await streamImportProjects(emit, sheet)
-      totalProjects = result.count
-      allWarnings.push(...result.warnings)
+      try {
+        const result = await streamImportProjects(emit, sheet)
+        totalProjects = result.count
+        allWarnings.push(...result.warnings)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(
+          '[streaming-import] Projects sync failed:',
+          err instanceof Error ? err.stack : err,
+        )
+        const warning = `Projects sync error: ${msg}`
+        allWarnings.push(warning)
+        emit({
+          type: 'phase_complete',
+          phase: 'projects',
+          count: 0,
+          warnings: [warning],
+        })
+      }
     }
 
     if (type === 'all' || type === 'tags') {
-      const result = await streamImportTags(emit, sheet)
-      totalTags = result.count
-      allWarnings.push(...result.warnings)
+      try {
+        const result = await streamImportTags(emit, sheet)
+        totalTags = result.count
+        allWarnings.push(...result.warnings)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(
+          '[streaming-import] Tags sync failed:',
+          err instanceof Error ? err.stack : err,
+        )
+        const warning = `Tags sync error: ${msg}`
+        allWarnings.push(warning)
+        emit({
+          type: 'phase_complete',
+          phase: 'tags',
+          count: 0,
+          warnings: [warning],
+        })
+      }
     }
 
     if (type === 'all' || type === 'departments') {
-      const result = await streamImportDepartments(emit, sheet)
-      totalDepartments = result.count
-      allWarnings.push(...result.warnings)
+      try {
+        const result = await streamImportDepartments(emit, sheet)
+        totalDepartments = result.count
+        allWarnings.push(...result.warnings)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error(
+          '[streaming-import] Departments sync failed:',
+          err instanceof Error ? err.stack : err,
+        )
+        const warning = `Departments sync error: ${msg}`
+        allWarnings.push(warning)
+        emit({
+          type: 'phase_complete',
+          phase: 'departments',
+          count: 0,
+          warnings: [warning],
+        })
+      }
     }
 
     emit({
@@ -1475,10 +1615,12 @@ export async function runStreamingImport(
       warnings: allWarnings,
     })
   } catch (err) {
-    emit({
-      type: 'error',
-      message:
-        err instanceof Error ? err.message : 'Import failed unexpectedly',
-    })
+    const message =
+      err instanceof Error ? err.message : 'Import failed unexpectedly'
+    console.error(
+      '[streaming-import] runStreamingImport failed:',
+      err instanceof Error ? err.stack : err,
+    )
+    emit({ type: 'error', message })
   }
 }

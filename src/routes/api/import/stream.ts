@@ -102,6 +102,10 @@ export const Route = createFileRoute('/api/import/stream')({
                 err instanceof Error
                   ? err.message
                   : 'Import failed unexpectedly'
+              console.error(
+                '[import/stream] Sync failed:',
+                err instanceof Error ? err.stack : err,
+              )
               controller.enqueue(sse('error', { message }))
               controller.close()
             }
