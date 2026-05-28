@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.4.0",
+  "appVersion": "1.4.1",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,35 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.4.1",
+      "publishedAt": "2026-05-28",
+      "title": "Timer Start-Time Editing & Production Auth Fixes",
+      "body": "Patch fixing two timer bugs and a cross-origin authentication error that prevented the timer from saving in production.",
+      "features": [
+        {
+          "title": "Timer Start Time Now Saves Correctly",
+          "description": "Editing the start time on a running timer previously appeared to do nothing — the display would snap back to the old time immediately after saving. The updated time is now reflected instantly without requiring a page refresh.",
+          "image": null
+        },
+        {
+          "title": "Start Time Edit Input No Longer Gets Stuck",
+          "description": "If an invalid or future time was entered, the time input would become unresponsive and couldn't be dismissed. Pressing Enter or clicking away now always closes the edit field.",
+          "image": null
+        },
+        {
+          "title": "Fixed 'Request Origin Not Trusted' Error in Production",
+          "description": "Starting, stopping, and saving timers was failing in production with a forbidden origin error. The CSRF origin allowlist now correctly includes all Vercel deployment URLs (per-deployment, branch, and production) alongside any configured custom domain.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Track Time",
+          "to": "/app/time-tracker"
+        }
+      ]
+    },
     {
       "version": "1.4.0",
       "publishedAt": "2026-05-22",
