@@ -1,6 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "pnpm build",
+  "buildCommand": "NODE_OPTIONS='--max-old-space-size=4096' pnpm build",
+  "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
   "regions": ["sin1"],
   "crons": [
