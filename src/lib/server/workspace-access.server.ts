@@ -203,8 +203,8 @@ export async function listUserWorkspaces(userId: string, email: string) {
 
 // ── Core implementation (no cache) ────────────────────────────────────────────
 
-async function _fetchWorkspaceAccess(slug?: string | null) {
-  assertTrustedOrigin()
+async function _fetchWorkspaceAccess(slug?: string | null, skipCsrf = false) {
+  if (!skipCsrf) assertTrustedOrigin()
   const session = await getAuthSession()
 
   if (!session?.user) {
@@ -276,16 +276,24 @@ const _requestCache = new WeakMap<object, Promise<WorkspaceAccess>>()
 
 export async function requireWorkspaceAccess(
   slug?: string | null,
+  options?: { skipCsrf?: boolean },
 ): Promise<WorkspaceAccess> {
+  const skipCsrf = options?.skipCsrf ?? false
+
   if (slug != null) {
-    return _fetchWorkspaceAccess(slug)
+    return _fetchWorkspaceAccess(slug, skipCsrf)
   }
 
-  const request = getRequest()
-  const cached = _requestCache.get(request)
-  if (cached) return cached
+  // Only cache when not skipping CSRF — different security context
+  if (!skipCsrf) {
+    const request = getRequest()
+    const cached = _requestCache.get(request)
+    if (cached) return cached
 
-  const promise = _fetchWorkspaceAccess()
-  _requestCache.set(request, promise)
-  return promise
+    const promise = _fetchWorkspaceAccess(undefined, false)
+    _requestCache.set(request, promise)
+    return promise
+  }
+
+  return _fetchWorkspaceAccess(undefined, true)
 }

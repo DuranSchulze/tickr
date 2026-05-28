@@ -80,8 +80,15 @@ type Emitter = (event: ImportProgressEvent) => void
 
 // ── Sheets helpers ────────────────────────────────────────────────────────────
 
+export async function resolveSyncSheet() {
+  return resolveWorkspaceSheet()
+}
+
 async function resolveWorkspaceSheet() {
-  const access = await requireWorkspaceAccess()
+  // skipCsrf: this code runs inside a raw HTTP handler (/api/import/stream)
+  // that already validates the session. assertTrustedOrigin would reject any
+  // origin not in the hardcoded list (e.g. a custom prod domain).
+  const access = await requireWorkspaceAccess(undefined, { skipCsrf: true })
   assertAtLeastManager(access)
   const workspace = access.workspace
   if (!workspace.googleSheetUrl) {
@@ -1508,9 +1515,10 @@ export type ImportType = 'clients' | 'projects' | 'tags' | 'departments' | 'all'
 export async function runStreamingImport(
   type: ImportType,
   emit: Emitter,
+  preResolvedSheet?: Awaited<ReturnType<typeof resolveWorkspaceSheet>>,
 ): Promise<void> {
   try {
-    const sheet = await resolveWorkspaceSheet()
+    const sheet = preResolvedSheet ?? (await resolveWorkspaceSheet())
 
     let totalClients = 0
     let totalProjects = 0

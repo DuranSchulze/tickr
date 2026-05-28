@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { auth } from '#/lib/auth'
-import { runStreamingImport } from '#/lib/server/tracker/streaming-import.server'
+import {
+  runStreamingImport,
+  resolveSyncSheet,
+} from '#/lib/server/tracker/streaming-import.server'
 import type { ImportProgressEvent } from '#/lib/server/tracker/streaming-import.server'
 
 function sse(event: string, data: unknown): Uint8Array {
@@ -29,6 +32,21 @@ export const Route = createFileRoute('/api/import/stream')({
         ) {
           return new Response(JSON.stringify({ error: 'Invalid type' }), {
             status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+
+        // Resolve workspace access and sheet info HERE (outside the stream)
+        // so that requireWorkspaceAccess / assertTrustedOrigin run inside the
+        // request context where getRequest() works correctly.
+        let sheet
+        try {
+          sheet = await resolveSyncSheet()
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : 'Access denied'
+          console.error('[import/stream] resolveSyncSheet failed:', err)
+          return new Response(JSON.stringify({ error: errorMsg }), {
+            status: 403,
             headers: { 'Content-Type': 'application/json' },
           })
         }
@@ -96,6 +114,7 @@ export const Route = createFileRoute('/api/import/stream')({
               await runStreamingImport(
                 type as 'clients' | 'projects' | 'tags' | 'departments' | 'all',
                 emit,
+                sheet,
               )
             } catch (err) {
               const message =
