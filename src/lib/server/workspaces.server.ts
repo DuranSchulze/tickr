@@ -1,7 +1,7 @@
 import '@tanstack/react-start/server-only'
 import { db } from '#/db'
 import { workspaces, workspaceRoles, workspaceMembers } from '#/db/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import {
   DEFAULT_WORKSPACE_ROLES,
   DEFAULT_WORKSPACE_TIMEZONE,
@@ -96,4 +96,104 @@ export async function createWorkspaceForCurrentUser(input: {
     slug: result.workspace.slug,
     name: result.workspace.name,
   }
+}
+
+export async function deleteWorkspaceForCurrentUser(workspaceId: string) {
+  const session = await getAuthSession()
+  if (!session?.user) throw new Error('Please sign in.')
+
+  // Verify the caller is an OWNER of this workspace
+  const [membership] = await db
+    .select({ workspaceRoleId: workspaceMembers.workspaceRoleId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.userId, session.user.id),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .limit(1)
+
+  if (!membership) throw new Error('You are not a member of this workspace.')
+
+  if (membership.workspaceRoleId) {
+    const [role] = await db
+      .select({ permissionLevel: workspaceRoles.permissionLevel })
+      .from(workspaceRoles)
+      .where(eq(workspaceRoles.id, membership.workspaceRoleId))
+      .limit(1)
+
+    if (role?.permissionLevel !== 'OWNER') {
+      throw new Error('Only the workspace owner can delete a workspace.')
+    }
+  } else {
+    throw new Error('Only the workspace owner can delete a workspace.')
+  }
+
+  // Cascade deletes everything tied to this workspace via FK constraints
+  await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
+}
+
+export async function leaveWorkspaceForCurrentUser(workspaceId: string) {
+  const session = await getAuthSession()
+  if (!session?.user) throw new Error('Please sign in.')
+
+  const [membership] = await db
+    .select({
+      id: workspaceMembers.id,
+      workspaceRoleId: workspaceMembers.workspaceRoleId,
+    })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.userId, session.user.id),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .limit(1)
+
+  if (!membership) throw new Error('You are not a member of this workspace.')
+
+  // Prevent leaving if you're the sole owner
+  if (membership.workspaceRoleId) {
+    const [role] = await db
+      .select({ permissionLevel: workspaceRoles.permissionLevel })
+      .from(workspaceRoles)
+      .where(eq(workspaceRoles.id, membership.workspaceRoleId))
+      .limit(1)
+
+    if (role?.permissionLevel === 'OWNER') {
+      // Count other active owners
+      const otherOwners = await db
+        .select({ id: workspaceMembers.id })
+        .from(workspaceMembers)
+        .innerJoin(
+          workspaceRoles,
+          eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+        )
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, workspaceId),
+            eq(workspaceMembers.status, 'ACTIVE'),
+            eq(workspaceRoles.permissionLevel, 'OWNER'),
+          ),
+        )
+
+      const otherOwnerCount = otherOwners.filter(
+        (m) => m.id !== membership.id,
+      ).length
+
+      if (otherOwnerCount === 0) {
+        throw new Error(
+          'You are the only owner. Transfer ownership or delete the workspace instead.',
+        )
+      }
+    }
+  }
+
+  await db
+    .delete(workspaceMembers)
+    .where(eq(workspaceMembers.id, membership.id))
 }

@@ -8,6 +8,7 @@ import {
   CalendarDays,
   ChevronDown,
   Cog,
+  LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
   Timer,
@@ -30,6 +31,7 @@ export const AppSidebar = memo(function ({
   analyticsActive,
   performanceActive,
   calendarActive,
+  workspacesActive,
   activityActive,
   settingsActive,
   settingsOpen,
@@ -45,6 +47,7 @@ export const AppSidebar = memo(function ({
   analyticsActive: boolean
   performanceActive: boolean
   calendarActive: boolean
+  workspacesActive: boolean
   activityActive: boolean
   settingsActive: boolean
   settingsOpen: boolean
@@ -164,6 +167,21 @@ export const AppSidebar = memo(function ({
           >
             <TrendingUp className="h-4 w-4 shrink-0" />
             {!collapsed && <span>My Performance</span>}
+          </Link>
+
+          <Link
+            to="/app/my-workspaces"
+            title="My Workspaces"
+            className={`flex h-10 w-full items-center ${
+              collapsed ? 'justify-center' : 'gap-3 px-3'
+            } text-sm font-semibold transition-colors ${
+              workspacesActive
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>My Workspaces</span>}
           </Link>
 
           {isOwnerOrAdmin && (

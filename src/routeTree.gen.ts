@@ -19,6 +19,7 @@ import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
+import { Route as AppMyWorkspacesRouteImport } from './routes/app/my-workspaces'
 import { Route as AppMyPerformanceRouteImport } from './routes/app/my-performance'
 import { Route as AppChangelogRouteImport } from './routes/app/changelog'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
@@ -92,6 +93,11 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyWorkspacesRoute = AppMyWorkspacesRouteImport.update({
+  id: '/my-workspaces',
+  path: '/my-workspaces',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMyPerformanceRoute = AppMyPerformanceRouteImport.update({
@@ -233,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
+  '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
+  '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/app/calendar': typeof AppCalendarRoute
   '/app/changelog': typeof AppChangelogRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
+  '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
@@ -344,6 +353,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/changelog'
     | '/app/my-performance'
+    | '/app/my-workspaces'
     | '/app/profile'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/changelog'
     | '/app/my-performance'
+    | '/app/my-workspaces'
     | '/app/profile'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -416,6 +427,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/changelog'
     | '/app/my-performance'
+    | '/app/my-workspaces'
     | '/app/profile'
     | '/auth/forgot-password'
     | '/auth/reset-password'
@@ -528,6 +540,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/my-workspaces': {
+      id: '/app/my-workspaces'
+      path: '/my-workspaces'
+      fullPath: '/app/my-workspaces'
+      preLoaderRoute: typeof AppMyWorkspacesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/my-performance': {
@@ -739,6 +758,7 @@ interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppChangelogRoute: typeof AppChangelogRoute
   AppMyPerformanceRoute: typeof AppMyPerformanceRoute
+  AppMyWorkspacesRoute: typeof AppMyWorkspacesRoute
   AppProfileRoute: typeof AppProfileRoute
   AppTimeTrackerDayRoute: typeof AppTimeTrackerDayRoute
   AppTimeTrackerMonthRoute: typeof AppTimeTrackerMonthRoute
@@ -756,6 +776,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
   AppChangelogRoute: AppChangelogRoute,
   AppMyPerformanceRoute: AppMyPerformanceRoute,
+  AppMyWorkspacesRoute: AppMyWorkspacesRoute,
   AppProfileRoute: AppProfileRoute,
   AppTimeTrackerDayRoute: AppTimeTrackerDayRoute,
   AppTimeTrackerMonthRoute: AppTimeTrackerMonthRoute,

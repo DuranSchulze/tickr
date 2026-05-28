@@ -76,6 +76,7 @@ export function AppShell({
   const analyticsActive = pathname.startsWith('/app/analytics')
   const performanceActive = pathname.startsWith('/app/my-performance')
   const calendarActive = pathname.startsWith('/app/calendar')
+  const workspacesActive = pathname.startsWith('/app/my-workspaces')
   const activityActive = pathname.startsWith('/app/workspace/activity')
   const settingsActive =
     (pathname.startsWith('/app/workspace') &&
@@ -134,6 +135,7 @@ export function AppShell({
                   analyticsActive={analyticsActive}
                   performanceActive={performanceActive}
                   calendarActive={calendarActive}
+                  workspacesActive={workspacesActive}
                   activityActive={activityActive}
                   settingsActive={settingsActive}
                   settingsOpen={settingsOpen}
@@ -158,6 +160,7 @@ export function AppShell({
                 analyticsActive={analyticsActive}
                 performanceActive={performanceActive}
                 calendarActive={calendarActive}
+                workspacesActive={workspacesActive}
                 activityActive={activityActive}
                 settingsActive={settingsActive}
                 settingsOpen={settingsOpen}

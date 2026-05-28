@@ -1,5 +1,20 @@
 import { createServerFn } from '@tanstack/react-start'
 
+export const deleteWorkspaceFn = createServerFn({ method: 'POST' })
+  .inputValidator((input: { workspaceId: string }) => input)
+  .handler(async ({ data }) => {
+    const { deleteWorkspaceForCurrentUser } =
+      await import('./workspaces.server')
+    await deleteWorkspaceForCurrentUser(data.workspaceId)
+  })
+
+export const leaveWorkspaceFn = createServerFn({ method: 'POST' })
+  .inputValidator((input: { workspaceId: string }) => input)
+  .handler(async ({ data }) => {
+    const { leaveWorkspaceForCurrentUser } = await import('./workspaces.server')
+    await leaveWorkspaceForCurrentUser(data.workspaceId)
+  })
+
 export const createWorkspaceFn = createServerFn({ method: 'POST' })
   .inputValidator(
     (
