@@ -85,18 +85,31 @@ export function useDraftAndEdit({
   function saveEdit() {
     if (!editingId || !editingDraft.description.trim()) return
 
-    let durationSeconds: number
-    if (editingEntry?.endedAt) {
-      const origStart = dateTimeLocalValue(new Date(editingEntry.startedAt))
-      const origEnd = dateTimeLocalValue(new Date(editingEntry.endedAt))
-      const timesUnchanged =
-        editingDraft.startedAt === origStart && editingDraft.endedAt === origEnd
-      durationSeconds = timesUnchanged
-        ? editingEntry.durationSeconds
-        : calculateManualSeconds(editingDraft)
-    } else {
-      durationSeconds = calculateManualSeconds(editingDraft)
+    // Running entry — update without touching endedAt to keep the timer alive
+    if (!editingEntry?.endedAt) {
+      const startedAt = new Date(editingDraft.startedAt)
+      if (isNaN(startedAt.getTime()) || startedAt >= new Date()) return
+      void mutations.updateActiveTimer(
+        {
+          id: editingId,
+          description: editingDraft.description.trim(),
+          projectId: editingDraft.projectId,
+          tagIds: editingDraft.tagIds.filter(Boolean),
+          billable: editingDraft.billable,
+          startedAt: startedAt.toISOString(),
+        },
+        { onSuccess: () => setEditingId(null) },
+      )
+      return
     }
+
+    const origStart = dateTimeLocalValue(new Date(editingEntry.startedAt))
+    const origEnd = dateTimeLocalValue(new Date(editingEntry.endedAt))
+    const timesUnchanged =
+      editingDraft.startedAt === origStart && editingDraft.endedAt === origEnd
+    const durationSeconds = timesUnchanged
+      ? editingEntry.durationSeconds
+      : calculateManualSeconds(editingDraft)
 
     void mutations.updateEntry(
       editingId,
@@ -121,10 +134,24 @@ export function useDraftAndEdit({
   ) {
     const entry = state.entries.find((e) => e.id === entryId)
     if (!entry) return
+
+    // Running entry — route through updateActiveTimer so endedAt is never set
+    if (!entry.endedAt) {
+      void mutations.updateActiveTimer({
+        id: entryId,
+        description: (patch.description ?? entry.description).trim(),
+        projectId: patch.projectId ?? entry.projectId,
+        tagIds: patch.tagIds ?? entry.tagIds,
+        billable: patch.billable ?? entry.billable,
+        ...(patch.startedAt ? { startedAt: patch.startedAt } : {}),
+      })
+      return
+    }
+
     const description = (patch.description ?? entry.description).trim()
     if (!description) return
     const startedAt = patch.startedAt ?? entry.startedAt
-    const endedAt = patch.endedAt ?? entry.endedAt ?? new Date().toISOString()
+    const endedAt = patch.endedAt ?? entry.endedAt
     const durationSeconds = Math.max(
       0,
       Math.floor(

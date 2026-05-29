@@ -82,6 +82,11 @@ const departmentDashboardSchema = z.object({
   endDate: z.string().date(),
 })
 
+const memberMonthlyReportSchema = z.object({
+  memberId: z.string().min(1),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+})
+
 const paginatedMembersSchema = z.object({
   page: z.number().int().min(0),
   pageSize: z.number().int().min(1).max(100),
@@ -151,6 +156,13 @@ export const getDepartmentDashboardFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getDepartmentDashboard } = await import('./tracker.server')
     return getDepartmentDashboard(data)
+  })
+
+export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => memberMonthlyReportSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getMemberMonthlyReport } = await import('./tracker.server')
+    return getMemberMonthlyReport(data)
   })
 
 export const exportMembersCsvFn = createServerFn({ method: 'POST' }).handler(

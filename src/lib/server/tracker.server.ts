@@ -105,3 +105,8 @@ export {
   type DepartmentMemberBreakdown,
   type DepartmentProjectBreakdown,
 } from './tracker/department-dashboard.server'
+export {
+  getMemberMonthlyReport,
+  type MemberMonthlyReport,
+  type MemberMonthlyReportEntry,
+} from './tracker/member-report.server'

@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { RolesTablePage } from '#/components/time-tracker/catalogs/RolesTablePage'
 import { getPaginatedRolesFn } from '#/lib/server/tracker'
+import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
@@ -10,6 +11,16 @@ type RolesSearch = {
 }
 
 export const Route = createFileRoute('/app/workspace/catalogs/roles')({
+  beforeLoad: async ({ context }) => {
+    const access = await context.queryClient.ensureQueryData({
+      queryKey: ['workspace-access'],
+      queryFn: () => getWorkspaceAccessFn(),
+      staleTime: 5 * 60 * 1000,
+    })
+    if (access.member.permissionLevel === 'EMPLOYEE') {
+      throw redirect({ to: '/app/time-tracker' })
+    }
+  },
   validateSearch: (search: Record<string, unknown>): RolesSearch => ({
     page: typeof search.page === 'number' ? search.page : undefined,
     search: typeof search.search === 'string' ? search.search : undefined,

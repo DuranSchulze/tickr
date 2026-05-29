@@ -48,8 +48,14 @@ export function DescriptionAutocomplete({
         }}
         placeholder={placeholder}
         disabled={disabled}
+        maxLength={200}
         className="h-11 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
       />
+      {value.length > 150 && (
+        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-muted-foreground">
+          {value.length}/200
+        </span>
+      )}
       {open && suggestions.length > 0 && !disabled && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
           {suggestions.map((desc) => (

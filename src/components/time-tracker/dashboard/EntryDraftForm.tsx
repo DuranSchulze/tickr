@@ -20,6 +20,7 @@ export function EntryDraftForm({
   onCreateTag,
   canManageCatalog = true,
   compact = false,
+  isRunning = false,
 }: {
   draft: DraftEntry
   setDraft: (draft: DraftEntry) => void
@@ -35,6 +36,7 @@ export function EntryDraftForm({
   onCreateTag?: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   compact?: boolean
+  isRunning?: boolean
 }) {
   const activeClients = useMemo(
     () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
@@ -44,12 +46,20 @@ export function EntryDraftForm({
   return (
     <div className={compact ? 'grid gap-2' : 'flex flex-col gap-3'}>
       {/* Row 1: Task name */}
-      <input
-        value={draft.description}
-        onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-        placeholder="Task description"
-        className="h-10 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
-      />
+      <div className="relative">
+        <input
+          value={draft.description}
+          onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          placeholder="Task description"
+          maxLength={200}
+          className="h-10 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+        />
+        {draft.description.length > 150 && (
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-muted-foreground">
+            {draft.description.length}/200
+          </span>
+        )}
+      </div>
 
       {/* Row 2: Client + Project (unified) + Tag */}
       <div className="grid gap-3 sm:grid-cols-2">
@@ -72,17 +82,21 @@ export function EntryDraftForm({
       </div>
 
       {/* Row 3: Start date + End date + Billable */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div
+        className={`grid gap-3 ${isRunning ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
+      >
         <DateTimePicker
           value={draft.startedAt}
           onChange={(value) => setDraft({ ...draft, startedAt: value })}
           placeholder="Start date & time"
         />
-        <DateTimePicker
-          value={draft.endedAt}
-          onChange={(value) => setDraft({ ...draft, endedAt: value })}
-          placeholder="End date & time"
-        />
+        {!isRunning && (
+          <DateTimePicker
+            value={draft.endedAt}
+            onChange={(value) => setDraft({ ...draft, endedAt: value })}
+            placeholder="End date & time"
+          />
+        )}
         <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground">
           <input
             type="checkbox"

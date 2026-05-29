@@ -1,14 +1,21 @@
-import { memo } from 'react'
+import { memo, useCallback, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BarChart2, Pencil } from 'lucide-react'
+import { BarChart2, FileText, Loader2, Pencil } from 'lucide-react'
+import { gooeyToast } from 'goey-toast'
 import { Input } from '#/components/ui/input'
 import { TableCell, TableRow } from '#/components/ui/table'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
 import {
   computeEffectiveRate,
   formatCurrency,
 } from '#/lib/time-tracker/billing'
 import { formatHours } from '#/lib/time-tracker/store'
+import { getMemberMonthlyReportFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import type { MemberStat } from './MembersTable'
 import { MemberAnalyticsRow } from './MemberAnalyticsRow'
@@ -118,6 +125,172 @@ export const MemberRow = memo(function MemberRow({
     handleToggleStatus,
     toggleCohort,
   } = useMemberRow(member)
+
+  const [exportPopoverOpen, setExportPopoverOpen] = useState(false)
+  const [exportingMonth, setExportingMonth] = useState<string | null>(null)
+
+  const handleExportMonthlyReport = useCallback(
+    async (month: string) => {
+      setExportPopoverOpen(false)
+      setExportingMonth(month)
+      try {
+        const report = await getMemberMonthlyReportFn({
+          data: { memberId: member.id, month },
+        })
+
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const fmtDate = (d: string) => {
+          const date = new Date(d + 'T00:00:00')
+          return date.toLocaleDateString('en-PH', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        }
+        const fmtHrs = (s: number) => {
+          const h = Math.floor(s / 3600)
+          const m = Math.floor((s % 3600) / 60)
+          return `${h}h ${pad(m)}m`
+        }
+
+        const [year, mon] = month.split('-')
+        const monthName = new Date(
+          Number(year),
+          Number(mon) - 1,
+        ).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+
+        const totalHrs = fmtHrs(report.summary.totalSeconds)
+        const billableHrs = fmtHrs(report.summary.billableSeconds)
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Time Report - ${report.memberName} - ${monthName}</title>
+  <style>
+    @page { margin: 1.5cm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #1a1a1a; }
+    .header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2563eb; }
+    .header h1 { margin: 0; font-size: 20px; color: #2563eb; }
+    .header p { margin: 4px 0 0; color: #666; font-size: 13px; }
+    .summary-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .summary-card { flex: 1; min-width: 120px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
+    .summary-card .label { font-size: 10px; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
+    .summary-card .value { font-size: 18px; font-weight: 800; margin-top: 4px; }
+    .summary-card .value.primary { color: #2563eb; }
+    .summary-card .value.green { color: #16a34a; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f3f4f6; text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e5e7eb; }
+    td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    td.center { text-align: center; }
+    .billable-badge { background: #dcfce7; color: #16a34a; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .nonbillable-badge { background: #f3f4f6; color: #9ca3af; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
+    .total-row td { font-weight: 700; border-top: 2px solid #1a1a1a; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Time Entry Report</h1>
+    <p>${report.memberName} &middot; ${report.memberEmail}</p>
+    <p>${monthName}</p>
+  </div>
+
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="label">Total Hours</div>
+      <div class="value primary">${totalHrs}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Billable Hours</div>
+      <div class="value green">${billableHrs}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Entries</div>
+      <div class="value">${report.summary.entryCount}</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Billable Amount</div>
+      <div class="value green">${report.summary.totalBillableAmount > 0 ? formatCurrency(report.summary.totalBillableAmount, report.currency) : '—'}</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Project / Client</th>
+        <th>Tags</th>
+        <th>Description</th>
+        <th>Hours</th>
+        <th>Rate</th>
+        <th class="num">Amount</th>
+        <th class="center">Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${report.entries
+        .map(
+          (e) => `
+        <tr>
+          <td>${fmtDate(e.date)}</td>
+          <td>${[e.projectName, e.clientName].filter(Boolean).join(' · ') || '—'}</td>
+          <td>${e.tagNames.join(', ') || '—'}</td>
+          <td>${e.description || 'Untitled'}</td>
+          <td class="num">${fmtHrs(e.durationSeconds)}</td>
+          <td class="num">${e.billable ? formatCurrency(e.effectiveRate, report.currency) : '—'}</td>
+          <td class="num">${e.billableAmount != null ? formatCurrency(e.billableAmount, report.currency) : '—'}</td>
+          <td class="center">${e.billable ? '<span class="billable-badge">Billable</span>' : '<span class="nonbillable-badge">Non-billable</span>'}</td>
+        </tr>
+      `,
+        )
+        .join('')}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Generated on ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })} &middot; Tickr
+  </div>
+
+  <script>window.print()</script>
+</body>
+</html>`
+
+        const win = window.open('', '_blank')
+        if (win) {
+          win.document.write(html)
+          win.document.close()
+        }
+      } catch (err) {
+        gooeyToast.error('Export failed', {
+          description:
+            err instanceof Error ? err.message : 'Could not generate report.',
+        })
+      } finally {
+        setExportingMonth(null)
+      }
+    },
+    [member.id],
+  )
+
+  // Generate month options: current month and 5 previous months
+  const monthOptions = (() => {
+    const now = new Date()
+    const options: { value: string; label: string }[] = []
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const label = d.toLocaleDateString('en-PH', {
+        month: 'long',
+        year: 'numeric',
+      })
+      options.push({ value: `${y}-${m}`, label })
+    }
+    return options
+  })()
 
   const assignableCohorts = state.cohorts.filter(
     (cohort) => deptId && cohort.departmentId === deptId,
@@ -372,7 +545,7 @@ export const MemberRow = memo(function MemberRow({
               {formatHours(stats?.billableSeconds ?? 0)}
             </TableCell>
 
-            {/* Actions — analytics only */}
+            {/* Actions — analytics + export */}
             <TableCell className="px-5 py-4 align-top">
               <div className="flex items-center gap-1 whitespace-nowrap">
                 <IconBtn
@@ -382,6 +555,60 @@ export const MemberRow = memo(function MemberRow({
                 >
                   <BarChart2 className="h-3.5 w-3.5" />
                 </IconBtn>
+
+                <Popover
+                  open={exportPopoverOpen}
+                  onOpenChange={setExportPopoverOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <IconBtn
+                      onClick={() =>
+                        !exportingMonth && setExportPopoverOpen((v) => !v)
+                      }
+                      title={
+                        exportingMonth
+                          ? 'Generating report…'
+                          : 'Export monthly report'
+                      }
+                      className={
+                        exportPopoverOpen || exportingMonth
+                          ? 'bg-primary/10 text-primary'
+                          : ''
+                      }
+                    >
+                      {exportingMonth ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5" />
+                      )}
+                    </IconBtn>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    sideOffset={4}
+                    className="w-48 p-1"
+                  >
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Select month
+                    </div>
+                    {monthOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleExportMonthlyReport(option.value)}
+                        disabled={!!exportingMonth}
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                      >
+                        {exportingMonth === option.value ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5 text-primary" />
+                        )}
+                        {option.label}
+                      </button>
+                    ))}
+                  </PopoverContent>
+                </Popover>
               </div>
             </TableCell>
           </>

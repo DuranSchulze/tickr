@@ -69,12 +69,19 @@ export function EditEntryDrawer({
 
             <div className="overflow-y-auto p-3 sm:p-4">
               <div className="mb-3 sm:mb-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-                <p className="m-0">
-                  Editing entry from{' '}
-                  <span className="font-semibold text-foreground">
-                    {new Date(entry.startedAt).toLocaleString()}
-                  </span>
-                </p>
+                {!entry.endedAt ? (
+                  <p className="m-0">
+                    Timer is currently running. Changes will be saved without
+                    stopping the timer.
+                  </p>
+                ) : (
+                  <p className="m-0">
+                    Editing entry from{' '}
+                    <span className="font-semibold text-foreground">
+                      {new Date(entry.startedAt).toLocaleString()}
+                    </span>
+                  </p>
+                )}
               </div>
 
               <EntryDraftForm
@@ -87,6 +94,7 @@ export function EditEntryDrawer({
                 onCreateProject={onCreateProject}
                 onCreateTag={onCreateTag}
                 canManageCatalog={canManageCatalog}
+                isRunning={!entry.endedAt}
               />
             </div>
 

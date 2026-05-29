@@ -167,6 +167,7 @@ export const EntryRow = memo(function EntryRow({
               ref={descInputRef}
               className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
               value={draftDesc}
+              maxLength={200}
               onChange={(e) => setDraftDesc(e.target.value)}
               onBlur={commitDesc}
               onKeyDown={(e) => {
@@ -181,7 +182,7 @@ export const EntryRow = memo(function EntryRow({
             <button
               type="button"
               className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
-              title={entry.description}
+              title={entry.description || 'No description'}
               onClick={() => {
                 setDraftDesc(entry.description)
                 setEditDesc(true)

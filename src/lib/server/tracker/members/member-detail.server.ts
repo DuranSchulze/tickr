@@ -20,7 +20,10 @@ import {
   toFiniteRate,
 } from '#/lib/time-tracker/billing'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import {
+  assertAtLeastManager,
+  assertOwnerOrAdmin,
+} from '../shared/role-gates.server'
 import type {
   memberIdSchema,
   updateMemberDetailSchema,
@@ -43,6 +46,7 @@ function emptyToNull<T extends string | undefined>(v: T): string | null {
 
 export async function getMemberDetail(data: z.infer<typeof memberIdSchema>) {
   const access = await requireWorkspaceAccess()
+  assertAtLeastManager(access)
   const canManage =
     access.member.workspaceRole?.permissionLevel === 'OWNER' ||
     access.member.workspaceRole?.permissionLevel === 'ADMIN'

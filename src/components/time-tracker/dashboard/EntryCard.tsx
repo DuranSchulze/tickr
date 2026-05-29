@@ -125,8 +125,11 @@ export const EntryCard = memo(function EntryCard({
         isRunning ? 'border-primary/40 ring-1 ring-primary/20' : 'border-border'
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <p className="m-0 font-semibold leading-snug text-foreground">
+      <div className="flex items-start justify-between gap-2 min-w-0">
+        <p
+          className="m-0 truncate font-semibold leading-snug text-foreground"
+          title={entry.description || undefined}
+        >
           {entry.description || (
             <span className="text-muted-foreground">No description</span>
           )}
