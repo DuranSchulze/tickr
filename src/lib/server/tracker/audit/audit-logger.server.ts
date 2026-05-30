@@ -45,6 +45,8 @@ export type AuditAction =
   | 'EXPORT_MEMBERS'
   | 'EXPORT_ANALYTICS'
   | 'EXPORT_ACTIVITY'
+  // Security
+  | 'SUSPICIOUS_LOGIN_ALERT'
 
 export interface CreateAuditLogInput {
   workspaceId: string
