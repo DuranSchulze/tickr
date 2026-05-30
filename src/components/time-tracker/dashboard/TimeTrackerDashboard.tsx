@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
-import { FileText, ChevronDown, Play, Square } from 'lucide-react'
+import { FileText, Loader2, Play, Square } from 'lucide-react'
 import { gooeyToast } from 'goey-toast'
 import {
   formatDuration,
@@ -29,10 +29,15 @@ import {
   DrawerTitle,
 } from '#/components/ui/drawer'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
+import { Button } from '#/components/ui/button'
 import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
 import { EntriesSection } from './EntriesSection'
@@ -541,14 +546,47 @@ export function TimeTrackerDashboard({
 }
 
 function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
-  const [open, setOpen] = useState(false)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
+  const todayStr = (() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  })()
+
+  function openDialog() {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    setStartDate(`${y}-${m}-01`)
+    setEndDate(`${y}-${m}-${d}`)
+    setDialogOpen(true)
+  }
 
   const handleExport = useCallback(
-    async (month: string) => {
-      setOpen(false)
+    async (sd: string, ed: string) => {
+      setDialogOpen(false)
+      setExporting(true)
+
+      // Open synchronously before any await to avoid popup blockers.
+      const win = window.open('', '_blank')
+      if (!win) {
+        gooeyToast.error('Pop-ups blocked', {
+          description: 'Allow pop-ups for this site to open the report.',
+        })
+        setExporting(false)
+        return
+      }
+
       try {
         const report = await getMemberMonthlyReportFn({
-          data: { memberId: currentMemberId, month },
+          data: { memberId: currentMemberId, startDate: sd, endDate: ed },
         })
 
         const pad = (n: number) => String(n).padStart(2, '0')
@@ -566,12 +604,13 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
           const m = Math.floor((s % 3600) / 60)
           return `${h}h ${pad(m)}m`
         }
-
-        const [year, mon] = month.split('-')
-        const monthName = new Date(
-          Number(year),
-          Number(mon) - 1,
-        ).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+        const fmtShort = (iso: string) =>
+          new Date(iso + 'T00:00:00').toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        const dateRangeLabel = `${fmtShort(sd)} – ${fmtShort(ed)}`
 
         const totalHrs = fmtHrs(report.summary.totalSeconds)
         const billableHrs = fmtHrs(report.summary.billableSeconds)
@@ -580,7 +619,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>My Time Report - ${monthName}</title>
+  <title>My Time Report - ${dateRangeLabel}</title>
   <style>
     @page { margin: 1.5cm; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #1a1a1a; }
@@ -607,7 +646,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
   <div class="header">
     <h1>My Time Report</h1>
     <p>${report.memberName} &middot; ${report.memberEmail}</p>
-    <p>${monthName}</p>
+    <p>${dateRangeLabel}</p>
   </div>
 
   <div class="summary-row">
@@ -670,64 +709,88 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
 </body>
 </html>`
 
-        const win = window.open('', '_blank')
-        if (win) {
-          win.document.write(html)
-          win.document.close()
-        }
-      } catch {
-        // silently fail
+        win.document.write(html)
+        win.document.close()
+      } catch (err) {
+        win.close()
+        gooeyToast.error('Export failed', {
+          description:
+            err instanceof Error ? err.message : 'Could not generate report.',
+        })
+      } finally {
+        setExporting(false)
       }
     },
     [currentMemberId],
   )
 
-  const monthOptions = (() => {
-    const now = new Date()
-    const options: { value: string; label: string }[] = []
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const label = d.toLocaleDateString('en-PH', {
-        month: 'long',
-        year: 'numeric',
-      })
-      options.push({ value: `${y}-${m}`, label })
-    }
-    return options
-  })()
-
   return (
-    <div className="flex items-center gap-2">
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-          >
-            <FileText className="h-4 w-4" />
-            Export my time
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="end" sideOffset={4} className="w-48 p-1">
-          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-            Select month
+    <>
+      <button
+        type="button"
+        onClick={openDialog}
+        disabled={exporting}
+        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+      >
+        {exporting ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <FileText className="h-4 w-4" />
+        )}
+        Export my time
+      </button>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Export My Time Report</DialogTitle>
+            <DialogDescription>
+              Choose a date range to include in your personal time report.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Start date
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                max={endDate || todayStr}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                End date
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                max={todayStr}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
           </div>
-          {monthOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleExport(option.value)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent"
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => handleExport(startDate, endDate)}
+              disabled={!startDate || !endDate || startDate > endDate}
             >
-              <FileText className="h-3.5 w-3.5 text-primary" />
-              {option.label}
-            </button>
-          ))}
-        </PopoverContent>
-      </Popover>
-    </div>
+              <FileText className="mr-2 h-4 w-4" />
+              Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

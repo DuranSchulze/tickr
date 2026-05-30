@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Search } from 'lucide-react'
 import type { TrackerState } from '#/lib/time-tracker/types'
+import { CatalogSearchBar } from '#/components/time-tracker/catalogs/CatalogTableLayout'
 
 export function MembersFilterBar({
   state,
@@ -33,38 +32,19 @@ export function MembersFilterBar({
   hasActiveFilters: boolean
   onClear: () => void
 }) {
-  const [localSearch, setLocalSearch] = useState(search)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Sync localSearch when the committed value is cleared from outside (e.g. Clear button).
-  useEffect(() => {
-    if (search === '') setLocalSearch('')
-  }, [search])
-
-  function handleSearchInput(value: string) {
-    setLocalSearch(value)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      onSearchChange(value)
-    }, 300)
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-      <div className="relative min-w-[180px] flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="search"
+    <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
+      <div className="min-w-[180px] flex-1 max-w-xs">
+        <CatalogSearchBar
+          value={search}
+          onChange={onSearchChange}
           placeholder="Search by name or email…"
-          value={localSearch}
-          onChange={(e) => handleSearchInput(e.target.value)}
-          className="h-9 w-full rounded-lg border border-border bg-card pl-8 pr-3 text-sm text-foreground outline-none focus:border-primary"
         />
       </div>
       <select
         value={filterRole}
         onChange={(e) => onFilterRoleChange(e.target.value)}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All roles</option>
         {state.roles.map((r) => (
@@ -76,7 +56,7 @@ export function MembersFilterBar({
       <select
         value={filterDept}
         onChange={(e) => onFilterDeptChange(e.target.value)}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All departments</option>
         {state.departments.map((d) => (
@@ -88,7 +68,7 @@ export function MembersFilterBar({
       <select
         value={filterCohort}
         onChange={(e) => onFilterCohortChange(e.target.value)}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All cohorts</option>
         {cohortFilterOptions.map((cohort) => (
@@ -100,7 +80,7 @@ export function MembersFilterBar({
       <select
         value={filterStatus}
         onChange={(e) => onFilterStatusChange(e.target.value)}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All statuses</option>
         <option value="ACTIVE">Active</option>

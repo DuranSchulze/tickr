@@ -84,7 +84,8 @@ const departmentDashboardSchema = z.object({
 
 const memberMonthlyReportSchema = z.object({
   memberId: z.string().min(1),
-  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  startDate: z.string().date(), // YYYY-MM-DD
+  endDate: z.string().date(), // YYYY-MM-DD
 })
 
 const paginatedMembersSchema = z.object({
@@ -178,6 +179,13 @@ export const exportAnalyticsCsvFn = createServerFn({ method: 'POST' })
     const { exportAnalyticsCsv } = await import('./tracker/export.server')
     return exportAnalyticsCsv(data)
   })
+
+export const exportActivityCsvFn = createServerFn({ method: 'POST' }).handler(
+  async () => {
+    const { exportActivityCsv } = await import('./tracker/export.server')
+    return exportActivityCsv()
+  },
+)
 
 export const startTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => startTimerSchema.parse(input))

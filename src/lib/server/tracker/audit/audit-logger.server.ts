@@ -44,6 +44,7 @@ export type AuditAction =
   // Exports
   | 'EXPORT_MEMBERS'
   | 'EXPORT_ANALYTICS'
+  | 'EXPORT_ACTIVITY'
 
 export interface CreateAuditLogInput {
   workspaceId: string

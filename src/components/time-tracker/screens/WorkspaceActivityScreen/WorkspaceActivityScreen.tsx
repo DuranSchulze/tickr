@@ -1,8 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
+import {
+  ExportMenu,
+  downloadCsv,
+} from '#/components/time-tracker/shared/ExportMenu'
+import {
+  exportActivityCsvFn,
+  getWorkspaceActivityFn,
+} from '#/lib/server/tracker'
 import { Page } from '../shared/Page'
 import { MemberActivityCard } from './MemberActivityCard'
-import { getWorkspaceActivityFn } from '#/lib/server/tracker'
 import type { WorkspaceMemberActivity } from '#/lib/server/tracker/activity.server'
 
 const POLL_INTERVAL = 30_000
@@ -54,12 +61,23 @@ export function WorkspaceActivityScreen() {
           {' · '}
           {total} total members
         </p>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <RefreshCw
-            className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`}
-            aria-hidden="true"
+        <div className="flex items-center gap-2">
+          <ExportMenu
+            onExportCsv={async () => {
+              const csv = await exportActivityCsvFn()
+              downloadCsv(
+                csv,
+                `activity-${new Date().toISOString().slice(0, 10)}.csv`,
+              )
+            }}
           />
-          {lastRefreshed && <span>Updated {lastRefreshed}</span>}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <RefreshCw
+              className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`}
+              aria-hidden="true"
+            />
+            {lastRefreshed && <span>Updated {lastRefreshed}</span>}
+          </div>
         </div>
       </div>
 

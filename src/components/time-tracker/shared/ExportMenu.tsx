@@ -6,6 +6,7 @@ import {
   Printer,
   RefreshCcw,
 } from 'lucide-react'
+import { gooeyToast } from 'goey-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +43,11 @@ export function ExportMenu({
     setLoading(true)
     try {
       await onExportCsv()
+    } catch (err) {
+      gooeyToast.error('Export failed', {
+        description:
+          err instanceof Error ? err.message : 'Could not generate CSV.',
+      })
     } finally {
       setLoading(false)
     }
@@ -52,6 +58,11 @@ export function ExportMenu({
     setSyncing(true)
     try {
       await onSyncToSheet()
+    } catch (err) {
+      gooeyToast.error('Sync failed', {
+        description:
+          err instanceof Error ? err.message : 'Could not sync to sheet.',
+      })
     } finally {
       setSyncing(false)
     }

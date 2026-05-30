@@ -10,7 +10,7 @@ import {
   users,
   workspaces,
 } from '#/db/schema'
-import { and, eq, gte, lt, inArray, isNotNull, sql } from 'drizzle-orm'
+import { and, eq, gte, lt, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 
@@ -31,7 +31,8 @@ export type MemberMonthlyReport = {
   memberId: string
   memberName: string
   memberEmail: string
-  month: string // YYYY-MM
+  startDate: string // YYYY-MM-DD
+  endDate: string // YYYY-MM-DD
   currency: string
   entries: MemberMonthlyReportEntry[]
   summary: {
@@ -51,7 +52,8 @@ export type MemberMonthlyReport = {
  */
 export async function getMemberMonthlyReport(data: {
   memberId: string
-  month: string // YYYY-MM
+  startDate: string // YYYY-MM-DD
+  endDate: string // YYYY-MM-DD
 }): Promise<MemberMonthlyReport> {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
@@ -86,12 +88,14 @@ export async function getMemberMonthlyReport(data: {
     }
   }
 
-  // Parse month boundaries
-  const [yearStr, monthStr] = data.month.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr) - 1 // 0-indexed
-  const startDate = new Date(year, month, 1)
-  const endDate = new Date(year, month + 1, 1)
+  // Build inclusive date boundaries from the selected range.
+  // startDate is midnight at the start of the first day;
+  // endDate is midnight at the start of the day AFTER the last day so the
+  // existing lt(...) condition keeps endDate entries inclusive.
+  const startDate = new Date(data.startDate + 'T00:00:00')
+  const endDate = new Date(
+    new Date(data.endDate + 'T00:00:00').getTime() + 86_400_000,
+  )
 
   // Get workspace defaults
   const [workspaceRow] = await db
@@ -215,7 +219,8 @@ export async function getMemberMonthlyReport(data: {
     memberId: data.memberId,
     memberName: memberRow.name ?? memberRow.email,
     memberEmail: memberRow.email,
-    month: data.month,
+    startDate: data.startDate,
+    endDate: data.endDate,
     currency,
     entries,
     summary: {

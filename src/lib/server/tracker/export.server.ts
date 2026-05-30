@@ -13,11 +13,22 @@ import {
   tags,
   timeEntryTags,
 } from '#/db/schema'
-import { and, asc, desc, eq, inArray, isNotNull, lt, gte } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  gte,
+} from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
 import { getAnalyticsDateRange } from './shared/dates'
+import { assertOwnerOrAdmin } from './shared/role-gates.server'
 import type { analyticsRangeSchema } from './shared/schemas'
 import {
   computeEffectiveRate,
@@ -406,4 +417,79 @@ export async function exportAnalyticsCsv(
   })
 
   return buildCsv(rows)
+}
+
+export async function exportActivityCsv(): Promise<string> {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const rows = await db
+    .select({
+      memberId: workspaceMembers.id,
+      userId: workspaceMembers.userId,
+      name: users.name,
+      email: workspaceMembers.email,
+      status: workspaceMembers.status,
+      entryId: timeEntries.id,
+      description: timeEntries.description,
+      projectName: projects.name,
+      startedAt: timeEntries.startedAt,
+    })
+    .from(workspaceMembers)
+    .innerJoin(users, eq(workspaceMembers.userId, users.id))
+    .leftJoin(
+      timeEntries,
+      and(
+        eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+        isNull(timeEntries.endedAt),
+      ),
+    )
+    .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, access.workspace.id),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .orderBy(asc(users.name))
+
+  const headers: (string | number)[] = [
+    'Name',
+    'Email',
+    'Status',
+    'Active Entry',
+    'Project',
+    'Started At',
+  ]
+
+  const csvRows: (string | number | null | undefined)[][] = [
+    ['Activity Export'],
+    ['Workspace', access.workspace.name],
+    ['Generated', new Date().toISOString().slice(0, 10)],
+    [],
+    headers,
+  ]
+
+  for (const row of rows) {
+    const isOnline = row.entryId !== null
+    csvRows.push([
+      row.name ?? row.email,
+      row.email,
+      isOnline ? 'Online' : 'Offline',
+      isOnline ? row.description || 'No description' : '',
+      isOnline ? (row.projectName ?? 'No project') : '',
+      isOnline && row.startedAt ? row.startedAt.toISOString() : '',
+    ])
+  }
+
+  void createAuditLog({
+    workspaceId: access.workspace.id,
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: 'EXPORT_ACTIVITY',
+    targetType: 'workspace',
+    targetId: access.workspace.id,
+  })
+
+  return buildCsv(csvRows)
 }

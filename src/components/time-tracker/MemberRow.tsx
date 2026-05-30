@@ -1,15 +1,34 @@
 import { memo, useCallback, useState } from 'react'
-import type { ReactNode } from 'react'
 import { Link } from '@tanstack/react-router'
-import { BarChart2, FileText, Loader2, Pencil } from 'lucide-react'
+import {
+  BarChart2,
+  CheckCircle,
+  FileText,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  UserX,
+} from 'lucide-react'
 import { gooeyToast } from 'goey-toast'
+import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { TableCell, TableRow } from '#/components/ui/table'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import {
   computeEffectiveRate,
   formatCurrency,
@@ -23,63 +42,11 @@ import { useMemberRow } from './useMemberRow'
 
 type Member = TrackerState['members'][number]
 
-function IconBtn({
-  onClick,
-  title,
-  children,
-  className = '',
-}: {
-  onClick: () => void
-  title: string
-  children: ReactNode
-  className?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`rounded p-1 text-muted-foreground transition-colors hover:text-foreground ${className}`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function MemberStatusControl({
-  status,
-  canToggle,
-  pending,
-  onToggle,
-}: {
-  status: string
-  canToggle: boolean
-  pending: boolean
-  onToggle: () => void
-}) {
-  const styles: Record<string, string> = {
-    ACTIVE: 'bg-primary/15 text-primary',
-    INVITED:
-      'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
-    DISABLED: 'bg-destructive/15 text-destructive',
-  }
-  const className = `rounded-lg px-2 py-1 text-xs font-bold ${styles[status] ?? 'bg-muted text-foreground'}`
-
-  if (!canToggle) {
-    return <span className={className}>{status}</span>
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={pending}
-      title={status === 'DISABLED' ? 'Reactivate member' : 'Disable member'}
-      className={`${className} transition-colors hover:bg-accent disabled:opacity-50`}
-    >
-      {pending ? 'UPDATING' : status}
-    </button>
-  )
+const STATUS_STYLES: Record<string, string> = {
+  ACTIVE: 'bg-primary/15 text-primary',
+  INVITED:
+    'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+  DISABLED: 'bg-destructive/15 text-destructive',
 }
 
 export const MemberRow = memo(function MemberRow({
@@ -126,16 +93,39 @@ export const MemberRow = memo(function MemberRow({
     toggleCohort,
   } = useMemberRow(member)
 
-  const [exportPopoverOpen, setExportPopoverOpen] = useState(false)
-  const [exportingMonth, setExportingMonth] = useState<string | null>(null)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [exportStartDate, setExportStartDate] = useState('')
+  const [exportEndDate, setExportEndDate] = useState('')
+  const [exporting, setExporting] = useState(false)
 
-  const handleExportMonthlyReport = useCallback(
-    async (month: string) => {
-      setExportPopoverOpen(false)
-      setExportingMonth(month)
+  function openExportDialog() {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    setExportStartDate(`${y}-${m}-01`)
+    setExportEndDate(`${y}-${m}-${d}`)
+    setExportDialogOpen(true)
+  }
+
+  const handleExportReport = useCallback(
+    async (startDate: string, endDate: string) => {
+      setExportDialogOpen(false)
+      setExporting(true)
+
+      // Open before any await so popup blockers don't block it.
+      const win = window.open('', '_blank')
+      if (!win) {
+        gooeyToast.error('Pop-ups blocked', {
+          description: 'Allow pop-ups for this site to open the report.',
+        })
+        setExporting(false)
+        return
+      }
+
       try {
         const report = await getMemberMonthlyReportFn({
-          data: { memberId: member.id, month },
+          data: { memberId: member.id, startDate, endDate },
         })
 
         const pad = (n: number) => String(n).padStart(2, '0')
@@ -154,11 +144,13 @@ export const MemberRow = memo(function MemberRow({
           return `${h}h ${pad(m)}m`
         }
 
-        const [year, mon] = month.split('-')
-        const monthName = new Date(
-          Number(year),
-          Number(mon) - 1,
-        ).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })
+        const fmtShort = (iso: string) =>
+          new Date(iso + 'T00:00:00').toLocaleDateString('en-PH', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+          })
+        const dateRangeLabel = `${fmtShort(startDate)} – ${fmtShort(endDate)}`
 
         const totalHrs = fmtHrs(report.summary.totalSeconds)
         const billableHrs = fmtHrs(report.summary.billableSeconds)
@@ -167,7 +159,7 @@ export const MemberRow = memo(function MemberRow({
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Time Report - ${report.memberName} - ${monthName}</title>
+  <title>Time Report - ${report.memberName} - ${dateRangeLabel}</title>
   <style>
     @page { margin: 1.5cm; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #1a1a1a; }
@@ -195,7 +187,7 @@ export const MemberRow = memo(function MemberRow({
   <div class="header">
     <h1>Time Entry Report</h1>
     <p>${report.memberName} &middot; ${report.memberEmail}</p>
-    <p>${monthName}</p>
+    <p>${dateRangeLabel}</p>
   </div>
 
   <div class="summary-row">
@@ -258,38 +250,27 @@ export const MemberRow = memo(function MemberRow({
 </body>
 </html>`
 
-        const win = window.open('', '_blank')
-        if (win) {
-          win.document.write(html)
-          win.document.close()
-        }
+        win.document.write(html)
+        win.document.close()
       } catch (err) {
+        win.close()
         gooeyToast.error('Export failed', {
           description:
             err instanceof Error ? err.message : 'Could not generate report.',
         })
       } finally {
-        setExportingMonth(null)
+        setExporting(false)
       }
     },
     [member.id],
   )
 
-  // Generate month options: current month and 5 previous months
-  const monthOptions = (() => {
+  const todayStr = (() => {
     const now = new Date()
-    const options: { value: string; label: string }[] = []
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const label = d.toLocaleDateString('en-PH', {
-        month: 'long',
-        year: 'numeric',
-      })
-      options.push({ value: `${y}-${m}`, label })
-    }
-    return options
+    const y = now.getFullYear()
+    const m = String(now.getMonth() + 1).padStart(2, '0')
+    const d = String(now.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
   })()
 
   const assignableCohorts = state.cohorts.filter(
@@ -299,7 +280,7 @@ export const MemberRow = memo(function MemberRow({
   return (
     <>
       <TableRow className="border-t border-border">
-        {/* Member — links to detail page, not inline editable */}
+        {/* Member — links to detail page */}
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           <Link
             to="/app/workspace/members/$memberId"
@@ -313,7 +294,7 @@ export const MemberRow = memo(function MemberRow({
           </p>
         </TableCell>
 
-        {/* Role */}
+        {/* Role — inline editable for canManage */}
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           {editingField === 'role' && canManage ? (
             <select
@@ -358,7 +339,7 @@ export const MemberRow = memo(function MemberRow({
           )}
         </TableCell>
 
-        {/* Department */}
+        {/* Department — inline editable for canManage */}
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           {editingField === 'dept' && canManage ? (
             <select
@@ -406,7 +387,7 @@ export const MemberRow = memo(function MemberRow({
           )}
         </TableCell>
 
-        {/* Groups / Cohorts */}
+        {/* Groups / Cohorts — inline editable for canManage */}
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           {editingField === 'cohorts' && canManage ? (
             <div className="grid gap-2">
@@ -473,19 +454,18 @@ export const MemberRow = memo(function MemberRow({
           )}
         </TableCell>
 
-        {/* Status */}
+        {/* Status — display-only badge; toggle lives in the actions dropdown */}
         <TableCell className="whitespace-nowrap px-5 py-4 align-top">
-          <MemberStatusControl
-            status={member.status}
-            canToggle={canManage && !isSelf}
-            pending={pending}
-            onToggle={handleToggleStatus}
-          />
+          <span
+            className={`rounded-lg px-2 py-1 text-xs font-bold ${STATUS_STYLES[member.status] ?? 'bg-muted text-foreground'}`}
+          >
+            {member.status}
+          </span>
         </TableCell>
 
         {canManage && (
           <>
-            {/* Rate */}
+            {/* Billable Rate — inline editable */}
             <TableCell className="overflow-hidden px-5 py-4 align-top">
               {editingField === 'rate' ? (
                 <div className="grid gap-1">
@@ -535,6 +515,7 @@ export const MemberRow = memo(function MemberRow({
               )}
             </TableCell>
 
+            {/* Stats */}
             <TableCell className="whitespace-nowrap px-5 py-4 text-right align-top text-sm tabular-nums text-muted-foreground">
               {formatHours(stats?.thisWeekSeconds ?? 0)}
             </TableCell>
@@ -545,70 +526,63 @@ export const MemberRow = memo(function MemberRow({
               {formatHours(stats?.billableSeconds ?? 0)}
             </TableCell>
 
-            {/* Actions — analytics + export */}
+            {/* Actions — MoreHorizontal dropdown matching the catalog pattern */}
             <TableCell className="px-5 py-4 align-top">
-              <div className="flex items-center gap-1 whitespace-nowrap">
-                <IconBtn
-                  onClick={() => setShowAnalytics((v) => !v)}
-                  title="View analytics"
-                  className={showAnalytics ? 'bg-primary/10 text-primary' : ''}
-                >
-                  <BarChart2 className="h-3.5 w-3.5" />
-                </IconBtn>
-
-                <Popover
-                  open={exportPopoverOpen}
-                  onOpenChange={setExportPopoverOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <IconBtn
-                      onClick={() =>
-                        !exportingMonth && setExportPopoverOpen((v) => !v)
-                      }
-                      title={
-                        exportingMonth
-                          ? 'Generating report…'
-                          : 'Export monthly report'
-                      }
-                      className={
-                        exportPopoverOpen || exportingMonth
-                          ? 'bg-primary/10 text-primary'
-                          : ''
-                      }
-                    >
-                      {exportingMonth ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <FileText className="h-3.5 w-3.5" />
-                      )}
-                    </IconBtn>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="end"
-                    sideOffset={4}
-                    className="w-48 p-1"
+              <div className="flex justify-end">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    disabled={pending || exporting}
+                    className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    aria-label="Member actions"
                   >
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                      Select month
-                    </div>
-                    {monthOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => handleExportMonthlyReport(option.value)}
-                        disabled={!!exportingMonth}
-                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-                      >
-                        {exportingMonth === option.value ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                        ) : (
-                          <FileText className="h-3.5 w-3.5 text-primary" />
-                        )}
-                        {option.label}
-                      </button>
-                    ))}
-                  </PopoverContent>
-                </Popover>
+                    {exporting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MoreHorizontal className="h-4 w-4" />
+                    )}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => setShowAnalytics((v) => !v)}
+                    >
+                      <BarChart2 className="mr-2 h-4 w-4" />
+                      {showAnalytics ? 'Hide analytics' : 'View analytics'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={openExportDialog}
+                      disabled={exporting}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Export report
+                    </DropdownMenuItem>
+                    {!isSelf && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={handleToggleStatus}
+                          disabled={pending}
+                          className={
+                            member.status !== 'DISABLED'
+                              ? 'text-destructive focus:text-destructive'
+                              : ''
+                          }
+                        >
+                          {member.status === 'DISABLED' ? (
+                            <>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Enable member
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="mr-2 h-4 w-4" />
+                              Disable member
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </TableCell>
           </>
@@ -623,6 +597,67 @@ export const MemberRow = memo(function MemberRow({
           state={state}
         />
       )}
+
+      {/* Export date-range dialog */}
+      <Dialog open={exportDialogOpen} onOpenChange={setExportDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Export Time Report</DialogTitle>
+            <DialogDescription>
+              Choose a date range to include in the report for{' '}
+              <span className="font-semibold text-foreground">
+                {member.name}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                Start date
+              </label>
+              <input
+                type="date"
+                value={exportStartDate}
+                max={exportEndDate || todayStr}
+                onChange={(e) => setExportStartDate(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <label className="text-xs font-semibold text-foreground">
+                End date
+              </label>
+              <input
+                type="date"
+                value={exportEndDate}
+                min={exportStartDate || undefined}
+                max={todayStr}
+                onChange={(e) => setExportEndDate(e.target.value)}
+                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              onClick={() => handleExportReport(exportStartDate, exportEndDate)}
+              disabled={
+                !exportStartDate ||
+                !exportEndDate ||
+                exportStartDate > exportEndDate
+              }
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Generate PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 })

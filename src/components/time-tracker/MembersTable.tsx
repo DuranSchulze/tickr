@@ -85,8 +85,8 @@ export function MembersTable({
 
   return (
     <div className="min-w-0 overflow-x-auto">
-      <Table className="min-w-[1120px] table-fixed">
-        <TableHeader className="whitespace-nowrap bg-muted text-xs uppercase tracking-wide text-muted-foreground">
+      <Table className="min-w-[900px]">
+        <TableHeader className="whitespace-nowrap bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -197,27 +197,27 @@ function useMembersColumns(canManage: boolean) {
         id: 'member',
         header: 'Member',
         size: 220,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3' },
       }),
       columnHelper.accessor('roleName', {
         header: 'Role',
         size: 150,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3' },
       }),
       columnHelper.accessor('departmentId', {
         header: 'Department',
         size: 160,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3' },
       }),
       columnHelper.accessor('cohortIds', {
         header: 'Groups / cohorts',
         size: 220,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3' },
       }),
       columnHelper.accessor('status', {
         header: 'Status',
         size: 120,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3' },
       }),
     ]
 
@@ -228,31 +228,31 @@ function useMembersColumns(canManage: boolean) {
       columnHelper.accessor('billableRate', {
         header: 'Rate',
         size: 160,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'thisWeek',
         header: 'This week',
         size: 110,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'total',
         header: 'Total',
         size: 110,
-        meta: { headerClassName: 'whitespace-nowrap px-5 py-3 text-right' },
+        meta: { headerClassName: 'whitespace-nowrap px-4 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'billable',
         header: 'Billable',
         size: 110,
-        meta: { headerClassName: 'px-5 py-3 text-right' },
+        meta: { headerClassName: 'px-4 py-3 text-right' },
       }),
       columnHelper.display({
         id: 'actions',
         header: '',
         size: 60,
-        meta: { headerClassName: 'px-5 py-3' },
+        meta: { headerClassName: 'px-4 py-3' },
       }),
     ]
   }, [canManage])
