@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.4.1",
+  "appVersion": "1.5.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,39 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.4.2",
+      "publishedAt": "2026-06-01",
+      "title": "Member Row Export Button & Activity CSV Export",
+      "body": "Per-user PDF export for time entries on the Members table and Activity page, plus a global CSV export for the workspace activity view.",
+      "features": [
+        {
+          "title": "Per-User Export Button on Members Table",
+          "description": "Each member row in the workspace members table now has a labeled Export button (instead of a hidden icon). Click to pick a month and generate a print-ready PDF report with all time entries, billable amounts, and summary cards.",
+          "image": null
+        },
+        {
+          "title": "Export Button on Activity Cards",
+          "description": "Each member card on the Team Activity page now has an Export button. Same month-picker and PDF report generation as the members table — perfect for getting a quick report on any team member.",
+          "image": null
+        },
+        {
+          "title": "Global Activity CSV Export",
+          "description": "A new Export dropdown in the activity page header provides CSV export of all member activity data (online/offline status, active entries, project names).",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Manage Members",
+          "to": "/app/workspace/members"
+        },
+        {
+          "label": "View Activity",
+          "to": "/app/workspace/activity"
+        }
+      ]
+    },
     {
       "version": "1.4.1",
       "publishedAt": "2026-05-28",
