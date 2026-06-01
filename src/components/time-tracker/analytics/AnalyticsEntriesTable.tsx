@@ -114,10 +114,15 @@ export function AnalyticsEntriesTable({
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
-                  <td className="max-w-[200px] truncate px-4 py-2.5 text-xs text-foreground">
-                    {entry.description || (
-                      <span className="text-muted-foreground">Untitled</span>
-                    )}
+                  <td className="px-4 py-2.5 text-xs text-foreground">
+                    <div
+                      className="max-w-[260px] truncate"
+                      title={entry.description || undefined}
+                    >
+                      {entry.description || (
+                        <span className="text-muted-foreground">Untitled</span>
+                      )}
+                    </div>
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono font-semibold text-foreground">
                     {formatDuration(entry.durationSeconds)}

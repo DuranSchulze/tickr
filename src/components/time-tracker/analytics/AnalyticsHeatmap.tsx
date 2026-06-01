@@ -195,7 +195,10 @@ function RankingRows({
               />
             )}
             <div className="min-w-0">
-              <p className="m-0 truncate text-sm font-bold text-foreground">
+              <p
+                className="m-0 truncate text-sm font-bold text-foreground"
+                title={item.name}
+              >
                 {item.name}
               </p>
               <p className="m-0 mt-0.5 text-xs text-muted-foreground">

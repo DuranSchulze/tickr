@@ -260,8 +260,13 @@ export function AnalyticsScreen({
                 <td className="px-2 py-1.5">
                   {entry.tagNames.join(', ') || '—'}
                 </td>
-                <td className="px-2 py-1.5 max-w-[300px] truncate">
-                  {entry.description || '—'}
+                <td className="px-2 py-1.5">
+                  <div
+                    className="max-w-[300px] truncate"
+                    title={entry.description || undefined}
+                  >
+                    {entry.description || '—'}
+                  </div>
                 </td>
                 <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
                   {formatDuration(entry.durationSeconds)}

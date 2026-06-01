@@ -138,10 +138,10 @@ export function TimerPanel({
     : ''
 
   return (
-    <div className="grid gap-3">
+    <div className="grid min-w-0 gap-3">
       <div
         className={
-          'grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] md:grid-cols-[minmax(0,1fr)_160px_44px_auto_130px] lg:grid-cols-[minmax(0,1fr)_180px_180px_44px_auto_130px]'
+          'grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] md:grid-cols-[minmax(0,1fr)_160px_44px_auto_130px] lg:grid-cols-[minmax(0,1fr)_180px_180px_44px_auto_130px]'
         }
       >
         <DescriptionAutocomplete
@@ -234,7 +234,7 @@ export function TimerPanel({
       )}
 
       {activeEntry && (
-        <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 sm:p-4">
+        <div className="min-w-0 rounded-lg border border-primary/30 bg-primary/10 p-3 sm:p-4">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-0">
             <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
               Running now

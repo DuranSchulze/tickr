@@ -391,7 +391,7 @@ export function TimeTrackerDashboard({
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid min-w-0 gap-6">
       {!isOnline && (
         <div
           role="status"
@@ -423,7 +423,7 @@ export function TimeTrackerDashboard({
       />
 
       {/* Desktop: inline input section */}
-      <div className="hidden sm:block">
+      <div className="hidden min-w-0 sm:block">
         <InputSection {...inputSectionProps} />
       </div>
 

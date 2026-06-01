@@ -90,7 +90,7 @@ export function InputSection({
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
       <div className="flex border-b border-border">
         <button
           type="button"

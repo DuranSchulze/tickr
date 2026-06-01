@@ -266,7 +266,7 @@ export function AllEntriesSection({
 
               {/* Desktop table */}
               <div className="hidden border-t border-border/40 sm:block">
-                <Table>
+                <Table className="table-fixed">
                   <TableHeader className="bg-muted/60">
                     <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
                       <TableHead className="px-4 py-2.5 w-[32%] text-muted-foreground font-medium">
