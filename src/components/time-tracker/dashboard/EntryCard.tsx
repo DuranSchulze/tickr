@@ -127,7 +127,7 @@ export const EntryCard = memo(function EntryCard({
     >
       <div className="flex items-start justify-between gap-2 min-w-0">
         <p
-          className="m-0 truncate font-semibold leading-snug text-foreground"
+          className="m-0 min-w-0 truncate font-semibold leading-snug text-foreground"
           title={entry.description || undefined}
         >
           {entry.description || (

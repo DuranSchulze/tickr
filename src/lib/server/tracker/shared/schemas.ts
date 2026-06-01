@@ -2,8 +2,14 @@ import { z } from 'zod'
 
 // ─── Entries ──────────────────────────────────────────────────────────────────
 
+/** Max length for a time-entry / task description (kept in sync with client inputs). */
+export const MAX_DESCRIPTION_LENGTH = 200
+
+const descriptionRequired = z.string().trim().min(1).max(MAX_DESCRIPTION_LENGTH)
+const descriptionOptional = z.string().trim().max(MAX_DESCRIPTION_LENGTH)
+
 export const entryInputSchema = z.object({
-  description: z.string().trim().min(1),
+  description: descriptionRequired,
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
@@ -14,7 +20,7 @@ export const entryInputSchema = z.object({
 })
 
 export const startTimerSchema = z.object({
-  description: z.string().trim().default(''),
+  description: descriptionOptional.default(''),
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
@@ -22,7 +28,7 @@ export const startTimerSchema = z.object({
 
 export const updateActiveTimerSchema = z.object({
   id: z.string().min(1),
-  description: z.string().trim().default(''),
+  description: descriptionOptional.default(''),
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
@@ -35,7 +41,7 @@ export const entryIdSchema = z.object({
 
 export const stopTimerSchema = z.object({
   id: z.string().min(1),
-  description: z.string().trim().optional(),
+  description: descriptionOptional.optional(),
   projectId: z.string().optional(),
   tagIds: z.array(z.string().min(1)).optional(),
   billable: z.boolean().optional(),
