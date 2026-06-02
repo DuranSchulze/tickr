@@ -2,15 +2,19 @@ import { Check, X } from 'lucide-react'
 import { cn } from '#/lib/utils'
 import {
   PASSWORD_RULES,
+  PASSWORD_RULE_COUNT,
   STRENGTH_LABELS,
   getPasswordStrength,
 } from '#/lib/auth-validation'
 
+// Indexed by the number of passed rules (0…PASSWORD_RULE_COUNT). The top
+// (green) colour is only used when every rule passes.
 const STRENGTH_COLORS = [
   '',
   'bg-red-500',
   'bg-orange-400',
   'bg-yellow-400',
+  'bg-lime-500',
   'bg-green-500',
 ] as const
 
@@ -25,19 +29,21 @@ export function PasswordStrengthChecklist({ password }: Props) {
 
   return (
     <div className="mt-2 grid max-h-24 gap-2 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {/* Strength bar */}
+      {/* Strength bar — one segment per requirement */}
       <div className="flex items-center gap-2">
         <div className="flex flex-1 gap-1">
-          {[1, 2, 3, 4].map((level) => (
-            <div
-              key={level}
-              role="none"
-              className={cn(
-                'h-1.5 flex-1 rounded-full transition-colors duration-300',
-                strength >= level ? STRENGTH_COLORS[strength] : 'bg-muted',
-              )}
-            />
-          ))}
+          {Array.from({ length: PASSWORD_RULE_COUNT }, (_, i) => i + 1).map(
+            (level) => (
+              <div
+                key={level}
+                role="none"
+                className={cn(
+                  'h-1.5 flex-1 rounded-full transition-colors duration-300',
+                  strength >= level ? STRENGTH_COLORS[strength] : 'bg-muted',
+                )}
+              />
+            ),
+          )}
         </div>
         {strength > 0 && (
           <span className="w-20 shrink-0 text-right text-xs font-medium text-muted-foreground">

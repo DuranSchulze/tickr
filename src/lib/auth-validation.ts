@@ -51,8 +51,8 @@ export interface PasswordRule {
 export const PASSWORD_RULES: PasswordRule[] = [
   {
     id: 'length',
-    label: 'At least 12 characters',
-    test: (pw) => pw.length >= 12,
+    label: 'At least 8 characters',
+    test: (pw) => pw.length >= 8,
   },
   {
     id: 'uppercase',
@@ -76,13 +76,22 @@ export const PASSWORD_RULES: PasswordRule[] = [
   },
 ]
 
-export function getPasswordStrength(pw: string): 0 | 1 | 2 | 3 | 4 {
-  const passed = PASSWORD_RULES.filter((r) => r.test(pw)).length
-  return Math.min(4, passed) as 0 | 1 | 2 | 3 | 4
+/** Total number of rules a password must satisfy to be valid. */
+export const PASSWORD_RULE_COUNT = PASSWORD_RULES.length
+
+/**
+ * Number of rules the password currently passes (0…PASSWORD_RULE_COUNT).
+ * The top score is only reached when every rule passes, so the strength
+ * meter stays consistent with the checklist and the submit validation.
+ */
+export function getPasswordStrength(pw: string): number {
+  return PASSWORD_RULES.filter((r) => r.test(pw)).length
 }
 
+/** Indexed by the number of passed rules (0…PASSWORD_RULE_COUNT). */
 export const STRENGTH_LABELS = [
   '',
+  'Very Weak',
   'Weak',
   'Fair',
   'Strong',
