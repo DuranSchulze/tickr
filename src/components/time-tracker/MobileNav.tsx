@@ -8,7 +8,6 @@ import {
   CalendarDays,
   ChevronDown,
   Cog,
-  LayoutGrid,
   Menu,
   Timer,
   TrendingUp,
@@ -35,7 +34,6 @@ export const MobileNav = memo(function ({
   analyticsActive,
   performanceActive,
   calendarActive,
-  workspacesActive,
   activityActive,
   settingsActive,
   settingsOpen,
@@ -49,7 +47,6 @@ export const MobileNav = memo(function ({
   analyticsActive: boolean
   performanceActive: boolean
   calendarActive: boolean
-  workspacesActive: boolean
   activityActive: boolean
   settingsActive: boolean
   settingsOpen: boolean
@@ -153,19 +150,6 @@ export const MobileNav = memo(function ({
             >
               <TrendingUp className="h-4 w-4 shrink-0" />
               <span>My Performance</span>
-            </Link>
-
-            <Link
-              to="/app/my-workspaces"
-              onClick={close}
-              className={`flex h-10 w-full items-center gap-3 px-3 text-sm font-semibold transition-colors ${
-                workspacesActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4 shrink-0" />
-              <span>My Workspaces</span>
             </Link>
 
             {isOwnerOrAdmin && (

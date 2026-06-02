@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BriefcaseBusiness,
   Check,
   ChevronDown,
+  LayoutGrid,
   Loader2,
   Plus,
 } from 'lucide-react'
@@ -146,6 +148,11 @@ export function WorkspaceSwitcher({
             )
           })}
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild className="flex items-center gap-2 text-sm">
+            <Link to="/app/my-workspaces">
+              <LayoutGrid className="h-4 w-4" /> My Workspaces
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={(e) => {
               e.preventDefault()

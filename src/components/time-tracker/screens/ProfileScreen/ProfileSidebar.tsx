@@ -1,6 +1,15 @@
-import { KeyRound } from 'lucide-react'
+import { useState } from 'react'
+import { KeyRound, LayoutGrid, Palette } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
-import { ThemeSection } from '#/components/settings/ThemeSection'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
+import { ThemeControls } from '#/components/settings/ThemeSection'
 import { Info } from '../shared/Info'
 import { MemberStatusBadge } from '../shared/MemberStatusBadge'
 
@@ -27,6 +36,8 @@ export function ProfileSidebar({
   cohortNames: string
   onChangePassword: () => void
 }) {
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+
   return (
     <div className="grid h-fit gap-4">
       <section className="rounded-lg border border-border bg-card p-6 text-center shadow-sm">
@@ -61,17 +72,46 @@ export function ProfileSidebar({
           <Info label="Department" value={departmentName} />
           <Info label="Groups / cohorts" value={cohortNames} />
         </dl>
+        <Button asChild variant="outline" className="mt-5 w-full">
+          <Link to="/app/my-workspaces">
+            <LayoutGrid className="h-3.5 w-3.5" />
+            My Workspaces
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setAppearanceOpen(true)}
+          className="mt-2 w-full"
+        >
+          <Palette className="h-3.5 w-3.5" />
+          Appearance
+        </Button>
         <Button
           type="button"
           variant="outline"
           onClick={onChangePassword}
-          className="mt-5 w-full"
+          className="mt-2 w-full"
         >
           <KeyRound className="h-3.5 w-3.5" />
           Change password
         </Button>
       </section>
-      <ThemeSection />
+
+      <Dialog open={appearanceOpen} onOpenChange={setAppearanceOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Appearance</DialogTitle>
+            <DialogDescription>
+              Pick the theme and accent color that fit you best. Saved on this
+              device.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-2">
+            <ThemeControls />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
