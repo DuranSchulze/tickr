@@ -58,21 +58,22 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
         </div>
       </section>
 
-      {hasSheet && isAtLeastManager && (
+      {isAtLeastManager && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <h2 className="m-0 text-base font-bold text-foreground">
             Sync time entries
           </h2>
           <p className="m-0 mt-1 text-sm text-muted-foreground">
-            Push all time entries to the linked Google Sheet. Time entries are
-            also synced automatically every two hours.
+            {hasSheet
+              ? 'Push all time entries to the linked Google Sheet. Time entries are also synced automatically every two hours.'
+              : 'No Google Sheet is linked to this workspace yet. Link one below to enable syncing — clicking sync before then will tell you what to do.'}
           </p>
           <div className="mt-4">
             <GoogleSheetSyncButton
               sheetUrl={state.workspace.googleSheetUrl}
               lastSyncedAt={lastSyncedAt}
             />
-            {!lastSyncedAt && (
+            {hasSheet && !lastSyncedAt && (
               <p className="mt-2 text-xs text-muted-foreground">Never synced</p>
             )}
           </div>

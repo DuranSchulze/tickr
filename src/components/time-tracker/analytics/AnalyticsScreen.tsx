@@ -76,17 +76,16 @@ export function AnalyticsScreen({
     currentMember?.permissionLevel === 'MANAGER'
   const hasSheet = !!state.workspace.googleSheetUrl
   async function handleSyncToSheet() {
-    try {
-      const result = await syncWorkspaceToGoogleSheetsFn()
-      gooeyToast.success('Synced to Google Sheets', {
-        description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
-      })
-    } catch (err) {
-      gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-      throw err // re-throw so the ExportMenu can manage its loading state
+    if (!hasSheet) {
+      // Surfaced by ExportMenu's catch as a readable toast.
+      throw new Error(
+        'No Google Sheet is connected to this workspace, so there is nothing to sync to. The workspace Owner can link one in Workspace settings.',
+      )
     }
+    const result = await syncWorkspaceToGoogleSheetsFn()
+    gooeyToast.success('Synced to Google Sheets', {
+      description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
+    })
   }
 
   async function handleExportCsv() {
@@ -160,9 +159,7 @@ export function AnalyticsScreen({
               />
               <ExportMenu
                 onExportCsv={handleExportCsv}
-                onSyncToSheet={
-                  hasSheet && isManagerOrAbove ? handleSyncToSheet : undefined
-                }
+                onSyncToSheet={isManagerOrAbove ? handleSyncToSheet : undefined}
               />
             </div>
           </div>

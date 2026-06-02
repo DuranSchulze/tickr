@@ -15,6 +15,13 @@ export function GoogleSheetSyncButton({
   const [pending, setPending] = useState(false)
 
   async function handleSync() {
+    if (!sheetUrl) {
+      gooeyToast.error('No Google Sheet connected', {
+        description:
+          'This workspace has no Google Sheet linked yet, so there is nothing to sync to. The workspace Owner can add one in Workspace settings.',
+      })
+      return
+    }
     setPending(true)
     try {
       const result = await syncWorkspaceToGoogleSheetsFn()
@@ -24,16 +31,21 @@ export function GoogleSheetSyncButton({
       })
     } catch (err) {
       gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
+        description:
+          err instanceof Error && err.message
+            ? err.message
+            : 'Something went wrong while syncing. Please try again, and contact an admin if it keeps failing.',
       })
     } finally {
       setPending(false)
     }
   }
 
-  const disabled = pending || !sheetUrl
+  // Keep the button clickable even without a linked sheet so the user gets a
+  // clear toast explaining why sync can't proceed (rather than a dead button).
+  const disabled = pending
   const tooltip = !sheetUrl
-    ? 'Set the Google Sheet URL in workspace settings first.'
+    ? 'No Google Sheet is linked yet. Set the URL in workspace settings first.'
     : 'Push all time entries to the linked Google Sheet.'
 
   return (
