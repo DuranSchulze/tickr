@@ -224,7 +224,7 @@ export async function getMyPerformance(): Promise<PerformancePayload> {
   }
 
   const currentMonth = monthHistory[monthHistory.length - 1]
-  const projectTotals = [...projectSecondsMap.values()].sort(
+  const projectTotals = Array.from(projectSecondsMap.values()).sort(
     (a, b) => b.seconds - a.seconds,
   )
 
@@ -361,7 +361,7 @@ export async function getPublicPerformance(
     toDateKey(monthStart).slice(0, 7),
     monthSrc,
   )
-  const projectTotals = [...projectSecondsMap.values()].sort(
+  const projectTotals = Array.from(projectSecondsMap.values()).sort(
     (a, b) => b.seconds - a.seconds,
   )
 

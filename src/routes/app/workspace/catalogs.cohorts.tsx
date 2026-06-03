@@ -41,6 +41,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/cohorts')({
   component: CohortsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function CohortsRoute() {
   const { access, data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()

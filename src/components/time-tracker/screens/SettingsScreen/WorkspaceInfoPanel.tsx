@@ -95,7 +95,7 @@ export function WorkspaceInfoPanel({
               onClick={() => setEditing(true)}
               className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
             >
-              <Pencil className="h-3.5 w-3.5" />
+              <Pencil className="size-3.5" />
               Edit settings
             </button>
           )}

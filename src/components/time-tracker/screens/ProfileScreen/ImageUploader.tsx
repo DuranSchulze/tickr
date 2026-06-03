@@ -117,7 +117,7 @@ export function ImageUploader({
         }
         onDragLeave={disabled ? undefined : () => setDragging(false)}
         disabled={disabled}
-        className={`group relative mx-auto flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed transition-colors ${
+        className={`group relative mx-auto flex size-24 items-center justify-center rounded-full border-2 border-dashed transition-colors ${
           disabled
             ? 'cursor-not-allowed border-border bg-muted opacity-60'
             : dragging
@@ -136,24 +136,24 @@ export function ImageUploader({
             <img
               src={displayUrl}
               alt="Avatar preview"
-              className="h-full w-full rounded-full object-cover"
+              className="size-full rounded-full object-cover"
             />
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
               {uploading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-white" />
+                <Loader2 className="size-6 animate-spin text-white" />
               ) : cooldownLeft > 0 ? (
                 <span className="text-sm font-semibold text-white">
                   {cooldownLeft}s
                 </span>
               ) : (
-                <Upload className="h-6 w-6 text-white" />
+                <Upload className="size-6 text-white" />
               )}
             </div>
           </>
         ) : uploading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="size-8 animate-spin text-muted-foreground" />
         ) : (
-          <Camera className="h-8 w-8 text-muted-foreground" />
+          <Camera className="size-8 text-muted-foreground" />
         )}
       </button>
 
@@ -175,6 +175,7 @@ export function ImageUploader({
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"
         onChange={handleInputChange}
+        aria-label="Upload profile image"
       />
     </div>
   )

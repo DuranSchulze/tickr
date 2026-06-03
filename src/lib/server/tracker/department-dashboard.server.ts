@@ -357,7 +357,7 @@ export async function getDepartmentDashboard(data: {
     })
     .sort((a, b) => b.seconds - a.seconds)
 
-  const dailyTotals = [...dailyMap.entries()]
+  const dailyTotals = Array.from(dailyMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, seconds]) => ({ date, seconds }))
 

@@ -107,9 +107,9 @@ function DevLoginButtonInner() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close dev logins"
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              <X className="h-4 w-4" />
+              <X className="size-4" />
             </button>
           </div>
 
@@ -142,9 +142,9 @@ function DevLoginButtonInner() {
                       type="button"
                       onClick={() => void copy(cred.email)}
                       aria-label={`Copy ${cred.email}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                      className="flex size-8 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
                     >
-                      <Copy className="h-3.5 w-3.5" />
+                      <Copy className="size-3.5" />
                     </button>
 
                     <button
@@ -157,7 +157,7 @@ function DevLoginButtonInner() {
                         'Signing…'
                       ) : (
                         <>
-                          <LogIn className="h-3 w-3" />
+                          <LogIn className="size-3" />
                           Use
                         </>
                       )}
@@ -178,7 +178,7 @@ function DevLoginButtonInner() {
               onClick={() => void copy(DEV_PASSWORD)}
               className="inline-flex items-center gap-1 rounded text-muted-foreground hover:text-foreground"
             >
-              <Copy className="h-3 w-3" />
+              <Copy className="size-3" />
               Copy
             </button>
           </div>
@@ -192,7 +192,7 @@ function DevLoginButtonInner() {
         aria-label="Dev logins"
         className="flex h-12 items-center gap-2 rounded-full bg-primary px-4 text-sm font-bold text-primary-foreground shadow-xl transition-all hover:brightness-110"
       >
-        <KeyRound className="h-4 w-4" />
+        <KeyRound className="size-4" />
         Dev logins
       </button>
     </div>

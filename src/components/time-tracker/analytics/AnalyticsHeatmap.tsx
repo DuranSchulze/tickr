@@ -53,7 +53,7 @@ export function AnalyticsHeatmap({
           {intensityStyles.map((className, index) => (
             <span
               key={className}
-              className={`h-3 w-3 rounded-[3px] border border-border/60 ${className}`}
+              className={`size-3 rounded-[3px] border border-border/60 ${className}`}
               title={`Level ${index}`}
             />
           ))}
@@ -190,7 +190,7 @@ function RankingRows({
           <div className="flex min-w-0 items-center gap-2">
             {item.color && (
               <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                className="size-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
             )}

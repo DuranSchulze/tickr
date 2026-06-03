@@ -42,9 +42,11 @@ export function CatalogFormDialog({
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
+        aria-label="Close"
       />
       <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -52,10 +54,10 @@ export function CatalogFormDialog({
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Close"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
         <div className="p-5">{children}</div>
@@ -91,12 +93,13 @@ export function CatalogSearchBar({
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
       <input
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder={placeholder}
+        aria-label={placeholder}
         className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       />
       {inputValue && (
@@ -108,7 +111,7 @@ export function CatalogSearchBar({
           }}
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="size-3.5" />
         </button>
       )}
     </div>
@@ -133,13 +136,13 @@ function SelectionCheckbox({
         e.stopPropagation()
         onChange()
       }}
-      className={`grid h-5 w-5 place-items-center rounded border transition-colors ${
+      className={`grid size-5 place-items-center rounded border transition-colors ${
         checked
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-background hover:border-primary/50'
       }`}
     >
-      {checked && <Check className="h-3 w-3" />}
+      {checked && <Check className="size-3" />}
     </button>
   )
 }
@@ -193,13 +196,16 @@ export function CatalogTablePage<TData>({
   getRowId,
   onBulkAction,
 }: CatalogTablePageProps<TData>) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  // Track selection per-page — when page changes, selection resets automatically
+  const [selectionState, setSelectionState] = useState<{
+    page: number
+    ids: Set<string>
+  }>({ page: 0, ids: new Set() })
   const [bulkPending, setBulkPending] = useState(false)
 
-  // Clear selection when data/page changes
-  useEffect(() => {
-    setSelectedIds(new Set())
-  }, [data, page])
+  // Derive selectedIds — returns empty set when page changes (no effect needed)
+  const selectedIds =
+    selectionState.page === page ? selectionState.ids : new Set<string>()
 
   const allIds = useMemo(
     () => (getRowId ? data.map((row) => getRowId(row)) : []),
@@ -211,24 +217,24 @@ export function CatalogTablePage<TData>({
   const selectionCount = selectedIds.size
 
   function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
+    setSelectionState((prev) => {
+      const next = new Set(prev.ids)
       if (next.has(id)) next.delete(id)
       else next.add(id)
-      return next
+      return { page, ids: next }
     })
   }
 
   function toggleSelectAll() {
     if (allSelected) {
-      setSelectedIds(new Set())
+      setSelectionState((prev) => ({ page, ids: new Set() }))
     } else {
-      setSelectedIds(new Set(allIds))
+      setSelectionState((prev) => ({ page, ids: new Set(allIds) }))
     }
   }
 
   function clearSelection() {
-    setSelectedIds(new Set())
+    setSelectionState((prev) => ({ page: prev.page, ids: new Set() }))
   }
 
   // Inject checkbox column when bulk selection is enabled
@@ -288,7 +294,7 @@ export function CatalogTablePage<TData>({
           to={backHref}
           className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="size-3.5" />
           Catalogs
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -309,7 +315,7 @@ export function CatalogTablePage<TData>({
                   onClick={onCreate}
                   className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="size-4" />
                   {createLabel}
                 </button>
               )}
@@ -465,7 +471,7 @@ export function CatalogTablePage<TData>({
             disabled={bulkPending}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Check className="h-4 w-4 text-emerald-500" />
+            <Check className="size-4 text-emerald-500" />
             Activate
           </button>
           <button
@@ -474,7 +480,7 @@ export function CatalogTablePage<TData>({
             disabled={bulkPending}
             className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-background px-3 py-1.5 text-sm font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
             Archive
           </button>
           <button

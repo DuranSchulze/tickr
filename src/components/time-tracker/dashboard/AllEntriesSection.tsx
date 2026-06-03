@@ -53,7 +53,7 @@ function taskGroupKey(entry: TimeEntry): string {
   return [
     entry.description.trim().toLowerCase(),
     entry.projectId,
-    [...entry.tagIds].sort().join(','),
+    entry.tagIds.toSorted().join(','),
     String(entry.billable),
   ].join('|')
 }
@@ -66,7 +66,7 @@ function groupEntriesByTask(entries: TimeEntry[]): TaskGroup[] {
     map.get(key)!.push(entry)
   }
   return Array.from(map.entries()).map(([key, groupEntries]) => {
-    const sorted = [...groupEntries].sort(
+    const sorted = groupEntries.toSorted(
       (a, b) =>
         new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
     )
@@ -380,7 +380,7 @@ export function AllEntriesSection({
             disabled={loadingMore}
             className="gap-2"
           >
-            {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {loadingMore && <Loader2 className="size-3.5 animate-spin" />}
             {loadingMore ? 'Loading…' : 'Load more entries'}
           </Button>
         </div>

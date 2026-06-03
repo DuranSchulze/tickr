@@ -27,7 +27,7 @@ function EmbedFooter() {
         className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         Open in full app
-        <ExternalLink className="h-3 w-3" />
+        <ExternalLink className="size-3" />
       </a>
     </div>
   )

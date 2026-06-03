@@ -117,6 +117,8 @@ export function SyncSheetDialog({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [open])
 
+  // State machine reset — suppress: open/close lifecycle requires cleanup
+  // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change
   useEffect(() => {
     if (!open) {
       abortRef.current?.abort()
@@ -291,7 +293,7 @@ export function SyncSheetDialog({
       >
         {!result && !error && (
           <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 mx-6 mt-4">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <AlertTriangle className="size-3.5 shrink-0" />
             Do not close this tab while sync is in progress.
           </div>
         )}
@@ -412,7 +414,7 @@ function ProgressState({
                   className="flex items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/50"
                 >
                   <Icon
-                    className={`h-3.5 w-3.5 shrink-0 ${actionDef.className} ${item.action === 'updated' ? 'animate-spin' : ''}`}
+                    className={`size-3.5 shrink-0 ${actionDef.className} ${item.action === 'updated' ? 'animate-spin' : ''}`}
                   />
                   <span className="truncate font-medium text-foreground">
                     {item.name}
@@ -425,7 +427,7 @@ function ProgressState({
                       className="shrink-0 truncate text-muted-foreground/70 max-w-50"
                       title={item.detail}
                     >
-                      — {item.detail}
+                      ({item.detail})
                     </span>
                   )}
                 </div>
@@ -437,7 +439,7 @@ function ProgressState({
 
       {!activeState && (
         <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 size-4 animate-spin" />
           Starting import…
         </div>
       )}
@@ -472,13 +474,13 @@ function PhaseRow({
       }`}
     >
       {/* Status icon */}
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center">
+      <div className="flex size-6 shrink-0 items-center justify-center">
         {isDone ? (
-          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+          <CheckCircle2 className="size-5 text-emerald-500" />
         ) : isActive ? (
-          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <Loader2 className="size-4 animate-spin text-primary" />
         ) : (
-          <Circle className="h-4 w-4 text-muted-foreground/40" />
+          <Circle className="size-4 text-muted-foreground/40" />
         )}
       </div>
 
@@ -538,7 +540,7 @@ function CompleteState({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
-        <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-500" />
+        <CheckCircle2 className="size-6 shrink-0 text-emerald-500" />
         <div>
           <p className="font-semibold text-emerald-800 dark:text-emerald-200">
             Import complete
@@ -599,7 +601,7 @@ function ErrorState({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
-        <XCircle className="h-6 w-6 shrink-0 text-red-500" />
+        <XCircle className="size-6 shrink-0 text-red-500" />
         <div>
           <p className="font-semibold text-red-800 dark:text-red-200">
             Import failed

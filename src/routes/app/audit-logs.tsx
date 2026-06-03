@@ -33,6 +33,7 @@ export const Route = createFileRoute('/app/audit-logs')({
   component: AuditLogsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function AuditLogsRoute() {
   const data = Route.useLoaderData()
   const search = Route.useSearch()

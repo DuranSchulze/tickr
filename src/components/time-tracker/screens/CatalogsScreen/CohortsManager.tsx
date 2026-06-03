@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { Plus, Trash2, X } from 'lucide-react'
@@ -15,14 +15,35 @@ export function CohortsManager({
   canManage: boolean
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [departmentId, setDepartmentId] = useState(
-    state.departments[0]?.id ?? '',
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showForm: boolean
+        name: string
+        departmentId: string
+        filterDepartmentId: string
+        pending: boolean
+        deletingId: string | null
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showForm: false,
+      name: '',
+      departmentId: state.departments[0]?.id ?? '',
+      filterDepartmentId: '',
+      pending: false,
+      deletingId: null,
+    },
   )
-  const [filterDepartmentId, setFilterDepartmentId] = useState('')
-  const [pending, setPending] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const {
+    showForm,
+    name,
+    departmentId,
+    filterDepartmentId,
+    pending,
+    deletingId,
+  } = local
 
   const visibleCohorts = state.cohorts.filter(
     (cohort) =>
@@ -35,24 +56,23 @@ export function CohortsManager({
       gooeyToast.error('Select a department first')
       return
     }
-    setPending(true)
+    dispatch({ pending: true })
     try {
       await createCohortFn({ data: { name, departmentId } })
       await router.invalidate()
       gooeyToast.success('Cohort created')
-      setName('')
-      setShowForm(false)
+      dispatch({ name: '', showForm: false })
     } catch (err) {
       gooeyToast.error('Could not create cohort', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
   async function handleDelete(id: string, cohortName: string) {
-    setDeletingId(id)
+    dispatch({ deletingId: id })
     try {
       await deleteCohortFn({ data: { id } })
       await router.invalidate()
@@ -62,7 +82,7 @@ export function CohortsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setDeletingId(null)
+      dispatch({ deletingId: null })
     }
   }
 
@@ -73,13 +93,13 @@ export function CohortsManager({
         canManage ? (
           <button
             type="button"
-            onClick={() => setShowForm((p) => !p)}
+            onClick={() => dispatch({ showForm: !showForm })}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
             {showForm ? (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             ) : (
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
             )}
             {showForm ? 'Cancel' : 'New cohort'}
           </button>
@@ -90,7 +110,7 @@ export function CohortsManager({
         <form onSubmit={handleCreate} className="mt-4 grid gap-2">
           <select
             value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
+            onChange={(e) => dispatch({ departmentId: e.target.value })}
             required
             className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
           >
@@ -103,8 +123,9 @@ export function CohortsManager({
           </select>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => dispatch({ name: e.target.value })}
             placeholder="Cohort name"
+            aria-label="Cohort name"
             required
             className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
           />
@@ -120,7 +141,7 @@ export function CohortsManager({
       <div className="mt-4">
         <select
           value={filterDepartmentId}
-          onChange={(e) => setFilterDepartmentId(e.target.value)}
+          onChange={(e) => dispatch({ filterDepartmentId: e.target.value })}
           className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">All departments</option>
@@ -157,7 +178,7 @@ export function CohortsManager({
                   variant="danger"
                 >
                   <Trash2
-                    className={`h-3.5 w-3.5 opacity-0 group-hover:opacity-100 ${deletingId === cohort.id ? 'opacity-100' : ''}`}
+                    className={`size-3.5 opacity-0 group-hover:opacity-100 ${deletingId === cohort.id ? 'opacity-100' : ''}`}
                   />
                 </IconBtn>
               )}

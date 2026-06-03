@@ -113,17 +113,17 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
         <div className="flex flex-1 items-center gap-1 overflow-hidden">
           {renderTrigger(selectedItems)}
         </div>
-        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
       </button>
 
       {open && (
         <div className="absolute left-0 top-[calc(100%+4px)] z-50 w-64 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
           <div className="border-b border-border p-2">
             <input
-              autoFocus
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
               className="h-8 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
             />
           </div>
@@ -147,13 +147,13 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                     }`}
                   >
                     <span
-                      className="h-2 w-2 shrink-0 rounded-full"
+                      className="size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="flex-1 truncate text-left">
                       {item.name}
                     </span>
-                    {checked && <Check className="h-3.5 w-3.5 text-primary" />}
+                    {checked && <Check className="size-3.5 text-primary" />}
                   </button>
                 )
               })
@@ -165,10 +165,10 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                 <form onSubmit={handleCreate} className="grid gap-2">
                   <div className="flex gap-2">
                     <input
-                      autoFocus
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
                       placeholder={newNamePlaceholder}
+                      aria-label={newNamePlaceholder}
                       className="h-8 flex-1 rounded-lg border border-border bg-card text-foreground px-2 text-sm outline-none focus:border-primary"
                     />
                     <input
@@ -176,7 +176,8 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                       value={newColor}
                       onChange={(e) => setNewColor(e.target.value)}
                       title="Pick a color"
-                      className="h-8 w-10 cursor-pointer rounded-lg border border-border p-0.5"
+                      aria-label="Color"
+                      className="h-8 w-10 cursor-pointer rounded-lg border border-border bg-card p-0.5"
                     />
                   </div>
                   <div className="flex gap-1.5">
@@ -205,7 +206,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                   onClick={() => setCreating(true)}
                   className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus className="size-3.5" />
                   {createLabel}
                 </button>
               )}

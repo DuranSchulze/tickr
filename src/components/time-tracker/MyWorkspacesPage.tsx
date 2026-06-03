@@ -151,7 +151,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
       {/* Owned workspaces */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 text-amber-500" />
+          <Crown className="size-4 text-amber-500" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Owned by you ({owned.length})
           </h2>
@@ -179,7 +179,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-1.5"
                     title="Delete workspace"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="size-4" />
                     Delete
                   </Button>
                 }
@@ -192,7 +192,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
       {/* Joined workspaces */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
+          <Users className="size-4 text-muted-foreground" />
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Joined workspaces ({joined.length})
           </h2>
@@ -220,7 +220,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
                     className="text-muted-foreground hover:bg-accent hover:text-foreground gap-1.5"
                     title="Leave workspace"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOut className="size-4" />
                     Leave
                   </Button>
                 }
@@ -250,7 +250,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
               setShowCreate(true)
             }}
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             New workspace
           </Button>
         </div>
@@ -279,6 +279,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
               >
                 Workspace name
               </label>
+              {/* oxlint-disable-next-line jsx-a11y/no-autofocus -- workspace name input in dialog */}
               <input
                 id="page-ws-name"
                 type="text"
@@ -286,7 +287,6 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
                 onChange={(e) => setNewWsName(e.target.value)}
                 placeholder="e.g. Acme Corp"
                 maxLength={150}
-                autoFocus
                 disabled={creating}
                 className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               />
@@ -308,7 +308,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
               >
                 {creating ? (
                   <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 size-3.5 animate-spin" />
                     Creating…
                   </>
                 ) : (
@@ -336,7 +336,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
               {pendingAction?.type === 'delete' ? (
                 <>
                   This will permanently delete the workspace and{' '}
-                  <strong>all its data</strong> — members, time entries,
+                  <strong>all its data</strong>: members, time entries,
                   projects, and settings. This cannot be undone.
                 </>
               ) : (
@@ -368,7 +368,7 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-2 size-3.5 animate-spin" />
                   {pendingAction?.type === 'delete' ? 'Deleting…' : 'Leaving…'}
                 </>
               ) : pendingAction?.type === 'delete' ? (
@@ -401,8 +401,8 @@ const WorkspaceCard = memo(function WorkspaceCard({
         isCurrent ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
       }`}
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+        <BriefcaseBusiness className="size-4 text-muted-foreground" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -412,7 +412,7 @@ const WorkspaceCard = memo(function WorkspaceCard({
           </p>
           {isCurrent && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
-              <Check className="h-3 w-3" />
+              <Check className="size-3" />
               Active
             </span>
           )}

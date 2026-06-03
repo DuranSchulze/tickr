@@ -47,6 +47,7 @@ export function DescriptionAutocomplete({
           if (e.key === 'Escape') setOpen(false)
         }}
         placeholder={placeholder}
+        aria-label={placeholder}
         disabled={disabled}
         maxLength={200}
         className="h-11 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"

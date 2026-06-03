@@ -44,6 +44,7 @@ export const Route = createFileRoute('/app/department-analytics')({
   component: DepartmentAnalyticsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function DepartmentAnalyticsRoute() {
   const dashboard = Route.useLoaderData()
   const search = Route.useSearch()

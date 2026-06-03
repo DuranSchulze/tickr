@@ -38,7 +38,9 @@ function normalizeCurrencyOptions(options: CurrencyOption[]) {
     const code = normalizeCurrency(option.code)
     unique.set(code, { code, name: option.name.trim() || code })
   }
-  return [...unique.values()].sort((a, b) => a.code.localeCompare(b.code))
+  return Array.from(unique.values()).sort((a, b) =>
+    a.code.localeCompare(b.code),
+  )
 }
 
 export async function updateWorkspaceBilling(

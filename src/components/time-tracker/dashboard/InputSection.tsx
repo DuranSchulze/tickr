@@ -101,7 +101,7 @@ export function InputSection({
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Play className="mr-1.5 inline h-3.5 w-3.5" />
+          <Play className="mr-1.5 inline size-3.5" />
           Timer
         </button>
         <button
@@ -113,7 +113,7 @@ export function InputSection({
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          <Pencil className="mr-1.5 inline h-3.5 w-3.5" />
+          <Pencil className="mr-1.5 inline size-3.5" />
           Manual entry
         </button>
       </div>

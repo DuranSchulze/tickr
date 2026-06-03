@@ -15,8 +15,9 @@ export const Route = createFileRoute('/app/changelog')({
   }),
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ChangelogRoute() {
-  const updates = [...manifest.updates].sort(
+  const updates = manifest.updates.toSorted(
     (a, b) =>
       new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   )
@@ -26,7 +27,7 @@ function ChangelogRoute() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div>
         <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-          <Sparkles className="h-3.5 w-3.5" />
+          <Sparkles className="size-3.5" />
           Changelog
         </div>
         <h1 className="m-0 text-3xl font-black tracking-tight sm:text-4xl">
@@ -57,9 +58,9 @@ function ChangelogRoute() {
             {/* Dot on the timeline */}
             <div
               aria-hidden
-              className="absolute left-0 top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card"
+              className="absolute left-0 top-1.5 flex size-6 items-center justify-center rounded-full border border-border bg-card"
             >
-              <div className="h-2 w-2 rounded-full bg-primary" />
+              <div className="size-2 rounded-full bg-primary" />
             </div>
 
             {/* Release card */}
@@ -67,7 +68,7 @@ function ChangelogRoute() {
               {/* Version badge + date */}
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                  <ArrowUpCircle className="h-3.5 w-3.5" />v{entry.version}
+                  <ArrowUpCircle className="size-3.5" />v{entry.version}
                 </span>
                 {entry.publishedAt && (
                   <span className="text-xs text-muted-foreground">
@@ -95,7 +96,7 @@ function ChangelogRoute() {
                       className="rounded-lg border border-border bg-muted/30 p-4"
                     >
                       <h3 className="m-0 flex items-center gap-2 text-sm font-bold">
-                        <ArrowUpCircle className="h-4 w-4 shrink-0 text-primary" />
+                        <ArrowUpCircle className="size-4 shrink-0 text-primary" />
                         {feature.title}
                       </h3>
                       {feature.description && (
@@ -130,7 +131,7 @@ function ChangelogRoute() {
                     >
                       <Link to={action.to} className="no-underline">
                         {action.label}
-                        <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                        <ExternalLink className="ml-1.5 size-3.5" />
                       </Link>
                     </Button>
                   ))}

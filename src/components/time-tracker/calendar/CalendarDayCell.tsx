@@ -26,7 +26,7 @@ export const CalendarDayCell = memo(function CalendarDayCell({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black ${
+          className={`flex size-7 items-center justify-center rounded-full text-sm font-black ${
             isToday
               ? 'bg-primary text-primary-foreground'
               : isCurrentMonth

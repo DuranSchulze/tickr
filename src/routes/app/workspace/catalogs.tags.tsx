@@ -43,6 +43,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/tags')({
   component: TagsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function TagsRoute() {
   const { access, data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()

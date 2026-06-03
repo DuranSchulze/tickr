@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { Plus, Trash2, X } from 'lucide-react'
@@ -15,37 +15,50 @@ export function DepartmentsManager({
   canManage: boolean
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [color, setColor] = useState('#6366f1')
-  const [pending, setPending] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showForm: boolean
+        name: string
+        description: string
+        color: string
+        pending: boolean
+        deletingId: string | null
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showForm: false,
+      name: '',
+      description: '',
+      color: '#6366f1',
+      pending: false,
+      deletingId: null,
+    },
+  )
+  const { showForm, name, description, color, pending, deletingId } = local
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       await createDepartmentFn({
         data: { name, description: description || undefined, color },
       })
       await router.invalidate()
       gooeyToast.success('Department created')
-      setName('')
-      setDescription('')
-      setColor('#6366f1')
-      setShowForm(false)
+      dispatch({ name: '', description: '', color: '#6366f1', showForm: false })
     } catch (err) {
       gooeyToast.error('Could not create department', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
   async function handleDelete(id: string, deptName: string) {
-    setDeletingId(id)
+    dispatch({ deletingId: id })
     try {
       await deleteDepartmentFn({ data: { id } })
       await router.invalidate()
@@ -55,7 +68,7 @@ export function DepartmentsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setDeletingId(null)
+      dispatch({ deletingId: null })
     }
   }
 
@@ -66,13 +79,13 @@ export function DepartmentsManager({
         canManage ? (
           <button
             type="button"
-            onClick={() => setShowForm((p) => !p)}
+            onClick={() => dispatch({ showForm: !showForm })}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
             {showForm ? (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             ) : (
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
             )}
             {showForm ? 'Cancel' : 'New department'}
           </button>
@@ -84,23 +97,26 @@ export function DepartmentsManager({
           <div className="flex gap-2">
             <input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => dispatch({ name: e.target.value })}
               placeholder="Department name"
+              aria-label="Department name"
               required
               className="h-9 flex-1 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
             />
             <input
               type="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(e) => dispatch({ color: e.target.value })}
               className="h-9 w-12 cursor-pointer rounded-lg border border-border p-1"
               title="Department color"
+              aria-label="Department color"
             />
           </div>
           <input
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => dispatch({ description: e.target.value })}
             placeholder="Description (optional)"
+            aria-label="Description"
             className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <button
@@ -128,7 +144,7 @@ export function DepartmentsManager({
                 variant="danger"
               >
                 <Trash2
-                  className={`h-3.5 w-3.5 opacity-0 group-hover:opacity-100 ${deletingId === dept.id ? 'opacity-100' : ''}`}
+                  className={`size-3.5 opacity-0 group-hover:opacity-100 ${deletingId === dept.id ? 'opacity-100' : ''}`}
                 />
               </IconBtn>
             )}

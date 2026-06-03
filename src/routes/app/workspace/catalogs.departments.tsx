@@ -41,6 +41,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/departments')({
   component: DepartmentsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function DepartmentsRoute() {
   const { access, data, pageSize, googleSheetUrl } = Route.useLoaderData()
   const navigate = Route.useNavigate()

@@ -46,6 +46,7 @@ export function EditTagForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Tag name"
+        aria-label="Tag name"
         required
         className={inputClass}
       />

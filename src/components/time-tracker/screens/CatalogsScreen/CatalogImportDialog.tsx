@@ -36,12 +36,11 @@ function completedCount(steps: ImportStep[]) {
 
 function StepIcon({ status }: { status: StepStatus }) {
   if (status === 'running')
-    return <Loader2 className="h-4 w-4 animate-spin text-primary" />
+    return <Loader2 className="size-4 animate-spin text-primary" />
   if (status === 'done')
-    return <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-  if (status === 'error')
-    return <XCircle className="h-4 w-4 text-destructive" />
-  return <Circle className="h-4 w-4 text-muted-foreground/50" />
+    return <CheckCircle2 className="size-4 text-emerald-500" />
+  if (status === 'error') return <XCircle className="size-4 text-destructive" />
+  return <Circle className="size-4 text-muted-foreground/50" />
 }
 
 export function CatalogImportDialog({
@@ -78,8 +77,7 @@ export function CatalogImportDialog({
         <div className="space-y-4 py-1">
           {isRunning && (
             <p className="text-sm text-muted-foreground">
-              You can close this dialog — the import continues in the
-              background.
+              You can close this dialog; the import continues in the background.
             </p>
           )}
 
@@ -103,14 +101,14 @@ export function CatalogImportDialog({
                     {step.label}
                     {step.status === 'done' && step.count !== undefined && (
                       <span className="ml-1.5 font-normal text-muted-foreground">
-                        — {step.count} {step.count === 1 ? 'record' : 'records'}
+                        ({step.count} {step.count === 1 ? 'record' : 'records'})
                       </span>
                     )}
                   </p>
                   {step.status === 'done' &&
                     (step.warnings?.length ?? 0) > 0 && (
                       <p className="mt-0.5 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                        <AlertTriangle className="size-3 shrink-0" />
                         {step.warnings!.length} row
                         {step.warnings!.length !== 1 ? 's' : ''} skipped
                       </p>

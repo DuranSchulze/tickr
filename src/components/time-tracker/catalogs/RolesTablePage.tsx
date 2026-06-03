@@ -40,7 +40,7 @@ export function RolesTablePage({
         cell: ({ getValue, row }) => (
           <div className="flex items-center gap-2">
             <span
-              className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+              className="size-3 shrink-0 rounded-full border border-white/20"
               style={{ backgroundColor: row.original.color }}
             />
             <span className="font-semibold text-foreground">{getValue()}</span>

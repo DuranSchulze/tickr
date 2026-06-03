@@ -170,6 +170,7 @@ export const EntryRow = memo(function EntryRow({
               maxLength={200}
               onChange={(e) => setDraftDesc(e.target.value)}
               onBlur={commitDesc}
+              aria-label="Task description"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitDesc()
                 if (e.key === 'Escape') {
@@ -213,6 +214,7 @@ export const EntryRow = memo(function EntryRow({
                     setEditStartTime(false)
                   }
                 }}
+                aria-label="Start time"
               />
             ) : (
               <button
@@ -249,6 +251,7 @@ export const EntryRow = memo(function EntryRow({
                       setEditEndTime(false)
                     }
                   }}
+                  aria-label="End time"
                 />
               ) : (
                 <button
@@ -275,7 +278,7 @@ export const EntryRow = memo(function EntryRow({
             </span>
 
             {isPending && (
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              <Loader2 className="size-3 animate-spin text-muted-foreground" />
             )}
           </div>
         </div>
@@ -308,7 +311,7 @@ export const EntryRow = memo(function EntryRow({
         <BillableToggleButton
           pressed={entry.billable}
           onPressedChange={(b) => onUpdate({ billable: b })}
-          className="h-8 w-8 mx-auto"
+          className="size-8 mx-auto"
         />
       </TableCell>
 
@@ -320,7 +323,7 @@ export const EntryRow = memo(function EntryRow({
             currency,
           )
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">–</span>
         )}
       </TableCell>
 
@@ -340,7 +343,7 @@ export const EntryRow = memo(function EntryRow({
               className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Resume entry"
             >
-              <Play className="h-3.5 w-3.5" />
+              <Play className="size-3.5" />
             </button>
           )}
 
@@ -350,15 +353,15 @@ export const EntryRow = memo(function EntryRow({
               className="rounded-lg border border-border p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="More actions"
             >
-              <MoreHorizontal className="h-3.5 w-3.5" />
+              <MoreHorizontal className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onStartEdit}>
-                <Clock className="mr-2 h-4 w-4" />
+                <Clock className="mr-2 size-4" />
                 Edit date / time
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
-                <Copy className="mr-2 h-4 w-4" />
+                <Copy className="mr-2 size-4" />
                 Duplicate
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -366,7 +369,7 @@ export const EntryRow = memo(function EntryRow({
                 onClick={() => setShowDeleteDialog(true)}
                 className="text-destructive focus:text-destructive"
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="mr-2 size-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>

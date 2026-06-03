@@ -33,7 +33,7 @@ export function useDescriptionSuggestions(
         })
       })
 
-    return [...acc.values()]
+    return Array.from(acc.values())
       .sort((a, b) => {
         if (q) return b.count - a.count || b.lastUsed - a.lastUsed
         return b.lastUsed - a.lastUsed

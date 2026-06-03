@@ -22,13 +22,13 @@ function MemberAvatar({
       <img
         src={avatarUrl}
         alt={name}
-        className="h-10 w-10 shrink-0 rounded-full object-cover"
+        className="size-10 shrink-0 rounded-full object-cover"
       />
     )
   }
 
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
       {initials}
     </div>
   )
@@ -60,7 +60,7 @@ export function MemberActivityCard({
         <MemberAvatar name={member.name} avatarUrl={member.avatarUrl} />
         <span
           aria-hidden="true"
-          className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card ${
+          className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card ${
             isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'
           }`}
         />
@@ -86,7 +86,7 @@ export function MemberActivityCard({
         {isOnline && member.activeEntry ? (
           <div className="mt-1.5 space-y-1">
             <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-              <Briefcase className="h-3 w-3 shrink-0" />
+              <Briefcase className="size-3 shrink-0" />
               <span className="truncate">
                 {member.activeEntry.projectName ?? 'No project'}
               </span>
@@ -95,7 +95,7 @@ export function MemberActivityCard({
               {member.activeEntry.description || 'No description'}
             </p>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3 shrink-0" />
+              <Clock className="size-3 shrink-0" />
               <ElapsedTimer startedAt={member.activeEntry.startedAt} />
             </p>
           </div>

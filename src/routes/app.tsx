@@ -110,9 +110,9 @@ function FullscreenRouteState({
         <CardHeader className="border-b border-border">
           <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
             {isLoading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" />
             ) : (
-              <ShieldCheck className="h-3.5 w-3.5" />
+              <ShieldCheck className="size-3.5" />
             )}
             {eyebrow}
           </div>
@@ -142,7 +142,7 @@ function FullscreenRouteState({
           <Button asChild>
             <Link to={isLoading ? '/' : '/onboarding'} className="no-underline">
               {isLoading ? 'Back to home' : 'Open onboarding'}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="size-4" />
             </Link>
           </Button>
           <Button asChild variant="outline">

@@ -69,7 +69,7 @@ export function WorkspaceActivityScreen() {
           {trackerState && <BulkExportButton state={trackerState} />}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <RefreshCw
-              className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`}
+              className={`size-3 ${isFetching ? 'animate-spin' : ''}`}
               aria-hidden="true"
             />
             {lastRefreshed && <span>Updated {lastRefreshed}</span>}

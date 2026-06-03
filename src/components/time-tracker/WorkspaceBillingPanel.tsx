@@ -120,6 +120,7 @@ export function WorkspaceBillingPanel({
                 <option
                   key={option.code}
                   value={option.code}
+                  aria-label={`${option.code} - ${option.name}`}
                   label={`${option.code} - ${option.name}`}
                 />
               ))}

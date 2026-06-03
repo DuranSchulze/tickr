@@ -8,6 +8,7 @@ export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordPage,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -37,8 +38,8 @@ function ForgotPasswordPage() {
     <AuthSplitLayout>
       {submitted ? (
         <div className="mt-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-            <CheckCircle2 className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+            <CheckCircle2 className="size-6" />
           </div>
           <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
             Check your inbox
@@ -63,14 +64,14 @@ function ForgotPasswordPage() {
             to="/auth"
             className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 no-underline hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
             Back to sign in
           </Link>
         </div>
       ) : (
         <div className="mt-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-            <Mail className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+            <Mail className="size-6" />
           </div>
           <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
             Forgot your password?
@@ -106,7 +107,7 @@ function ForgotPasswordPage() {
             to="/auth"
             className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 no-underline hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
             Back to sign in
           </Link>
         </div>

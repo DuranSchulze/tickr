@@ -515,16 +515,16 @@ export function TimeTrackerDashboard({
               : 'Stop timer'
             : 'Start timer'
         }
-        className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-colors sm:hidden ${
+        className={`fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full shadow-xl transition-colors sm:hidden ${
           activeEntry
             ? 'bg-destructive text-destructive-foreground'
             : 'bg-primary text-primary-foreground'
         }`}
       >
         {activeEntry ? (
-          <Square className="h-5 w-5 fill-current" />
+          <Square className="size-5 fill-current" />
         ) : (
-          <Play className="h-5 w-5" />
+          <Play className="size-5" />
         )}
       </button>
 
@@ -733,9 +733,9 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
         className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
       >
         {exporting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" />
         ) : (
-          <FileText className="h-4 w-4" />
+          <FileText className="size-4" />
         )}
         Export my time
       </button>
@@ -759,6 +759,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
                 value={startDate}
                 max={endDate || todayStr}
                 onChange={(e) => setStartDate(e.target.value)}
+                aria-label="Start date"
                 className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -772,6 +773,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
                 min={startDate || undefined}
                 max={todayStr}
                 onChange={(e) => setEndDate(e.target.value)}
+                aria-label="End date"
                 className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -785,7 +787,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
               onClick={() => handleExport(startDate, endDate)}
               disabled={!startDate || !endDate || startDate > endDate}
             >
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 size-4" />
               Generate PDF
             </Button>
           </DialogFooter>

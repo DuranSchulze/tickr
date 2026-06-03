@@ -91,7 +91,7 @@ export function DashboardHeader({
                   onClick={onPreviousPeriod}
                   aria-label={`Previous ${view}`}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="size-4" />
                 </Button>
 
                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
@@ -102,7 +102,7 @@ export function DashboardHeader({
                       aria-label="Open calendar to pick a date"
                     >
                       <div className="flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0">
                           <p className="m-0 max-w-40 truncate text-sm font-semibold text-foreground sm:max-w-none">
                             {selectedRangeLabel}
@@ -132,7 +132,7 @@ export function DashboardHeader({
                   onClick={onNextPeriod}
                   aria-label={`Next ${view}`}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="size-4" />
                 </Button>
                 <Button
                   type="button"

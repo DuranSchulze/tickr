@@ -25,6 +25,7 @@ export const Route = createFileRoute('/app/workspace/activity')({
   component: WorkspaceActivityRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function WorkspaceActivityRoute() {
   return <WorkspaceActivityScreen />
 }

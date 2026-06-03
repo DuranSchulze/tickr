@@ -93,19 +93,19 @@ function MultiSelectDropdown({
       >
         <DropdownMenuTrigger className="inline-flex h-9 min-w-[140px] items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent">
           <span className="truncate">{buttonLabel}</span>
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 p-0">
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <Search className="size-3.5 shrink-0 text-muted-foreground" />
             <input
-              autoFocus
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
               placeholder={`Search ${label.toLowerCase()}…`}
+              aria-label={`Search ${label.toLowerCase()}`}
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             {query && (
@@ -114,7 +114,7 @@ function MultiSelectDropdown({
                 onClick={() => setQuery('')}
                 className="text-muted-foreground hover:text-foreground"
               >
-                <X className="h-3 w-3" />
+                <X className="size-3" />
               </button>
             )}
           </div>
@@ -138,17 +138,17 @@ function MultiSelectDropdown({
                     className="flex items-center gap-2 px-3 py-2"
                   >
                     <span
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
                         selected
                           ? 'border-primary bg-primary text-primary-foreground'
                           : 'border-border'
                       }`}
                     >
-                      {selected && <Check className="h-3 w-3" />}
+                      {selected && <Check className="size-3" />}
                     </span>
                     {o.color && (
                       <span
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: o.color }}
                       />
                     )}
@@ -308,7 +308,7 @@ export function AnalyticsFilterBar({
           onClick={onClear}
           className="inline-flex h-9 items-center gap-1.5 self-end rounded-lg border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="size-3.5" />
           Clear filters
         </button>
       )}

@@ -47,6 +47,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/projects')({
   component: ProjectsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ProjectsRoute() {
   const { access, data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()

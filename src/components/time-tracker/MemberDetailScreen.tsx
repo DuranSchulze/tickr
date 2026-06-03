@@ -191,7 +191,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
             to="/app/workspace/members"
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground no-underline hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="size-4" />
             Back to members
           </Link>
           <h1 className="m-0 mt-2 text-2xl font-bold tracking-tight text-foreground">
@@ -234,7 +234,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       {activeTab === 'overview' && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <SectionTitle
-            icon={<UserRound className="h-4 w-4" />}
+            icon={<UserRound className="size-4" />}
             title="Overview"
           />
           <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -262,7 +262,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       {activeTab === 'billing' && detail.canManage && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <SectionTitle
-            icon={<DollarSign className="h-4 w-4" />}
+            icon={<DollarSign className="size-4" />}
             title="Billing"
           />
           <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -320,7 +320,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       {activeTab === 'employment' && detail.canManage && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <SectionTitle
-            icon={<IdCard className="h-4 w-4" />}
+            icon={<IdCard className="size-4" />}
             title="Employment"
           />
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -420,7 +420,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       {activeTab === 'government' && detail.canManage && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <SectionTitle
-            icon={<IdCard className="h-4 w-4" />}
+            icon={<IdCard className="size-4" />}
             title="Government IDs"
           />
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -479,7 +479,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       {activeTab === 'personal' && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <SectionTitle
-            icon={<UserRound className="h-4 w-4" />}
+            icon={<UserRound className="size-4" />}
             title="Personal info"
           />
           <p className="m-0 mt-2 text-sm text-muted-foreground">
@@ -553,14 +553,14 @@ function MemberAvatar({
       <img
         src={image}
         alt=""
-        className="h-16 w-16 rounded-full object-cover ring-4 ring-muted"
+        className="size-16 rounded-full object-cover ring-4 ring-muted"
       />
     )
   }
 
   return (
     <div
-      className="grid h-16 w-16 place-items-center rounded-full text-lg font-bold text-primary-foreground ring-4 ring-muted"
+      className="grid size-16 place-items-center rounded-full text-lg font-bold text-primary-foreground ring-4 ring-muted"
       style={{ backgroundColor: color }}
     >
       {initials}

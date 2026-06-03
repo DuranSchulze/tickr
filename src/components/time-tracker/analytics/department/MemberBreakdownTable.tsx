@@ -41,12 +41,12 @@ function SortButton({
       {label}
       {active ? (
         ascending ? (
-          <ChevronUp className="h-3 w-3" />
+          <ChevronUp className="size-3" />
         ) : (
-          <ChevronDown className="h-3 w-3" />
+          <ChevronDown className="size-3" />
         )
       ) : (
-        <ChevronDown className="h-3 w-3 opacity-30" />
+        <ChevronDown className="size-3 opacity-30" />
       )}
     </button>
   )
@@ -73,7 +73,7 @@ export function MemberBreakdownTable({
     setPage(1)
   }
 
-  const sorted = [...members].sort((a, b) => {
+  const sorted = members.toSorted((a, b) => {
     const diff = a[sortKey] - b[sortKey]
     return ascending ? diff : -diff
   })
@@ -222,17 +222,17 @@ export function MemberBreakdownTable({
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-4" />
             </button>
             <button
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </button>
           </div>
         </div>

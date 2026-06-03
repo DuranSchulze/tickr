@@ -64,7 +64,7 @@ export function ManualEntryPanel({
           }
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
           Add entry
         </button>
       </div>

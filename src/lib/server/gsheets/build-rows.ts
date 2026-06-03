@@ -111,7 +111,7 @@ export function buildSyncRows({
   const departments: DepartmentRows[] = []
   let totalRowCount = 0
 
-  const sortedTabs = [...grouped.keys()].sort((a, b) => {
+  const sortedTabs = Array.from(grouped.keys()).sort((a, b) => {
     if (a === UNASSIGNED_TAB) return 1
     if (b === UNASSIGNED_TAB) return -1
     return a.localeCompare(b)

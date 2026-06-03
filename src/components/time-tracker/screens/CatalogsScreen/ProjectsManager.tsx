@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { Plus, Trash2, X } from 'lucide-react'
@@ -17,12 +17,28 @@ export function ProjectsManager({
   const router = useRouter()
   const activeClients = state.clients.filter((c) => c.clientStatus === 'ACTIVE')
   const clientNameById = new Map(state.clients.map((c) => [c.id, c.name]))
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [color, setColor] = useState('#2563eb')
-  const [clientId, setClientId] = useState(activeClients[0]?.id ?? '')
-  const [pending, setPending] = useState(false)
-  const [archivingId, setArchivingId] = useState<string | null>(null)
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showForm: boolean
+        name: string
+        color: string
+        clientId: string
+        pending: boolean
+        archivingId: string | null
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showForm: false,
+      name: '',
+      color: '#2563eb',
+      clientId: activeClients[0]?.id ?? '',
+      pending: false,
+      archivingId: null,
+    },
+  )
+  const { showForm, name, color, clientId, pending, archivingId } = local
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
@@ -30,25 +46,23 @@ export function ProjectsManager({
       gooeyToast.error('Choose a client first')
       return
     }
-    setPending(true)
+    dispatch({ pending: true })
     try {
       await createProjectFn({ data: { name, color, clientId } })
       await router.invalidate()
       gooeyToast.success('Project created')
-      setName('')
-      setColor('#2563eb')
-      setShowForm(false)
+      dispatch({ name: '', color: '#2563eb', showForm: false })
     } catch (err) {
       gooeyToast.error('Could not create project', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
   async function handleArchive(id: string, projectName: string) {
-    setArchivingId(id)
+    dispatch({ archivingId: id })
     try {
       await archiveProjectFn({ data: { id } })
       await router.invalidate()
@@ -58,7 +72,7 @@ export function ProjectsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
@@ -69,13 +83,13 @@ export function ProjectsManager({
         canManage ? (
           <button
             type="button"
-            onClick={() => setShowForm((p) => !p)}
+            onClick={() => dispatch({ showForm: !showForm })}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
             {showForm ? (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             ) : (
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
             )}
             {showForm ? 'Cancel' : 'New project'}
           </button>
@@ -94,7 +108,7 @@ export function ProjectsManager({
           >
             <select
               value={clientId}
-              onChange={(e) => setClientId(e.target.value)}
+              onChange={(e) => dispatch({ clientId: e.target.value })}
               required
               className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
             >
@@ -106,16 +120,18 @@ export function ProjectsManager({
             </select>
             <input
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => dispatch({ name: e.target.value })}
               placeholder="Project name"
+              aria-label="Project name"
               required
               className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
             />
             <input
               type="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={(e) => dispatch({ color: e.target.value })}
               className="h-9 w-12 cursor-pointer rounded-lg border border-border p-1"
+              aria-label="Project color"
               title="Project color"
             />
             <button
@@ -134,7 +150,7 @@ export function ProjectsManager({
             className="group flex items-center gap-1.5 rounded-lg border border-border px-3 py-2"
           >
             <span
-              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+              className="inline-block size-2.5 flex-shrink-0 rounded-full"
               style={{ backgroundColor: p.color }}
             />
             <div className="flex flex-col">
@@ -152,7 +168,7 @@ export function ProjectsManager({
                 variant="danger"
               >
                 <Trash2
-                  className={`h-3 w-3 opacity-0 group-hover:opacity-100 ${archivingId === p.id ? 'opacity-100' : ''}`}
+                  className={`size-3 opacity-0 group-hover:opacity-100 ${archivingId === p.id ? 'opacity-100' : ''}`}
                 />
               </IconBtn>
             )}

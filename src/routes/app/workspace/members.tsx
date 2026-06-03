@@ -73,6 +73,7 @@ export const Route = createFileRoute('/app/workspace/members')({
   component: MembersRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function MembersRoute() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,

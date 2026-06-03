@@ -112,10 +112,10 @@ function UserProfileSection({
             <img
               src={image}
               alt={name}
-              className="h-full w-full rounded-full object-cover"
+              className="size-full rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-primary/10 font-heading text-xl font-black text-primary">
+            <div className="flex size-full items-center justify-center bg-primary/10 font-heading text-xl font-black text-primary">
               {initials}
             </div>
           )}

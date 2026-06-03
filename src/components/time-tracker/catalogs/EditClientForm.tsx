@@ -47,6 +47,7 @@ export function EditClientForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Client name"
+        aria-label="Client name"
         required
         className={inputClass}
       />
@@ -55,7 +56,7 @@ export function EditClientForm({
           type="checkbox"
           checked={active}
           onChange={(e) => setActive(e.target.checked)}
-          className="h-4 w-4 accent-primary"
+          className="size-4 accent-primary"
         />
         Active (visible in timer)
       </label>

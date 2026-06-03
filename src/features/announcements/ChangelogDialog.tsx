@@ -48,8 +48,8 @@ export function ChangelogDialog({ open, entry, onComplete }: Props) {
         <div className="overflow-y-auto p-6 space-y-6">
           <DialogHeader>
             <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              What's New — v{entry.version}
+              <Sparkles className="size-3.5" />
+              What's New: v{entry.version}
             </div>
 
             <DialogTitle className="text-2xl font-black tracking-tight">
@@ -76,7 +76,7 @@ export function ChangelogDialog({ open, entry, onComplete }: Props) {
                   className="rounded-lg border border-border bg-muted/50 p-4"
                 >
                   <h4 className="m-0 flex items-center gap-2 text-sm font-bold">
-                    <ArrowUpCircle className="h-4 w-4 shrink-0 text-primary" />
+                    <ArrowUpCircle className="size-4 shrink-0 text-primary" />
                     {feature.title}
                   </h4>
                   {feature.description && (
@@ -111,7 +111,7 @@ export function ChangelogDialog({ open, entry, onComplete }: Props) {
                   onClick={() => handleAction(action.to)}
                 >
                   {action.label}
-                  <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+                  <ExternalLink className="ml-1.5 size-3.5" />
                 </Button>
               ))}
             </div>

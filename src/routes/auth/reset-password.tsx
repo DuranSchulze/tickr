@@ -21,6 +21,7 @@ export const Route = createFileRoute('/auth/reset-password')({
   component: ResetPasswordPage,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ResetPasswordPage() {
   const { token, error: searchError } = Route.useSearch()
   const navigate = useNavigate()
@@ -76,8 +77,8 @@ function ResetPasswordPage() {
     return (
       <AuthSplitLayout>
         <div className="mt-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
-            <AlertTriangle className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
+            <AlertTriangle className="size-6" />
           </div>
           <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
             Link expired or invalid
@@ -111,8 +112,8 @@ function ResetPasswordPage() {
     return (
       <AuthSplitLayout>
         <div className="mt-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-            <CheckCircle2 className="h-6 w-6" />
+          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+            <CheckCircle2 className="size-6" />
           </div>
           <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
             Password updated
@@ -138,8 +139,8 @@ function ResetPasswordPage() {
   return (
     <AuthSplitLayout>
       <div className="mt-8">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-          <KeyRound className="h-6 w-6" />
+        <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+          <KeyRound className="size-6" />
         </div>
         <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
           Set a new password

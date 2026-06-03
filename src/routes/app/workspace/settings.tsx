@@ -20,6 +20,7 @@ export const Route = createFileRoute('/app/workspace/settings')({
   component: SettingsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function SettingsRoute() {
   const state = Route.useLoaderData()
   return <SettingsScreen state={state} />

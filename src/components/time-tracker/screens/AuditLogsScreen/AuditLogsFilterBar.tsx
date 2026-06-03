@@ -156,10 +156,11 @@ export function AuditLogsFilterBar({
       <div className="flex flex-wrap items-center gap-2">
         {/* Actor email search */}
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
             placeholder="Search by actor email…"
+            aria-label="Search by actor email"
             value={localEmail}
             onChange={(e) => handleEmailInput(e.target.value)}
             className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm text-foreground outline-none focus:border-primary"
@@ -188,7 +189,7 @@ export function AuditLogsFilterBar({
 
         {/* Quick date range */}
         <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
-          <CalendarDays className="ml-1.5 h-3.5 w-3.5 text-muted-foreground" />
+          <CalendarDays className="ml-1.5 size-3.5 text-muted-foreground" />
           {(
             [
               { key: '', label: 'Any time' },
@@ -219,7 +220,7 @@ export function AuditLogsFilterBar({
             onClick={clearAll}
             className="flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="size-3.5" />
             Clear
           </button>
         )}
@@ -237,6 +238,7 @@ export function AuditLogsFilterBar({
             onChange={(e) =>
               onChange({ ...filters, fromDate: e.target.value || undefined })
             }
+            aria-label="From date"
             className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
           />
           <span className="text-xs font-medium text-muted-foreground">to</span>
@@ -247,6 +249,7 @@ export function AuditLogsFilterBar({
               onChange({ ...filters, toDate: e.target.value || undefined })
             }
             min={filters.fromDate}
+            aria-label="To date"
             className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
           />
         </div>

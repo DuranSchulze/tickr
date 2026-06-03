@@ -51,6 +51,7 @@ export function EntryDraftForm({
           value={draft.description}
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           placeholder="Task description"
+          aria-label="Task description"
           maxLength={200}
           className="h-10 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
         />
@@ -102,7 +103,7 @@ export function EntryDraftForm({
             type="checkbox"
             checked={draft.billable}
             onChange={(e) => setDraft({ ...draft, billable: e.target.checked })}
-            className="h-4 w-4"
+            className="size-4"
           />
           Billable
         </label>
@@ -114,6 +115,7 @@ export function EntryDraftForm({
           value={draft.notes}
           onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
           placeholder="Notes (optional)"
+          aria-label="Notes"
           className="h-10 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
         />
       )}

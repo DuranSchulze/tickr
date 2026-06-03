@@ -56,7 +56,7 @@ export function DepartmentProjectBreakdown({
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: p.color }}
                     />
                     <span className="text-sm font-medium text-foreground">

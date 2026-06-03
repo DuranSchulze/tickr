@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { calculateManualSeconds, emptyDraft, toEntryPayload } from '../utils'
@@ -34,17 +34,20 @@ export function useDraftAndEdit({
     ),
   )
 
+  // Derive editing validity — auto-cancels when entry is no longer in state
+  const resolvedEditingId: string | null = editingId
+    ? state.entries.some((e) => e.id === editingId)
+      ? editingId
+      : null
+    : null
+
   const editingEntry = useMemo(
     () =>
-      editingId
-        ? (state.entries.find((e) => e.id === editingId) ?? null)
+      resolvedEditingId
+        ? (state.entries.find((e) => e.id === resolvedEditingId) ?? null)
         : null,
-    [editingId, state.entries],
+    [resolvedEditingId, state.entries],
   )
-
-  useEffect(() => {
-    if (editingId && !editingEntry) setEditingId(null)
-  }, [editingId, editingEntry])
 
   function addManualEntry() {
     if (

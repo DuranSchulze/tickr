@@ -36,9 +36,11 @@ export function TimerOptionsSheet({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center lg:hidden">
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
+        aria-label="Close"
       />
       <div className="relative grid w-full max-w-sm gap-4 rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-xl">
         <div className="flex items-center justify-between">
@@ -48,10 +50,10 @@ export function TimerOptionsSheet({
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Close timer options"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
 

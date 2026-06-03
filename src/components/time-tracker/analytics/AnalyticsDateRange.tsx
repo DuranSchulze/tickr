@@ -75,10 +75,10 @@ export function AnalyticsDateRange({
         }}
         className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent"
       >
-        <CalendarDays className="h-4 w-4 text-primary" />
+        <CalendarDays className="size-4 text-primary" />
         {formatRange(range.startDate, range.endDate)}
         <ChevronDown
-          className={`h-4 w-4 text-muted-foreground transition-transform ${
+          className={`size-4 text-muted-foreground transition-transform ${
             open ? 'rotate-180' : ''
           }`}
         />
@@ -115,7 +115,7 @@ export function AnalyticsDateRange({
               disabled={!draft?.from || !draft.to}
               className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
             >
-              <Check className="h-4 w-4" />
+              <Check className="size-4" />
               Apply
             </button>
           </div>

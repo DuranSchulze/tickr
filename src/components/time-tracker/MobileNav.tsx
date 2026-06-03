@@ -74,7 +74,7 @@ export const MobileNav = memo(function ({
           aria-label="Open navigation"
           className="lg:hidden"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="size-5" />
         </Button>
       </DrawerTrigger>
 
@@ -93,7 +93,7 @@ export const MobileNav = memo(function ({
                   {userEmail}
                 </p>
               </div>
-              <BriefcaseBusiness className="h-4 w-4 shrink-0 text-primary" />
+              <BriefcaseBusiness className="size-4 shrink-0 text-primary" />
             </div>
           </div>
 
@@ -107,7 +107,7 @@ export const MobileNav = memo(function ({
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
-              <Timer className="h-4 w-4 shrink-0" />
+              <Timer className="size-4 shrink-0" />
               <span>Timer</span>
             </Link>
 
@@ -121,7 +121,7 @@ export const MobileNav = memo(function ({
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
               >
-                <BarChart3 className="h-4 w-4 shrink-0" />
+                <BarChart3 className="size-4 shrink-0" />
                 <span>Analytics</span>
               </Link>
             )}
@@ -135,7 +135,7 @@ export const MobileNav = memo(function ({
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
-              <CalendarDays className="h-4 w-4 shrink-0" />
+              <CalendarDays className="size-4 shrink-0" />
               <span>Calendar</span>
             </Link>
 
@@ -148,7 +148,7 @@ export const MobileNav = memo(function ({
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
-              <TrendingUp className="h-4 w-4 shrink-0" />
+              <TrendingUp className="size-4 shrink-0" />
               <span>My Performance</span>
             </Link>
 
@@ -162,7 +162,7 @@ export const MobileNav = memo(function ({
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 }`}
               >
-                <Activity className="h-4 w-4 shrink-0" />
+                <Activity className="size-4 shrink-0" />
                 <span>Team Activity</span>
               </Link>
             )}
@@ -180,10 +180,10 @@ export const MobileNav = memo(function ({
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   }`}
                 >
-                  <Cog className="h-4 w-4 shrink-0" />
+                  <Cog className="size-4 shrink-0" />
                   <span className="flex-1 text-left">Settings</span>
                   <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                    className={`size-3.5 shrink-0 transition-transform duration-200 ${
                       settingsOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -204,7 +204,7 @@ export const MobileNav = memo(function ({
                               'flex items-center gap-3 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground no-underline',
                           }}
                         >
-                          <Icon className="h-4 w-4" />
+                          <Icon className="size-4" />
                           {item.label}
                         </Link>
                       )

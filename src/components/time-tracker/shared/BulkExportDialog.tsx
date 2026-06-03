@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { FileSpreadsheet, FileText, Layers, Loader2 } from 'lucide-react'
 import { gooeyToast } from 'goey-toast'
 import {
@@ -54,22 +54,31 @@ export function BulkExportButton({
   className?: string
 }) {
   const [open, setOpen] = useState(false)
-  const [scopeType, setScopeType] = useState<BulkReportScopeType>('all')
-  const [scopeId, setScopeId] = useState('')
-  const [startDate, setStartDate] = useState(
-    defaultStartDate ?? monthStartStr(),
-  )
-  const [endDate, setEndDate] = useState(defaultEndDate ?? todayStr())
-  const [exporting, setExporting] = useState<ExportFormat | null>(null)
+  // Key form state by `open` — resets to defaults automatically when dialog opens
+  const [formState, setFormState] = useState<{
+    open: boolean
+    scopeType: BulkReportScopeType
+    scopeId: string
+    startDate: string
+    endDate: string
+  }>({
+    open: false,
+    scopeType: 'all',
+    scopeId: '',
+    startDate: defaultStartDate ?? monthStartStr(),
+    endDate: defaultEndDate ?? todayStr(),
+  })
 
-  useEffect(() => {
-    if (open) {
-      setScopeType('all')
-      setScopeId('')
-      setStartDate(defaultStartDate ?? monthStartStr())
-      setEndDate(defaultEndDate ?? todayStr())
-    }
-  }, [open, defaultStartDate, defaultEndDate])
+  const scopeType = formState.open === open ? formState.scopeType : 'all'
+  const scopeId = formState.open === open ? formState.scopeId : ''
+  const startDate =
+    formState.open === open
+      ? formState.startDate
+      : (defaultStartDate ?? monthStartStr())
+  const endDate =
+    formState.open === open ? formState.endDate : (defaultEndDate ?? todayStr())
+
+  const [exporting, setExporting] = useState<ExportFormat | null>(null)
 
   const today = todayStr()
   const scopeEntities =
@@ -118,7 +127,7 @@ export function BulkExportButton({
         onClick={() => setOpen(true)}
         className={`no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
       >
-        <Layers className="h-4 w-4" />
+        <Layers className="size-4" />
         Bulk Export
       </button>
 
@@ -144,8 +153,11 @@ export function BulkExportButton({
                     key={opt.value}
                     type="button"
                     onClick={() => {
-                      setScopeType(opt.value)
-                      setScopeId('')
+                      setFormState((prev) => ({
+                        ...prev,
+                        scopeType: opt.value,
+                        scopeId: '',
+                      }))
                     }}
                     className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-colors ${
                       scopeType === opt.value
@@ -167,7 +179,12 @@ export function BulkExportButton({
                 </label>
                 <select
                   value={scopeId}
-                  onChange={(e) => setScopeId(e.target.value)}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      scopeId: e.target.value,
+                    }))
+                  }
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 >
                   <option value="">Choose a {scopeType}…</option>
@@ -195,7 +212,13 @@ export function BulkExportButton({
                   type="date"
                   value={startDate}
                   max={endDate || today}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
+                  }
+                  aria-label="Start date"
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -208,7 +231,13 @@ export function BulkExportButton({
                   value={endDate}
                   min={startDate || undefined}
                   max={today}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
+                  }
+                  aria-label="End date"
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -227,9 +256,9 @@ export function BulkExportButton({
               disabled={invalid || exporting !== null}
             >
               {exporting === 'csv' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 size-4" />
               )}
               CSV
             </Button>
@@ -238,9 +267,9 @@ export function BulkExportButton({
               disabled={invalid || exporting !== null}
             >
               {exporting === 'pdf' ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
               ) : (
-                <FileText className="mr-2 h-4 w-4" />
+                <FileText className="mr-2 size-4" />
               )}
               PDF
             </Button>

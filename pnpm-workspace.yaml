@@ -1,3 +1,10 @@
+# Delay installing newly published versions for 7 days (10080 minutes) so that
+# malicious releases have time to be detected and unpublished before we pull them in.
+minimumReleaseAge: 10080
+# Refuse to silently install an older version than the one already in the lockfile,
+# so an attacker can't push a malicious "downgrade" to a known-vulnerable release.
+trustPolicy: no-downgrade
+
 onlyBuiltDependencies:
   - esbuild
   - lightningcss

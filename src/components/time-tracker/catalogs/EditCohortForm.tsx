@@ -56,6 +56,7 @@ export function EditCohortForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Cohort name"
+        aria-label="Cohort name"
         required
         className={inputClass}
       />

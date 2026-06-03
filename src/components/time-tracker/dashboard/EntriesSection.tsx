@@ -53,7 +53,7 @@ function taskGroupKey(entry: TimeEntry): string {
   return [
     entry.description.trim().toLowerCase(),
     entry.projectId,
-    [...entry.tagIds].sort().join(','),
+    entry.tagIds.toSorted().join(','),
     String(entry.billable),
   ].join('|')
 }
@@ -66,7 +66,7 @@ function groupEntriesByTask(entries: TimeEntry[]): TaskGroup[] {
     map.get(key)!.push(entry)
   }
   return Array.from(map.entries()).map(([key, groupEntries]) => {
-    const sorted = [...groupEntries].sort(
+    const sorted = groupEntries.toSorted(
       (a, b) =>
         new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
     )
@@ -180,9 +180,9 @@ function TaskGroupHeaderRow({
       <td className="px-4 py-3 w-[32%]">
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
           )}
           <span className="truncate text-sm font-semibold text-foreground">
             {group.description || (
@@ -202,13 +202,13 @@ function TaskGroupHeaderRow({
         {project ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span
-              className="h-2 w-2 rounded-full shrink-0"
+              className="size-2 rounded-full shrink-0"
               style={{ backgroundColor: project.color }}
             />
             <span className="truncate">{project.name}</span>
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">–</span>
         )}
       </td>
 
@@ -241,7 +241,7 @@ function TaskGroupHeaderRow({
             className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Resume task"
           >
-            <Play className="h-3.5 w-3.5" />
+            <Play className="size-3.5" />
           </button>
         </div>
       </td>
@@ -282,9 +282,9 @@ function TaskGroupHeaderCard({
       >
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
           )}
           <span className="truncate font-semibold text-foreground">
             {group.description || (
@@ -305,7 +305,7 @@ function TaskGroupHeaderCard({
           {project && (
             <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
               <span
-                className="h-2 w-2 rounded-full"
+                className="size-2 rounded-full"
                 style={{ backgroundColor: project.color }}
               />
               {project.name}
@@ -336,7 +336,7 @@ function TaskGroupHeaderCard({
           className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Resume task"
         >
-          <Play className="h-3.5 w-3.5" />
+          <Play className="size-3.5" />
         </button>
       </div>
     </div>
@@ -494,12 +494,12 @@ export function EntriesSection({
               >
                 {allCollapsed ? (
                   <>
-                    <ChevronsUpDown className="h-3 w-3" />
+                    <ChevronsUpDown className="size-3" />
                     Expand all
                   </>
                 ) : (
                   <>
-                    <ChevronsDownUp className="h-3 w-3" />
+                    <ChevronsDownUp className="size-3" />
                     Collapse all
                   </>
                 )}
@@ -511,7 +511,7 @@ export function EntriesSection({
                 onClick={clearFilters}
                 className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
               >
-                <X className="h-3 w-3" />
+                <X className="size-3" />
                 Clear ({activeFilterCount})
               </button>
             )}
@@ -524,7 +524,7 @@ export function EntriesSection({
                   : 'border-border text-foreground hover:bg-accent'
               }`}
             >
-              <Filter className="h-3.5 w-3.5" />
+              <Filter className="size-3.5" />
               Filter / Sort
               {activeFilterCount > 0 && (
                 <span className="ml-0.5 rounded-full bg-card px-1.5 text-xs font-bold text-foreground">
@@ -589,9 +589,9 @@ export function EntriesSection({
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {isDayCollapsed ? (
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
                     )}
                     <span className="text-sm font-bold text-foreground">
                       {group.label}
@@ -811,7 +811,7 @@ export function EntriesSection({
             onClick={() => setVisibleGroupCount((c) => c + GROUPS_PER_PAGE)}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
           >
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="size-4" />
             Show {Math.min(GROUPS_PER_PAGE, hiddenGroupCount)} more{' '}
             {Math.min(GROUPS_PER_PAGE, hiddenGroupCount) === 1 ? 'day' : 'days'}
             <span className="text-xs text-muted-foreground">

@@ -11,6 +11,14 @@ type RolesSearch = {
 }
 
 export const Route = createFileRoute('/app/workspace/catalogs/roles')({
+  validateSearch: (search: Record<string, unknown>): RolesSearch => ({
+    page: typeof search.page === 'number' ? search.page : undefined,
+    search: typeof search.search === 'string' ? search.search : undefined,
+  }),
+  loaderDeps: ({ search }) => ({
+    page: search.page ?? 0,
+    search: search.search ?? '',
+  }),
   beforeLoad: async ({ context }) => {
     const access = await context.queryClient.ensureQueryData({
       queryKey: ['workspace-access'],
@@ -21,14 +29,6 @@ export const Route = createFileRoute('/app/workspace/catalogs/roles')({
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  validateSearch: (search: Record<string, unknown>): RolesSearch => ({
-    page: typeof search.page === 'number' ? search.page : undefined,
-    search: typeof search.search === 'string' ? search.search : undefined,
-  }),
-  loaderDeps: ({ search }) => ({
-    page: search.page ?? 0,
-    search: search.search ?? '',
-  }),
   loader: async ({ deps }) => {
     const paginatedRoles = await getPaginatedRolesFn({
       data: {
@@ -43,6 +43,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/roles')({
   component: RolesRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function RolesRoute() {
   const { data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()

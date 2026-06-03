@@ -15,6 +15,7 @@ export const Route = createFileRoute('/app/my-performance')({
   }),
 })
 
+// oxlint-disable-next-line react/only-export-components
 function MyPerformanceRoute() {
   const { performance } = Route.useLoaderData()
   return <PerformancePage data={performance} />

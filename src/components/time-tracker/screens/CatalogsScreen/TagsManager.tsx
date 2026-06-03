@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { Plus, Trash2, X } from 'lucide-react'
@@ -15,33 +15,46 @@ export function TagsManager({
   canManage: boolean
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [color, setColor] = useState('#14b8a6')
-  const [pending, setPending] = useState(false)
-  const [archivingId, setArchivingId] = useState<string | null>(null)
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showForm: boolean
+        name: string
+        color: string
+        pending: boolean
+        archivingId: string | null
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showForm: false,
+      name: '',
+      color: '#14b8a6',
+      pending: false,
+      archivingId: null,
+    },
+  )
+  const { showForm, name, color, pending, archivingId } = local
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       await createTagFn({ data: { name, color } })
       await router.invalidate()
       gooeyToast.success('Tag created')
-      setName('')
-      setColor('#14b8a6')
-      setShowForm(false)
+      dispatch({ name: '', color: '#14b8a6', showForm: false })
     } catch (err) {
       gooeyToast.error('Could not create tag', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
   async function handleArchive(id: string, tagName: string) {
-    setArchivingId(id)
+    dispatch({ archivingId: id })
     try {
       await archiveTagFn({ data: { id } })
       await router.invalidate()
@@ -51,7 +64,7 @@ export function TagsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
@@ -62,13 +75,13 @@ export function TagsManager({
         canManage ? (
           <button
             type="button"
-            onClick={() => setShowForm((p) => !p)}
+            onClick={() => dispatch({ showForm: !showForm })}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
             {showForm ? (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             ) : (
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
             )}
             {showForm ? 'Cancel' : 'New tag'}
           </button>
@@ -79,17 +92,19 @@ export function TagsManager({
         <form onSubmit={handleCreate} className="mt-4 flex gap-2">
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => dispatch({ name: e.target.value })}
             placeholder="Tag name"
+            aria-label="Tag name"
             required
             className="h-9 flex-1 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <input
             type="color"
             value={color}
-            onChange={(e) => setColor(e.target.value)}
+            onChange={(e) => dispatch({ color: e.target.value })}
             className="h-9 w-12 cursor-pointer rounded-lg border border-border p-1"
             title="Tag color"
+            aria-label="Tag color"
           />
           <button
             type="submit"
@@ -107,7 +122,7 @@ export function TagsManager({
             className="group flex items-center gap-1.5 rounded-lg border border-border px-3 py-2"
           >
             <span
-              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+              className="inline-block size-2.5 flex-shrink-0 rounded-full"
               style={{ backgroundColor: t.color }}
             />
             <span className="text-sm font-semibold text-foreground">
@@ -120,7 +135,7 @@ export function TagsManager({
                 variant="danger"
               >
                 <Trash2
-                  className={`h-3 w-3 opacity-0 group-hover:opacity-100 ${archivingId === t.id ? 'opacity-100' : ''}`}
+                  className={`size-3 opacity-0 group-hover:opacity-100 ${archivingId === t.id ? 'opacity-100' : ''}`}
                 />
               </IconBtn>
             )}

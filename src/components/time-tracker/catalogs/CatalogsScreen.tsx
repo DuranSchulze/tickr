@@ -29,7 +29,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Roles',
       description: 'Permission levels used to control workspace access.',
       count: state.roles.length,
-      icon: <ShieldCheck className="h-5 w-5" />,
+      icon: <ShieldCheck className="size-5" />,
       accent: blueAccent,
       preview: <Preview names={state.roles.map((r) => r.name)} />,
       href: '/app/workspace/catalogs/roles',
@@ -39,7 +39,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Clients',
       description: 'Customers and accounts that own one or more projects.',
       count: state.clients.length,
-      icon: <Building className="h-5 w-5" />,
+      icon: <Building className="size-5" />,
       accent: skyAccent,
       preview: <Preview names={state.clients.map((c) => c.name)} />,
       href: '/app/workspace/catalogs/clients',
@@ -49,7 +49,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Projects',
       description: 'Billable or internal work streams used by time entries.',
       count: state.projects.length,
-      icon: <Briefcase className="h-5 w-5" />,
+      icon: <Briefcase className="size-5" />,
       accent: greenAccent,
       preview: <Preview names={state.projects.map((p) => p.name)} />,
       href: '/app/workspace/catalogs/projects',
@@ -59,7 +59,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Tags',
       description: 'Labels for classifying tasks across projects and reports.',
       count: state.tags.length,
-      icon: <Tags className="h-5 w-5" />,
+      icon: <Tags className="size-5" />,
       accent: tealAccent,
       preview: <Preview names={state.tags.map((t) => t.name)} />,
       href: '/app/workspace/catalogs/tags',
@@ -69,7 +69,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Departments',
       description: 'Primary organizational units for members and cohorts.',
       count: state.departments.length,
-      icon: <Building2 className="h-5 w-5" />,
+      icon: <Building2 className="size-5" />,
       accent: violetAccent,
       preview: <Preview names={state.departments.map((d) => d.name)} />,
       href: '/app/workspace/catalogs/departments',
@@ -79,7 +79,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       title: 'Groups / Cohorts',
       description: 'Teams inside departments for finer member filtering.',
       count: state.cohorts.length,
-      icon: <UsersRound className="h-5 w-5" />,
+      icon: <UsersRound className="size-5" />,
       accent: amberAccent,
       preview: <Preview names={state.cohorts.map((c) => c.name)} />,
       href: '/app/workspace/catalogs/cohorts',
@@ -133,7 +133,7 @@ function CatalogNavCard({ catalog }: { catalog: CatalogNav }) {
     >
       <div className="flex items-start justify-between gap-3">
         <span
-          className={`grid h-11 w-11 place-items-center rounded-lg border ${catalog.accent.border} ${catalog.accent.bg} ${catalog.accent.text}`}
+          className={`grid size-11 place-items-center rounded-lg border ${catalog.accent.border} ${catalog.accent.bg} ${catalog.accent.text}`}
         >
           {catalog.icon}
         </span>

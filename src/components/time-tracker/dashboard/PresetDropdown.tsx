@@ -84,9 +84,9 @@ export function PresetDropdown({
             variant="outline"
             className="inline-flex h-11 items-center justify-center gap-2 px-3"
           >
-            <Bookmark className="h-4 w-4" />
+            <Bookmark className="size-4" />
             <span className="hidden sm:inline">Presets</span>
-            <ChevronDown className="h-4 w-4" />
+            <ChevronDown className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -118,11 +118,12 @@ export function PresetDropdown({
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => handleDeletePreset(e, preset.id)}
                     className="shrink-0 p-1 rounded-sm hover:bg-accent hover:text-destructive opacity-0 group-hover:opacity-100 focus:opacity-100"
                     tabIndex={-1}
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <Trash2 className="size-3.5" />
                   </button>
                 </DropdownMenuItem>
               )
@@ -135,7 +136,7 @@ export function PresetDropdown({
             onClick={handleOpenSaveDialog}
             disabled={!canSaveCurrent}
           >
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 size-4" />
             Save current as preset...
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -107,7 +107,7 @@ export function MembersScreen({
                 onClick={() => setShowForm(true)}
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
               >
-                <UserPlus className="h-4 w-4" />
+                <UserPlus className="size-4" />
                 Invite member
               </button>
             )}

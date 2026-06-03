@@ -57,7 +57,7 @@ export const PerformanceHeatmap = memo(function ({
         {intensityStyles.map((cls, index) => (
           <span
             key={cls}
-            className={`h-3 w-3 rounded-[3px] border border-border/60 ${cls}`}
+            className={`size-3 rounded-[3px] border border-border/60 ${cls}`}
             title={`Level ${index}`}
           />
         ))}

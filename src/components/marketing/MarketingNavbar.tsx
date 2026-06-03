@@ -43,8 +43,8 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
                 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 title={session?.user?.email}
               >
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
-                  <User className="h-3.5 w-3.5" />
+                <div className="flex size-6 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+                  <User className="size-3.5" />
                 </div>
                 <span className="max-w-[120px] truncate">
                   {
@@ -58,7 +58,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)] no-underline shadow-lg shadow-[var(--primary)]/20 transition-all hover:-translate-y-0.5 hover:brightness-110"
               >
                 Open tracker
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="size-4" />
               </Link>
             </>
           ) : (
@@ -74,7 +74,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-4 py-2 text-sm font-bold text-[var(--primary-foreground)] no-underline shadow-lg shadow-[var(--primary)]/20 transition-all hover:-translate-y-0.5 hover:brightness-110"
               >
                 Open app
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="size-4" />
               </Link>
             </>
           )}
@@ -90,7 +90,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
       href={href}
       className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-muted-foreground no-underline transition-colors hover:bg-muted hover:text-foreground"
     >
-      <Sparkles className="h-3.5 w-3.5 text-[var(--primary)]" />
+      <Sparkles className="size-3.5 text-[var(--primary)]" />
       {children}
     </a>
   )

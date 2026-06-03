@@ -45,27 +45,31 @@ export function InviteMemberDialog({
     if (emails.length === 0) return
 
     setPending(true)
-    let successCount = 0
-    let failCount = 0
     const errors: Array<{ email: string; error: string }> = []
 
-    for (const email of emails) {
-      try {
-        await createWorkspaceInviteFn({
-          data: {
-            email,
-            workspaceRoleId,
-            departmentId: departmentId || undefined,
-          },
-        })
-        successCount++
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        console.error('Invite failed for', email, message)
-        errors.push({ email, error: message })
-        failCount++
-      }
-    }
+    // Each invite targets a distinct email, so fan them out concurrently
+    // instead of awaiting one round-trip per email in sequence.
+    const results = await Promise.all(
+      emails.map(async (email) => {
+        try {
+          await createWorkspaceInviteFn({
+            data: {
+              email,
+              workspaceRoleId,
+              departmentId: departmentId || undefined,
+            },
+          })
+          return true
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Unknown error'
+          console.error('Invite failed for', email, message)
+          errors.push({ email, error: message })
+          return false
+        }
+      }),
+    )
+    const successCount = results.filter(Boolean).length
+    const failCount = results.length - successCount
 
     await router.invalidate()
 
@@ -171,12 +175,12 @@ export function InviteMemberDialog({
             <Button type="submit" disabled={pending || emailCount === 0}>
               {pending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                   Inviting...
                 </>
               ) : (
                 <>
-                  <Mail className="mr-2 h-4 w-4" />
+                  <Mail className="mr-2 size-4" />
                   Invite{emailCount > 1 ? ` (${emailCount})` : ''}
                 </>
               )}

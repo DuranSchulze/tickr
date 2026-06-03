@@ -27,6 +27,7 @@ export const Route = createFileRoute('/invite/$token')({
   component: InvitePage,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function InvitePage() {
   const { token, preview, signedInEmail, signedInName } = Route.useLoaderData()
   const navigate = useNavigate()
@@ -106,7 +107,7 @@ function InvitePage() {
           <img
             src={BRAND.logoSrc}
             alt={BRAND.logoAlt}
-            className="h-9 w-9 rounded-lg object-contain"
+            className="size-9 rounded-lg object-contain"
           />
           <span className="text-sm font-bold">{BRAND.name}</span>
         </Link>
@@ -114,7 +115,7 @@ function InvitePage() {
       </div>
 
       <section className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <Mail className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+        <Mail className="size-8 text-indigo-600 dark:text-indigo-400" />
         <h1 className="m-0 mt-4 text-2xl font-black tracking-tight">
           {heading}
         </h1>
@@ -214,7 +215,7 @@ function InvitePage() {
                       onClick={handleSwitchAccount}
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 text-sm font-semibold transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                     >
-                      <LogOut className="h-4 w-4" /> Sign out &amp; use{' '}
+                      <LogOut className="size-4" /> Sign out &amp; use{' '}
                       {preview.inviteEmail}
                     </button>
                   </>
@@ -243,6 +244,7 @@ function getHeading(status: string): string {
   }
 }
 
+// oxlint-disable-next-line react/only-export-components
 function StatusNotice({
   tone,
   icon: Icon,
@@ -260,7 +262,7 @@ function StatusNotice({
     <div
       className={`mt-5 flex items-start gap-3 rounded-lg border p-3 text-sm ${toneClass}`}
     >
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+      <Icon className="mt-0.5 size-4 shrink-0" />
       <div>{children}</div>
     </div>
   )

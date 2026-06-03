@@ -52,7 +52,8 @@ export function ClientProjectPicker({
 
   useEffect(() => {
     if (open) {
-      setTimeout(() => inputRef.current?.focus(), 0)
+      const id = setTimeout(() => inputRef.current?.focus(), 0)
+      return () => clearTimeout(id)
     } else {
       setSearch('')
     }
@@ -119,7 +120,7 @@ export function ClientProjectPicker({
             {hasSelection ? (
               <>
                 <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  className="size-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: selectedProject!.color }}
                 />
                 <span className="truncate text-left">
@@ -147,13 +148,13 @@ export function ClientProjectPicker({
                 onKeyDown={(e) => e.key === 'Enter' && handleClear(e as never)}
                 aria-label="Clear client and project"
                 className={cn(
-                  'grid h-5 w-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                  'grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
                 )}
               >
-                <X className="h-3 w-3" />
+                <X className="size-3" />
               </span>
             )}
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           </div>
         </button>
 
@@ -189,6 +190,7 @@ export function ClientProjectPicker({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search clients or projects…"
+              aria-label="Search clients or projects"
               className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
             />
           </div>
@@ -210,7 +212,7 @@ export function ClientProjectPicker({
                         i > 0 && 'mt-1 border-t border-border/50 pt-2',
                       )}
                     >
-                      <Building2 className="h-3 w-3 shrink-0" />
+                      <Building2 className="size-3 shrink-0" />
                       <span className="truncate">{row.client.name}</span>
                     </div>
                   )
@@ -231,12 +233,12 @@ export function ClientProjectPicker({
                     )}
                   >
                     <span
-                      className="h-2 w-2 shrink-0 rounded-full"
+                      className="size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: row.project.color }}
                     />
                     <span className="flex-1 truncate">{row.project.name}</span>
                     {isActive && (
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                     )}
                   </button>
                 )

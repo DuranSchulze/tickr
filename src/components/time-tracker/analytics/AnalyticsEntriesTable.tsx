@@ -95,7 +95,7 @@ export function AnalyticsEntriesTable({
                         )}
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">–</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5">
@@ -111,7 +111,7 @@ export function AnalyticsEntriesTable({
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">–</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-xs text-foreground">
@@ -131,7 +131,7 @@ export function AnalyticsEntriesTable({
                     {entry.billableAmount != null ? (
                       formatCurrency(entry.billableAmount, currency)
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">–</span>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-center">
@@ -140,7 +140,7 @@ export function AnalyticsEntriesTable({
                         Billable
                       </span>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">–</span>
                     )}
                   </td>
                 </tr>
@@ -160,17 +160,17 @@ export function AnalyticsEntriesTable({
               type="button"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="size-4" />
             </button>
             <button
               type="button"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="size-4" />
             </button>
           </div>
         </div>

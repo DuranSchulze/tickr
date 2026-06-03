@@ -167,33 +167,36 @@ export async function bulkArchiveProjects(data: z.infer<typeof bulkIdsSchema>) {
       ),
     )
 
-  for (const row of rows) {
-    let clientName = ''
-    if (row.clientId) {
-      const [client] = await db
-        .select({ name: clients.name })
-        .from(clients)
-        .where(eq(clients.id, row.clientId))
-        .limit(1)
-      clientName = client?.name ?? ''
-    }
-    void createAuditLog({
-      workspaceId: access.workspace.id,
-      actorId: access.user.id,
-      actorEmail: access.user.email,
-      action: 'PROJECT_ARCHIVE',
-      targetType: 'project',
-      targetId: row.id,
-      details: row.name,
-    })
-    void exportProject(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      clientName,
-      color: row.color,
-      archived: true,
-    })
-  }
+  // Per-row client-name lookups are independent reads — run them concurrently.
+  await Promise.all(
+    rows.map(async (row) => {
+      let clientName = ''
+      if (row.clientId) {
+        const [client] = await db
+          .select({ name: clients.name })
+          .from(clients)
+          .where(eq(clients.id, row.clientId))
+          .limit(1)
+        clientName = client?.name ?? ''
+      }
+      void createAuditLog({
+        workspaceId: access.workspace.id,
+        actorId: access.user.id,
+        actorEmail: access.user.email,
+        action: 'PROJECT_ARCHIVE',
+        targetType: 'project',
+        targetId: row.id,
+        details: row.name,
+      })
+      void exportProject(access.workspace.id, {
+        id: row.id,
+        name: row.name,
+        clientName,
+        color: row.color,
+        archived: true,
+      })
+    }),
+  )
 }
 
 export async function bulkActivateProjects(
@@ -227,33 +230,36 @@ export async function bulkActivateProjects(
       ),
     )
 
-  for (const row of rows) {
-    let clientName = ''
-    if (row.clientId) {
-      const [client] = await db
-        .select({ name: clients.name })
-        .from(clients)
-        .where(eq(clients.id, row.clientId))
-        .limit(1)
-      clientName = client?.name ?? ''
-    }
-    void createAuditLog({
-      workspaceId: access.workspace.id,
-      actorId: access.user.id,
-      actorEmail: access.user.email,
-      action: 'PROJECT_ACTIVATE',
-      targetType: 'project',
-      targetId: row.id,
-      details: row.name,
-    })
-    void exportProject(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      clientName,
-      color: row.color,
-      archived: false,
-    })
-  }
+  // Per-row client-name lookups are independent reads — run them concurrently.
+  await Promise.all(
+    rows.map(async (row) => {
+      let clientName = ''
+      if (row.clientId) {
+        const [client] = await db
+          .select({ name: clients.name })
+          .from(clients)
+          .where(eq(clients.id, row.clientId))
+          .limit(1)
+        clientName = client?.name ?? ''
+      }
+      void createAuditLog({
+        workspaceId: access.workspace.id,
+        actorId: access.user.id,
+        actorEmail: access.user.email,
+        action: 'PROJECT_ACTIVATE',
+        targetType: 'project',
+        targetId: row.id,
+        details: row.name,
+      })
+      void exportProject(access.workspace.id, {
+        id: row.id,
+        name: row.name,
+        clientName,
+        color: row.color,
+        archived: false,
+      })
+    }),
+  )
 }
 
 export async function archiveProject(data: z.infer<typeof idSchema>) {

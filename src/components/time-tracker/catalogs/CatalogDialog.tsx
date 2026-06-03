@@ -33,7 +33,7 @@ export function CatalogCard({
     >
       <div className="flex items-start justify-between gap-3">
         <span
-          className={`grid h-11 w-11 place-items-center rounded-lg border ${accent.border} ${accent.bg} ${accent.text}`}
+          className={`grid size-11 place-items-center rounded-lg border ${accent.border} ${accent.bg} ${accent.text}`}
         >
           {icon}
         </span>
@@ -77,16 +77,18 @@ export function CatalogDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-2 sm:items-center sm:p-6">
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/45 backdrop-blur-sm"
         onClick={onClose}
+        aria-label="Close"
       />
       <section className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-card shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
             <span
-              className={`hidden sm:grid h-10 w-10 shrink-0 place-items-center rounded-lg border ${accent.border} ${accent.bg} ${accent.text}`}
+              className={`hidden sm:grid size-10 shrink-0 place-items-center rounded-lg border ${accent.border} ${accent.bg} ${accent.text}`}
             >
               {icon}
             </span>
@@ -105,10 +107,10 @@ export function CatalogDialog({
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Close catalog"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
 
@@ -122,10 +124,10 @@ export function CatalogDialog({
           <button
             type="button"
             onClick={() => setFormOpen(true)}
-            className="absolute bottom-5 right-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+            className="absolute bottom-5 right-5 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
             aria-label="Add new item"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="size-5" />
           </button>
         )}
       </section>
@@ -133,9 +135,11 @@ export function CatalogDialog({
       {/* Form dialog */}
       {canManage && formOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
+          <button
+            type="button"
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setFormOpen(false)}
+            aria-label="Close"
           />
           <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
             <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -145,10 +149,10 @@ export function CatalogDialog({
               <button
                 type="button"
                 onClick={() => setFormOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
                 aria-label="Close form"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </button>
             </div>
             <div className="p-5">{createForm(() => setFormOpen(false))}</div>

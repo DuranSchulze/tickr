@@ -71,12 +71,12 @@ export const AppSidebar = memo(function ({
               type="button"
               onClick={onToggleCollapsed}
               title="Expand sidebar"
-              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
-              <PanelLeftOpen className="h-4 w-4" />
+              <PanelLeftOpen className="size-4" />
             </button>
-            <div className="flex h-9 w-9 items-center justify-center border border-primary/30 bg-primary/10">
-              <BriefcaseBusiness className="h-4 w-4 text-primary" />
+            <div className="flex size-9 items-center justify-center border border-primary/30 bg-primary/10">
+              <BriefcaseBusiness className="size-4 text-primary" />
             </div>
           </div>
         ) : (
@@ -89,9 +89,9 @@ export const AppSidebar = memo(function ({
                 type="button"
                 onClick={onToggleCollapsed}
                 title="Collapse sidebar"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               >
-                <PanelLeftClose className="h-4 w-4" />
+                <PanelLeftClose className="size-4" />
               </button>
             </div>
             <p className="m-0 mt-0.5 truncate text-sm font-bold text-foreground">
@@ -115,7 +115,7 @@ export const AppSidebar = memo(function ({
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
           >
-            <Timer className="h-4 w-4 shrink-0" />
+            <Timer className="size-4 shrink-0" />
             {!collapsed && <span>Timer</span>}
           </Link>
 
@@ -131,7 +131,7 @@ export const AppSidebar = memo(function ({
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
-              <BarChart3 className="h-4 w-4 shrink-0" />
+              <BarChart3 className="size-4 shrink-0" />
               {!collapsed && <span>Analytics</span>}
             </Link>
           )}
@@ -147,7 +147,7 @@ export const AppSidebar = memo(function ({
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
           >
-            <CalendarDays className="h-4 w-4 shrink-0" />
+            <CalendarDays className="size-4 shrink-0" />
             {!collapsed && <span>Calendar</span>}
           </Link>
 
@@ -162,7 +162,7 @@ export const AppSidebar = memo(function ({
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground'
             }`}
           >
-            <TrendingUp className="h-4 w-4 shrink-0" />
+            <TrendingUp className="size-4 shrink-0" />
             {!collapsed && <span>My Performance</span>}
           </Link>
 
@@ -178,7 +178,7 @@ export const AppSidebar = memo(function ({
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               }`}
             >
-              <Activity className="h-4 w-4 shrink-0" />
+              <Activity className="size-4 shrink-0" />
               {!collapsed && <span>Team Activity</span>}
             </Link>
           )}
@@ -195,7 +195,7 @@ export const AppSidebar = memo(function ({
                       : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   }`}
                 >
-                  <Cog className="h-4 w-4" />
+                  <Cog className="size-4" />
                 </Link>
               ) : (
                 <button
@@ -209,10 +209,10 @@ export const AppSidebar = memo(function ({
                         : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                   }`}
                 >
-                  <Cog className="h-4 w-4 shrink-0" />
+                  <Cog className="size-4 shrink-0" />
                   <span className="flex-1 text-left">Settings</span>
                   <ChevronDown
-                    className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
+                    className={`size-3.5 shrink-0 transition-transform duration-200 ${
                       settingsOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -233,7 +233,7 @@ export const AppSidebar = memo(function ({
                             'flex items-center gap-3 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground no-underline',
                         }}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="size-4" />
                         {item.label}
                       </Link>
                     )

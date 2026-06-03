@@ -54,6 +54,7 @@ export function EditDepartmentForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Department name"
+        aria-label="Department name"
         required
         className={inputClass}
       />
@@ -61,6 +62,7 @@ export function EditDepartmentForm({
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Description (optional)"
+        aria-label="Description"
         className={inputClass}
       />
       <ColorInput value={color} onChange={setColor} />

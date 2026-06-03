@@ -72,7 +72,7 @@ export function getLast7Days(
   dailyTotals: Array<{ date: string; seconds: number; entryCount: number }>,
   today: string,
 ) {
-  const sorted = [...dailyTotals].sort((a, b) => b.date.localeCompare(a.date))
+  const sorted = dailyTotals.toSorted((a, b) => b.date.localeCompare(a.date))
   return sorted
     .filter((d) => d.date <= today)
     .slice(0, 7)
@@ -83,7 +83,7 @@ export function getLast30Days(
   dailyTotals: Array<{ date: string; seconds: number; entryCount: number }>,
   today: string,
 ) {
-  const sorted = [...dailyTotals].sort((a, b) => b.date.localeCompare(a.date))
+  const sorted = dailyTotals.toSorted((a, b) => b.date.localeCompare(a.date))
   return sorted
     .filter((d) => d.date <= today)
     .slice(0, 30)

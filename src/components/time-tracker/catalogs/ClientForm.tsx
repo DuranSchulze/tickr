@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
@@ -12,25 +12,47 @@ import {
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
 
+type ClientFormState = {
+  mode: 'single' | 'bulk'
+  name: string
+  bulkNames: string
+  active: boolean
+  pending: boolean
+}
+
+const initialClientFormState: ClientFormState = {
+  mode: 'single',
+  name: '',
+  bulkNames: '',
+  active: true,
+  pending: false,
+}
+
+function clientFormReducer(
+  state: ClientFormState,
+  action: Partial<ClientFormState>,
+): ClientFormState {
+  return { ...state, ...action }
+}
+
 export function ClientForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter()
-  const [mode, setMode] = useState<'single' | 'bulk'>('single')
-  const [name, setName] = useState('')
-  const [bulkNames, setBulkNames] = useState('')
-  const [active, setActive] = useState(true)
-  const [pending, setPending] = useState(false)
+  const [state, dispatch] = useReducer(
+    clientFormReducer,
+    initialClientFormState,
+  )
+  const { mode, name, bulkNames, active, pending } = state
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       const status = active ? 'ACTIVE' : 'INACTIVE'
       if (mode === 'single') {
         await createClientFn({ data: { name, clientStatus: status } })
         await router.invalidate()
         gooeyToast.success('Client created')
-        setName('')
-        setActive(true)
+        dispatch({ name: '', active: true })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -41,14 +63,14 @@ export function ClientForm({ onSuccess }: { onSuccess?: () => void }) {
           router,
           onSuccess,
         )
-        setBulkNames('')
+        dispatch({ bulkNames: '' })
       }
     } catch (err) {
       gooeyToast.error('Could not create client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
@@ -57,23 +79,27 @@ export function ClientForm({ onSuccess }: { onSuccess?: () => void }) {
       <FormTitle
         title={mode === 'single' ? 'Create client' : 'Bulk create clients'}
       />
-      <ModeToggle mode={mode} onChange={setMode} />
+      <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
       {mode === 'single' ? (
         <input
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => dispatch({ name: event.target.value })}
           placeholder="Client name"
+          aria-label="Client name"
           required
           className={inputClass}
         />
       ) : (
-        <BulkNamesInput value={bulkNames} onChange={setBulkNames} />
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
       )}
       <label className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
         <input
           type="checkbox"
           checked={active}
-          onChange={(event) => setActive(event.target.checked)}
+          onChange={(event) => dispatch({ active: event.target.checked })}
         />
         Active (visible in timer)
       </label>

@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 
+// oxlint-disable-next-line react/only-export-components
 export function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -77,20 +78,20 @@ export function ExportMenu({
         className="no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isBusy ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 className="size-4 animate-spin" />
         ) : (
-          <FileText className="h-4 w-4" />
+          <FileText className="size-4" />
         )}
         Export
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <ChevronDown className="size-3.5 text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={handleCsv} disabled={isBusy}>
-          <FileText className="mr-2 h-4 w-4" />
+          <FileText className="mr-2 size-4" />
           Export CSV
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => window.print()}>
-          <Printer className="mr-2 h-4 w-4" />
+          <Printer className="mr-2 size-4" />
           Print / Save as PDF
         </DropdownMenuItem>
         {onSyncToSheet && (
@@ -98,7 +99,7 @@ export function ExportMenu({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSync} disabled={isBusy}>
               <RefreshCcw
-                className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`}
+                className={`mr-2 size-4 ${syncing ? 'animate-spin' : ''}`}
               />
               Sync to sheet
             </DropdownMenuItem>

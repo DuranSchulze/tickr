@@ -101,11 +101,11 @@ export function WorkspaceSwitcher({
             title="Switch workspace"
             className="hidden max-w-[260px] items-center gap-2 bg-card/80 text-foreground sm:inline-flex"
           >
-            <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
+            <BriefcaseBusiness className="size-4 text-muted-foreground" />
             <span className="truncate font-semibold">
               {currentWorkspaceName}
             </span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3.5 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -142,7 +142,7 @@ export function WorkspaceSwitcher({
                   )}
                 </div>
                 {isCurrentByName && (
-                  <Check className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+                  <Check className="mt-0.5 size-4 text-primary shrink-0" />
                 )}
               </DropdownMenuItem>
             )
@@ -150,7 +150,7 @@ export function WorkspaceSwitcher({
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild className="flex items-center gap-2 text-sm">
             <Link to="/app/my-workspaces">
-              <LayoutGrid className="h-4 w-4" /> My Workspaces
+              <LayoutGrid className="size-4" /> My Workspaces
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -160,7 +160,7 @@ export function WorkspaceSwitcher({
             }}
             className="flex items-center gap-2 text-sm font-semibold text-primary"
           >
-            <Plus className="h-4 w-4" /> Create a workspace
+            <Plus className="size-4" /> Create a workspace
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -187,6 +187,7 @@ export function WorkspaceSwitcher({
               >
                 Workspace name
               </label>
+              {/* oxlint-disable-next-line jsx-a11y/no-autofocus -- workspace name input */}
               <input
                 id="ws-name"
                 type="text"
@@ -194,7 +195,6 @@ export function WorkspaceSwitcher({
                 onChange={(e) => setWsName(e.target.value)}
                 placeholder="e.g. Acme Corp"
                 maxLength={150}
-                autoFocus
                 disabled={creating}
                 className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               />
@@ -216,7 +216,7 @@ export function WorkspaceSwitcher({
               >
                 {creating ? (
                   <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-2 size-3.5 animate-spin" />
                     Creating…
                   </>
                 ) : (

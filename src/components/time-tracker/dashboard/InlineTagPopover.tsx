@@ -59,7 +59,7 @@ export function InlineTagPopover({
               )}
             </>
           ) : (
-            <Tag className="h-3 w-3 text-muted-foreground/50" />
+            <Tag className="size-3 text-muted-foreground/50" />
           )}
         </button>
       </PopoverTrigger>
@@ -80,7 +80,7 @@ export function InlineTagPopover({
                   onClick={() => toggle(tag.id)}
                 >
                   <span
-                    className={`h-3 w-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors`}
+                    className={`size-3 rounded-sm border flex items-center justify-center shrink-0 transition-colors`}
                     style={{
                       borderColor: tag.color,
                       backgroundColor: checked ? tag.color : 'transparent',
@@ -89,7 +89,7 @@ export function InlineTagPopover({
                     {checked && (
                       <svg
                         viewBox="0 0 8 8"
-                        className="h-2 w-2 fill-white"
+                        className="size-2 fill-white"
                         aria-hidden
                       >
                         <path

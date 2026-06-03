@@ -72,7 +72,7 @@ export const EntryCard = memo(function EntryCard({
           >
             <span className="text-muted-foreground/40">↳</span>
             <span>{timeRange}</span>
-            {isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+            {isPending && <Loader2 className="size-3 animate-spin" />}
           </div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm font-bold tabular-nums text-foreground">
@@ -86,7 +86,7 @@ export const EntryCard = memo(function EntryCard({
                 className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
                 aria-label="Edit entry"
               >
-                <Pencil className="h-3 w-3" />
+                <Pencil className="size-3" />
               </button>
               <button
                 type="button"
@@ -95,7 +95,7 @@ export const EntryCard = memo(function EntryCard({
                 className="rounded-md border border-destructive/30 p-1 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
                 aria-label="Delete entry"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="size-3" />
               </button>
             </div>
           </div>
@@ -143,7 +143,7 @@ export const EntryCard = memo(function EntryCard({
         {project && (
           <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
             <span
-              className="h-2 w-2 rounded-full"
+              className="size-2 rounded-full"
               style={{ backgroundColor: project.color }}
             />
             {project.name}
@@ -165,13 +165,13 @@ export const EntryCard = memo(function EntryCard({
         )}
         {isRunning && (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
-            <span className="h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" />
+            <span className="size-1.5 rounded-full bg-destructive animate-pulse" />
             Running
           </span>
         )}
         {isPending && (
           <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Loader2 className="size-3 animate-spin" />
             Syncing
           </span>
         )}
@@ -203,7 +203,7 @@ export const EntryCard = memo(function EntryCard({
               className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Resume entry"
             >
-              <Play className="h-3.5 w-3.5" />
+              <Play className="size-3.5" />
             </button>
           )}
           <button
@@ -213,7 +213,7 @@ export const EntryCard = memo(function EntryCard({
             className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
             aria-label="Edit entry"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="size-3.5" />
           </button>
           <button
             type="button"
@@ -222,7 +222,7 @@ export const EntryCard = memo(function EntryCard({
             className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
             aria-label="Duplicate entry"
           >
-            <Copy className="h-3.5 w-3.5" />
+            <Copy className="size-3.5" />
           </button>
           <button
             type="button"
@@ -231,7 +231,7 @@ export const EntryCard = memo(function EntryCard({
             className="rounded-lg border border-destructive/30 p-1.5 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
             aria-label="Delete entry"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="size-3.5" />
           </button>
         </div>
       </div>

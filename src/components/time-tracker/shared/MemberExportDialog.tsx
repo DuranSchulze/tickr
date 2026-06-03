@@ -122,6 +122,7 @@ export function MemberExportDialog({
               value={startDate}
               max={endDate || today}
               onChange={(e) => setStartDate(e.target.value)}
+              aria-label="Start date"
               className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -135,6 +136,7 @@ export function MemberExportDialog({
               min={startDate || undefined}
               max={today}
               onChange={(e) => setEndDate(e.target.value)}
+              aria-label="End date"
               className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -152,9 +154,9 @@ export function MemberExportDialog({
             disabled={invalid || exporting !== null}
           >
             {exporting === 'csv' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              <FileSpreadsheet className="mr-2 size-4" />
             )}
             CSV
           </Button>
@@ -163,9 +165,9 @@ export function MemberExportDialog({
             disabled={invalid || exporting !== null}
           >
             {exporting === 'pdf' ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 size-4 animate-spin" />
             ) : (
-              <FileText className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 size-4" />
             )}
             PDF
           </Button>
@@ -198,7 +200,7 @@ export function MemberExportButton({
 }) {
   const [open, setOpen] = useState(false)
   const sizeClasses = size === 'sm' ? 'h-8 px-2.5 text-xs' : 'h-9 px-3 text-sm'
-  const iconClasses = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4'
+  const iconClasses = size === 'sm' ? 'size-3.5' : 'size-4'
 
   return (
     <>

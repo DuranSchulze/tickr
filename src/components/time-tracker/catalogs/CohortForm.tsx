@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
@@ -13,6 +13,14 @@ import {
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
 
+type CohortFormState = {
+  mode: 'single' | 'bulk'
+  name: string
+  bulkNames: string
+  departmentId: string
+  pending: boolean
+}
+
 export function CohortForm({
   departments,
   onSuccess,
@@ -21,11 +29,17 @@ export function CohortForm({
   onSuccess?: () => void
 }) {
   const router = useRouter()
-  const [mode, setMode] = useState<'single' | 'bulk'>('single')
-  const [name, setName] = useState('')
-  const [bulkNames, setBulkNames] = useState('')
-  const [departmentId, setDepartmentId] = useState(departments[0]?.id ?? '')
-  const [pending, setPending] = useState(false)
+  const [state, dispatch] = useReducer(
+    (s: CohortFormState, a: Partial<CohortFormState>) => ({ ...s, ...a }),
+    {
+      mode: 'single' as const,
+      name: '',
+      bulkNames: '',
+      departmentId: departments[0]?.id ?? '',
+      pending: false,
+    },
+  )
+  const { mode, name, bulkNames, departmentId, pending } = state
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -33,13 +47,13 @@ export function CohortForm({
       gooeyToast.error('Select a department first')
       return
     }
-    setPending(true)
+    dispatch({ pending: true })
     try {
       if (mode === 'single') {
         await createCohortFn({ data: { name, departmentId } })
         await router.invalidate()
         gooeyToast.success('Cohort created')
-        setName('')
+        dispatch({ name: '' })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -50,14 +64,14 @@ export function CohortForm({
           router,
           onSuccess,
         )
-        setBulkNames('')
+        dispatch({ bulkNames: '' })
       }
     } catch (err) {
       gooeyToast.error('Could not create cohort', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
@@ -68,10 +82,10 @@ export function CohortForm({
           mode === 'single' ? 'Create group / cohort' : 'Bulk create cohorts'
         }
       />
-      <ModeToggle mode={mode} onChange={setMode} />
+      <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
       <select
         value={departmentId}
-        onChange={(event) => setDepartmentId(event.target.value)}
+        onChange={(event) => dispatch({ departmentId: event.target.value })}
         required
         className={inputClass}
       >
@@ -85,13 +99,17 @@ export function CohortForm({
       {mode === 'single' ? (
         <input
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => dispatch({ name: event.target.value })}
           placeholder="Group or cohort name"
+          aria-label="Group or cohort name"
           required
           className={inputClass}
         />
       ) : (
-        <BulkNamesInput value={bulkNames} onChange={setBulkNames} />
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
       )}
       <SubmitButton
         pending={pending}

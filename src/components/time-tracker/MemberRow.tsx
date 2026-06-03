@@ -108,7 +108,6 @@ export const MemberRow = memo(function MemberRow({
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           {editingField === 'role' && canManage ? (
             <select
-              autoFocus
               value={roleId}
               onChange={(e) => {
                 const newRoleId = e.target.value
@@ -128,13 +127,14 @@ export const MemberRow = memo(function MemberRow({
               ))}
             </select>
           ) : (
-            <span
+            <button
+              type="button"
               onClick={() => canManage && !pending && setEditingField('role')}
               title={canManage ? 'Click to edit role' : undefined}
               className={`group inline-flex max-w-full items-center gap-1.5 text-sm font-semibold text-foreground ${canManage ? 'cursor-pointer rounded px-1 -mx-1 hover:bg-accent' : ''}`}
             >
               <span
-                className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                className="inline-block size-2.5 flex-shrink-0 rounded-full"
                 style={{
                   backgroundColor:
                     state.roles.find((r) => r.id === member.workspaceRoleId)
@@ -143,9 +143,9 @@ export const MemberRow = memo(function MemberRow({
               />
               <span className="truncate">{member.roleName || 'No role'}</span>
               {canManage && (
-                <Pencil className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
+                <Pencil className="size-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
               )}
-            </span>
+            </button>
           )}
         </TableCell>
 
@@ -153,7 +153,6 @@ export const MemberRow = memo(function MemberRow({
         <TableCell className="overflow-hidden px-5 py-4 align-top">
           {editingField === 'dept' && canManage ? (
             <select
-              autoFocus
               value={deptId}
               onChange={(e) => {
                 const newDeptId = e.target.value
@@ -182,7 +181,8 @@ export const MemberRow = memo(function MemberRow({
               ))}
             </select>
           ) : (
-            <span
+            <button
+              type="button"
               onClick={() => canManage && !pending && setEditingField('dept')}
               title={canManage ? 'Click to edit department' : undefined}
               className={`group flex max-w-full items-center gap-1 text-sm text-foreground ${canManage ? 'cursor-pointer rounded px-1 -mx-1 hover:bg-accent' : ''}`}
@@ -191,9 +191,9 @@ export const MemberRow = memo(function MemberRow({
                 {department?.name || 'Unassigned'}
               </span>
               {canManage && (
-                <Pencil className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
+                <Pencil className="size-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
               )}
-            </span>
+            </button>
           )}
         </TableCell>
 
@@ -247,7 +247,8 @@ export const MemberRow = memo(function MemberRow({
               </div>
             </div>
           ) : (
-            <span
+            <button
+              type="button"
               onClick={() =>
                 canManage && !pending && setEditingField('cohorts')
               }
@@ -258,9 +259,9 @@ export const MemberRow = memo(function MemberRow({
                 {cohorts.map((c) => c.name).join(', ') || 'None'}
               </span>
               {canManage && (
-                <Pencil className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
+                <Pencil className="size-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
               )}
-            </span>
+            </button>
           )}
         </TableCell>
 
@@ -306,7 +307,8 @@ export const MemberRow = memo(function MemberRow({
                   </span>
                 </div>
               ) : (
-                <span
+                <button
+                  type="button"
                   onClick={() => !pending && setEditingField('rate')}
                   title="Click to edit rate"
                   className="group flex cursor-pointer items-center justify-end gap-1 rounded px-1 -mx-1 text-right text-sm tabular-nums text-muted-foreground hover:bg-accent"
@@ -320,8 +322,8 @@ export const MemberRow = memo(function MemberRow({
                       <span className="ml-1 text-xs">(default)</span>
                     )}
                   </span>
-                  <Pencil className="h-3 w-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
-                </span>
+                  <Pencil className="size-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
+                </button>
               )}
             </TableCell>
 
@@ -342,20 +344,20 @@ export const MemberRow = memo(function MemberRow({
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     disabled={pending}
-                    className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     aria-label="Member actions"
                   >
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="size-4" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
                       onClick={() => setShowAnalytics((v) => !v)}
                     >
-                      <BarChart2 className="mr-2 h-4 w-4" />
+                      <BarChart2 className="mr-2 size-4" />
                       {showAnalytics ? 'Hide analytics' : 'View analytics'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setExportDialogOpen(true)}>
-                      <FileText className="mr-2 h-4 w-4" />
+                      <FileText className="mr-2 size-4" />
                       Export report
                     </DropdownMenuItem>
                     {!isSelf && (
@@ -372,12 +374,12 @@ export const MemberRow = memo(function MemberRow({
                         >
                           {member.status === 'DISABLED' ? (
                             <>
-                              <CheckCircle className="mr-2 h-4 w-4" />
+                              <CheckCircle className="mr-2 size-4" />
                               Enable member
                             </>
                           ) : (
                             <>
-                              <UserX className="mr-2 h-4 w-4" />
+                              <UserX className="mr-2 size-4" />
                               Disable member
                             </>
                           )}

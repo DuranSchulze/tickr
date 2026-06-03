@@ -1,0 +1,25 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "rules": {
+    "react-doctor/no-danger": "off",
+    "react-doctor/only-export-components": "off"
+  },
+  "ignore": {
+    "overrides": [
+      {
+        "files": ["src/hooks/useInView.ts"],
+        "rules": ["react-doctor/no-adjust-state-on-prop-change"]
+      },
+      {
+        "files": ["src/components/time-tracker/catalogs/SyncSheetDialog.tsx"],
+        "rules": ["react-doctor/no-adjust-state-on-prop-change"]
+      },
+      {
+        "files": [
+          "src/components/time-tracker/dashboard/hooks/useTimerCore.ts"
+        ],
+        "rules": ["react-doctor/no-adjust-state-on-prop-change"]
+      }
+    ]
+  }
+}

@@ -53,14 +53,16 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
+      <button
+        type="button"
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
+        aria-label="Close"
       />
       <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5 text-foreground" />
+            <KeyRound className="size-5 text-foreground" />
             <h3 className="m-0 text-base font-bold text-foreground">
               Change password
             </h3>
@@ -68,9 +70,9 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
           >
-            <X className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         </div>
 

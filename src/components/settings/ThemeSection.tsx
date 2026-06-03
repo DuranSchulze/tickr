@@ -16,8 +16,8 @@ export function ThemeSection() {
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Palette className="h-4 w-4" />
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Palette className="size-4" />
         </div>
         <div className="flex-1">
           <h3 className="m-0 text-base font-bold text-foreground">
@@ -88,13 +88,13 @@ export function ThemeControls() {
           <ModeButton
             active={mode === 'light'}
             onClick={() => selectMode('light')}
-            icon={<Sun className="h-4 w-4" />}
+            icon={<Sun className="size-4" />}
             label="Light"
           />
           <ModeButton
             active={mode === 'dark'}
             onClick={() => selectMode('dark')}
-            icon={<Moon className="h-4 w-4" />}
+            icon={<Moon className="size-4" />}
             label="Dark"
           />
         </div>
@@ -121,7 +121,7 @@ export function ThemeControls() {
                 title={c.label}
                 onClick={() => selectColor(c.id)}
                 className={cn(
-                  'relative h-10 w-10 rounded-full border-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                  'relative size-10 rounded-full border-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                   isActive
                     ? 'border-foreground scale-110'
                     : 'border-transparent hover:scale-105',
@@ -130,7 +130,7 @@ export function ThemeControls() {
               >
                 {isActive && (
                   <Check
-                    className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
+                    className="absolute inset-0 m-auto size-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
                     strokeWidth={3}
                   />
                 )}

@@ -104,13 +104,13 @@ export function PendingInvitesPanel() {
                       onClick={() =>
                         void handleCopyCode(invite.id, invite.joinCode!)
                       }
-                      className="grid h-5 w-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                      className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
                       title="Copy join code"
                     >
                       {copiedId === invite.id ? (
-                        <Check className="h-3 w-3 text-emerald-500" />
+                        <Check className="size-3 text-emerald-500" />
                       ) : (
-                        <Copy className="h-3 w-3" />
+                        <Copy className="size-3" />
                       )}
                     </button>
                   </div>

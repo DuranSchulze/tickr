@@ -110,9 +110,9 @@ export function Navbar({
 
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-2 text-xs font-semibold text-muted-foreground lg:inline-flex">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-70" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--primary)] opacity-70" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-[var(--primary)]" />
             </span>
             Workspace live
           </div>
@@ -127,7 +127,7 @@ export function Navbar({
                 title="What's new &amp; help"
                 className="rounded-full bg-card/80 text-muted-foreground hover:text-foreground"
               >
-                <CircleHelp className="h-4 w-4" />
+                <CircleHelp className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -140,7 +140,7 @@ export function Navbar({
                   showOnboarding()
                 }}
               >
-                <CircleHelp className="h-4 w-4" />
+                <CircleHelp className="size-4" />
                 Tour the app
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
@@ -149,7 +149,7 @@ export function Navbar({
                   className="flex items-center gap-2"
                   onClick={() => setInfoOpen(false)}
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="size-4" />
                   What's new
                 </Link>
               </DropdownMenuItem>
@@ -168,10 +168,10 @@ export function Navbar({
                   <img
                     src={user.image}
                     alt={user.name}
-                    className="h-full w-full rounded-full object-cover"
+                    className="size-full rounded-full object-cover"
                   />
                 ) : (
-                  <UserCircle className="h-4 w-4" />
+                  <UserCircle className="size-4" />
                 )}
               </Button>
             </DropdownMenuTrigger>
@@ -189,7 +189,7 @@ export function Navbar({
 
               <DropdownMenuItem asChild>
                 <Link to="/app/profile" className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
+                  <Settings className="size-4" />
                   Profile settings
                 </Link>
               </DropdownMenuItem>
@@ -208,13 +208,13 @@ export function Navbar({
                   <ModePill
                     active={theme === 'light'}
                     onClick={() => selectMode('light')}
-                    icon={<Sun className="h-3.5 w-3.5" />}
+                    icon={<Sun className="size-3.5" />}
                     label="Light"
                   />
                   <ModePill
                     active={theme === 'dark'}
                     onClick={() => selectMode('dark')}
-                    icon={<Moon className="h-3.5 w-3.5" />}
+                    icon={<Moon className="size-3.5" />}
                     label="Dark"
                   />
                 </div>
@@ -236,7 +236,7 @@ export function Navbar({
                       title={c.label}
                       onClick={() => selectColor(c.id)}
                       className={cn(
-                        'relative h-6 w-6 rounded-full border-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'relative size-6 rounded-full border-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring',
                         isActive
                           ? 'border-foreground scale-110'
                           : 'border-transparent hover:scale-105',
@@ -245,7 +245,7 @@ export function Navbar({
                     >
                       {isActive && (
                         <Check
-                          className="absolute inset-0 m-auto h-3 w-3 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
+                          className="absolute inset-0 m-auto size-3 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
                           strokeWidth={3}
                         />
                       )}
@@ -260,7 +260,7 @@ export function Navbar({
                 onSelect={handleSignOut}
                 className="flex items-center gap-2 text-destructive focus:text-destructive"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="size-4" />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

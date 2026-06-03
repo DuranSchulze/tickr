@@ -31,6 +31,7 @@ export const Route = createFileRoute('/app/calendar')({
   component: CalendarRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function CalendarRoute() {
   const calendar = Route.useLoaderData()
   const navigate = useNavigate()

@@ -89,6 +89,7 @@ export const Route = createFileRoute('/app/analytics')({
   component: AnalyticsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function AnalyticsRoute() {
   const { analytics, state } = Route.useLoaderData()
   const search = Route.useSearch()

@@ -122,7 +122,7 @@ export function AnalyticsScreen({
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
-              <BarChart3 className="h-3.5 w-3.5" />
+              <BarChart3 className="size-3.5" />
               {copy.eyebrow}
             </div>
             <h1 className="m-0 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
@@ -210,7 +210,7 @@ export function AnalyticsScreen({
 
       {analytics.notice && (
         <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-foreground">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <p className="m-0">{analytics.notice}</p>
         </div>
       )}
@@ -244,7 +244,7 @@ export function AnalyticsScreen({
       <div className="hidden print:block">
         <div className="mb-4 text-center">
           <h2 className="m-0 text-lg font-bold">
-            {analytics.scopeLabel} — Time Entries
+            {analytics.scopeLabel}: Time Entries
           </h2>
           <p className="m-0 mt-1 text-xs text-muted-foreground">
             {formatRange(analytics.startDate, analytics.endDate)} ·{' '}

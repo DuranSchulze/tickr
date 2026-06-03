@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from 'goey-toast'
@@ -88,16 +88,35 @@ export function ProjectsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingProject, setEditingProject] = useState<PaginatedProject | null>(
-    null,
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showCreate: boolean
+        editingProject: PaginatedProject | null
+        archivingId: string | null
+        sheetLoading: boolean
+        showSyncDialog: boolean
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showCreate: false,
+      editingProject: null,
+      archivingId: null,
+      sheetLoading: false,
+      showSyncDialog: false,
+    },
   )
-  const [archivingId, setArchivingId] = useState<string | null>(null)
-  const [sheetLoading, setSheetLoading] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
+  const {
+    showCreate,
+    editingProject,
+    archivingId,
+    sheetLoading,
+    showSyncDialog,
+  } = local
 
   async function handleArchive(project: PaginatedProject) {
-    setArchivingId(project.id)
+    dispatch({ archivingId: project.id })
     try {
       await archiveProjectFn({ data: { id: project.id } })
       await router.invalidate()
@@ -107,12 +126,12 @@ export function ProjectsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleActivate(project: PaginatedProject) {
-    setArchivingId(project.id)
+    dispatch({ archivingId: project.id })
     try {
       await activateProjectFn({ data: { id: project.id } })
       await router.invalidate()
@@ -122,12 +141,12 @@ export function ProjectsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleSync() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
@@ -139,12 +158,12 @@ export function ProjectsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   async function handleSetupSheetTab() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       await ensureCatalogTabsFn()
       gooeyToast.success('Sheet tab ready')
@@ -153,12 +172,12 @@ export function ProjectsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   function handleImportFromSheet() {
-    setShowSyncDialog(true)
+    dispatch({ showSyncDialog: true })
   }
 
   const columns = useMemo(
@@ -168,7 +187,7 @@ export function ProjectsTablePage({
         cell: ({ getValue, row }) => (
           <div className="flex items-center gap-2">
             <span
-              className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+              className="size-3 shrink-0 rounded-full border border-white/20"
               style={{ backgroundColor: row.original.color }}
             />
             <span className="font-semibold text-foreground">{getValue()}</span>
@@ -216,16 +235,16 @@ export function ProjectsTablePage({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         disabled={archivingId === project.id}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         aria-label="Row actions"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => setEditingProject(project)}
+                          onClick={() => dispatch({ editingProject: project })}
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="mr-2 size-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -233,7 +252,7 @@ export function ProjectsTablePage({
                           <DropdownMenuItem
                             onClick={() => handleActivate(project)}
                           >
-                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <CheckCircle className="mr-2 size-4" />
                             Activate
                           </DropdownMenuItem>
                         ) : (
@@ -241,7 +260,7 @@ export function ProjectsTablePage({
                             onClick={() => handleArchive(project)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Archive className="mr-2 h-4 w-4" />
+                            <Archive className="mr-2 size-4" />
                             Archive
                           </DropdownMenuItem>
                         )}
@@ -271,26 +290,26 @@ export function ProjectsTablePage({
         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <Loader2 className="size-4 animate-spin" aria-hidden />
         ) : (
-          <FileSpreadsheet className="h-4 w-4" aria-hidden />
+          <FileSpreadsheet className="size-4" aria-hidden />
         )}
         Sheet
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Sync from Sheet
         </DropdownMenuItem>
         {canManage && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSync}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 size-4" />
               Sync all catalogs
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSetupSheetTab}>
-              <TableIcon className="mr-2 h-4 w-4" />
+              <TableIcon className="mr-2 size-4" />
               Setup Sheet Tab
             </DropdownMenuItem>
           </>
@@ -329,7 +348,7 @@ export function ProjectsTablePage({
           onChange={(e) =>
             onFilterChange({ showArchived: e.target.checked || undefined })
           }
-          className="h-4 w-4 rounded border-border accent-primary"
+          className="size-4 rounded border-border accent-primary"
         />
         Show archived
       </label>
@@ -363,7 +382,7 @@ export function ProjectsTablePage({
         pageSize={pageSize}
         onPageChange={onPageChange}
         canManage={canManage}
-        onCreate={() => setShowCreate(true)}
+        onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Project"
         headerActions={sheetButton}
         toolbar={toolbar}
@@ -389,12 +408,12 @@ export function ProjectsTablePage({
       <CatalogFormDialog
         title="New Project"
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => dispatch({ showCreate: false })}
       >
         <ProjectForm
           clients={clientsForForm}
           onSuccess={async () => {
-            setShowCreate(false)
+            dispatch({ showCreate: false })
             await router.invalidate()
           }}
         />
@@ -403,14 +422,14 @@ export function ProjectsTablePage({
       <CatalogFormDialog
         title={editingProject ? `Edit "${editingProject.name}"` : ''}
         open={!!editingProject}
-        onClose={() => setEditingProject(null)}
+        onClose={() => dispatch({ editingProject: null })}
       >
         {editingForForm && (
           <EditProjectForm
             project={editingForForm}
             clients={clientsForForm}
             onDone={async () => {
-              setEditingProject(null)
+              dispatch({ editingProject: null })
               await router.invalidate()
             }}
           />
@@ -420,7 +439,7 @@ export function ProjectsTablePage({
       <SyncSheetDialog
         open={showSyncDialog}
         onClose={async () => {
-          setShowSyncDialog(false)
+          dispatch({ showSyncDialog: false })
           await router.invalidate()
         }}
         type="projects"

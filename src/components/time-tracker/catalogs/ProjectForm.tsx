@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { Plus } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
@@ -16,6 +16,19 @@ import {
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
 
+type ProjectFormState = {
+  mode: 'single' | 'bulk'
+  name: string
+  bulkNames: string
+  color: string
+  clientId: string
+  pending: boolean
+  addingClient: boolean
+  newClientName: string
+  newClientPending: boolean
+  pendingSelectName: string | null
+}
+
 export function ProjectForm({
   clients,
   onSuccess,
@@ -25,84 +38,106 @@ export function ProjectForm({
 }) {
   const router = useRouter()
   const activeClients = clients.filter((c) => c.clientStatus === 'ACTIVE')
-  const [mode, setMode] = useState<'single' | 'bulk'>('single')
-  const [name, setName] = useState('')
-  const [bulkNames, setBulkNames] = useState('')
-  const [color, setColor] = useState('#2563eb')
-  const [clientId, setClientId] = useState(activeClients[0]?.id ?? '')
-  const [pending, setPending] = useState(false)
-
-  const [addingClient, setAddingClient] = useState(false)
-  const [newClientName, setNewClientName] = useState('')
-  const [newClientPending, setNewClientPending] = useState(false)
-  const [pendingSelectName, setPendingSelectName] = useState<string | null>(
-    null,
+  const [state, dispatch] = useReducer(
+    (s: ProjectFormState, a: Partial<ProjectFormState>) => ({ ...s, ...a }),
+    {
+      mode: 'single' as const,
+      name: '',
+      bulkNames: '',
+      color: '#2563eb',
+      clientId: activeClients[0]?.id ?? '',
+      pending: false,
+      addingClient: false,
+      newClientName: '',
+      newClientPending: false,
+      pendingSelectName: null,
+    },
   )
+  const {
+    mode,
+    name,
+    bulkNames,
+    color,
+    clientId,
+    pending,
+    addingClient,
+    newClientName,
+    newClientPending,
+    pendingSelectName,
+  } = state
 
-  // Auto-select client after inline creation once clients prop refreshes
-  useEffect(() => {
-    if (!pendingSelectName) return
+  // Auto-select new client after creation — derive match instead of setState in effect
+  const resolvedClientId = (() => {
+    if (!pendingSelectName) return clientId
     const match = activeClients.find(
       (c) => c.name.toLowerCase() === pendingSelectName.toLowerCase(),
     )
-    if (match) {
-      setClientId(match.id)
-      setPendingSelectName(null)
+    if (match && match.id !== clientId) {
+      // Queue a render-phase update to clear pendingSelectName
+      queueMicrotask(() => dispatch({ pendingSelectName: null }))
+      return match.id
     }
-  }, [clients])
+    return clientId
+  })()
 
   async function handleCreateClient() {
     if (!newClientName.trim()) return
-    setNewClientPending(true)
+    dispatch({ newClientPending: true })
     try {
       await createClientFn({
         data: { name: newClientName, clientStatus: 'ACTIVE' },
       })
       await router.invalidate()
-      setPendingSelectName(newClientName.trim())
-      setNewClientName('')
-      setAddingClient(false)
+      dispatch({
+        pendingSelectName: newClientName.trim(),
+        newClientName: '',
+        addingClient: false,
+      })
     } catch (err) {
       gooeyToast.error('Could not create client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setNewClientPending(false)
+      dispatch({ newClientPending: false })
     }
   }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    if (!clientId) {
+    if (!resolvedClientId) {
       gooeyToast.error('Choose a client first')
       return
     }
-    setPending(true)
+    dispatch({ pending: true })
     try {
       if (mode === 'single') {
-        await createProjectFn({ data: { name, color, clientId } })
+        await createProjectFn({
+          data: { name, color, clientId: resolvedClientId },
+        })
         await router.invalidate()
         gooeyToast.success('Project created')
-        setName('')
-        setColor('#2563eb')
+        dispatch({ name: '', color: '#2563eb' })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
         await runBulk(
           names,
-          (n) => createProjectFn({ data: { name: n, color, clientId } }),
+          (n) =>
+            createProjectFn({
+              data: { name: n, color, clientId: resolvedClientId },
+            }),
           'project',
           router,
           onSuccess,
         )
-        setBulkNames('')
+        dispatch({ bulkNames: '' })
       }
     } catch (err) {
       gooeyToast.error('Could not create project', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
@@ -111,14 +146,14 @@ export function ProjectForm({
       <FormTitle
         title={mode === 'single' ? 'Create project' : 'Bulk create projects'}
       />
-      <ModeToggle mode={mode} onChange={setMode} />
+      <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
 
       {activeClients.length === 0 && !addingClient ? (
         <p className="text-sm text-muted-foreground">
           No clients yet.{' '}
           <button
             type="button"
-            onClick={() => setAddingClient(true)}
+            onClick={() => dispatch({ addingClient: true })}
             className="font-semibold text-primary hover:underline"
           >
             Create one first.
@@ -129,17 +164,17 @@ export function ProjectForm({
           {activeClients.length > 0 && (
             <ClientSelect
               clients={activeClients}
-              value={clientId}
-              onChange={setClientId}
+              value={resolvedClientId}
+              onChange={(id) => dispatch({ clientId: id })}
             />
           )}
           {addingClient ? (
             <div className="flex gap-2">
               <input
-                autoFocus
                 value={newClientName}
-                onChange={(e) => setNewClientName(e.target.value)}
+                onChange={(e) => dispatch({ newClientName: e.target.value })}
                 placeholder="New client name"
+                aria-label="New client name"
                 required
                 className={`${inputClass} flex-1`}
                 onKeyDown={(e) => {
@@ -148,8 +183,7 @@ export function ProjectForm({
                     void handleCreateClient()
                   }
                   if (e.key === 'Escape') {
-                    setAddingClient(false)
-                    setNewClientName('')
+                    dispatch({ addingClient: false, newClientName: '' })
                   }
                 }}
               />
@@ -163,10 +197,9 @@ export function ProjectForm({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setAddingClient(false)
-                  setNewClientName('')
-                }}
+                onClick={() =>
+                  dispatch({ addingClient: false, newClientName: '' })
+                }
                 className="h-10 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-accent"
               >
                 Cancel
@@ -175,10 +208,10 @@ export function ProjectForm({
           ) : (
             <button
               type="button"
-              onClick={() => setAddingClient(true)}
+              onClick={() => dispatch({ addingClient: true })}
               className="flex items-center gap-1.5 self-start text-xs font-semibold text-primary hover:underline"
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="size-3" />
               New client
             </button>
           )}
@@ -188,16 +221,20 @@ export function ProjectForm({
       {mode === 'single' ? (
         <input
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => dispatch({ name: event.target.value })}
           placeholder="Project name"
+          aria-label="Project name"
           required
           className={inputClass}
-          disabled={!clientId}
+          disabled={!resolvedClientId}
         />
       ) : (
-        <BulkNamesInput value={bulkNames} onChange={setBulkNames} />
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
       )}
-      <ColorInput value={color} onChange={setColor} />
+      <ColorInput value={color} onChange={(c) => dispatch({ color: c })} />
       <SubmitButton
         pending={pending}
         label={mode === 'single' ? 'Create project' : 'Create projects'}

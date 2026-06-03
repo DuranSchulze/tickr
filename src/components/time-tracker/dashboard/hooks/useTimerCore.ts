@@ -135,7 +135,8 @@ export function useTimerCore({
       timerDescription,
     )
 
-  // --- Server sync effect ---
+  // Server sync effect — suppress: timer op state machine is inherently imperative
+  // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change
   useEffect(() => {
     const op = timerOperationRef.current
     if (
@@ -176,6 +177,7 @@ export function useTimerCore({
   }, [state.entries, state.workspace.id, optimisticStoppedEntries.length])
 
   // Sync timer-input state from the active entry without overwriting local edits.
+  // react-doctor-disable-next-line react-doctor/no-adjust-state-on-prop-change
   useEffect(() => {
     if (isApplyingPresetRef.current) return
     if (activeEntryBase) {

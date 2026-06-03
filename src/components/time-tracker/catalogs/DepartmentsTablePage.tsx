@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from 'goey-toast'
@@ -61,16 +61,30 @@ export function DepartmentsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingDept, setEditingDept] = useState<PaginatedDepartment | null>(
-    null,
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showCreate: boolean
+        editingDept: PaginatedDepartment | null
+        deletingId: string | null
+        sheetLoading: boolean
+        showSyncDialog: boolean
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showCreate: false,
+      editingDept: null,
+      deletingId: null,
+      sheetLoading: false,
+      showSyncDialog: false,
+    },
   )
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [sheetLoading, setSheetLoading] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
+  const { showCreate, editingDept, deletingId, sheetLoading, showSyncDialog } =
+    local
 
   async function handleImportFromSheet() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       const result = await importDepartmentsFromSheetFn()
       await router.invalidate()
@@ -82,12 +96,12 @@ export function DepartmentsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   async function handleSetupSheetTab() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       await ensureCatalogTabsFn()
       gooeyToast.success('Sheet tab ready')
@@ -96,14 +110,14 @@ export function DepartmentsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   async function handleDelete(dept: PaginatedDepartment) {
     if (!confirm(`Delete department "${dept.name}"? This cannot be undone.`))
       return
-    setDeletingId(dept.id)
+    dispatch({ deletingId: dept.id })
     try {
       await deleteDepartmentFn({ data: { id: dept.id } })
       await router.invalidate()
@@ -113,7 +127,7 @@ export function DepartmentsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setDeletingId(null)
+      dispatch({ deletingId: null })
     }
   }
 
@@ -124,7 +138,7 @@ export function DepartmentsTablePage({
         cell: ({ getValue, row }) => (
           <div className="flex items-center gap-2">
             <span
-              className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+              className="size-3 shrink-0 rounded-full border border-white/20"
               style={{ backgroundColor: row.original.color }}
             />
             <span className="font-semibold text-foreground">{getValue()}</span>
@@ -150,20 +164,20 @@ export function DepartmentsTablePage({
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      onClick={() => setEditingDept(dept)}
-                      className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                      onClick={() => dispatch({ editingDept: dept })}
+                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
                       title="Edit"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <Pencil className="size-3.5" />
                     </button>
                     <button
                       type="button"
                       disabled={deletingId === dept.id}
                       onClick={() => handleDelete(dept)}
-                      className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       title="Delete"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="size-3.5" />
                     </button>
                   </div>
                 )
@@ -189,23 +203,23 @@ export function DepartmentsTablePage({
         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <Loader2 className="size-4 animate-spin" aria-hidden />
         ) : (
-          <FileSpreadsheet className="h-4 w-4" aria-hidden />
+          <FileSpreadsheet className="size-4" aria-hidden />
         )}
         Sheet
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setShowSyncDialog(true)}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => dispatch({ showSyncDialog: true })}>
+          <RefreshCw className="mr-2 size-4" />
           Sync from Sheet
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Quick Sync
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleSetupSheetTab}>
-          <TableIcon className="mr-2 h-4 w-4" />
+          <TableIcon className="mr-2 size-4" />
           Setup Sheet Tab
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -238,7 +252,7 @@ export function DepartmentsTablePage({
         pageSize={pageSize}
         onPageChange={onPageChange}
         canManage={canManage}
-        onCreate={() => setShowCreate(true)}
+        onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Department"
         toolbar={toolbar}
         emptyMessage={
@@ -251,11 +265,11 @@ export function DepartmentsTablePage({
       <CatalogFormDialog
         title="New Department"
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => dispatch({ showCreate: false })}
       >
         <DepartmentForm
           onSuccess={async () => {
-            setShowCreate(false)
+            dispatch({ showCreate: false })
             await router.invalidate()
           }}
         />
@@ -264,13 +278,13 @@ export function DepartmentsTablePage({
       <CatalogFormDialog
         title={editingDept ? `Edit "${editingDept.name}"` : ''}
         open={!!editingDept}
-        onClose={() => setEditingDept(null)}
+        onClose={() => dispatch({ editingDept: null })}
       >
         {editingDept && (
           <EditDepartmentForm
             department={editingDept}
             onDone={async () => {
-              setEditingDept(null)
+              dispatch({ editingDept: null })
               await router.invalidate()
             }}
           />
@@ -279,7 +293,7 @@ export function DepartmentsTablePage({
 
       <SyncSheetDialog
         open={showSyncDialog}
-        onClose={() => setShowSyncDialog(false)}
+        onClose={() => dispatch({ showSyncDialog: false })}
         type="departments"
         onComplete={() => router.invalidate()}
       />

@@ -67,7 +67,7 @@ export function InlineClientProjectPopover({
           {hasSelection ? (
             <>
               <span
-                className="h-2 w-2 rounded-full shrink-0"
+                className="size-2 rounded-full shrink-0"
                 style={{ backgroundColor: selectedProject!.color }}
               />
               <span className="truncate text-foreground">
@@ -84,16 +84,16 @@ export function InlineClientProjectPopover({
           ) : (
             <span className="text-muted-foreground">Client / Project</span>
           )}
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+          <ChevronDown className="size-3 shrink-0 text-muted-foreground/60" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2" align="start">
         {/* Search */}
         <div className="mb-2">
           <input
-            autoFocus
             className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm outline-none focus:ring-1 focus:ring-primary"
             placeholder="Search clients or projects…"
+            aria-label="Search clients or projects"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -115,7 +115,7 @@ export function InlineClientProjectPopover({
                       i > 0 ? 'mt-1 border-t border-border/50 pt-2' : ''
                     }`}
                   >
-                    <Building2 className="h-3 w-3 shrink-0" />
+                    <Building2 className="size-3 shrink-0" />
                     <span className="truncate">{row.client.name}</span>
                   </div>
                 )
@@ -138,12 +138,12 @@ export function InlineClientProjectPopover({
                   }`}
                 >
                   <span
-                    className="h-2 w-2 shrink-0 rounded-full"
+                    className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: row.project.color }}
                   />
                   <span className="flex-1 truncate">{row.project.name}</span>
                   {isActive && (
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                    <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                   )}
                 </button>
               )

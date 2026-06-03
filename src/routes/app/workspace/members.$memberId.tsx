@@ -20,6 +20,7 @@ export const Route = createFileRoute('/app/workspace/members/$memberId')({
   component: MemberDetailRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function MemberDetailRoute() {
   const detail = Route.useLoaderData()
   return <MemberDetailScreen detail={detail} />

@@ -13,6 +13,7 @@ import { BRAND } from '#/lib/brand'
 
 import type { QueryClient } from '@tanstack/react-query'
 
+// oxlint-disable-next-line react/only-export-components
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 text-center">
@@ -70,10 +71,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   notFoundComponent: NotFoundComponent,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* The theme init script must run before React hydrates to prevent FOUC */}
+        {/* oxlint-disable-next-line react/no-danger */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
       </head>

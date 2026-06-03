@@ -143,7 +143,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
             onClick={handleImport}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
-            <Download className="h-3.5 w-3.5" />
+            <Download className="size-3.5" />
             Import from Sheet
           </button>
         </div>

@@ -24,6 +24,7 @@ export const Route = createFileRoute('/app/workspace/catalogs')({
   component: CatalogsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function CatalogsRoute() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,

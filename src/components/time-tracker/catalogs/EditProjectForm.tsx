@@ -55,6 +55,7 @@ export function EditProjectForm({
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Project name"
+        aria-label="Project name"
         required
         className={inputClass}
       />

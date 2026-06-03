@@ -188,7 +188,7 @@ export const PerformanceCharts = memo(function ({
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: p.color }}
                     />
                     <span className="truncate text-sm font-bold text-foreground">

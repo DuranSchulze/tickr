@@ -243,7 +243,7 @@ export function AuditLogsScreen({
         {/* Stats strip */}
         <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card px-5 py-3 text-sm">
           <div className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4 text-primary" />
+            <ClipboardList className="size-4 text-primary" />
             <span className="font-semibold text-foreground">
               {result.totalCount}
             </span>
@@ -277,7 +277,7 @@ export function AuditLogsScreen({
                 <tr>
                   <td colSpan={5} className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <ClipboardList className="h-8 w-8 opacity-30" />
+                      <ClipboardList className="size-8 opacity-30" />
                       <p className="font-medium">No events found</p>
                       {hasFilters && (
                         <p className="text-xs">

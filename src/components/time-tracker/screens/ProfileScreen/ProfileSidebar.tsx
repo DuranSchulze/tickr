@@ -46,11 +46,11 @@ export function ProfileSidebar({
             <img
               src={avatarUrl}
               alt={name}
-              className="h-24 w-24 rounded-full object-cover ring-4 ring-muted"
+              className="size-24 rounded-full object-cover ring-4 ring-muted"
             />
           ) : (
             <div
-              className="flex h-24 w-24 items-center justify-center rounded-full text-2xl font-bold text-primary-foreground ring-4 ring-muted"
+              className="flex size-24 items-center justify-center rounded-full text-2xl font-bold text-primary-foreground ring-4 ring-muted"
               style={{ backgroundColor: roleColor }}
             >
               {initials}
@@ -74,7 +74,7 @@ export function ProfileSidebar({
         </dl>
         <Button asChild variant="outline" className="mt-5 w-full">
           <Link to="/app/my-workspaces">
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="size-3.5" />
             My Workspaces
           </Link>
         </Button>
@@ -84,7 +84,7 @@ export function ProfileSidebar({
           onClick={() => setAppearanceOpen(true)}
           className="mt-2 w-full"
         >
-          <Palette className="h-3.5 w-3.5" />
+          <Palette className="size-3.5" />
           Appearance
         </Button>
         <Button
@@ -93,7 +93,7 @@ export function ProfileSidebar({
           onClick={onChangePassword}
           className="mt-2 w-full"
         >
-          <KeyRound className="h-3.5 w-3.5" />
+          <KeyRound className="size-3.5" />
           Change password
         </Button>
       </section>

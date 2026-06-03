@@ -17,7 +17,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
           <img
             src="/auth-background.jpg"
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 size-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/80" />
 
@@ -29,7 +29,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
               <img
                 src={BRAND.logoSrc}
                 alt={BRAND.logoAlt}
-                className="h-10 w-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur"
+                className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur"
               />
               <span className="text-sm font-bold tracking-wide text-white">
                 {BRAND.name}
@@ -58,7 +58,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             <p className="m-0 text-xs text-white/50">
-              © {new Date().getFullYear()} {BRAND.name} — internal workspace.
+              © {new Date().getFullYear()} {BRAND.name} (internal workspace).
             </p>
           </div>
         </aside>
@@ -73,7 +73,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
               <img
                 src={BRAND.logoSrc}
                 alt={BRAND.logoAlt}
-                className="h-9 w-9 rounded-lg border border-border bg-card object-contain"
+                className="size-9 rounded-lg border border-border bg-card object-contain"
               />
               <span className="text-sm font-bold text-foreground">
                 {BRAND.name}
@@ -98,8 +98,8 @@ function Benefit({
 }) {
   return (
     <li className="flex items-center gap-3">
-      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur">
-        <Icon className="h-4 w-4 text-white" />
+      <span className="flex size-8 items-center justify-center rounded-full bg-white/10 backdrop-blur">
+        <Icon className="size-4 text-white" />
       </span>
       <span className="text-white/90">{label}</span>
     </li>

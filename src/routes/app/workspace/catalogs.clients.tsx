@@ -40,6 +40,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/clients')({
   component: ClientsRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ClientsRoute() {
   const { access, data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
@@ -11,6 +11,14 @@ import {
   SubmitButton,
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
+
+type ColorCatalogFormState = {
+  mode: 'single' | 'bulk'
+  name: string
+  bulkNames: string
+  color: string
+  pending: boolean
+}
 
 export function ColorCatalogForm({
   title,
@@ -26,22 +34,30 @@ export function ColorCatalogForm({
   onSuccess?: () => void
 }) {
   const router = useRouter()
-  const [mode, setMode] = useState<'single' | 'bulk'>('single')
-  const [name, setName] = useState('')
-  const [bulkNames, setBulkNames] = useState('')
-  const [color, setColor] = useState(defaultColor)
-  const [pending, setPending] = useState(false)
+  const [state, dispatch] = useReducer(
+    (s: ColorCatalogFormState, a: Partial<ColorCatalogFormState>) => ({
+      ...s,
+      ...a,
+    }),
+    {
+      mode: 'single' as const,
+      name: '',
+      bulkNames: '',
+      color: defaultColor,
+      pending: false,
+    },
+  )
+  const { mode, name, bulkNames, color, pending } = state
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       if (mode === 'single') {
         await onCreate({ name, color })
         await router.invalidate()
         gooeyToast.success(`${title} created`)
-        setName('')
-        setColor(defaultColor)
+        dispatch({ name: '', color: defaultColor })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -52,14 +68,14 @@ export function ColorCatalogForm({
           router,
           onSuccess,
         )
-        setBulkNames('')
+        dispatch({ bulkNames: '' })
       }
     } catch (err) {
       gooeyToast.error(`Could not create ${title.toLowerCase()}`, {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
@@ -72,19 +88,23 @@ export function ColorCatalogForm({
             : `Bulk create ${title.toLowerCase()}s`
         }
       />
-      <ModeToggle mode={mode} onChange={setMode} />
+      <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
       {mode === 'single' ? (
         <input
           value={name}
-          onChange={(event) => setName(event.target.value)}
+          onChange={(event) => dispatch({ name: event.target.value })}
           placeholder={placeholder}
+          aria-label={placeholder}
           required
           className={inputClass}
         />
       ) : (
-        <BulkNamesInput value={bulkNames} onChange={setBulkNames} />
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
       )}
-      <ColorInput value={color} onChange={setColor} />
+      <ColorInput value={color} onChange={(c) => dispatch({ color: c })} />
       <SubmitButton
         pending={pending}
         label={

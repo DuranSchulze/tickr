@@ -20,6 +20,7 @@ export const Route = createFileRoute('/app/profile')({
   component: ProfileRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function ProfileRoute() {
   const { state, selfProfile, imagekitConfigured } = Route.useLoaderData()
 
@@ -51,6 +52,7 @@ function ProfileRoute() {
   )
 }
 
+// oxlint-disable-next-line react/only-export-components
 function ProfileUnavailable() {
   const router = useRouter()
   return (
@@ -61,7 +63,7 @@ function ProfileUnavailable() {
         </h1>
         <p className="m-0 mt-2 text-sm text-muted-foreground">
           Your account loaded, but the profile details didn&apos;t come through.
-          This is usually a temporary hiccup — try again.
+          This is usually a temporary hiccup. Try again.
         </p>
       </div>
       <Button onClick={() => void router.invalidate()}>Retry</Button>

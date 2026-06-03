@@ -58,6 +58,7 @@ export function ClientSelect({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search clients…"
+        aria-label="Search clients"
         className="w-full border-b border-border bg-transparent px-3 py-2 text-sm outline-none focus:border-primary"
       />
       <div className="max-h-40 overflow-y-auto">
@@ -157,6 +158,7 @@ export function BulkNamesInput({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={'One name per line…\nName A\nName B\nName C'}
+      aria-label="Names (one per line)"
       rows={5}
       required
       className="resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:border-primary"

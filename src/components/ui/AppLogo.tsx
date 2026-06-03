@@ -1,9 +1,9 @@
 import { BRAND } from '#/lib/brand'
 
 const sizes = {
-  sm: { container: 'h-8 w-8', img: 'h-5 w-5' },
-  md: { container: 'h-11 w-11', img: 'h-7 w-7' },
-  lg: { container: 'h-14 w-14', img: 'h-10 w-10' },
+  sm: { container: 'size-8', img: 'size-5' },
+  md: { container: 'size-11', img: 'size-7' },
+  lg: { container: 'size-14', img: 'size-10' },
 }
 
 /**

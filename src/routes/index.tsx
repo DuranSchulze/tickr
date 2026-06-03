@@ -38,8 +38,8 @@ function HomePage() {
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 opacity-60 dark:opacity-40"
         >
-          <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-[var(--primary)] blur-3xl opacity-30" />
-          <div className="absolute right-0 top-40 h-80 w-80 rounded-full bg-[var(--primary)] blur-3xl opacity-20" />
+          <div className="absolute -left-24 top-10 size-72 rounded-full bg-[var(--primary)] blur-3xl opacity-30" />
+          <div className="absolute right-0 top-40 size-80 rounded-full bg-[var(--primary)] blur-3xl opacity-20" />
         </div>
         <div
           aria-hidden
@@ -49,7 +49,7 @@ function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-24">
           <div>
             <span className="inline-flex items-center gap-2 rounded-lg border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--primary)]">
-              <Sparkles className="h-3 w-3" />
+              <Sparkles className="size-3" />
               Internal time tracking
             </span>
             <h1 className="m-0 mt-5 max-w-3xl text-5xl font-black leading-[1.05] tracking-tight text-foreground sm:text-6xl">
@@ -61,8 +61,8 @@ function HomePage() {
             </h1>
             <p className="m-0 mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
               A private company workspace for live timers, manual entries,
-              controlled catalogs, and clean reporting — built for teams who
-              care about their time.
+              controlled catalogs, and clean reporting, built for teams who care
+              about their time.
             </p>
             <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
               <HeroStat value="1" label="Active timer per member" />
@@ -75,7 +75,7 @@ function HomePage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--primary)] px-5 py-3 text-sm font-bold text-[var(--primary-foreground)] no-underline shadow-lg shadow-[var(--primary)]/20 transition-all hover:brightness-110 hover:shadow-xl"
               >
                 Start tracking
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="size-4" />
               </Link>
               <a
                 href="#how-it-works"
@@ -187,7 +187,7 @@ function HomePage() {
               Everything your team needs to track work.
             </h2>
             <p className="m-0 mt-3 text-base text-muted-foreground">
-              From solo freelancers to full departments — the same simple timer
+              From solo freelancers to full departments, the same simple timer
               powers your whole workspace.
             </p>
           </div>
@@ -277,16 +277,16 @@ function HomePage() {
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-card px-6 py-3 text-sm font-bold text-card-foreground no-underline shadow-lg transition-transform hover:scale-105"
               >
                 Open app
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="size-4" />
               </Link>
             </div>
             <div
               aria-hidden
-              className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
+              className="absolute -right-16 -top-16 size-64 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
             />
             <div
               aria-hidden
-              className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
+              className="absolute -bottom-20 -left-10 size-56 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
             />
           </div>
         </div>
@@ -296,7 +296,7 @@ function HomePage() {
       <footer className="bg-background">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row">
           <p className="m-0">
-            © {new Date().getFullYear()} {BRAND.name} — internal workspace.
+            © {new Date().getFullYear()} {BRAND.name} (internal workspace).
           </p>
           <div className="flex items-center gap-4">
             <Link
@@ -329,8 +329,8 @@ function Feature({
 }) {
   return (
     <div className="group border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-border/80 hover:shadow-lg">
-      <div className="inline-flex h-10 w-10 items-center justify-center border border-primary/20 bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)]/20">
-        <Icon className="h-5 w-5" />
+      <div className="inline-flex size-10 items-center justify-center border border-primary/20 bg-[var(--primary)]/10 text-[var(--primary)] transition-colors group-hover:bg-[var(--primary)]/20">
+        <Icon className="size-5" />
       </div>
       <h3 className="m-0 mt-4 text-base font-bold text-card-foreground">
         {title}
@@ -351,7 +351,7 @@ function Step({
 }) {
   return (
     <div className="relative border border-border bg-card p-6 shadow-sm">
-      <div className="flex h-12 w-12 items-center justify-center bg-[var(--primary)] text-lg font-black text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/20">
+      <div className="flex size-12 items-center justify-center bg-[var(--primary)] text-lg font-black text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/20">
         {num}
       </div>
       <h3 className="m-0 mt-5 text-lg font-bold text-foreground">{title}</h3>
@@ -382,8 +382,8 @@ function InsightRow({
 }) {
   return (
     <div className="flex gap-4 border border-border bg-background/70 p-4">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-primary/20 bg-[var(--primary)]/10 text-[var(--primary)]">
-        <Icon className="h-5 w-5" />
+      <div className="flex size-11 shrink-0 items-center justify-center border border-primary/20 bg-[var(--primary)]/10 text-[var(--primary)]">
+        <Icon className="size-5" />
       </div>
       <div>
         <p className="m-0 text-sm font-bold text-foreground">{title}</p>
@@ -427,9 +427,9 @@ function TimerPreview() {
       <div className="relative rotate-1 border border-border bg-card p-6 shadow-2xl transition-transform hover:rotate-0">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           <span className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--primary)]" />
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--primary)] opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-[var(--primary)]" />
             </span>
             Active timer
           </span>
@@ -457,9 +457,9 @@ function TimerPreview() {
           <button
             type="button"
             aria-label="Stop timer"
-            className="flex h-12 w-12 items-center justify-center border border-primary/20 bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 transition-transform hover:scale-110"
+            className="flex size-12 items-center justify-center border border-primary/20 bg-[var(--primary)] text-[var(--primary-foreground)] shadow-lg shadow-[var(--primary)]/30 transition-transform hover:scale-110"
           >
-            <Pause className="h-5 w-5" />
+            <Pause className="size-5" />
           </button>
         </div>
 
@@ -501,7 +501,7 @@ function RecentRow({
   return (
     <li className="flex items-center justify-between gap-3 border border-transparent px-2 py-1.5 text-foreground/90">
       <span className="flex items-center gap-2">
-        <Icon className="h-3.5 w-3.5 text-[var(--primary)]" />
+        <Icon className="size-3.5 text-[var(--primary)]" />
         {title}
       </span>
       <span className="font-mono text-xs tabular-nums text-muted-foreground">

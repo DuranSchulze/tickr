@@ -11,6 +11,7 @@ import { getContext } from './integrations/tanstack-query/root-provider'
 import * as Sentry from '@sentry/react'
 import './sentry.client.config'
 
+// oxlint-disable-next-line react/only-export-components
 function DefaultNotFoundComponent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 text-center">
@@ -28,10 +29,11 @@ function DefaultNotFoundComponent() {
   )
 }
 
+// oxlint-disable-next-line react/only-export-components
 function DefaultPendingComponent() {
   return (
     <div className="flex min-h-[200px] items-center justify-center">
-      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Loader2 className="size-6 animate-spin text-muted-foreground" />
     </div>
   )
 }

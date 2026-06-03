@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from 'goey-toast'
@@ -85,16 +85,35 @@ export function ClientsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingClient, setEditingClient] = useState<PaginatedClient | null>(
-    null,
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showCreate: boolean
+        editingClient: PaginatedClient | null
+        archivingId: string | null
+        sheetLoading: boolean
+        showSyncDialog: boolean
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showCreate: false,
+      editingClient: null,
+      archivingId: null,
+      sheetLoading: false,
+      showSyncDialog: false,
+    },
   )
-  const [archivingId, setArchivingId] = useState<string | null>(null)
-  const [sheetLoading, setSheetLoading] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
+  const {
+    showCreate,
+    editingClient,
+    archivingId,
+    sheetLoading,
+    showSyncDialog,
+  } = local
 
   async function handleArchive(client: PaginatedClient) {
-    setArchivingId(client.id)
+    dispatch({ archivingId: client.id })
     try {
       await archiveClientFn({ data: { id: client.id } })
       await router.invalidate()
@@ -104,12 +123,12 @@ export function ClientsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleActivate(client: PaginatedClient) {
-    setArchivingId(client.id)
+    dispatch({ archivingId: client.id })
     try {
       await activateClientFn({ data: { id: client.id } })
       await router.invalidate()
@@ -119,12 +138,12 @@ export function ClientsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleSync() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
@@ -136,12 +155,12 @@ export function ClientsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   async function handleSetupSheetTab() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       await ensureCatalogTabsFn()
       gooeyToast.success('Sheet tab ready')
@@ -150,12 +169,12 @@ export function ClientsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   function handleImportFromSheet() {
-    setShowSyncDialog(true)
+    dispatch({ showSyncDialog: true })
   }
 
   const columns = useMemo(
@@ -173,7 +192,7 @@ export function ClientsTablePage({
           return (
             <span className="inline-flex items-center gap-1.5 text-sm">
               <span
-                className={`h-1.5 w-1.5 rounded-full ${
+                className={`size-1.5 rounded-full ${
                   status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-muted-foreground'
                 }`}
               />
@@ -217,16 +236,16 @@ export function ClientsTablePage({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         disabled={archivingId === client.id}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         aria-label="Row actions"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => setEditingClient(client)}
+                          onClick={() => dispatch({ editingClient: client })}
                         >
-                          <Pencil className="mr-2 h-4 w-4" />
+                          <Pencil className="mr-2 size-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -235,14 +254,14 @@ export function ClientsTablePage({
                             onClick={() => handleArchive(client)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Archive className="mr-2 h-4 w-4" />
+                            <Archive className="mr-2 size-4" />
                             Archive
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem
                             onClick={() => handleActivate(client)}
                           >
-                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <CheckCircle className="mr-2 size-4" />
                             Activate
                           </DropdownMenuItem>
                         )}
@@ -272,26 +291,26 @@ export function ClientsTablePage({
         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <Loader2 className="size-4 animate-spin" aria-hidden />
         ) : (
-          <FileSpreadsheet className="h-4 w-4" aria-hidden />
+          <FileSpreadsheet className="size-4" aria-hidden />
         )}
         Sheet
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Sync from Sheet
         </DropdownMenuItem>
         {canManage && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSync}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 size-4" />
               Sync all catalogs
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSetupSheetTab}>
-              <TableIcon className="mr-2 h-4 w-4" />
+              <TableIcon className="mr-2 size-4" />
               Setup Sheet Tab
             </DropdownMenuItem>
           </>
@@ -336,7 +355,7 @@ export function ClientsTablePage({
         pageSize={pageSize}
         onPageChange={onPageChange}
         canManage={canManage}
-        onCreate={() => setShowCreate(true)}
+        onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Client"
         headerActions={sheetButton}
         toolbar={toolbar}
@@ -362,11 +381,11 @@ export function ClientsTablePage({
       <CatalogFormDialog
         title="New Client"
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => dispatch({ showCreate: false })}
       >
         <ClientForm
           onSuccess={async () => {
-            setShowCreate(false)
+            dispatch({ showCreate: false })
             await router.invalidate()
           }}
         />
@@ -375,13 +394,13 @@ export function ClientsTablePage({
       <CatalogFormDialog
         title={editingClient ? `Edit "${editingClient.name}"` : ''}
         open={!!editingClient}
-        onClose={() => setEditingClient(null)}
+        onClose={() => dispatch({ editingClient: null })}
       >
         {editingClient && (
           <EditClientForm
             client={editingClient}
             onDone={async () => {
-              setEditingClient(null)
+              dispatch({ editingClient: null })
               await router.invalidate()
             }}
           />
@@ -391,7 +410,7 @@ export function ClientsTablePage({
       <SyncSheetDialog
         open={showSyncDialog}
         onClose={async () => {
-          setShowSyncDialog(false)
+          dispatch({ showSyncDialog: false })
           await router.invalidate()
         }}
         type="clients"

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from 'goey-toast'
@@ -82,14 +82,30 @@ export function TagsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingTag, setEditingTag] = useState<PaginatedTag | null>(null)
-  const [archivingId, setArchivingId] = useState<string | null>(null)
-  const [sheetLoading, setSheetLoading] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showCreate: boolean
+        editingTag: PaginatedTag | null
+        archivingId: string | null
+        sheetLoading: boolean
+        showSyncDialog: boolean
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showCreate: false,
+      editingTag: null,
+      archivingId: null,
+      sheetLoading: false,
+      showSyncDialog: false,
+    },
+  )
+  const { showCreate, editingTag, archivingId, sheetLoading, showSyncDialog } =
+    local
 
   async function handleArchive(tag: PaginatedTag) {
-    setArchivingId(tag.id)
+    dispatch({ archivingId: tag.id })
     try {
       await archiveTagFn({ data: { id: tag.id } })
       await router.invalidate()
@@ -99,12 +115,12 @@ export function TagsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleActivate(tag: PaginatedTag) {
-    setArchivingId(tag.id)
+    dispatch({ archivingId: tag.id })
     try {
       await activateTagFn({ data: { id: tag.id } })
       await router.invalidate()
@@ -114,12 +130,12 @@ export function TagsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setArchivingId(null)
+      dispatch({ archivingId: null })
     }
   }
 
   async function handleSync() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
@@ -131,12 +147,12 @@ export function TagsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   async function handleSetupSheetTab() {
-    setSheetLoading(true)
+    dispatch({ sheetLoading: true })
     try {
       await ensureCatalogTabsFn()
       gooeyToast.success('Sheet tab ready')
@@ -145,12 +161,12 @@ export function TagsTablePage({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setSheetLoading(false)
+      dispatch({ sheetLoading: false })
     }
   }
 
   function handleImportFromSheet() {
-    setShowSyncDialog(true)
+    dispatch({ showSyncDialog: true })
   }
 
   const columns = useMemo(
@@ -160,7 +176,7 @@ export function TagsTablePage({
         cell: ({ getValue, row }) => (
           <div className="flex items-center gap-2">
             <span
-              className="h-3 w-3 shrink-0 rounded-full border border-white/20"
+              className="size-3 shrink-0 rounded-full border border-white/20"
               style={{ backgroundColor: row.original.color }}
             />
             <span className="font-semibold text-foreground">{getValue()}</span>
@@ -208,20 +224,22 @@ export function TagsTablePage({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         disabled={archivingId === tag.id}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         aria-label="Row actions"
                       >
-                        <MoreHorizontal className="h-4 w-4" />
+                        <MoreHorizontal className="size-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingTag(tag)}>
-                          <Pencil className="mr-2 h-4 w-4" />
+                        <DropdownMenuItem
+                          onClick={() => dispatch({ editingTag: tag })}
+                        >
+                          <Pencil className="mr-2 size-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {tag.archived ? (
                           <DropdownMenuItem onClick={() => handleActivate(tag)}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
+                            <CheckCircle className="mr-2 size-4" />
                             Activate
                           </DropdownMenuItem>
                         ) : (
@@ -229,7 +247,7 @@ export function TagsTablePage({
                             onClick={() => handleArchive(tag)}
                             className="text-destructive focus:text-destructive"
                           >
-                            <Archive className="mr-2 h-4 w-4" />
+                            <Archive className="mr-2 size-4" />
                             Archive
                           </DropdownMenuItem>
                         )}
@@ -259,26 +277,26 @@ export function TagsTablePage({
         className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <Loader2 className="size-4 animate-spin" aria-hidden />
         ) : (
-          <FileSpreadsheet className="h-4 w-4" aria-hidden />
+          <FileSpreadsheet className="size-4" aria-hidden />
         )}
         Sheet
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="mr-2 size-4" />
           Sync from Sheet
         </DropdownMenuItem>
         {canManage && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSync}>
-              <RefreshCw className="mr-2 h-4 w-4" />
+              <RefreshCw className="mr-2 size-4" />
               Sync all catalogs
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSetupSheetTab}>
-              <TableIcon className="mr-2 h-4 w-4" />
+              <TableIcon className="mr-2 size-4" />
               Setup Sheet Tab
             </DropdownMenuItem>
           </>
@@ -303,7 +321,7 @@ export function TagsTablePage({
           onChange={(e) =>
             onFilterChange({ showArchived: e.target.checked || undefined })
           }
-          className="h-4 w-4 rounded border-border accent-primary"
+          className="size-4 rounded border-border accent-primary"
         />
         Show archived
       </label>
@@ -323,7 +341,7 @@ export function TagsTablePage({
         pageSize={pageSize}
         onPageChange={onPageChange}
         canManage={canManage}
-        onCreate={() => setShowCreate(true)}
+        onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Tag"
         headerActions={sheetButton}
         toolbar={toolbar}
@@ -349,11 +367,11 @@ export function TagsTablePage({
       <CatalogFormDialog
         title="New Tag"
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => dispatch({ showCreate: false })}
       >
         <TagForm
           onSuccess={async () => {
-            setShowCreate(false)
+            dispatch({ showCreate: false })
             await router.invalidate()
           }}
         />
@@ -362,13 +380,13 @@ export function TagsTablePage({
       <CatalogFormDialog
         title={editingTag ? `Edit "${editingTag.name}"` : ''}
         open={!!editingTag}
-        onClose={() => setEditingTag(null)}
+        onClose={() => dispatch({ editingTag: null })}
       >
         {editingTag && (
           <EditTagForm
             tag={editingTag}
             onDone={async () => {
-              setEditingTag(null)
+              dispatch({ editingTag: null })
               await router.invalidate()
             }}
           />
@@ -378,7 +396,7 @@ export function TagsTablePage({
       <SyncSheetDialog
         open={showSyncDialog}
         onClose={async () => {
-          setShowSyncDialog(false)
+          dispatch({ showSyncDialog: false })
           await router.invalidate()
         }}
         type="tags"

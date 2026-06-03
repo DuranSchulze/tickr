@@ -24,7 +24,7 @@ export function BillableToggleButton({
           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       }`}
     >
-      <DollarSign className="h-4 w-4" />
+      <DollarSign className="size-4" />
     </button>
   )
 }

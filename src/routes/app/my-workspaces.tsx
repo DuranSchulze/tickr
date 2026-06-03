@@ -17,6 +17,7 @@ export const Route = createFileRoute('/app/my-workspaces')({
   component: MyWorkspacesRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function MyWorkspacesRoute() {
   const { workspaces, currentWorkspaceId } = Route.useLoaderData()
   return (

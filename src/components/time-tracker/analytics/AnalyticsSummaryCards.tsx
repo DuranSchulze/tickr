@@ -56,8 +56,8 @@ export function AnalyticsSummaryCards({
                   {card.value}
                 </p>
               </div>
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
+              <span className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Icon className="size-4" />
               </span>
             </div>
             <p className="m-0 mt-3 text-sm font-medium text-muted-foreground">

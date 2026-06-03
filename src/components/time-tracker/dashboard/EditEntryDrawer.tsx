@@ -106,7 +106,7 @@ export function EditEntryDrawer({
                   disabled={pending}
                   className="w-full sm:w-auto"
                 >
-                  <X className="mr-2 h-4 w-4" />
+                  <X className="mr-2 size-4" />
                   Cancel
                 </Button>
               </DrawerClose>
@@ -115,7 +115,7 @@ export function EditEntryDrawer({
                 disabled={pending}
                 className="w-full sm:w-auto"
               >
-                <Save className="mr-2 h-4 w-4" />
+                <Save className="mr-2 size-4" />
                 Save Changes
               </Button>
             </div>

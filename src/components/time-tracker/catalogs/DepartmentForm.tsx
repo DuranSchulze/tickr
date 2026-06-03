@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
@@ -13,18 +13,38 @@ import {
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
 
+type DepartmentFormState = {
+  mode: 'single' | 'bulk'
+  name: string
+  bulkNames: string
+  description: string
+  color: string
+  pending: boolean
+}
+
+const initialDepartmentFormState: DepartmentFormState = {
+  mode: 'single',
+  name: '',
+  bulkNames: '',
+  description: '',
+  color: '#6366f1',
+  pending: false,
+}
+
 export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter()
-  const [mode, setMode] = useState<'single' | 'bulk'>('single')
-  const [name, setName] = useState('')
-  const [bulkNames, setBulkNames] = useState('')
-  const [description, setDescription] = useState('')
-  const [color, setColor] = useState('#6366f1')
-  const [pending, setPending] = useState(false)
+  const [state, dispatch] = useReducer(
+    (s: DepartmentFormState, a: Partial<DepartmentFormState>) => ({
+      ...s,
+      ...a,
+    }),
+    initialDepartmentFormState,
+  )
+  const { mode, name, bulkNames, description, color, pending } = state
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       if (mode === 'single') {
         await createDepartmentFn({
@@ -32,9 +52,7 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
         })
         await router.invalidate()
         gooeyToast.success('Department created')
-        setName('')
-        setDescription('')
-        setColor('#6366f1')
+        dispatch({ name: '', description: '', color: '#6366f1' })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -45,14 +63,14 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
           router,
           onSuccess,
         )
-        setBulkNames('')
+        dispatch({ bulkNames: '' })
       }
     } catch (err) {
       gooeyToast.error('Could not create department', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
@@ -63,27 +81,32 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
           mode === 'single' ? 'Create department' : 'Bulk create departments'
         }
       />
-      <ModeToggle mode={mode} onChange={setMode} />
+      <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
       {mode === 'single' ? (
         <>
           <input
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => dispatch({ name: event.target.value })}
             placeholder="Department name"
+            aria-label="Department name"
             required
             className={inputClass}
           />
           <input
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={(event) => dispatch({ description: event.target.value })}
             placeholder="Description"
+            aria-label="Description"
             className={inputClass}
           />
         </>
       ) : (
-        <BulkNamesInput value={bulkNames} onChange={setBulkNames} />
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
       )}
-      <ColorInput value={color} onChange={setColor} />
+      <ColorInput value={color} onChange={(c) => dispatch({ color: c })} />
       <SubmitButton
         pending={pending}
         label={mode === 'single' ? 'Create department' : 'Create departments'}

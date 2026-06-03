@@ -10,6 +10,7 @@ type WorkspaceSummary = {
   entryCount: number
 }
 
+// oxlint-disable-next-line react/only-export-components
 export function getWorkspaceMembersSummary(
   memberStats: MemberStat[],
 ): WorkspaceSummary | null {
@@ -39,22 +40,22 @@ export function WorkspaceMembersSummary({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <AnalyticCard
-        icon={<Clock className="h-4 w-4" />}
+        icon={<Clock className="size-4" />}
         label="This week"
         value={formatHours(summary.thisWeekSeconds)}
       />
       <AnalyticCard
-        icon={<BarChart2 className="h-4 w-4" />}
+        icon={<BarChart2 className="size-4" />}
         label="Total tracked"
         value={formatHours(summary.totalSeconds)}
       />
       <AnalyticCard
-        icon={<DollarSign className="h-4 w-4" />}
+        icon={<DollarSign className="size-4" />}
         label="Billable"
         value={formatHours(summary.billableSeconds)}
       />
       <AnalyticCard
-        icon={<UserPlus className="h-4 w-4" />}
+        icon={<UserPlus className="size-4" />}
         label="Total entries"
         value={String(summary.entryCount)}
       />

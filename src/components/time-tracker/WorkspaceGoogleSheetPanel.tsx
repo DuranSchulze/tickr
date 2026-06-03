@@ -98,7 +98,7 @@ export function WorkspaceGoogleSheetPanel({
                 disabled={pending || !dirty}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               >
-                <Save className="h-3.5 w-3.5" />
+                <Save className="size-3.5" />
                 {pending ? 'Saving…' : 'Save URL'}
               </button>
               {workspace.googleSheetUrl && (
@@ -108,7 +108,7 @@ export function WorkspaceGoogleSheetPanel({
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
                 >
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <ExternalLink className="size-3.5" />
                   Open sheet
                 </a>
               )}
@@ -125,7 +125,7 @@ export function WorkspaceGoogleSheetPanel({
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
             >
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="size-3.5" />
               Open sheet
             </a>
           </div>

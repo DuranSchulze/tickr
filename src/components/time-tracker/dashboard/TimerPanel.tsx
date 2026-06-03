@@ -195,7 +195,7 @@ export function TimerPanel({
           onClick={() => setOptionsOpen(true)}
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent sm:w-auto md:hidden"
         >
-          <SlidersHorizontal className="h-4 w-4" />
+          <SlidersHorizontal className="size-4" />
           Options
         </button>
         <button
@@ -211,14 +211,14 @@ export function TimerPanel({
         >
           {activeEntry ? (
             stopPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Square className="h-4 w-4 fill-current" />
+              <Square className="size-4 fill-current" />
             )
           ) : startPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Play className="h-4 w-4" />
+            <Play className="size-4" />
           )}
           {activeEntry ? 'Stop timer' : 'Start'}
           <Kbd className="bg-white/20 text-white/80 hidden sm:inline-flex">
@@ -247,7 +247,7 @@ export function TimerPanel({
                 title="Discard timer — deletes this entry with no record saved"
                 className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 px-2.5 py-1 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="size-3" />
                 Discard
                 <Kbd className="hidden sm:inline-flex">Esc</Kbd>
               </button>
@@ -259,9 +259,9 @@ export function TimerPanel({
                   className="inline-flex items-center gap-1.5 rounded-md bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3"
                 >
                   {stopPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="size-3 animate-spin" />
                   ) : (
-                    <Square className="h-3 w-3 fill-current" />
+                    <Square className="size-3 fill-current" />
                   )}
                   Stop
                 </button>
@@ -279,7 +279,7 @@ export function TimerPanel({
                 {activeProject && (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <span
-                      className="inline-block h-2 w-2 rounded-full"
+                      className="inline-block size-2 rounded-full"
                       style={{ backgroundColor: activeProject.color }}
                     />
                     {activeProject.name}
@@ -311,7 +311,6 @@ export function TimerPanel({
                 {editStarted ? (
                   <input
                     type="time"
-                    autoFocus
                     className="rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                     value={draftStarted}
                     onChange={(e) => setDraftStarted(e.target.value)}
@@ -320,6 +319,7 @@ export function TimerPanel({
                       if (e.key === 'Enter') commitStartedAt()
                       if (e.key === 'Escape') setEditStarted(false)
                     }}
+                    aria-label="Started at"
                   />
                 ) : (
                   <span className="flex items-center gap-1">
@@ -335,7 +335,7 @@ export function TimerPanel({
                       className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                       title="Edit start time"
                     >
-                      <Pencil className="h-3 w-3" />
+                      <Pencil className="size-3" />
                     </button>
                   </span>
                 )}

@@ -95,7 +95,7 @@ export function OnboardingDialog({ open, onComplete }: Props) {
             ) : (
               <div className="flex h-44 items-center justify-center">
                 <div className="flex flex-col items-center gap-1.5 text-muted-foreground/40">
-                  <ImageIcon className="h-8 w-8" />
+                  <ImageIcon className="size-8" />
                   <span className="text-xs font-medium">Screenshot</span>
                 </div>
               </div>
@@ -106,7 +106,7 @@ export function OnboardingDialog({ open, onComplete }: Props) {
           <DialogHeader>
             {isFirst && (
               <div className="mb-2 inline-flex w-fit items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
-                <Sparkles className="h-3.5 w-3.5" />
+                <Sparkles className="size-3.5" />
                 {manifest.onboarding.title}
               </div>
             )}
@@ -131,7 +131,7 @@ export function OnboardingDialog({ open, onComplete }: Props) {
                 onClick={() => handleAction(step.action!.to)}
               >
                 {step.action.label}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
+                <ArrowRight className="ml-1.5 size-4" />
               </Button>
             </div>
           )}
@@ -147,7 +147,7 @@ export function OnboardingDialog({ open, onComplete }: Props) {
               </Button>
             ) : (
               <Button variant="ghost" size="sm" onClick={goBack}>
-                <ArrowLeft className="mr-1 h-4 w-4" />
+                <ArrowLeft className="mr-1 size-4" />
                 Back
               </Button>
             )}
@@ -161,7 +161,7 @@ export function OnboardingDialog({ open, onComplete }: Props) {
           {/* Right: Next / Done */}
           <Button size="sm" onClick={goNext}>
             {isLast ? 'Done' : 'Next'}
-            {!isLast && <ArrowRight className="ml-1.5 h-4 w-4" />}
+            {!isLast && <ArrowRight className="ml-1.5 size-4" />}
           </Button>
         </div>
       </DialogContent>

@@ -71,7 +71,7 @@ export function EntriesFilters({
       </label>
       <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
         <span className="inline-flex items-center gap-1">
-          <ArrowDownUp className="h-3 w-3" />
+          <ArrowDownUp className="size-3" />
           Sort by
         </span>
         <select

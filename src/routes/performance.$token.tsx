@@ -12,6 +12,7 @@ export const Route = createFileRoute('/performance/$token')({
   component: PublicPerformanceRoute,
 })
 
+// oxlint-disable-next-line react/only-export-components
 function PublicPerformanceRoute() {
   const { data } = Route.useLoaderData()
   return <PublicPerformancePage data={data} />

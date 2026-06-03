@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { Building2, CheckCircle2, Plus, Trash2, X } from 'lucide-react'
@@ -21,33 +21,46 @@ export function ClientsManager({
   canManage: boolean
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
-  const [name, setName] = useState('')
-  const [status, setStatus] = useState<ClientStatus>('ACTIVE')
-  const [pending, setPending] = useState(false)
-  const [busyId, setBusyId] = useState<string | null>(null)
+  const [local, dispatch] = useReducer(
+    (
+      s: {
+        showForm: boolean
+        name: string
+        status: ClientStatus
+        pending: boolean
+        busyId: string | null
+      },
+      a: Partial<typeof s>,
+    ) => ({ ...s, ...a }),
+    {
+      showForm: false,
+      name: '',
+      status: 'ACTIVE',
+      pending: false,
+      busyId: null,
+    },
+  )
+  const { showForm, name, status, pending, busyId } = local
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
-    setPending(true)
+    dispatch({ pending: true })
     try {
       await createClientFn({ data: { name, clientStatus: status } })
       await router.invalidate()
       gooeyToast.success('Client created')
-      setName('')
-      setStatus('ACTIVE')
-      setShowForm(false)
+      dispatch({ name: '', status: 'ACTIVE', showForm: false })
     } catch (err) {
       gooeyToast.error('Could not create client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setPending(false)
+      dispatch({ pending: false })
     }
   }
 
   async function handleArchive(id: string, clientName: string) {
-    setBusyId(id)
+    dispatch({ busyId: id })
     try {
       await archiveClientFn({ data: { id } })
       await router.invalidate()
@@ -57,12 +70,12 @@ export function ClientsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setBusyId(null)
+      dispatch({ busyId: null })
     }
   }
 
   async function handleReactivate(client: Client) {
-    setBusyId(client.id)
+    dispatch({ busyId: client.id })
     try {
       await updateClientFn({
         data: { id: client.id, name: client.name, clientStatus: 'ACTIVE' },
@@ -74,7 +87,7 @@ export function ClientsManager({
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
-      setBusyId(null)
+      dispatch({ busyId: null })
     }
   }
 
@@ -85,13 +98,13 @@ export function ClientsManager({
         canManage ? (
           <button
             type="button"
-            onClick={() => setShowForm((p) => !p)}
+            onClick={() => dispatch({ showForm: !showForm })}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
           >
             {showForm ? (
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             ) : (
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="size-3.5" />
             )}
             {showForm ? 'Cancel' : 'New client'}
           </button>
@@ -105,8 +118,9 @@ export function ClientsManager({
         >
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => dispatch({ name: e.target.value })}
             placeholder="Client name"
+            aria-label="Client name"
             required
             className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
           />
@@ -115,7 +129,7 @@ export function ClientsManager({
               type="checkbox"
               checked={status === 'ACTIVE'}
               onChange={(e) =>
-                setStatus(e.target.checked ? 'ACTIVE' : 'INACTIVE')
+                dispatch({ status: e.target.checked ? 'ACTIVE' : 'INACTIVE' })
               }
             />
             Active
@@ -140,7 +154,7 @@ export function ClientsManager({
               key={c.id}
               className="group flex items-center gap-1.5 rounded-lg border border-border px-3 py-2"
             >
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <Building2 className="size-3.5 text-muted-foreground" />
               <span className="text-sm font-semibold text-foreground">
                 {c.name}
               </span>
@@ -156,7 +170,7 @@ export function ClientsManager({
                   variant="danger"
                 >
                   <Trash2
-                    className={`h-3 w-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
                   />
                 </IconBtn>
               )}
@@ -166,7 +180,7 @@ export function ClientsManager({
                   title="Reactivate client"
                 >
                   <CheckCircle2
-                    className={`h-3 w-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
                   />
                 </IconBtn>
               )}

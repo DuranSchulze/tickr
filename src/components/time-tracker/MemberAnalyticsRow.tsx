@@ -70,7 +70,7 @@ export function MemberAnalyticsRow({
                 return (
                   <div key={projectId} className="flex items-center gap-3">
                     <span
-                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                      className="inline-block size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: project?.color ?? '#94a3b8' }}
                     />
                     <span className="w-32 shrink-0 truncate text-sm text-foreground">
