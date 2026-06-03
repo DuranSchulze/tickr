@@ -142,6 +142,7 @@ export function AppShell({
             <Navbar
               workspace={workspace}
               user={user}
+              permissionLevel={permissionLevel}
               mobileMenuButton={
                 <MobileNav
                   workspaceName={workspace.name}

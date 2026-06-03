@@ -40,10 +40,12 @@ import {
 export function Navbar({
   workspace,
   user,
+  permissionLevel,
   mobileMenuButton,
 }: {
   workspace: { name: string }
   user: { id: string; name: string; email: string; image?: string | null }
+  permissionLevel: string
   mobileMenuButton?: ReactNode
 }) {
   const navigate = useNavigate()
@@ -117,7 +119,10 @@ export function Navbar({
             Workspace live
           </div>
 
-          <WorkspaceSwitcher currentWorkspaceName={workspace.name} />
+          <WorkspaceSwitcher
+            currentWorkspaceName={workspace.name}
+            permissionLevel={permissionLevel}
+          />
 
           <DropdownMenu open={infoOpen} onOpenChange={setInfoOpen}>
             <DropdownMenuTrigger asChild>

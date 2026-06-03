@@ -11,7 +11,11 @@ export const Route = createFileRoute('/app/my-workspaces')({
       listUserWorkspacesFn(),
       getWorkspaceAccessFn(),
     ])
-    return { workspaces, currentWorkspaceId: access.workspace.id }
+    return {
+      workspaces,
+      currentWorkspaceId: access.workspace.id,
+      permissionLevel: access.member.permissionLevel,
+    }
   },
   staleTime: 0,
   component: MyWorkspacesRoute,
@@ -19,11 +23,13 @@ export const Route = createFileRoute('/app/my-workspaces')({
 
 // oxlint-disable-next-line react/only-export-components
 function MyWorkspacesRoute() {
-  const { workspaces, currentWorkspaceId } = Route.useLoaderData()
+  const { workspaces, currentWorkspaceId, permissionLevel } =
+    Route.useLoaderData()
   return (
     <MyWorkspacesPage
       workspaces={workspaces}
       currentWorkspaceId={currentWorkspaceId}
+      permissionLevel={permissionLevel}
     />
   )
 }

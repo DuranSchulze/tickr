@@ -41,9 +41,15 @@ type Workspace = {
 interface Props {
   workspaces: Workspace[]
   currentWorkspaceId: string
+  permissionLevel: string
 }
 
-export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
+export function MyWorkspacesPage({
+  workspaces,
+  currentWorkspaceId,
+  permissionLevel,
+}: Props) {
+  const canCreate = permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const router = useRouter()
   const [pendingAction, setPendingAction] = useState<{
     type: 'delete' | 'leave'
@@ -231,30 +237,32 @@ export function MyWorkspacesPage({ workspaces, currentWorkspaceId }: Props) {
       </section>
 
       {/* Create new workspace */}
-      <section className="border-t border-border pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              Create a new workspace
-            </p>
-            <p className="text-xs text-muted-foreground">
-              You'll be the owner with full control.
-            </p>
+      {canCreate && (
+        <section className="border-t border-border pt-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                Create a new workspace
+              </p>
+              <p className="text-xs text-muted-foreground">
+                You'll be the owner with full control.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => {
+                setNewWsName('')
+                setShowCreate(true)
+              }}
+            >
+              <Plus className="size-4" />
+              New workspace
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => {
-              setNewWsName('')
-              setShowCreate(true)
-            }}
-          >
-            <Plus className="size-4" />
-            New workspace
-          </Button>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Create workspace dialog */}
       <Dialog

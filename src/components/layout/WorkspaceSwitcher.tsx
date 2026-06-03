@@ -34,9 +34,12 @@ import { createWorkspaceFn } from '#/lib/server/workspaces'
 
 export function WorkspaceSwitcher({
   currentWorkspaceName,
+  permissionLevel,
 }: {
   currentWorkspaceName: string
+  permissionLevel: string
 }) {
+  const canCreate = permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const queryClient = useQueryClient()
   const { data: workspaces = [] } = useQuery({
     queryKey: ['user-workspaces'],
@@ -153,15 +156,17 @@ export function WorkspaceSwitcher({
               <LayoutGrid className="size-4" /> My Workspaces
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault()
-              openCreateDialog()
-            }}
-            className="flex items-center gap-2 text-sm font-semibold text-primary"
-          >
-            <Plus className="size-4" /> Create a workspace
-          </DropdownMenuItem>
+          {canCreate && (
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault()
+                openCreateDialog()
+              }}
+              className="flex items-center gap-2 text-sm font-semibold text-primary"
+            >
+              <Plus className="size-4" /> Create a workspace
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
