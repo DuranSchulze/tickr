@@ -5,30 +5,17 @@ import {
   workspaces,
   workspaceMembers,
   users,
-  workspaceRoles,
-  departments,
   timeEntries,
   projects,
   clients,
   tags,
   timeEntryTags,
 } from '#/db/schema'
-import {
-  and,
-  asc,
-  desc,
-  eq,
-  inArray,
-  isNotNull,
-  isNull,
-  lt,
-  gte,
-} from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, lt, gte } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
 import { getAnalyticsDateRange } from './shared/dates'
-import { assertOwnerOrAdmin } from './shared/role-gates.server'
 import type { analyticsRangeSchema } from './shared/schemas'
 import {
   computeEffectiveRate,
@@ -50,158 +37,6 @@ function escapeCsv(value: string | number | null | undefined): string {
 
 function buildCsv(rows: (string | number | null | undefined)[][]): string {
   return rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n')
-}
-
-export async function exportMembersCsv(): Promise<string> {
-  const access = await requireWorkspaceAccess()
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const isAdmin = level === 'OWNER' || level === 'ADMIN'
-
-  // Build member conditions
-  const memberConditions: SQL[] = [
-    eq(workspaceMembers.workspaceId, access.workspace.id),
-  ]
-
-  if (level === 'EMPLOYEE') {
-    memberConditions.push(eq(workspaceMembers.id, access.member.id))
-  } else if (level === 'MANAGER' && access.member.departmentId) {
-    memberConditions.push(
-      eq(workspaceMembers.departmentId, access.member.departmentId),
-    )
-  }
-
-  const [memberRows, allEntries] = await Promise.all([
-    db
-      .select({
-        id: workspaceMembers.id,
-        email: workspaceMembers.email,
-        status: workspaceMembers.status,
-        userName: users.name,
-        roleName: workspaceRoles.name,
-        departmentName: departments.name,
-      })
-      .from(workspaceMembers)
-      .leftJoin(users, eq(workspaceMembers.userId, users.id))
-      .leftJoin(
-        workspaceRoles,
-        eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
-      )
-      .leftJoin(departments, eq(workspaceMembers.departmentId, departments.id))
-      .where(and(...memberConditions))
-      .orderBy(asc(workspaceMembers.email)),
-    isAdmin
-      ? db
-          .select({
-            workspaceMemberId: timeEntries.workspaceMemberId,
-            durationSeconds: timeEntries.durationSeconds,
-            billable: timeEntries.billable,
-            startedAt: timeEntries.startedAt,
-          })
-          .from(timeEntries)
-          .where(
-            and(
-              eq(timeEntries.workspaceId, access.workspace.id),
-              isNotNull(timeEntries.endedAt),
-            ),
-          )
-      : Promise.resolve([]),
-  ])
-
-  // Compute per-member stats for admin exports
-  const now = new Date()
-  const weekStart = new Date(now)
-  weekStart.setHours(0, 0, 0, 0)
-  const dayOfWeek = weekStart.getDay()
-  weekStart.setDate(
-    weekStart.getDate() + (dayOfWeek === 0 ? -6 : 1 - dayOfWeek),
-  )
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-
-  type Stat = {
-    totalSeconds: number
-    billableSeconds: number
-    thisWeekSeconds: number
-    thisMonthSeconds: number
-    entryCount: number
-  }
-  const statsMap = new Map<string, Stat>()
-
-  for (const entry of allEntries) {
-    const id = entry.workspaceMemberId
-    if (!statsMap.has(id)) {
-      statsMap.set(id, {
-        totalSeconds: 0,
-        billableSeconds: 0,
-        thisWeekSeconds: 0,
-        thisMonthSeconds: 0,
-        entryCount: 0,
-      })
-    }
-    const s = statsMap.get(id)!
-    s.totalSeconds += entry.durationSeconds
-    s.entryCount++
-    if (entry.billable) s.billableSeconds += entry.durationSeconds
-    const d = new Date(entry.startedAt)
-    if (d >= weekStart) s.thisWeekSeconds += entry.durationSeconds
-    if (d >= monthStart) s.thisMonthSeconds += entry.durationSeconds
-  }
-
-  const headers: (string | number)[] = [
-    'Name',
-    'Email',
-    'Role',
-    'Department',
-    'Status',
-  ]
-  if (isAdmin) {
-    headers.push(
-      'Total Hours',
-      'Billable Hours',
-      'This Week (h)',
-      'This Month (h)',
-      'Entries',
-    )
-  }
-
-  const rows: (string | number | null | undefined)[][] = [
-    ['Members Export'],
-    ['Workspace', access.workspace.name],
-    ['Generated', new Date().toISOString().slice(0, 10)],
-    [],
-    headers,
-  ]
-
-  for (const m of memberRows) {
-    const s = statsMap.get(m.id)
-    const row: (string | number | null | undefined)[] = [
-      m.userName ?? m.email,
-      m.email,
-      m.roleName ?? '',
-      m.departmentName ?? '',
-      m.status,
-    ]
-    if (isAdmin) {
-      row.push(
-        ((s?.totalSeconds ?? 0) / 3600).toFixed(2),
-        ((s?.billableSeconds ?? 0) / 3600).toFixed(2),
-        ((s?.thisWeekSeconds ?? 0) / 3600).toFixed(2),
-        ((s?.thisMonthSeconds ?? 0) / 3600).toFixed(2),
-        s?.entryCount ?? 0,
-      )
-    }
-    rows.push(row)
-  }
-
-  void createAuditLog({
-    workspaceId: access.workspace.id,
-    actorId: access.user.id,
-    actorEmail: access.user.email,
-    action: 'EXPORT_MEMBERS',
-    targetType: 'workspace',
-    targetId: access.workspace.id,
-  })
-
-  return buildCsv(rows)
 }
 
 export async function exportAnalyticsCsv(
@@ -417,79 +252,4 @@ export async function exportAnalyticsCsv(
   })
 
   return buildCsv(rows)
-}
-
-export async function exportActivityCsv(): Promise<string> {
-  const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
-
-  const rows = await db
-    .select({
-      memberId: workspaceMembers.id,
-      userId: workspaceMembers.userId,
-      name: users.name,
-      email: workspaceMembers.email,
-      status: workspaceMembers.status,
-      entryId: timeEntries.id,
-      description: timeEntries.description,
-      projectName: projects.name,
-      startedAt: timeEntries.startedAt,
-    })
-    .from(workspaceMembers)
-    .innerJoin(users, eq(workspaceMembers.userId, users.id))
-    .leftJoin(
-      timeEntries,
-      and(
-        eq(timeEntries.workspaceMemberId, workspaceMembers.id),
-        isNull(timeEntries.endedAt),
-      ),
-    )
-    .leftJoin(projects, eq(timeEntries.projectId, projects.id))
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, access.workspace.id),
-        eq(workspaceMembers.status, 'ACTIVE'),
-      ),
-    )
-    .orderBy(asc(users.name))
-
-  const headers: (string | number)[] = [
-    'Name',
-    'Email',
-    'Status',
-    'Active Entry',
-    'Project',
-    'Started At',
-  ]
-
-  const csvRows: (string | number | null | undefined)[][] = [
-    ['Activity Export'],
-    ['Workspace', access.workspace.name],
-    ['Generated', new Date().toISOString().slice(0, 10)],
-    [],
-    headers,
-  ]
-
-  for (const row of rows) {
-    const isOnline = row.entryId !== null
-    csvRows.push([
-      row.name ?? row.email,
-      row.email,
-      isOnline ? 'Online' : 'Offline',
-      isOnline ? row.description || 'No description' : '',
-      isOnline ? (row.projectName ?? 'No project') : '',
-      isOnline && row.startedAt ? row.startedAt.toISOString() : '',
-    ])
-  }
-
-  void createAuditLog({
-    workspaceId: access.workspace.id,
-    actorId: access.user.id,
-    actorEmail: access.user.email,
-    action: 'EXPORT_ACTIVITY',
-    targetType: 'workspace',
-    targetId: access.workspace.id,
-  })
-
-  return buildCsv(csvRows)
 }

@@ -45,6 +45,7 @@ export type AuditAction =
   | 'EXPORT_MEMBERS'
   | 'EXPORT_ANALYTICS'
   | 'EXPORT_ACTIVITY'
+  | 'EXPORT_BULK_REPORT'
   // Security
   | 'SUSPICIOUS_LOGIN_ALERT'
 

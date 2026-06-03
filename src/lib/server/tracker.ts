@@ -88,6 +88,13 @@ const memberMonthlyReportSchema = z.object({
   endDate: z.string().date(), // YYYY-MM-DD
 })
 
+const bulkReportSchema = z.object({
+  startDate: z.string().date(), // YYYY-MM-DD
+  endDate: z.string().date(), // YYYY-MM-DD
+  scopeType: z.enum(['all', 'client', 'department', 'tag']),
+  scopeId: z.string().optional(),
+})
+
 const paginatedMembersSchema = z.object({
   page: z.number().int().min(0),
   pageSize: z.number().int().min(1).max(100),
@@ -166,12 +173,12 @@ export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
     return getMemberMonthlyReport(data)
   })
 
-export const exportMembersCsvFn = createServerFn({ method: 'POST' }).handler(
-  async () => {
-    const { exportMembersCsv } = await import('./tracker/export.server')
-    return exportMembersCsv()
-  },
-)
+export const getBulkReportFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => bulkReportSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getBulkReport } = await import('./tracker.server')
+    return getBulkReport(data)
+  })
 
 export const exportAnalyticsCsvFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => analyticsRangeSchema.parse(input))
@@ -179,13 +186,6 @@ export const exportAnalyticsCsvFn = createServerFn({ method: 'POST' })
     const { exportAnalyticsCsv } = await import('./tracker/export.server')
     return exportAnalyticsCsv(data)
   })
-
-export const exportActivityCsvFn = createServerFn({ method: 'POST' }).handler(
-  async () => {
-    const { exportActivityCsv } = await import('./tracker/export.server')
-    return exportActivityCsv()
-  },
-)
 
 export const startTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => startTimerSchema.parse(input))

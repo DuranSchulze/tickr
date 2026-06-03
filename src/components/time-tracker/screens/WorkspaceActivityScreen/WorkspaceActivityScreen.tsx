@@ -1,11 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { RefreshCw } from 'lucide-react'
+import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
 import {
-  ExportMenu,
-  downloadCsv,
-} from '#/components/time-tracker/shared/ExportMenu'
-import {
-  exportActivityCsvFn,
+  getTrackerStateLiteFn,
   getWorkspaceActivityFn,
 } from '#/lib/server/tracker'
 import { Page } from '../shared/Page'
@@ -39,6 +36,13 @@ export function WorkspaceActivityScreen() {
     refetchIntervalInBackground: false,
   })
 
+  // Workspace catalogs (clients/departments/tags) for the bulk export dialog.
+  const { data: trackerState } = useQuery({
+    queryKey: ['tracker-state-lite'],
+    queryFn: () => getTrackerStateLiteFn(),
+    staleTime: 5 * 60 * 1000,
+  })
+
   const sorted = sortMembers(members)
   const onlineCount = members.filter((m) => m.activeEntry !== null).length
   const total = members.length
@@ -62,15 +66,7 @@ export function WorkspaceActivityScreen() {
           {total} total members
         </p>
         <div className="flex items-center gap-2">
-          <ExportMenu
-            onExportCsv={async () => {
-              const csv = await exportActivityCsvFn()
-              downloadCsv(
-                csv,
-                `activity-${new Date().toISOString().slice(0, 10)}.csv`,
-              )
-            }}
-          />
+          {trackerState && <BulkExportButton state={trackerState} />}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <RefreshCw
               className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`}

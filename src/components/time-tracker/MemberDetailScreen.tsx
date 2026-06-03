@@ -3,6 +3,7 @@ import { Link, useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
 import { ArrowLeft, DollarSign, IdCard, UserRound } from 'lucide-react'
 import { Button } from '#/components/ui/button'
+import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import {
@@ -200,11 +201,17 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
             {detail.member.email}
           </p>
         </div>
-        <MemberAvatar
-          image={detail.member.image}
-          initials={initials}
-          color={detail.member.role?.color ?? '#64748b'}
-        />
+        <div className="flex items-center gap-3">
+          <MemberExportButton
+            memberId={detail.member.id}
+            memberName={detail.member.name}
+          />
+          <MemberAvatar
+            image={detail.member.image}
+            initials={initials}
+            color={detail.member.role?.color ?? '#64748b'}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b border-border">

@@ -1,8 +1,8 @@
 import { db } from '#/db'
-import { timeEntries } from '#/db/schema'
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { timeEntries, workspaceMembers } from '#/db/schema'
+import { and, eq, inArray, isNotNull } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
 
 export type MemberStat = {
   memberId: string
@@ -16,7 +16,28 @@ export type MemberStat = {
 
 export async function getMemberAnalytics(): Promise<MemberStat[]> {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+
+  // Role-scoped visibility, mirroring exportMembersCsv:
+  // - OWNER/ADMIN: all members in the workspace
+  // - MANAGER (with a department): members in their department
+  // - everyone else: only themselves
+  const entryConditions: SQL[] = [
+    eq(timeEntries.workspaceId, access.workspace.id),
+    isNotNull(timeEntries.endedAt),
+  ]
+
+  if (level === 'OWNER' || level === 'ADMIN') {
+    // no member restriction — all workspace entries
+  } else if (level === 'MANAGER' && access.member.departmentId) {
+    const deptMemberIds = db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.departmentId, access.member.departmentId))
+    entryConditions.push(inArray(timeEntries.workspaceMemberId, deptMemberIds))
+  } else {
+    entryConditions.push(eq(timeEntries.workspaceMemberId, access.member.id))
+  }
 
   const now = new Date()
 
@@ -38,12 +59,7 @@ export async function getMemberAnalytics(): Promise<MemberStat[]> {
       projectId: timeEntries.projectId,
     })
     .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.workspaceId, access.workspace.id),
-        isNotNull(timeEntries.endedAt),
-      ),
-    )
+    .where(and(...entryConditions))
 
   const statsMap: Partial<
     Record<

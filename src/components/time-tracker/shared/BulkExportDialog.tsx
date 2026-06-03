@@ -1,0 +1,252 @@
+import { useEffect, useState } from 'react'
+import { FileSpreadsheet, FileText, Layers, Loader2 } from 'lucide-react'
+import { gooeyToast } from 'goey-toast'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
+import { Button } from '#/components/ui/button'
+import { getBulkReportFn } from '#/lib/server/tracker'
+import type { BulkReportScopeType } from '#/lib/server/tracker.server'
+import {
+  downloadBulkReportCsv,
+  downloadBulkReportPdf,
+} from '#/lib/time-tracker/bulk-report-export'
+import type { TrackerState } from '#/lib/time-tracker/types'
+
+type ExportFormat = 'pdf' | 'csv'
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const fmt = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const monthStartStr = () => {
+  const now = new Date()
+  return fmt(new Date(now.getFullYear(), now.getMonth(), 1))
+}
+const todayStr = () => fmt(new Date())
+
+const scopeOptions: { value: BulkReportScopeType; label: string }[] = [
+  { value: 'all', label: 'Everything' },
+  { value: 'client', label: 'Client' },
+  { value: 'department', label: 'Department' },
+  { value: 'tag', label: 'Tag' },
+]
+
+/**
+ * Bulk report export: one PDF/CSV for a date range, scoped to everything or a
+ * single client / department / tag. Grouped by member with computed billing.
+ * Permissions are enforced server-side by `getBulkReport`.
+ */
+export function BulkExportButton({
+  state,
+  defaultStartDate,
+  defaultEndDate,
+  className = '',
+}: {
+  state: TrackerState
+  defaultStartDate?: string
+  defaultEndDate?: string
+  className?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [scopeType, setScopeType] = useState<BulkReportScopeType>('all')
+  const [scopeId, setScopeId] = useState('')
+  const [startDate, setStartDate] = useState(
+    defaultStartDate ?? monthStartStr(),
+  )
+  const [endDate, setEndDate] = useState(defaultEndDate ?? todayStr())
+  const [exporting, setExporting] = useState<ExportFormat | null>(null)
+
+  useEffect(() => {
+    if (open) {
+      setScopeType('all')
+      setScopeId('')
+      setStartDate(defaultStartDate ?? monthStartStr())
+      setEndDate(defaultEndDate ?? todayStr())
+    }
+  }, [open, defaultStartDate, defaultEndDate])
+
+  const today = todayStr()
+  const scopeEntities =
+    scopeType === 'client'
+      ? state.clients
+      : scopeType === 'department'
+        ? state.departments
+        : scopeType === 'tag'
+          ? state.tags
+          : []
+  const needsScopeId = scopeType !== 'all'
+  const invalid =
+    !startDate || !endDate || startDate > endDate || (needsScopeId && !scopeId)
+
+  async function handleExport(format: ExportFormat) {
+    setExporting(format)
+    try {
+      const report = await getBulkReportFn({
+        data: {
+          startDate,
+          endDate,
+          scopeType,
+          scopeId: needsScopeId ? scopeId : undefined,
+        },
+      })
+      if (format === 'pdf') {
+        downloadBulkReportPdf(report)
+      } else {
+        downloadBulkReportCsv(report)
+      }
+      setOpen(false)
+    } catch (err) {
+      gooeyToast.error('Export failed', {
+        description:
+          err instanceof Error ? err.message : 'Could not generate report.',
+      })
+    } finally {
+      setExporting(null)
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
+      >
+        <Layers className="h-4 w-4" />
+        Bulk Export
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bulk Export</DialogTitle>
+            <DialogDescription>
+              Export one report for a date range, grouped by member with
+              computed billing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4">
+            {/* Scope */}
+            <div className="grid gap-2">
+              <span className="text-xs font-semibold text-foreground">
+                Export
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {scopeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      setScopeType(opt.value)
+                      setScopeId('')
+                    }}
+                    className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+                      scopeType === opt.value
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scope value */}
+            {needsScopeId && (
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Select {scopeType}
+                </label>
+                <select
+                  value={scopeId}
+                  onChange={(e) => setScopeId(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
+                  <option value="">Choose a {scopeType}…</option>
+                  {scopeEntities.map((entity) => (
+                    <option key={entity.id} value={entity.id}>
+                      {entity.name}
+                    </option>
+                  ))}
+                </select>
+                {scopeEntities.length === 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    No {scopeType}s available.
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Date range */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  Start date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  max={endDate || today}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold text-foreground">
+                  End date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || undefined}
+                  max={today}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={exporting !== null}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="outline"
+              onClick={() => handleExport('csv')}
+              disabled={invalid || exporting !== null}
+            >
+              {exporting === 'csv' ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+              )}
+              CSV
+            </Button>
+            <Button
+              onClick={() => handleExport('pdf')}
+              disabled={invalid || exporting !== null}
+            >
+              {exporting === 'pdf' ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <FileText className="mr-2 h-4 w-4" />
+              )}
+              PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}

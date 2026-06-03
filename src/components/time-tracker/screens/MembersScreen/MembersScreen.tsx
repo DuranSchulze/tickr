@@ -1,11 +1,7 @@
 import { useMemo, useState } from 'react'
 import { UserPlus } from 'lucide-react'
 import type { Member, TrackerState } from '#/lib/time-tracker/types'
-import { exportMembersCsvFn } from '#/lib/server/tracker'
-import {
-  ExportMenu,
-  downloadCsv,
-} from '#/components/time-tracker/shared/ExportMenu'
+import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
 import { InviteMemberDialog } from '../../InviteMemberDialog'
 import { MembersTable } from '../../MembersTable'
 import type { MemberStat } from '../../MembersTable'
@@ -104,15 +100,7 @@ export function MembersScreen({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <ExportMenu
-              onExportCsv={async () => {
-                const csv = await exportMembersCsvFn()
-                downloadCsv(
-                  csv,
-                  `members-${new Date().toISOString().slice(0, 10)}.csv`,
-                )
-              }}
-            />
+            <BulkExportButton state={state} />
             {canManage && (
               <button
                 type="button"

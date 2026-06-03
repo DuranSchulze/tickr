@@ -8,6 +8,8 @@ import {
   downloadCsv,
 } from '#/components/time-tracker/shared/ExportMenu'
 import { exportAnalyticsCsvFn } from '#/lib/server/tracker'
+import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
+import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
@@ -66,6 +68,14 @@ export function AnalyticsScreen({
   }
 
   const page = currentFilters.page ?? 1
+
+  // When exactly one member is selected, offer a per-member PDF report scoped
+  // to the current analytics date range.
+  const selectedMemberIds = (currentFilters.memberIds ?? '')
+    .split(',')
+    .filter(Boolean)
+  const singleSelectedMemberId =
+    selectedMemberIds.length === 1 ? selectedMemberIds[0] : null
 
   const currentMember = state.members.find(
     (m) => m.id === state.currentMemberId,
@@ -156,6 +166,18 @@ export function AnalyticsScreen({
                 onChangeRange={(range) =>
                   onChangeQuery({ ...range, scope: analytics.selectedScope })
                 }
+              />
+              {singleSelectedMemberId && (
+                <MemberExportButton
+                  memberId={singleSelectedMemberId}
+                  defaultStartDate={analytics.startDate}
+                  defaultEndDate={analytics.endDate}
+                />
+              )}
+              <BulkExportButton
+                state={state}
+                defaultStartDate={analytics.startDate}
+                defaultEndDate={analytics.endDate}
               />
               <ExportMenu
                 onExportCsv={handleExportCsv}
