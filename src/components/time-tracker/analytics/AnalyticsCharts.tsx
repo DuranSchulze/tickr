@@ -154,8 +154,8 @@ export function AnalyticsCharts({
                   outerRadius={90}
                   paddingAngle={3}
                 >
-                  {billableData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
+                  {billableData.map((entry, index) => (
+                    <Cell key={`${entry.name}-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatHours(Number(value))} />
@@ -199,7 +199,7 @@ export function AnalyticsCharts({
                 <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
                   {projectData.map((entry, index) => (
                     <Cell
-                      key={entry.name}
+                      key={`${entry.name}-${index}`}
                       fill={
                         entry.color ||
                         fallbackColors[index % fallbackColors.length]

@@ -1,16 +1,9 @@
 import { AlertTriangle, BarChart3 } from 'lucide-react'
 import { formatCurrency } from '#/lib/time-tracker/billing'
-import { gooeyToast } from 'goey-toast'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
-import {
-  ExportMenu,
-  downloadCsv,
-} from '#/components/time-tracker/shared/ExportMenu'
-import { exportAnalyticsCsvFn } from '#/lib/server/tracker'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
-import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
 import type { AnalyticsFilters } from './AnalyticsFilterBar'
@@ -77,44 +70,6 @@ export function AnalyticsScreen({
   const singleSelectedMemberId =
     selectedMemberIds.length === 1 ? selectedMemberIds[0] : null
 
-  const currentMember = state.members.find(
-    (m) => m.id === state.currentMemberId,
-  )
-  const isManagerOrAbove =
-    currentMember?.permissionLevel === 'OWNER' ||
-    currentMember?.permissionLevel === 'ADMIN' ||
-    currentMember?.permissionLevel === 'MANAGER'
-  const hasSheet = !!state.workspace.googleSheetUrl
-  async function handleSyncToSheet() {
-    if (!hasSheet) {
-      // Surfaced by ExportMenu's catch as a readable toast.
-      throw new Error(
-        'No Google Sheet is connected to this workspace, so there is nothing to sync to. The workspace Owner can link one in Workspace settings.',
-      )
-    }
-    const result = await syncWorkspaceToGoogleSheetsFn()
-    gooeyToast.success('Synced to Google Sheets', {
-      description: `${result.departmentCount} tab(s), ${result.rowCount} row(s).`,
-    })
-  }
-
-  async function handleExportCsv() {
-    const csv = await exportAnalyticsCsvFn({
-      data: {
-        startDate: analytics.startDate,
-        endDate: analytics.endDate,
-        scope: analytics.selectedScope,
-        projectId: currentFilters.projectId,
-        clientId: currentFilters.clientId,
-        tagIds: currentFilters.tagIds,
-        memberIds: currentFilters.memberIds,
-        billable: currentFilters.billable,
-      },
-    })
-    const filename = `analytics-${analytics.startDate}-${analytics.endDate}.csv`
-    downloadCsv(csv, filename)
-  }
-
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-5">
       {/* Header */}
@@ -178,10 +133,6 @@ export function AnalyticsScreen({
                 state={state}
                 defaultStartDate={analytics.startDate}
                 defaultEndDate={analytics.endDate}
-              />
-              <ExportMenu
-                onExportCsv={handleExportCsv}
-                onSyncToSheet={isManagerOrAbove ? handleSyncToSheet : undefined}
               />
             </div>
           </div>

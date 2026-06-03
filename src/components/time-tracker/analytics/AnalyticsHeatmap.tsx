@@ -50,10 +50,10 @@ export function AnalyticsHeatmap({
         </div>
         <div className="mt-4 flex items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
           <span>Less</span>
-          {intensityStyles.map((className, index) => (
+          {intensityStyles.map((_, index) => (
             <span
-              key={className}
-              className={`size-3 rounded-[3px] border border-border/60 ${className}`}
+              key={`intensity-${index}`}
+              className={`size-3 rounded-[3px] border border-border/60 ${intensityStyles[index]}`}
               title={`Level ${index}`}
             />
           ))}
@@ -66,8 +66,8 @@ export function AnalyticsHeatmap({
           title="Top tasks"
           subtitle="Most-tracked descriptions in this range."
           emptyLabel="Tasks will show here after entries are completed."
-          items={topTasks.map((task) => ({
-            id: task.description,
+          items={topTasks.map((task, index) => ({
+            id: `${task.description}-${index}`,
             name: task.description,
             meta: `${task.entryCount} entries`,
             seconds: task.seconds,

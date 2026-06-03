@@ -124,14 +124,23 @@ export function BulkExportButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setFormState((prev) => ({ ...prev, open: true }))
+          setOpen(true)
+        }}
         className={`no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
       >
         <Layers className="size-4" />
         Bulk Export
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) setFormState((prev) => ({ ...prev, open: false }))
+          setOpen(o)
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Bulk Export</DialogTitle>
