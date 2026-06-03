@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  CalendarDays,
   Clock,
   Copy,
   Loader2,
@@ -9,8 +10,8 @@ import {
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
-import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import { Calendar } from '#/components/ui/calendar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
 import { TableCell, TableRow } from '#/components/ui/table'
 import { BillableToggleButton } from './BillableToggleButton'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -51,6 +57,163 @@ function patchTime(isoStr: string, timeInput: string): string {
   return d.toISOString()
 }
 
+function patchDate(isoStr: string, date: Date): string {
+  const d = new Date(isoStr)
+  d.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
+  return d.toISOString()
+}
+
+// Inline-editable time text — mirrors the description field's click-to-edit UX.
+function InlineTimeField({
+  isoStr,
+  bold,
+  ariaLabel,
+  onCommit,
+}: {
+  isoStr: string
+  bold?: boolean
+  ariaLabel: string
+  onCommit: (timeInput: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(() => toTimeInput(isoStr))
+  const inputRef = useRef<HTMLInputElement>(null)
+  const skipCommit = useRef(false)
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus()
+  }, [editing])
+
+  // Single commit path (via blur) — Enter/Escape blur instead of committing
+  // directly, so one edit never fires two updates.
+  function commit() {
+    if (skipCommit.current) {
+      skipCommit.current = false
+      setEditing(false)
+      return
+    }
+    if (draft && draft !== toTimeInput(isoStr)) onCommit(draft)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="time"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            e.stopPropagation()
+            inputRef.current?.blur()
+          } else if (e.key === 'Escape') {
+            e.preventDefault()
+            e.stopPropagation()
+            skipCommit.current = true
+            setDraft(toTimeInput(isoStr))
+            inputRef.current?.blur()
+          }
+        }}
+        aria-label={ariaLabel}
+        className="box-border h-6 w-[5.25rem] rounded border border-border bg-background px-1 text-xs tabular-nums text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(toTimeInput(isoStr))
+        setEditing(true)
+      }}
+      title="Edit time"
+      className={`cursor-text rounded px-0.5 hover:underline focus:outline-none focus:ring-1 focus:ring-primary ${
+        bold ? 'font-semibold text-foreground' : 'text-muted-foreground'
+      }`}
+    >
+      {formatTimeDisplay(isoStr)}
+    </button>
+  )
+}
+
+function EntryTimeCell({
+  entry,
+  onUpdate,
+}: {
+  entry: TimeEntry
+  onUpdate: (patch: InlinePatch) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const isRunning = !entry.endedAt
+
+  // Date change — patch both start & end in a single mutation.
+  function handleDateSelect(date: Date | undefined) {
+    if (!date) return
+    const patch: InlinePatch = { startedAt: patchDate(entry.startedAt, date) }
+    if (entry.endedAt) patch.endedAt = patchDate(entry.endedAt, date)
+    onUpdate(patch)
+    setOpen(false)
+  }
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <div className="grid justify-items-end gap-0.5 text-xs leading-tight tabular-nums">
+        <InlineTimeField
+          isoStr={entry.startedAt}
+          bold
+          ariaLabel="Start time"
+          onCommit={(t) =>
+            onUpdate({ startedAt: patchTime(entry.startedAt, t) })
+          }
+        />
+        {isRunning ? (
+          <span className="px-0.5 italic text-muted-foreground">now</span>
+        ) : (
+          <InlineTimeField
+            isoStr={entry.endedAt!}
+            ariaLabel="End time"
+            onCommit={(t) =>
+              onUpdate({ endedAt: patchTime(entry.endedAt!, t) })
+            }
+          />
+        )}
+      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            title="Change date"
+            aria-label="Change task date"
+          >
+            <CalendarDays className="size-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="center">
+          <Calendar
+            mode="single"
+            selected={new Date(entry.startedAt)}
+            defaultMonth={new Date(entry.startedAt)}
+            onSelect={handleDateSelect}
+            autoFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  )
+}
+
+function formatTimeDisplay(isoStr: string): string {
+  return new Date(isoStr).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export const EntryRow = memo(function EntryRow({
   entry,
   clients,
@@ -61,8 +224,6 @@ export const EntryRow = memo(function EntryRow({
   formatTime,
   hasActiveTimer,
   isSubEntry,
-  currency,
-  rateLookup,
   onStartEdit,
   onUpdate,
   onResume,
@@ -94,17 +255,8 @@ export const EntryRow = memo(function EntryRow({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [editDesc, setEditDesc] = useState(false)
   const [draftDesc, setDraftDesc] = useState(() => entry.description)
-  const [editStartTime, setEditStartTime] = useState(false)
-  const [draftStartTime, setDraftStartTime] = useState(() =>
-    toTimeInput(entry.startedAt),
-  )
-  const [editEndTime, setEditEndTime] = useState(false)
-  const [draftEndTime, setDraftEndTime] = useState(() =>
-    entry.endedAt ? toTimeInput(entry.endedAt) : '',
-  )
   const descInputRef = useRef<HTMLInputElement>(null)
-  const startTimeInputRef = useRef<HTMLInputElement>(null)
-  const endTimeInputRef = useRef<HTMLInputElement>(null)
+  const skipDescCommit = useRef(false)
 
   const activeClients = useMemo(
     () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
@@ -120,172 +272,70 @@ export const EntryRow = memo(function EntryRow({
     if (editDesc) descInputRef.current?.focus()
   }, [editDesc])
 
-  useEffect(() => {
-    if (editStartTime) startTimeInputRef.current?.focus()
-  }, [editStartTime])
-
-  useEffect(() => {
-    if (editEndTime) endTimeInputRef.current?.focus()
-  }, [editEndTime])
-
+  // Single commit path (via blur). Enter/Escape blur the input rather than
+  // committing directly, so we never fire two updates for one edit.
   function commitDesc() {
-    onUpdate({ description: draftDesc })
+    if (skipDescCommit.current) {
+      skipDescCommit.current = false
+      setEditDesc(false)
+      return
+    }
+    const next = draftDesc.trim()
+    if (next && next !== entry.description) onUpdate({ description: next })
     setEditDesc(false)
   }
 
-  function commitStartTime() {
-    if (!draftStartTime) return
-    onUpdate({ startedAt: patchTime(entry.startedAt, draftStartTime) })
-    setEditStartTime(false)
-  }
-
-  function commitEndTime() {
-    if (!draftEndTime || !entry.endedAt) return
-    onUpdate({ endedAt: patchTime(entry.endedAt, draftEndTime) })
-    setEditEndTime(false)
-  }
-
-  const startTime = new Date(entry.startedAt).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-  const endTime = entry.endedAt
-    ? new Date(entry.endedAt).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : null
-
   return (
     <TableRow className={isSubEntry ? 'bg-muted/20' : ''}>
-      {/* Task — description + time range + duration */}
-      <TableCell className="py-2.5 px-4 w-[32%]">
-        <div className="flex flex-col gap-0.5 min-w-0">
-          {/* Description */}
-          {editDesc ? (
-            <input
-              ref={descInputRef}
-              className="w-full rounded border border-border bg-background px-2 py-0.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-              value={draftDesc}
-              maxLength={200}
-              onChange={(e) => setDraftDesc(e.target.value)}
-              onBlur={commitDesc}
-              aria-label="Task description"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') commitDesc()
-                if (e.key === 'Escape') {
-                  setDraftDesc(entry.description)
-                  setEditDesc(false)
-                }
-              }}
-            />
-          ) : (
-            <button
-              type="button"
-              className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
-              title={entry.description || 'No description'}
-              onClick={() => {
+      {/* Description — inline editable */}
+      <TableCell className="py-3 px-4 w-[26%]">
+        {editDesc ? (
+          <input
+            ref={descInputRef}
+            className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+            value={draftDesc}
+            maxLength={200}
+            onChange={(e) => setDraftDesc(e.target.value)}
+            onBlur={commitDesc}
+            aria-label="Task description"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.stopPropagation()
+                descInputRef.current?.blur()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
+                skipDescCommit.current = true
                 setDraftDesc(entry.description)
-                setEditDesc(true)
-              }}
-            >
-              {entry.description || (
-                <span className="text-muted-foreground font-normal">
-                  No description
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Time range + duration */}
-          <div className="flex items-center gap-1.5 font-sans text-xs text-muted-foreground">
-            {editStartTime ? (
-              <input
-                type="time"
-                ref={startTimeInputRef}
-                className="w-[68px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                value={draftStartTime}
-                onChange={(e) => setDraftStartTime(e.target.value)}
-                onBlur={commitStartTime}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitStartTime()
-                  if (e.key === 'Escape') {
-                    setDraftStartTime(toTimeInput(entry.startedAt))
-                    setEditStartTime(false)
-                  }
-                }}
-                aria-label="Start time"
-              />
-            ) : (
-              <button
-                type="button"
-                className="cursor-text rounded border-0 bg-transparent px-0.5 py-0 font-inherit text-inherit hover:bg-accent hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                title="Click to edit start time"
-                suppressHydrationWarning
-                onClick={() => {
-                  setDraftStartTime(toTimeInput(entry.startedAt))
-                  setEditStartTime(true)
-                }}
-              >
-                {startTime}
-              </button>
+                descInputRef.current?.blur()
+              }
+            }}
+          />
+        ) : (
+          <button
+            type="button"
+            className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
+            title={entry.description || 'No description'}
+            onClick={() => {
+              setDraftDesc(entry.description)
+              setEditDesc(true)
+            }}
+          >
+            {entry.description || (
+              <span className="text-muted-foreground font-normal">
+                No description
+              </span>
             )}
-
-            <span>→</span>
-
-            {entry.endedAt ? (
-              editEndTime ? (
-                <input
-                  type="time"
-                  ref={endTimeInputRef}
-                  className="w-[68px] rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-                  value={draftEndTime}
-                  onChange={(e) => setDraftEndTime(e.target.value)}
-                  onBlur={commitEndTime}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') commitEndTime()
-                    if (e.key === 'Escape') {
-                      setDraftEndTime(
-                        entry.endedAt ? toTimeInput(entry.endedAt) : '',
-                      )
-                      setEditEndTime(false)
-                    }
-                  }}
-                  aria-label="End time"
-                />
-              ) : (
-                <button
-                  type="button"
-                  className="cursor-text rounded border-0 bg-transparent px-0.5 py-0 font-inherit text-inherit hover:bg-accent hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                  title="Click to edit end time"
-                  suppressHydrationWarning
-                  onClick={() => {
-                    setDraftEndTime(
-                      entry.endedAt ? toTimeInput(entry.endedAt) : '',
-                    )
-                    setEditEndTime(true)
-                  }}
-                >
-                  {endTime}
-                </button>
-              )
-            ) : (
-              <span className="italic">now</span>
-            )}
-
-            <span className="font-mono font-bold tabular-nums text-foreground">
-              {formatTime(seconds)}
-            </span>
-
-            {isPending && (
-              <Loader2 className="size-3 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        </div>
+          </button>
+        )}
+        {isPending && (
+          <Loader2 className="mt-1 size-3 animate-spin text-muted-foreground" />
+        )}
       </TableCell>
 
       {/* Client + Project */}
-      <TableCell className="py-2.5 px-4 w-[22%]">
+      <TableCell className="py-3 px-4 w-[18%]">
         <InlineClientProjectPopover
           clients={activeClients}
           projects={projects}
@@ -297,7 +347,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Tags */}
-      <TableCell className="py-2.5 px-4 w-[18%]">
+      <TableCell className="py-3 px-4 w-[14%]">
         <InlineTagPopover
           tags={tags}
           value={entry.tagIds}
@@ -307,7 +357,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Billable */}
-      <TableCell className="py-2.5 px-4 w-[8%] text-center">
+      <TableCell className="py-3 px-4 w-[8%] text-center">
         <BillableToggleButton
           pressed={entry.billable}
           onPressedChange={(b) => onUpdate({ billable: b })}
@@ -315,20 +365,20 @@ export const EntryRow = memo(function EntryRow({
         />
       </TableCell>
 
-      {/* Amount */}
-      <TableCell className="py-2.5 px-4 w-[10%] text-right text-xs font-mono text-foreground whitespace-nowrap">
-        {entry.billable && currency && rateLookup ? (
-          formatCurrency(
-            (seconds / 3600) * rateLookup(entry.workspaceMemberId),
-            currency,
-          )
-        ) : (
-          <span className="text-muted-foreground">–</span>
-        )}
+      {/* Time — start/end with calendar date picker */}
+      <TableCell className="py-3 px-4 w-[12%] text-center">
+        <EntryTimeCell key={entry.id} entry={entry} onUpdate={onUpdate} />
+      </TableCell>
+
+      {/* Duration */}
+      <TableCell className="py-3 px-4 w-[10%] text-right">
+        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
+          {formatTime(seconds)}
+        </span>
       </TableCell>
 
       {/* Actions */}
-      <TableCell className="py-2.5 px-4 w-[18%]">
+      <TableCell className="py-3 px-4 w-[12%]">
         <div className="flex items-center justify-end gap-1">
           {entry.endedAt && (
             <button

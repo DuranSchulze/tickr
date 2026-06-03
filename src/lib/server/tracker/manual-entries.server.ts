@@ -102,6 +102,9 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
     await db
       .insert(timeEntryTags)
       .values(tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })))
+      // Defensive: if two updates for the same entry race, the second insert
+      // would otherwise hit a duplicate-key error.
+      .onConflictDoNothing()
   }
 
   if (endedAt && !existingEntry.endedAt) {

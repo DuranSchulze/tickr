@@ -269,22 +269,25 @@ export function AllEntriesSection({
                 <Table className="table-fixed">
                   <TableHeader className="bg-muted/60">
                     <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-                      <TableHead className="px-4 py-2.5 w-[32%] text-muted-foreground font-medium">
+                      <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
                         Task
                       </TableHead>
-                      <TableHead className="px-4 py-2.5 w-[22%] text-muted-foreground font-medium">
+                      <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
                         Client / Project
                       </TableHead>
-                      <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
+                      <TableHead className="px-4 py-2.5 w-[14%] text-muted-foreground font-medium">
                         Tags
                       </TableHead>
                       <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
                         Billable
                       </TableHead>
-                      <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
-                        Amount
+                      <TableHead className="px-4 py-2.5 w-[12%] text-center text-muted-foreground font-medium">
+                        Time
                       </TableHead>
-                      <TableHead className="px-4 py-2.5 w-[10%]" />
+                      <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
+                        Duration
+                      </TableHead>
+                      <TableHead className="px-4 py-2.5 w-[12%]" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

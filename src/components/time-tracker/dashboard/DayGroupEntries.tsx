@@ -25,6 +25,17 @@ type InlinePatch = Partial<
 
 type ClientItem = { id: string; name: string; clientStatus: string }
 
+// ─── Shared formatter for group totals ──────────────────────────────────────
+
+function formatGroupTime(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
+}
+
 // ─── Live total (ticks when a timer is running) ───────────────────────────────
 
 export function LiveGroupTotal({
@@ -70,7 +81,7 @@ function TaskGroupHeaderRow({
       className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={onToggle}
     >
-      <td className="px-4 py-3 w-[32%]">
+      <td className="px-4 py-3 w-[26%]">
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -89,7 +100,7 @@ function TaskGroupHeaderRow({
           </span>
         </div>
       </td>
-      <td className="px-4 py-3 w-[22%]">
+      <td className="px-4 py-3 w-[18%]">
         {project ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <span
@@ -102,17 +113,27 @@ function TaskGroupHeaderRow({
           <span className="text-xs text-muted-foreground">–</span>
         )}
       </td>
-      <td className="px-4 py-3 w-[18%]">
+      <td className="px-4 py-3 w-[14%]">
         <span className="text-xs text-muted-foreground">
           {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
         </span>
       </td>
-      <td className="px-4 py-3 w-[10%] text-center">
+      <td className="px-4 py-3 w-[8%] text-center">
         {group.billable && (
-          <span className="text-xs font-bold text-primary">$</span>
+          <span className="inline-block rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+            $
+          </span>
         )}
       </td>
-      <td className="px-4 py-3 w-[18%]" onClick={(e) => e.stopPropagation()}>
+      <td className="px-4 py-3 w-[12%] text-center text-xs text-muted-foreground">
+        —
+      </td>
+      <td className="px-4 py-3 w-[10%] text-right">
+        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
+          {formatGroupTime(group.totalSeconds)}
+        </span>
+      </td>
+      <td className="px-4 py-3 w-[12%]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <button
             type="button"
@@ -230,30 +251,29 @@ function TaskGroupHeaderCard({
 
 // ─── Desktop table header ────────────────────────────────────────────────────
 
-export function DayGroupTableHeader({
-  lastColWidth = '10%',
-}: {
-  lastColWidth?: string
-}) {
+export function DayGroupTableHeader() {
   return (
-    <TableHeader className="bg-muted/60">
-      <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-        <TableHead className="px-4 py-2.5 w-[32%] text-muted-foreground font-medium">
-          Task
+    <TableHeader className="bg-muted/80">
+      <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 hover:bg-transparent">
+        <TableHead className="px-4 py-3 w-[26%] text-muted-foreground/80 font-bold">
+          Description
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[22%] text-muted-foreground font-medium">
+        <TableHead className="px-4 py-3 w-[18%] text-muted-foreground/80 font-bold">
           Client / Project
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
+        <TableHead className="px-4 py-3 w-[14%] text-muted-foreground/80 font-bold">
           Tags
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
+        <TableHead className="px-4 py-3 w-[8%] text-center text-muted-foreground/80 font-bold">
           Billable
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
-          Amount
+        <TableHead className="px-4 py-3 w-[12%] text-center text-muted-foreground/80 font-bold">
+          Time
         </TableHead>
-        <TableHead className="px-4 py-2.5" style={{ width: lastColWidth }} />
+        <TableHead className="px-4 py-3 w-[10%] text-right text-muted-foreground/80 font-bold">
+          Duration
+        </TableHead>
+        <TableHead className="px-4 py-3 w-[12%]" />
       </TableRow>
     </TableHeader>
   )

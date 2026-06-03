@@ -77,6 +77,74 @@ export function TimeTrackerDashboard({
   const { isOnline } = useNetworkStatus()
   const { formatTime } = useTimeFormat(state.workspace.id)
 
+  // ── "All entries" paginated state ────────────────────────────────────────────
+  // Declared before useDraftAndEdit so edits in the "all" view can resolve
+  // entries that fall outside state.entries' 90-day window, and so mutations can
+  // refresh this locally-held list (router.invalidate only refreshes state).
+  const [allEntries, setAllEntries] = useState<TimeEntry[]>([])
+  const [allEntriesCursor, setAllEntriesCursor] = useState<string | null>(null)
+  const [allEntriesLoading, setAllEntriesLoading] = useState(false)
+  const [allEntriesHasMore, setAllEntriesHasMore] = useState(false)
+  const [allEntriesTotalCount, setAllEntriesTotalCount] = useState(0)
+  const allEntriesInitialized = useRef(false)
+
+  const loadAllEntries = useCallback(
+    async (reset = false) => {
+      if (allEntriesLoading) return
+      setAllEntriesLoading(true)
+      try {
+        const cursor = reset ? undefined : (allEntriesCursor ?? undefined)
+        const result = await getPaginatedEntriesFn({
+          data: { cursor, limit: 50 },
+        })
+        if (reset) {
+          setAllEntries(result.entries)
+        } else {
+          setAllEntries((prev) => [...prev, ...result.entries])
+        }
+        setAllEntriesCursor(result.nextCursor)
+        setAllEntriesHasMore(result.nextCursor !== null)
+        setAllEntriesTotalCount(result.totalCount)
+      } catch {
+        // silently fail — user can retry via "Load more"
+      } finally {
+        setAllEntriesLoading(false)
+      }
+    },
+    [allEntriesLoading, allEntriesCursor],
+  )
+
+  // After a mutation, refresh the "all" view's locally-paginated list (it isn't
+  // backed by the route loader, so router.invalidate alone leaves it stale).
+  const refreshAllEntries = useCallback(() => {
+    if (view === 'all' && allEntriesInitialized.current) {
+      void loadAllEntries(true)
+    }
+  }, [view, loadAllEntries])
+
+  // Delete/duplicate go straight through mutations (they don't read entry
+  // state), so they just need to refresh the "all" list on success.
+  const handleDeleteEntry = useCallback(
+    (id: string) => mutations.deleteEntry(id, { onSuccess: refreshAllEntries }),
+    [mutations, refreshAllEntries],
+  )
+  const handleDuplicateEntry = useCallback(
+    (id: string) =>
+      mutations.duplicateEntry(id, { onSuccess: refreshAllEntries }),
+    [mutations, refreshAllEntries],
+  )
+
+  // Entries to resolve edits against: state.entries (last 90 days) plus the
+  // paginated "all" list, which can include older entries. state.entries wins
+  // on conflict since it's refreshed by the route loader.
+  const lookupEntries = useMemo(() => {
+    if (allEntries.length === 0) return state.entries
+    const byId = new Map<string, TimeEntry>()
+    for (const e of allEntries) byId.set(e.id, e)
+    for (const e of state.entries) byId.set(e.id, e)
+    return Array.from(byId.values())
+  }, [state.entries, allEntries])
+
   const {
     draft,
     setDraft,
@@ -91,7 +159,12 @@ export function TimeTrackerDashboard({
     startEdit,
     saveEdit,
     handleInlineUpdate,
-  } = useDraftAndEdit({ state, mutations })
+  } = useDraftAndEdit({
+    state,
+    mutations,
+    lookupEntries,
+    onMutated: refreshAllEntries,
+  })
 
   const {
     timerDescription,
@@ -131,40 +204,6 @@ export function TimeTrackerDashboard({
   const canManageCatalog =
     currentUser.permissionLevel === 'OWNER' ||
     currentUser.permissionLevel === 'ADMIN'
-
-  // ── "All entries" paginated state ────────────────────────────────────────────
-  const [allEntries, setAllEntries] = useState<TimeEntry[]>([])
-  const [allEntriesCursor, setAllEntriesCursor] = useState<string | null>(null)
-  const [allEntriesLoading, setAllEntriesLoading] = useState(false)
-  const [allEntriesHasMore, setAllEntriesHasMore] = useState(false)
-  const [allEntriesTotalCount, setAllEntriesTotalCount] = useState(0)
-  const allEntriesInitialized = useRef(false)
-
-  const loadAllEntries = useCallback(
-    async (reset = false) => {
-      if (allEntriesLoading) return
-      setAllEntriesLoading(true)
-      try {
-        const cursor = reset ? undefined : (allEntriesCursor ?? undefined)
-        const result = await getPaginatedEntriesFn({
-          data: { cursor, limit: 50 },
-        })
-        if (reset) {
-          setAllEntries(result.entries)
-        } else {
-          setAllEntries((prev) => [...prev, ...result.entries])
-        }
-        setAllEntriesCursor(result.nextCursor)
-        setAllEntriesHasMore(result.nextCursor !== null)
-        setAllEntriesTotalCount(result.totalCount)
-      } catch {
-        // silently fail — user can retry via "Load more"
-      } finally {
-        setAllEntriesLoading(false)
-      }
-    },
-    [allEntriesLoading, allEntriesCursor],
-  )
 
   useEffect(() => {
     if (view === 'all') {
@@ -449,8 +488,8 @@ export function TimeTrackerDashboard({
           onStartEdit={startEdit}
           onUpdate={handleInlineUpdate}
           onResume={resumeEntry}
-          onDuplicate={mutations.duplicateEntry}
-          onDelete={mutations.deleteEntry}
+          onDuplicate={handleDuplicateEntry}
+          onDelete={handleDeleteEntry}
         />
       ) : (
         <EntriesSection
@@ -473,8 +512,8 @@ export function TimeTrackerDashboard({
           onStartEdit={startEdit}
           onUpdate={handleInlineUpdate}
           onResume={resumeEntry}
-          onDuplicate={mutations.duplicateEntry}
-          onDelete={mutations.deleteEntry}
+          onDuplicate={handleDuplicateEntry}
+          onDelete={handleDeleteEntry}
         />
       )}
 

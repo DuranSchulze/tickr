@@ -40,6 +40,7 @@ type EntryPayload = {
 
 type MutationOptions<T> = {
   invalidate?: boolean
+  successMessage?: string
   onSuccess?: (result: T) => void
   onError?: () => void
 }
@@ -59,6 +60,7 @@ export function useTrackerMutations() {
       const result = await action()
       options.onSuccess?.(result)
       if (options.invalidate !== false) void router.invalidate()
+      if (options.successMessage) gooeyToast.success(options.successMessage)
       return result
     } catch (err) {
       options.onError?.()
@@ -93,19 +95,38 @@ export function useTrackerMutations() {
     updateActiveTimer: (
       input: UpdateActiveTimerInput,
       options?: MutationOptions<TimeEntry>,
-    ) => run(() => updateActiveTimerFn({ data: input }), options),
+    ) =>
+      run(() => updateActiveTimerFn({ data: input }), {
+        successMessage: 'Entry updated',
+        ...options,
+      }),
     addManualEntry: (
       payload: EntryPayload,
       options?: MutationOptions<unknown>,
-    ) => run(async () => createManualEntryFn({ data: payload }), options),
+    ) =>
+      run(async () => createManualEntryFn({ data: payload }), {
+        successMessage: 'Entry added',
+        ...options,
+      }),
     updateEntry: (
       id: string,
       payload: EntryPayload,
       options?: MutationOptions<unknown>,
-    ) => run(async () => updateEntryFn({ data: { id, ...payload } }), options),
-    deleteEntry: (id: string) => run(() => deleteEntryFn({ data: { id } })),
-    duplicateEntry: (id: string) =>
-      run(() => duplicateEntryFn({ data: { id } })),
+    ) =>
+      run(async () => updateEntryFn({ data: { id, ...payload } }), {
+        successMessage: 'Entry updated',
+        ...options,
+      }),
+    deleteEntry: (id: string, options?: MutationOptions<unknown>) =>
+      run(() => deleteEntryFn({ data: { id } }), {
+        successMessage: 'Entry deleted',
+        ...options,
+      }),
+    duplicateEntry: (id: string, options?: MutationOptions<unknown>) =>
+      run(() => duplicateEntryFn({ data: { id } }), {
+        successMessage: 'Entry duplicated',
+        ...options,
+      }),
     createClient: (
       name: string,
       clientStatus: 'ACTIVE' | 'INACTIVE' = 'ACTIVE',

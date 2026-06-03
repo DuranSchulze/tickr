@@ -8,10 +8,21 @@ import type { useTrackerMutations } from './useTrackerMutations'
 export function useDraftAndEdit({
   state,
   mutations,
+  lookupEntries,
+  onMutated,
 }: {
   state: TrackerState
   mutations: ReturnType<typeof useTrackerMutations>
+  // Entries to resolve edits against. In the "all" view this includes entries
+  // older than the dashboard's 90-day window, which are absent from
+  // state.entries — without them, inline/drawer edits would silently no-op.
+  lookupEntries?: TimeEntry[]
+  // Called after a successful create/update so views backed by their own
+  // local list (the paginated "all" view) can refresh.
+  onMutated?: () => void
 }) {
+  // Fall back to state.entries when no explicit lookup list is provided.
+  const entries = lookupEntries ?? state.entries
   const activeClients = state.clients.filter((c) => c.clientStatus === 'ACTIVE')
   const initialClientId = activeClients[0]?.id || ''
   const initialProject =
@@ -36,7 +47,7 @@ export function useDraftAndEdit({
 
   // Derive editing validity — auto-cancels when entry is no longer in state
   const resolvedEditingId: string | null = editingId
-    ? state.entries.some((e) => e.id === editingId)
+    ? entries.some((e) => e.id === editingId)
       ? editingId
       : null
     : null
@@ -44,9 +55,9 @@ export function useDraftAndEdit({
   const editingEntry = useMemo(
     () =>
       resolvedEditingId
-        ? (state.entries.find((e) => e.id === resolvedEditingId) ?? null)
+        ? (entries.find((e) => e.id === resolvedEditingId) ?? null)
         : null,
-    [resolvedEditingId, state.entries],
+    [resolvedEditingId, entries],
   )
 
   function addManualEntry() {
@@ -66,6 +77,7 @@ export function useDraftAndEdit({
             state.tags[0]?.id || '',
           ),
         )
+        onMutated?.()
       },
     })
   }
@@ -101,7 +113,12 @@ export function useDraftAndEdit({
           billable: editingDraft.billable,
           startedAt: startedAt.toISOString(),
         },
-        { onSuccess: () => setEditingId(null) },
+        {
+          onSuccess: () => {
+            setEditingId(null)
+            onMutated?.()
+          },
+        },
       )
       return
     }
@@ -117,7 +134,12 @@ export function useDraftAndEdit({
     void mutations.updateEntry(
       editingId,
       { ...toEntryPayload(editingDraft), durationSeconds },
-      { onSuccess: () => setEditingId(null) },
+      {
+        onSuccess: () => {
+          setEditingId(null)
+          onMutated?.()
+        },
+      },
     )
   }
 
@@ -135,19 +157,22 @@ export function useDraftAndEdit({
       >
     >,
   ) {
-    const entry = state.entries.find((e) => e.id === entryId)
+    const entry = entries.find((e) => e.id === entryId)
     if (!entry) return
 
     // Running entry — route through updateActiveTimer so endedAt is never set
     if (!entry.endedAt) {
-      void mutations.updateActiveTimer({
-        id: entryId,
-        description: (patch.description ?? entry.description).trim(),
-        projectId: patch.projectId ?? entry.projectId,
-        tagIds: patch.tagIds ?? entry.tagIds,
-        billable: patch.billable ?? entry.billable,
-        ...(patch.startedAt ? { startedAt: patch.startedAt } : {}),
-      })
+      void mutations.updateActiveTimer(
+        {
+          id: entryId,
+          description: (patch.description ?? entry.description).trim(),
+          projectId: patch.projectId ?? entry.projectId,
+          tagIds: patch.tagIds ?? entry.tagIds,
+          billable: patch.billable ?? entry.billable,
+          ...(patch.startedAt ? { startedAt: patch.startedAt } : {}),
+        },
+        { onSuccess: onMutated },
+      )
       return
     }
 
@@ -161,16 +186,20 @@ export function useDraftAndEdit({
         (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000,
       ),
     )
-    void mutations.updateEntry(entryId, {
-      description,
-      projectId: patch.projectId ?? entry.projectId,
-      tagIds: patch.tagIds ?? entry.tagIds,
-      billable: patch.billable ?? entry.billable,
-      startedAt,
-      endedAt,
-      durationSeconds,
-      notes: entry.notes,
-    })
+    void mutations.updateEntry(
+      entryId,
+      {
+        description,
+        projectId: patch.projectId ?? entry.projectId,
+        tagIds: patch.tagIds ?? entry.tagIds,
+        billable: patch.billable ?? entry.billable,
+        startedAt,
+        endedAt,
+        durationSeconds,
+        notes: entry.notes,
+      },
+      { onSuccess: onMutated },
+    )
   }
 
   return {
