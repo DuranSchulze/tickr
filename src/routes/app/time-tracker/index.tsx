@@ -36,7 +36,7 @@ export const Route = createFileRoute('/app/time-tracker/')({
 
 function TimeTrackerRoute() {
   const state = Route.useLoaderData()
-  const { view = 'day', date = getLocalDateKey() } = Route.useSearch()
+  const { view = 'all', date = getLocalDateKey() } = Route.useSearch()
 
   return <TimeTrackerDashboard state={state} view={view} date={date} />
 }

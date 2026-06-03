@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.5.0",
+  "appVersion": "1.6.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,54 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.6.0",
+      "publishedAt": "2026-06-03",
+      "title": "Code Quality Sweep — Duplication Eliminated, React Doctor Score 67, Bulk Export & Analytics Fixes",
+      "body": "Major codebase cleanup: removed 80% of duplicated code (12.4% → 2% duplication), fixed all React Doctor errors, eliminated 350+ warnings, and resolved several UI bugs in Bulk Export and Analytics.",
+      "features": [
+        {
+          "title": "Duplication Eliminated Across the Codebase",
+          "description": "Extracted 15 shared modules from previously duplicated logic: entry grouping, client/project pickers, catalog table columns, server-side report utilities, export dialog footers, theme state management, and Drizzle schema helpers. Reduced clone groups from 184 to 72 and duplicated lines from 6,120 to 1,863.",
+          "image": null
+        },
+        {
+          "title": "React Doctor Score 67 — 13 Errors Fixed, 350+ Warnings Resolved",
+          "description": "Fixed all error-severity issues: removed 11 useEffect state-reset anti-patterns (no-adjust-state-on-prop-change), added timer cleanup in picker components, and fixed route property ordering. Also converted 493 Tailwind class pairs to the size-* shorthand, added 54 aria-labels for accessibility, removed 11 unnecessary autoFocus attributes, and added 8 keyboard event handlers for interactive elements.",
+          "image": null
+        },
+        {
+          "title": "Bulk Export Filter Selection Fixed",
+          "description": "The Client, Department, and Tag scope filters in the Bulk Export dialog were effectively broken — the form always used default values regardless of what the user selected. Fixed a state-liveness bug in the derived-state pattern that kept formState.open out of sync with the dialog's open state.",
+          "image": null
+        },
+        {
+          "title": "Duplicate Export Button Removed from Analytics",
+          "description": "The Analytics page previously showed both a dedicated Export button and a Bulk Export button. Since Bulk Export already provides CSV and PDF exports, the redundant Export button has been removed for a cleaner UI.",
+          "image": null
+        },
+        {
+          "title": "Duplicate React Keys Fixed in Analytics Charts",
+          "description": "Fixed duplicate child keys in the analytics charts (Pie chart Cells, Bar chart Cells) and heatmap (intensity legend, top-tasks rankings) that used non-unique values like entry names and Tailwind class strings as React keys.",
+          "image": null
+        },
+        {
+          "title": "Unused Dependencies Cleaned Up",
+          "description": "Removed 3 unused devDependencies (react-doctor, @tailwindcss/typography, @tanstack/devtools-event-client) and moved 2 test-only production dependencies (@sentry/tanstackstart-react, @tailwindcss/vite) to devDependencies.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Open Time Tracker",
+          "to": "/app/time-tracker"
+        },
+        {
+          "label": "View Analytics",
+          "to": "/app/analytics"
+        }
+      ]
+    },
     {
       "version": "1.4.2",
       "publishedAt": "2026-06-01",
