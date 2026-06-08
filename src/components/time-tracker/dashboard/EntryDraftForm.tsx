@@ -52,14 +52,8 @@ export function EntryDraftForm({
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           placeholder="Task description"
           aria-label="Task description"
-          maxLength={200}
           className="h-10 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
         />
-        {draft.description.length > 150 && (
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-muted-foreground">
-            {draft.description.length}/200
-          </span>
-        )}
       </div>
 
       {/* Row 2: Client + Project (unified) + Tag */}

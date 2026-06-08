@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import {
   CalendarDays,
   Clock,
@@ -80,9 +80,13 @@ function InlineTimeField({
   const inputRef = useRef<HTMLInputElement>(null)
   const skipCommit = useRef(false)
 
-  useEffect(() => {
-    if (editing) inputRef.current?.focus()
-  }, [editing])
+  // Callback ref: focus the input the moment it mounts (i.e. when the user
+  // clicks to edit). Memoised so it only runs on mount/unmount, never on
+  // re-render — so typing doesn't re-steal focus.
+  const attachInput = useCallback((el: HTMLInputElement | null) => {
+    inputRef.current = el
+    el?.focus()
+  }, [])
 
   // Single commit path (via blur) — Enter/Escape blur instead of committing
   // directly, so one edit never fires two updates.
@@ -99,7 +103,7 @@ function InlineTimeField({
   if (editing) {
     return (
       <input
-        ref={inputRef}
+        ref={attachInput}
         type="time"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -258,6 +262,13 @@ export const EntryRow = memo(function EntryRow({
   const descInputRef = useRef<HTMLInputElement>(null)
   const skipDescCommit = useRef(false)
 
+  // Callback ref: focus the description input as soon as it mounts (when the
+  // user clicks to edit). Memoised so it fires only on mount, not every render.
+  const attachDescInput = useCallback((el: HTMLInputElement | null) => {
+    descInputRef.current = el
+    el?.focus()
+  }, [])
+
   const activeClients = useMemo(
     () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
     [clients],
@@ -267,10 +278,6 @@ export const EntryRow = memo(function EntryRow({
     [projects, entry.projectId],
   )
   const actionsDisabled = pending || !!isPending
-
-  useEffect(() => {
-    if (editDesc) descInputRef.current?.focus()
-  }, [editDesc])
 
   // Single commit path (via blur). Enter/Escape blur the input rather than
   // committing directly, so we never fire two updates for one edit.
@@ -291,10 +298,9 @@ export const EntryRow = memo(function EntryRow({
       <TableCell className="py-3 px-4 w-[26%]">
         {editDesc ? (
           <input
-            ref={descInputRef}
+            ref={attachDescInput}
             className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
             value={draftDesc}
-            maxLength={200}
             onChange={(e) => setDraftDesc(e.target.value)}
             onBlur={commitDesc}
             aria-label="Task description"

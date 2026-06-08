@@ -2,10 +2,10 @@ import { gooeyToast } from 'goey-toast'
 import type { useRouter } from '@tanstack/react-router'
 
 export function parseBulkNames(raw: string): string[] {
-  return raw
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
+  return raw.split('\n').flatMap((l) => {
+    const trimmed = l.trim()
+    return trimmed ? [trimmed] : []
+  })
 }
 
 export async function runBulk<T>(

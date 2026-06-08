@@ -136,8 +136,10 @@ export function buildSyncRows({
         ? (projectName.get(entry.projectId) ?? '')
         : ''
       const tagList = entry.tagIds
-        .map((id) => tagName.get(id))
-        .filter(Boolean)
+        .flatMap((id) => {
+          const name = tagName.get(id)
+          return name ? [name] : []
+        })
         .join(', ')
       const hours = entry.durationSeconds / 3600
       const effectiveRate = computeEffectiveRate(

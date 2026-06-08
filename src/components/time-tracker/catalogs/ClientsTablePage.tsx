@@ -1,17 +1,6 @@
-import { useMemo, useReducer } from 'react'
+import { useCallback, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from 'goey-toast'
-import {
-  Archive,
-  CheckCircle,
-  FileSpreadsheet,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  RefreshCw,
-  Table as TableIcon,
-} from 'lucide-react'
 import {
   activateClientFn,
   archiveClientFn,
@@ -23,33 +12,15 @@ import {
   syncCatalogsWithSheetFn,
 } from '#/lib/server/gsheets/sync'
 import type { PaginatedClient } from '#/lib/server/tracker/catalogs/paginated.server'
-import { formatCurrency } from '#/lib/time-tracker/billing'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
-import {
-  CatalogFormDialog,
-  CatalogSearchBar,
-  CatalogTablePage,
-} from './CatalogTableLayout'
+import { CatalogFormDialog, CatalogTablePage } from './CatalogTableLayout'
 import { ClientForm } from './ClientForm'
 import { EditClientForm } from './EditClientForm'
 import { SyncSheetDialog } from './SyncSheetDialog'
-
-function formatSeconds(seconds: number): string {
-  if (seconds === 0) return '—'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
-}
-
-const col = createColumnHelper<PaginatedClient>()
+import {
+  ClientSheetMenu,
+  ClientsToolbar,
+  useClientColumns,
+} from './ClientsTableParts'
 
 interface Props {
   data: {
@@ -112,35 +83,46 @@ export function ClientsTablePage({
     showSyncDialog,
   } = local
 
-  async function handleArchive(client: PaginatedClient) {
-    dispatch({ archivingId: client.id })
-    try {
-      await archiveClientFn({ data: { id: client.id } })
-      await router.invalidate()
-      gooeyToast.success(`"${client.name}" archived`)
-    } catch (err) {
-      gooeyToast.error('Failed to archive', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ archivingId: null })
-    }
-  }
+  const handleArchive = useCallback(
+    async (client: PaginatedClient) => {
+      dispatch({ archivingId: client.id })
+      try {
+        await archiveClientFn({ data: { id: client.id } })
+        await router.invalidate()
+        gooeyToast.success(`"${client.name}" archived`)
+      } catch (err) {
+        gooeyToast.error('Failed to archive', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+      } finally {
+        dispatch({ archivingId: null })
+      }
+    },
+    [router],
+  )
 
-  async function handleActivate(client: PaginatedClient) {
-    dispatch({ archivingId: client.id })
-    try {
-      await activateClientFn({ data: { id: client.id } })
-      await router.invalidate()
-      gooeyToast.success(`"${client.name}" activated`)
-    } catch (err) {
-      gooeyToast.error('Failed to activate', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ archivingId: null })
-    }
-  }
+  const handleActivate = useCallback(
+    async (client: PaginatedClient) => {
+      dispatch({ archivingId: client.id })
+      try {
+        await activateClientFn({ data: { id: client.id } })
+        await router.invalidate()
+        gooeyToast.success(`"${client.name}" activated`)
+      } catch (err) {
+        gooeyToast.error('Failed to activate', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+      } finally {
+        dispatch({ archivingId: null })
+      }
+    },
+    [router],
+  )
+
+  const handleEdit = useCallback(
+    (client: PaginatedClient) => dispatch({ editingClient: client }),
+    [],
+  )
 
   async function handleSync() {
     dispatch({ sheetLoading: true })
@@ -173,174 +155,15 @@ export function ClientsTablePage({
     }
   }
 
-  function handleImportFromSheet() {
-    dispatch({ showSyncDialog: true })
-  }
-
-  const columns = useMemo(
-    () => [
-      col.accessor('name', {
-        header: 'Name',
-        cell: ({ getValue }) => (
-          <span className="font-semibold text-foreground">{getValue()}</span>
-        ),
-      }),
-      col.accessor('clientStatus', {
-        header: 'Status',
-        cell: ({ getValue }) => {
-          const status = getValue()
-          return (
-            <span className="inline-flex items-center gap-1.5 text-sm">
-              <span
-                className={`size-1.5 rounded-full ${
-                  status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-muted-foreground'
-                }`}
-              />
-              {status === 'ACTIVE' ? 'Active' : 'Inactive'}
-            </span>
-          )
-        },
-      }),
-      col.accessor('totalSeconds', {
-        header: 'Total Hours',
-        cell: ({ getValue }) => (
-          <span className="text-sm tabular-nums text-muted-foreground">
-            {formatSeconds(getValue())}
-          </span>
-        ),
-      }),
-      ...(canViewBillable
-        ? [
-            col.accessor('billableAmount', {
-              header: 'Billable Amount',
-              cell: ({ getValue }) => {
-                const amount = getValue()
-                return (
-                  <span className="text-sm tabular-nums text-muted-foreground">
-                    {amount === 0 ? '—' : formatCurrency(amount, currency)}
-                  </span>
-                )
-              },
-            }),
-          ]
-        : []),
-      ...(canManage
-        ? [
-            col.display({
-              id: 'actions',
-              header: '',
-              cell: ({ row }) => {
-                const client = row.original
-                return (
-                  <div className="flex justify-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        disabled={archivingId === client.id}
-                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
-                        aria-label="Row actions"
-                      >
-                        <MoreHorizontal className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => dispatch({ editingClient: client })}
-                        >
-                          <Pencil className="mr-2 size-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {client.clientStatus === 'ACTIVE' ? (
-                          <DropdownMenuItem
-                            onClick={() => handleArchive(client)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Archive className="mr-2 size-4" />
-                            Archive
-                          </DropdownMenuItem>
-                        ) : (
-                          <DropdownMenuItem
-                            onClick={() => handleActivate(client)}
-                          >
-                            <CheckCircle className="mr-2 size-4" />
-                            Activate
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                )
-              },
-            }),
-          ]
-        : []),
-    ],
-    [canManage, canViewBillable, currency, archivingId],
-  )
-
-  const sheetButton = canImportSheet ? (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={sheetLoading || !googleSheetUrl}
-        title={
-          !googleSheetUrl
-            ? 'Configure a Google Sheet URL in workspace settings to enable import'
-            : undefined
-        }
-        aria-label="Google Sheet actions"
-        aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {sheetLoading ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-        ) : (
-          <FileSpreadsheet className="size-4" aria-hidden />
-        )}
-        Sheet
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 size-4" />
-          Sync from Sheet
-        </DropdownMenuItem>
-        {canManage && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSync}>
-              <RefreshCw className="mr-2 size-4" />
-              Sync all catalogs
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSetupSheetTab}>
-              <TableIcon className="mr-2 size-4" />
-              Setup Sheet Tab
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ) : null
-
-  const toolbar = (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search clients…"
-        />
-      </div>
-      <select
-        value={statusFilter}
-        onChange={(e) =>
-          onFilterChange({ status: e.target.value || undefined })
-        }
-        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-      >
-        <option value="">All statuses</option>
-        <option value="ACTIVE">Active</option>
-        <option value="INACTIVE">Inactive</option>
-      </select>
-    </div>
-  )
+  const columns = useClientColumns({
+    canManage,
+    canViewBillable,
+    currency,
+    archivingId,
+    onEdit: handleEdit,
+    onArchive: handleArchive,
+    onActivate: handleActivate,
+  })
 
   return (
     <>
@@ -357,8 +180,24 @@ export function ClientsTablePage({
         canManage={canManage}
         onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Client"
-        headerActions={sheetButton}
-        toolbar={toolbar}
+        headerActions={
+          <ClientSheetMenu
+            canImportSheet={canImportSheet}
+            canManage={canManage}
+            sheetLoading={sheetLoading}
+            googleSheetUrl={googleSheetUrl}
+            onImport={() => dispatch({ showSyncDialog: true })}
+            onSyncAll={handleSync}
+            onSetupTab={handleSetupSheetTab}
+          />
+        }
+        toolbar={
+          <ClientsToolbar
+            search={search}
+            statusFilter={statusFilter}
+            onFilterChange={onFilterChange}
+          />
+        }
         emptyMessage={
           search || statusFilter
             ? 'No clients match your filters.'

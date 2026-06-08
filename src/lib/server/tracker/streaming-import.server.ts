@@ -127,7 +127,10 @@ async function streamImportClients(
 
   // Collect all IDs from the raw sheet data (col C, index 2) for Phase 2
   const previousSheetIds = new Set<string>(
-    rawValues.map((r) => r[2]?.trim()).filter(Boolean),
+    rawValues.flatMap((r) => {
+      const id = r[2]?.trim()
+      return id ? [id] : []
+    }),
   )
 
   const parsed = parseClientRows(rawValues)
@@ -147,7 +150,7 @@ async function streamImportClients(
   emit({ type: 'phase', phase: 'clients', total: parsed.length })
 
   // Build lookups
-  const knownIds = parsed.map((c) => c.id).filter(Boolean)
+  const knownIds = parsed.flatMap((c) => (c.id ? [c.id] : []))
   const [byIdRows, allRows] = await Promise.all([
     knownIds.length > 0
       ? db
@@ -298,7 +301,7 @@ async function streamImportClients(
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
 
   let archivedCount = 0
-  const currentSheetIds = new Set(parsed.map((c) => c.id).filter(Boolean))
+  const currentSheetIds = new Set(parsed.flatMap((c) => (c.id ? [c.id] : [])))
   const deletedIds =
     previousSheetIds.size > 0
       ? [...previousSheetIds].filter((id) => !currentSheetIds.has(id))
@@ -487,7 +490,10 @@ async function streamImportProjects(
 
   // Collect all IDs from raw sheet data (col E, index 4) for Phase 2
   const previousSheetIds = new Set<string>(
-    rawValues.map((r) => r[4]?.trim()).filter(Boolean),
+    rawValues.flatMap((r) => {
+      const id = r[4]?.trim()
+      return id ? [id] : []
+    }),
   )
 
   const parsed = parseProjectRows(rawValues)
@@ -507,7 +513,7 @@ async function streamImportProjects(
   emit({ type: 'phase', phase: 'projects', total: parsed.length })
 
   // Build lookups
-  const knownIds = parsed.map((p) => p.id).filter(Boolean)
+  const knownIds = parsed.flatMap((p) => (p.id ? [p.id] : []))
   const [byIdRows, allRows] = await Promise.all([
     knownIds.length > 0
       ? db
@@ -705,7 +711,7 @@ async function streamImportProjects(
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
 
   let archivedCount = 0
-  const currentSheetIds = new Set(parsed.map((p) => p.id).filter(Boolean))
+  const currentSheetIds = new Set(parsed.flatMap((p) => (p.id ? [p.id] : [])))
   const deletedIds =
     previousSheetIds.size > 0
       ? [...previousSheetIds].filter((id) => !currentSheetIds.has(id))
@@ -900,7 +906,10 @@ async function streamImportTags(
 
   // Collect all IDs from raw sheet data (col D, index 3) for Phase 2
   const previousSheetIds = new Set<string>(
-    rawValues.map((r) => r[3]?.trim()).filter(Boolean),
+    rawValues.flatMap((r) => {
+      const id = r[3]?.trim()
+      return id ? [id] : []
+    }),
   )
 
   const parsed = parseTagRows(rawValues)
@@ -920,7 +929,7 @@ async function streamImportTags(
   emit({ type: 'phase', phase: 'tags', total: parsed.length })
 
   // Build lookups
-  const knownIds = parsed.map((t) => t.id).filter(Boolean)
+  const knownIds = parsed.flatMap((t) => (t.id ? [t.id] : []))
   const [byIdRows, allRows] = await Promise.all([
     knownIds.length > 0
       ? db
@@ -1074,7 +1083,7 @@ async function streamImportTags(
   // ── Phase 2: Archive deleted rows ──────────────────────────────────────
 
   let archivedCount = 0
-  const currentSheetIds = new Set(parsed.map((t) => t.id).filter(Boolean))
+  const currentSheetIds = new Set(parsed.flatMap((t) => (t.id ? [t.id] : [])))
   const deletedIds =
     previousSheetIds.size > 0
       ? [...previousSheetIds].filter((id) => !currentSheetIds.has(id))
@@ -1251,7 +1260,10 @@ async function streamImportDepartments(
 
   // Collect all IDs from raw sheet data (col D, index 3) for Phase 2
   const previousSheetIds = new Set<string>(
-    rawValues.map((r) => r[3]?.trim()).filter(Boolean),
+    rawValues.flatMap((r) => {
+      const id = r[3]?.trim()
+      return id ? [id] : []
+    }),
   )
 
   const parsed = parseDepartmentRows(rawValues)
@@ -1271,7 +1283,7 @@ async function streamImportDepartments(
   emit({ type: 'phase', phase: 'departments', total: parsed.length })
 
   // Build lookups
-  const knownIds = parsed.map((d) => d.id).filter(Boolean)
+  const knownIds = parsed.flatMap((d) => (d.id ? [d.id] : []))
   const [byIdRows, allRows] = await Promise.all([
     knownIds.length > 0
       ? db
