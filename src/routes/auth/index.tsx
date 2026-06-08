@@ -81,6 +81,9 @@ function AuthPage() {
   const [emailError, setEmailError] = useState('')
   const [confirmPasswordError, setConfirmPasswordError] = useState('')
   const [serverError, setServerError] = useState('')
+  // Checked → persistent cookie (stays logged in across browser restarts for
+  // the rolling session window). Unchecked → session cookie, cleared on close.
+  const [rememberMe, setRememberMe] = useState(true)
 
   function validateName(value: string) {
     if (value.trim().length < 2) {
@@ -147,7 +150,11 @@ function AuthPage() {
               email: formEmail,
               password,
             })
-          : await authClient.signIn.email({ email: formEmail, password })
+          : await authClient.signIn.email({
+              email: formEmail,
+              password,
+              rememberMe,
+            })
 
       if (result.error) {
         if (mode === 'signup') {
@@ -304,6 +311,8 @@ function AuthPage() {
                 emailError={emailError}
                 confirmPasswordError={confirmPasswordError}
                 serverError={serverError}
+                rememberMe={rememberMe}
+                onRememberMeChange={setRememberMe}
                 onNameChange={(v) => {
                   setFormName(v)
                   if (nameError) setNameError('')
@@ -428,6 +437,8 @@ function SignInForm({
   emailError,
   confirmPasswordError,
   serverError,
+  rememberMe,
+  onRememberMeChange,
   onNameChange,
   onNameBlur,
   onEmailChange,
@@ -448,6 +459,8 @@ function SignInForm({
   emailError: string
   confirmPasswordError: string
   serverError: string
+  rememberMe: boolean
+  onRememberMeChange: (v: boolean) => void
   onNameChange: (v: string) => void
   onNameBlur: () => void
   onEmailChange: (v: string) => void
@@ -591,6 +604,18 @@ function SignInForm({
           />
           {isSignup && <PasswordStrengthChecklist password={password} />}
         </div>
+
+        {!isSignup && (
+          <label className="flex items-center gap-2 text-sm text-foreground/90 select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => onRememberMeChange(e.target.checked)}
+              className="size-4 rounded border-input accent-[var(--primary)]"
+            />
+            Remember me on this device
+          </label>
+        )}
 
         {isSignup && (
           <div className="grid gap-2">

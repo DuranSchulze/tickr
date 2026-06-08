@@ -5,6 +5,7 @@ import { WorkspaceGoogleSheetPanel } from '../../WorkspaceGoogleSheetPanel'
 import { GoogleSheetSyncButton } from '../../dashboard/GoogleSheetSyncButton'
 import { TimeFormatPicker } from '../../dashboard/TimeFormatPicker'
 import { Page } from '../shared/Page'
+import { SmtpTestPanel } from './SmtpTestPanel'
 import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
 
 export function SettingsScreen({ state }: { state: TrackerState }) {
@@ -84,6 +85,8 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
         workspace={state.workspace}
         permissionLevel={permissionLevel}
       />
+
+      {isOwnerOrAdmin && <SmtpTestPanel defaultEmail={currentMember.email} />}
     </Page>
   )
 }

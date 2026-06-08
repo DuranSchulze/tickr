@@ -16,7 +16,48 @@ function getFromAddress(): string {
   )
 }
 
+// Pull any http(s) links out of the plaintext body — these are the
+// reset/invite links we want visible in the terminal as a recovery fallback.
+function extractLinks(text: string): string[] {
+  return text.match(/https?:\/\/\S+/g) ?? []
+}
+
+function logLinks(links: string[]): void {
+  if (links.length === 0) return
+  console.info(`[mailer] Link(s):\n  ${links.join('\n  ')}`)
+}
+
 export async function sendEmail(input: SendEmailInput): Promise<void> {
+  const links = extractLinks(input.text)
+
+  // Always surface the send (and its links) in the server log, so that even if
+  // delivery fails we can still copy the reset/invite link straight from here.
+  console.info(`[mailer] Sending "${input.subject}" → ${input.to}`)
+  logLinks(links)
+
+  try {
+    await deliverEmail(input)
+    console.info(`[mailer] Delivered "${input.subject}" → ${input.to}`)
+  } catch (err) {
+    console.error(
+      `[mailer] FAILED to send "${input.subject}" → ${input.to}:`,
+      err,
+    )
+    // Re-print the links prominently so a delivery outage never blocks a
+    // password reset / invite — grab the link from the terminal instead.
+    if (links.length > 0) {
+      console.error(
+        '[mailer] Delivery failed — use the link(s) above directly.',
+      )
+    }
+    throw err
+  }
+}
+
+// Performs the actual provider delivery. Throws on failure so sendEmail can log
+// it; in dev with no provider configured it's a no-op (the link is already
+// logged above).
+async function deliverEmail(input: SendEmailInput): Promise<void> {
   const smtpHost = process.env.SMTP_HOST
   const resendApiKey = process.env.RESEND_API_KEY
 
@@ -72,13 +113,11 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     )
   }
 
-  // Dev-only fallback: log email to console so invite/reset links are visible locally.
-  console.warn('[mailer] No email provider configured — logging email instead.')
-  console.info('[mailer] ---- Email (dev fallback) ----')
-  console.info(`[mailer] To:      ${input.to}`)
-  console.info(`[mailer] Subject: ${input.subject}`)
-  console.info(`[mailer] Text:\n${input.text}`)
-  console.info('[mailer] ---- End email ----')
+  // Dev-only: no provider configured. The link is already logged by sendEmail,
+  // so there's nothing more to deliver.
+  console.warn(
+    '[mailer] No email provider configured — email not sent (link logged above).',
+  )
 }
 
 export async function sendInviteEmail(params: {
