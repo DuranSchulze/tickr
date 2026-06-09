@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { gooeyToast } from 'goey-toast'
 import { useRouter } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import type { TimeEntry } from '#/lib/time-tracker/types'
+import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
 import {
   createClientFn,
   createManualEntryFn,
@@ -47,6 +49,7 @@ type MutationOptions<T> = {
 
 export function useTrackerMutations() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
   const [startTimerPending, setStartTimerPending] = useState(false)
   const [stopTimerPending, setStopTimerPending] = useState(false)
@@ -59,7 +62,10 @@ export function useTrackerMutations() {
     try {
       const result = await action()
       options.onSuccess?.(result)
-      if (options.invalidate !== false) void router.invalidate()
+      if (options.invalidate !== false) {
+        void invalidateTrackerState(queryClient)
+        void router.invalidate()
+      }
       if (options.successMessage) gooeyToast.success(options.successMessage)
       return result
     } catch (err) {

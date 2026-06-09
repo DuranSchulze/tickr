@@ -11,6 +11,7 @@ import {
   parseDateKey,
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { getAnalyticsFn, getTrackerStateLiteFn } from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 type AnalyticsSearch = {
@@ -78,14 +79,22 @@ export const Route = createFileRoute('/app/analytics')({
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  loader: async ({ deps }) => {
+  loader: async ({ context, deps }) => {
     const [analytics, state] = await Promise.all([
-      getAnalyticsFn({ data: deps }),
-      getTrackerStateLiteFn(),
+      context.queryClient.ensureQueryData({
+        queryKey: trackerKeys.analytics(deps),
+        queryFn: () => getAnalyticsFn({ data: deps }),
+        staleTime: 60_000,
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: trackerKeys.stateLite,
+        queryFn: () => getTrackerStateLiteFn(),
+        staleTime: 60_000,
+      }),
     ])
     return { analytics, state }
   },
-  staleTime: 30_000,
+  staleTime: 60_000,
   component: AnalyticsRoute,
 })
 

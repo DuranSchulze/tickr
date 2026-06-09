@@ -19,6 +19,29 @@ const VIEW_OPTIONS = [
   { value: 'all', label: 'All' },
 ] as const satisfies readonly { value: ViewMode; label: string }[]
 
+// Owns the per-second tick in isolation so the rest of DashboardHeader (view
+// switcher, calendar popover, date nav, export dropdown) does NOT re-render
+// every second while a timer is running.
+function HeaderTotal({
+  completedTotalSeconds,
+  runningEntry,
+  formatTime,
+}: {
+  completedTotalSeconds: number
+  runningEntry: TimeEntry | null
+  formatTime: (seconds: number) => string
+}) {
+  const tick = useNowTick(runningEntry ? 1000 : null)
+  const selectedTotalSeconds =
+    completedTotalSeconds +
+    (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)
+  return (
+    <p className="m-0 mt-1 text-2xl font-bold text-foreground">
+      {formatTime(selectedTotalSeconds)}
+    </p>
+  )
+}
+
 export function DashboardHeader({
   workspaceName,
   userName,
@@ -53,10 +76,6 @@ export function DashboardHeader({
   trailing?: ReactNode
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const tick = useNowTick(runningEntry ? 1000 : null)
-  const selectedTotalSeconds =
-    completedTotalSeconds +
-    (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)
 
   const [y, m, d] = selectedDate.split('-').map(Number)
   const selectedDateObj = new Date(y, m - 1, d)
@@ -169,9 +188,11 @@ export function DashboardHeader({
             <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {view === 'all' ? 'loaded total' : `${view} total`}
             </p>
-            <p className="m-0 mt-1 text-2xl font-bold text-foreground">
-              {formatTime(selectedTotalSeconds)}
-            </p>
+            <HeaderTotal
+              completedTotalSeconds={completedTotalSeconds}
+              runningEntry={runningEntry}
+              formatTime={formatTime}
+            />
           </div>
         </div>
       </div>

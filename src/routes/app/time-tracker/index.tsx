@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { TimeTrackerDashboard } from '#/components/time-tracker/dashboard/TimeTrackerDashboard'
 import { getTrackerStateFn } from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { getLocalDateKey } from '#/lib/time-tracker/store'
 import type { ViewMode } from '#/lib/time-tracker/types'
 import { BRAND } from '#/lib/brand'
@@ -26,8 +27,13 @@ export const Route = createFileRoute('/app/time-tracker/')({
         ? search.date
         : undefined,
   }),
-  loader: () => getTrackerStateFn(),
-  staleTime: 30_000,
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: trackerKeys.state,
+      queryFn: () => getTrackerStateFn(),
+      staleTime: 60_000,
+    }),
+  staleTime: 60_000,
   component: TimeTrackerRoute,
   head: () => ({
     meta: [{ title: BRAND.name }],

@@ -4,6 +4,7 @@ import {
   isDateKey,
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { getDepartmentDashboardFn } from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 import { DepartmentDashboardScreen } from '#/components/time-tracker/analytics/department/DepartmentDashboardScreen'
 
@@ -39,8 +40,13 @@ export const Route = createFileRoute('/app/department-analytics')({
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  loader: async ({ deps }) => getDepartmentDashboardFn({ data: deps }),
-  staleTime: 30_000,
+  loader: ({ context, deps }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: trackerKeys.departmentDashboard(deps),
+      queryFn: () => getDepartmentDashboardFn({ data: deps }),
+      staleTime: 60_000,
+    }),
+  staleTime: 60_000,
   component: DepartmentAnalyticsRoute,
 })
 

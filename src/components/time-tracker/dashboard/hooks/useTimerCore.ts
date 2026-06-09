@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { gooeyToast } from 'goey-toast'
 import {
   loadPendingEntries,
@@ -9,6 +10,7 @@ import {
 import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
+import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
 import type { useTrackerMutations } from './useTrackerMutations'
 import { useDescriptionSuggestions } from './useDescriptionSuggestions'
 
@@ -36,6 +38,15 @@ export function useTimerCore({
   onMutated?: () => void
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  // Refresh the dashboard after a confirmed timer action: mark the cached
+  // tracker state stale so router.invalidate() refetches instead of serving the
+  // still-fresh (60s) cache entry.
+  function invalidateDashboard() {
+    void invalidateTrackerState(queryClient)
+    void router.invalidate()
+  }
 
   // --- Operation state machine ---
   const [timerOperation, setTimerOperationState] = useState<TimerOperation>({
@@ -453,7 +464,7 @@ export function useTimerCore({
         } else {
           removeOptimisticStoppedEntry(entryToStop.id)
         }
-        void router.invalidate()
+        invalidateDashboard()
         onMutated?.()
       })
       .catch((err: unknown) => {
@@ -539,7 +550,7 @@ export function useTimerCore({
             if (operationHasToken(timerOperationRef.current, token)) {
               setTimerOperation({ kind: 'idle' })
             }
-            void router.invalidate()
+            invalidateDashboard()
           })
           return
         }
@@ -619,7 +630,7 @@ export function useTimerCore({
         ) {
           return
         }
-        void router.invalidate()
+        invalidateDashboard()
       })
       .catch((err: unknown) => {
         const op = timerOperationRef.current
@@ -696,7 +707,7 @@ export function useTimerCore({
             if (operationHasToken(timerOperationRef.current, token)) {
               setTimerOperation({ kind: 'idle' })
             }
-            void router.invalidate()
+            invalidateDashboard()
           })
           return
         }

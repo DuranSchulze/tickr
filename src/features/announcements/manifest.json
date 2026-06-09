@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.6.0",
+  "appVersion": "1.7.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Tickr!",
@@ -48,6 +48,49 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.7.0",
+      "publishedAt": "2026-06-09",
+      "title": "Consistent \"All\" View Grouping, Faster Page Loads & Snappier Dashboard",
+      "body": "The All view now groups repeated tasks just like Day/Week/Month, stopped timers no longer disappear from it, analytics and dashboard pages load from cache instead of re-querying the database, and the dashboard stays smooth while a timer runs.",
+      "features": [
+        {
+          "title": "Repeated Tasks Now Group in the All View",
+          "description": "When you track the same task more than once, the All view now collapses those entries into a single ×N task group with per-day date headers and day totals — identical to the Day, Week, and Month views. Day groups and task groups are collapsible, with an Expand all / Collapse all toggle.",
+          "image": null
+        },
+        {
+          "title": "Stopped Timers Stay Visible in the All View",
+          "description": "Stopping a running timer while on the default All view previously made the new entry flash in and then vanish until a manual refresh. The All view now reloads correctly after stop, resume, edit, delete, and duplicate, so your entry stays put.",
+          "image": null
+        },
+        {
+          "title": "Faster Page Loads with Smart Caching",
+          "description": "The Time Tracker dashboard, Analytics, My Performance, and Department Analytics pages now serve recently loaded data from a 60-second cache instead of hitting the database on every visit. Revisiting a page within the window is instant, while timer and entry actions still refresh the dashboard immediately.",
+          "image": null
+        },
+        {
+          "title": "Smoother Dashboard While Tracking",
+          "description": "The live total in the header used to re-render the entire header (view switcher, calendar, date navigation) once per second while a timer ran. That per-second update is now isolated to the total itself, keeping the rest of the page idle.",
+          "image": null
+        },
+        {
+          "title": "Built-in Performance Monitoring",
+          "description": "Added lightweight, no-cost performance instrumentation: a development-only render profiler (react-scan) to spot re-render hotspots and Core Web Vitals logging (web-vitals) for real load/interaction metrics — a simpler alternative to heavier monitoring tools.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Open Time Tracker",
+          "to": "/app/time-tracker"
+        },
+        {
+          "label": "View Analytics",
+          "to": "/app/analytics"
+        }
+      ]
+    },
     {
       "version": "1.6.0",
       "publishedAt": "2026-06-03",

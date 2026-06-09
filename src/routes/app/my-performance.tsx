@@ -1,11 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { PerformancePage } from '#/components/time-tracker/performance/PerformancePage'
 import { getMyPerformanceFn } from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { BRAND } from '#/lib/brand'
 
 export const Route = createFileRoute('/app/my-performance')({
-  loader: async () => {
-    const performance = await getMyPerformanceFn()
+  loader: async ({ context }) => {
+    const performance = await context.queryClient.ensureQueryData({
+      queryKey: trackerKeys.myPerformance,
+      queryFn: () => getMyPerformanceFn(),
+      staleTime: 60_000,
+    })
     return { performance }
   },
   staleTime: 60_000,

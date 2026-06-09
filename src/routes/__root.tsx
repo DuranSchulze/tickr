@@ -7,6 +7,7 @@ import {
 import { GooeyToaster } from 'goey-toast'
 import 'goey-toast/styles.css'
 import { Button } from '../components/ui/button'
+import { Monitoring } from '../components/dev/Monitoring'
 
 import appCss from '../styles.css?url'
 import { BRAND } from '#/lib/brand'
@@ -83,6 +84,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20 selection:text-foreground">
         {children}
+        <Monitoring />
         <GooeyToaster position="top-right" />
         <Scripts />
       </body>
