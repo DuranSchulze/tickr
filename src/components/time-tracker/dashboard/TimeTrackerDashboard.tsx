@@ -327,22 +327,25 @@ export function TimeTrackerDashboard({
   }, [optimisticStoppedEntries, selectedRange])
 
   // Merge pending stopped entries into the visible list so they appear instantly.
+  // When a pending entry shares an id with a server row (e.g. a just-stopped timer
+  // that the server still reports as running until the next invalidate), the pending
+  // version wins — otherwise the row would keep showing as "running" until a reload.
   const filteredEntries = useMemo(() => {
     if (pendingInRange.length === 0) return serverFilteredEntries
+    const pendingById = new Map(pendingInRange.map((e) => [e.id, e]))
+    const merged = serverFilteredEntries.map((e) => pendingById.get(e.id) ?? e)
     const realIds = new Set(serverFilteredEntries.map((e) => e.id))
     const newPending = pendingInRange.filter((e) => !realIds.has(e.id))
-    return newPending.length > 0
-      ? [...serverFilteredEntries, ...newPending]
-      : serverFilteredEntries
+    return newPending.length > 0 ? [...merged, ...newPending] : merged
   }, [serverFilteredEntries, pendingInRange])
 
   const mergedBaseFiltered = useMemo(() => {
     if (pendingInRange.length === 0) return baseFiltered
+    const pendingById = new Map(pendingInRange.map((e) => [e.id, e]))
+    const merged = baseFiltered.map((e) => pendingById.get(e.id) ?? e)
     const realIds = new Set(baseFiltered.map((e) => e.id))
     const newPending = pendingInRange.filter((e) => !realIds.has(e.id))
-    return newPending.length > 0
-      ? [...baseFiltered, ...newPending]
-      : baseFiltered
+    return newPending.length > 0 ? [...merged, ...newPending] : merged
   }, [baseFiltered, pendingInRange])
 
   const currency = normalizeCurrency(state.workspace.billableCurrency)

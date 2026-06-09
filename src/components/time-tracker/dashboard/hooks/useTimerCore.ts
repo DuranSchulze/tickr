@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from 'goey-toast'
-import { formatDuration } from '#/lib/time-tracker/store'
 import {
   loadPendingEntries,
   removePendingEntry,
@@ -423,9 +422,7 @@ export function useTimerCore({
     })
     upsertOptimisticStoppedEntry(stoppedEntry)
 
-    gooeyToast.success('Timer stopped', {
-      description: `Duration: ${formatDuration(stoppedEntry.durationSeconds)}`,
-    })
+    gooeyToast.success('Timer stopped')
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, {
@@ -507,9 +504,7 @@ export function useTimerCore({
       token,
       optimisticId: optimisticEntry.id,
     })
-    gooeyToast.success('Timer started', {
-      description: description || 'No description',
-    })
+    gooeyToast.success('Timer started')
 
     const resumeInput = { description, projectId, tagIds, billable }
 
@@ -668,9 +663,7 @@ export function useTimerCore({
     })
     lastSyncedEntryIdRef.current = optimisticEntry.id
     timerInputDirtyRef.current = false
-    gooeyToast.success('Timer started', {
-      description: description || 'No description',
-    })
+    gooeyToast.success('Timer started')
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, {
