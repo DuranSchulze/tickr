@@ -190,7 +190,7 @@ export function TimeTrackerDashboard({
     discardTimer,
     resumeEntry,
     persistActiveTimerStartedAt,
-  } = useTimerCore({ state, mutations, isOnline })
+  } = useTimerCore({ state, mutations, isOnline, onMutated: refreshAllEntries })
 
   useTimerKeyboard({
     activeEntry,
@@ -471,7 +471,7 @@ export function TimeTrackerDashboard({
 
       {view === 'all' ? (
         <AllEntriesSection
-          entries={serverFilteredEntries}
+          entries={filteredEntries}
           totalCount={allEntriesTotalCount}
           hasMore={allEntriesHasMore}
           loadingMore={allEntriesLoading}

@@ -25,10 +25,15 @@ export function useTimerCore({
   state,
   mutations,
   isOnline,
+  onMutated,
 }: {
   state: TrackerState
   mutations: ReturnType<typeof useTrackerMutations>
   isOnline: boolean
+  // Called after a stop is confirmed by the server, so views backed by their
+  // own list (the "all" view's paginated state) can refresh — router.invalidate
+  // alone only refreshes the route loader's state.entries.
+  onMutated?: () => void
 }) {
   const router = useRouter()
 
@@ -449,6 +454,7 @@ export function useTimerCore({
           removeOptimisticStoppedEntry(entryToStop.id)
         }
         void router.invalidate()
+        onMutated?.()
       })
       .catch((err: unknown) => {
         const op = timerOperationRef.current

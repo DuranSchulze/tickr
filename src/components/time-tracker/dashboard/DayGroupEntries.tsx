@@ -1,12 +1,18 @@
 import { Fragment } from 'react'
 import { ChevronDown, ChevronRight, Play } from 'lucide-react'
-import type { Project, TimeEntry } from '#/lib/time-tracker/types'
+import { getEntrySeconds } from '#/lib/time-tracker/store'
+import type { Project, TimeEntry, ViewMode } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
-import { TableHead, TableHeader, TableRow } from '#/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '#/components/ui/table'
 import { EntryCard } from './EntryCard'
 import { EntryRow } from './EntryRow'
-import type { TaskGroup } from './entries-grouping'
-import { getEntrySeconds } from '#/lib/time-tracker/store'
+import type { DayGroup, TaskGroup } from './entries-grouping'
 import { useNowTick } from './hooks/useNowTick'
 
 // ─── Shared types ────────────────────────────────────────────────────────────
@@ -25,7 +31,7 @@ type InlinePatch = Partial<
 
 type ClientItem = { id: string; name: string; clientStatus: string }
 
-// ─── Shared formatter for group totals ──────────────────────────────────────
+// ─── Shared formatter for group totals ───────────────────────────────────────
 
 function formatGroupTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds))
@@ -81,6 +87,7 @@ function TaskGroupHeaderRow({
       className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
       onClick={onToggle}
     >
+      {/* Description + count + expand toggle */}
       <td className="px-4 py-3 w-[26%]">
         <div className="flex items-center gap-2 min-w-0">
           {isExpanded ? (
@@ -100,6 +107,8 @@ function TaskGroupHeaderRow({
           </span>
         </div>
       </td>
+
+      {/* Project */}
       <td className="px-4 py-3 w-[18%]">
         {project ? (
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -113,26 +122,34 @@ function TaskGroupHeaderRow({
           <span className="text-xs text-muted-foreground">–</span>
         )}
       </td>
+
+      {/* Tags */}
       <td className="px-4 py-3 w-[14%]">
         <span className="text-xs text-muted-foreground">
           {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
         </span>
       </td>
+
+      {/* Billable */}
       <td className="px-4 py-3 w-[8%] text-center">
         {group.billable && (
-          <span className="inline-block rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-            $
-          </span>
+          <span className="text-xs font-bold text-primary">$</span>
         )}
       </td>
+
+      {/* Time (per-entry only) */}
       <td className="px-4 py-3 w-[12%] text-center text-xs text-muted-foreground">
         —
       </td>
+
+      {/* Duration */}
       <td className="px-4 py-3 w-[10%] text-right">
         <span className="font-mono text-sm font-bold tabular-nums text-foreground">
           {formatGroupTime(group.totalSeconds)}
         </span>
       </td>
+
+      {/* Resume */}
       <td className="px-4 py-3 w-[12%]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <button
@@ -249,243 +266,293 @@ function TaskGroupHeaderCard({
   )
 }
 
-// ─── Desktop table header ────────────────────────────────────────────────────
+// ─── Shared day-grouped list ─────────────────────────────────────────────────
+// Single source of truth for the day-grouped entry list shown by both
+// EntriesSection (day/week/month) and AllEntriesSection (all). Renders per-day
+// headers (static in day view, collapsible otherwise) with collapsible ×N task
+// groups, a desktop table and mobile cards.
 
-export function DayGroupTableHeader() {
-  return (
-    <TableHeader className="bg-muted/80">
-      <TableRow className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 hover:bg-transparent">
-        <TableHead className="px-4 py-3 w-[26%] text-muted-foreground/80 font-bold">
-          Description
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[18%] text-muted-foreground/80 font-bold">
-          Client / Project
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[14%] text-muted-foreground/80 font-bold">
-          Tags
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[8%] text-center text-muted-foreground/80 font-bold">
-          Billable
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[12%] text-center text-muted-foreground/80 font-bold">
-          Time
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[10%] text-right text-muted-foreground/80 font-bold">
-          Duration
-        </TableHead>
-        <TableHead className="px-4 py-3 w-[12%]" />
-      </TableRow>
-    </TableHeader>
-  )
-}
-
-// ─── Common rendering helpers for EntryRow / EntryCard ───────────────────────
-
-type CommonRowProps = {
-  clients: ClientItem[]
-  projects: Project[]
-  tags: SearchableItem[]
-  pending: boolean
-  pendingEntryIds?: Set<string>
-  formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
-  currency: string
-  rateLookup: (memberId: string) => number
-  onStartEdit: (entry: TimeEntry) => void
-  onUpdate: (entryId: string, patch: InlinePatch) => void
-  onResume: (entry: TimeEntry) => void
-  onDuplicate: (id: string) => void
-  onDelete: (id: string) => void
-}
-
-type CommonCardProps = {
-  projects: Project[]
-  tags: SearchableItem[]
-  pending: boolean
-  pendingEntryIds?: Set<string>
-  formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
-  currency: string
-  rateLookup: (memberId: string) => number
-  onStartEdit: (entry: TimeEntry) => void
-  onResume: (entry: TimeEntry) => void
-  onDuplicate: (id: string) => void
-  onDelete: (id: string) => void
-}
-
-type TaskGroupHeaderConfig = {
-  isExpanded: (groupKey: string) => boolean
-  onToggle: (groupKey: string) => void
-  onResumeGroup: (taskGroup: TaskGroup) => void
-}
-
-// ─── Desktop table body entries ──────────────────────────────────────────────
-
-export function DayGroupDesktopEntries({
-  taskGroups,
+export function DayGroupsList({
+  groups,
+  view,
   clients,
   projects,
   tags,
+  currency,
+  rateLookup,
   pending,
   pendingEntryIds,
   formatTime,
   hasActiveTimer,
-  currency,
-  rateLookup,
+  isDayCollapsed,
+  toggleDayGroup,
+  isTaskGroupExpanded,
+  toggleTaskGroup,
   onStartEdit,
   onUpdate,
   onResume,
   onDuplicate,
   onDelete,
-  taskGroupHeader,
-}: CommonRowProps & {
-  taskGroups: TaskGroup[]
-  taskGroupHeader?: TaskGroupHeaderConfig
+}: {
+  groups: DayGroup[]
+  view?: ViewMode
+  clients: ClientItem[]
+  projects: Project[]
+  tags: SearchableItem[]
+  currency: string
+  rateLookup: (memberId: string) => number
+  pending: boolean
+  pendingEntryIds?: Set<string>
+  formatTime: (seconds: number) => string
+  hasActiveTimer: boolean
+  isDayCollapsed: (dateKey: string) => boolean
+  toggleDayGroup: (dateKey: string) => void
+  isTaskGroupExpanded: (dateKey: string, groupKey: string) => boolean
+  toggleTaskGroup: (dateKey: string, groupKey: string) => void
+  onStartEdit: (entry: TimeEntry) => void
+  onUpdate: (entryId: string, patch: InlinePatch) => void
+  onResume: (entry: TimeEntry) => void
+  onDuplicate: (id: string) => void
+  onDelete: (id: string) => void
 }) {
-  const renderEntryRow = (entry: TimeEntry, isSubEntry = false) => (
-    <EntryRow
-      key={entry.id}
-      entry={entry}
-      clients={clients}
-      projects={projects}
-      tags={tags}
-      pending={pending}
-      isPending={pendingEntryIds?.has(entry.id)}
-      formatTime={formatTime}
-      hasActiveTimer={hasActiveTimer}
-      isSubEntry={isSubEntry}
-      currency={currency}
-      rateLookup={rateLookup}
-      onStartEdit={() => onStartEdit(entry)}
-      onUpdate={(patch) => onUpdate(entry.id, patch)}
-      onResume={() => onResume(entry)}
-      onDuplicate={() => onDuplicate(entry.id)}
-      onDelete={() => onDelete(entry.id)}
-    />
-  )
-
   return (
-    <>
-      {taskGroups.map((taskGroup) => {
-        // Simple mode (AllEntriesSection): inline all entries with isSubEntry for i>0
-        if (!taskGroupHeader) {
-          if (taskGroup.entries.length === 1) {
-            return renderEntryRow(taskGroup.entries[0])
-          }
-          return (
-            <Fragment key={taskGroup.key}>
-              {taskGroup.entries.map((entry, i) =>
-                renderEntryRow(entry, i > 0),
-              )}
-            </Fragment>
-          )
-        }
-
-        // Grouped mode (EntriesSection): with task group headers and collapse
-        const isGrouped = taskGroup.entries.length > 1
-        const expanded = taskGroupHeader.isExpanded(taskGroup.key)
-
-        if (!isGrouped) {
-          return renderEntryRow(taskGroup.entries[0])
-        }
-
-        return (
-          <Fragment key={taskGroup.key}>
-            <TaskGroupHeaderRow
-              group={taskGroup}
-              projects={projects}
-              hasActiveTimer={hasActiveTimer}
-              isExpanded={expanded}
-              onToggle={() => taskGroupHeader.onToggle(taskGroup.key)}
-              onResume={() => taskGroupHeader.onResumeGroup(taskGroup)}
-            />
-            {expanded &&
-              taskGroup.entries.map((entry) => renderEntryRow(entry, true))}
-          </Fragment>
+    <div className="divide-y divide-border">
+      {groups.map((group) => {
+        const dayCollapsed = isDayCollapsed(group.dateKey)
+        const entryCount = group.taskGroups.reduce(
+          (n, tg) => n + tg.entries.length,
+          0,
         )
-      })}
-    </>
-  )
-}
-
-// ─── Mobile entry cards ──────────────────────────────────────────────────────
-
-export function DayGroupMobileCards({
-  taskGroups,
-  projects,
-  tags,
-  pending,
-  pendingEntryIds,
-  formatTime,
-  hasActiveTimer,
-  currency,
-  rateLookup,
-  onStartEdit,
-  onResume,
-  onDuplicate,
-  onDelete,
-  taskGroupHeader,
-}: CommonCardProps & {
-  taskGroups: TaskGroup[]
-  taskGroupHeader?: TaskGroupHeaderConfig
-}) {
-  const renderEntryCard = (entry: TimeEntry, isSubEntry = false) => (
-    <EntryCard
-      key={entry.id}
-      entry={entry}
-      projects={projects}
-      tags={tags}
-      currency={currency}
-      rateLookup={rateLookup}
-      pending={pending}
-      isPending={pendingEntryIds?.has(entry.id)}
-      formatTime={formatTime}
-      hasActiveTimer={hasActiveTimer}
-      isSubEntry={isSubEntry}
-      onStartEdit={() => onStartEdit(entry)}
-      onResume={() => onResume(entry)}
-      onDuplicate={() => onDuplicate(entry.id)}
-      onDelete={() => onDelete(entry.id)}
-    />
-  )
-
-  return (
-    <div className="grid gap-2 border-t border-border/40 p-3 sm:hidden">
-      {taskGroups.map((taskGroup) => {
-        // Simple mode (AllEntriesSection): flat list of all cards, no sub-entry styling
-        if (!taskGroupHeader) {
-          if (taskGroup.entries.length === 1) {
-            return renderEntryCard(taskGroup.entries[0])
-          }
-          return (
-            <Fragment key={taskGroup.key}>
-              {taskGroup.entries.map((entry) => renderEntryCard(entry))}
-            </Fragment>
-          )
-        }
-
-        // Grouped mode (EntriesSection): with task group header cards and collapse
-        const isGrouped = taskGroup.entries.length > 1
-        const expanded = taskGroupHeader.isExpanded(taskGroup.key)
-
-        if (!isGrouped) {
-          return renderEntryCard(taskGroup.entries[0])
-        }
-
         return (
-          <div key={`group-${taskGroup.key}`} className="grid gap-1.5">
-            <TaskGroupHeaderCard
-              group={taskGroup}
-              projects={projects}
-              tags={tags}
-              formatTime={formatTime}
-              hasActiveTimer={hasActiveTimer}
-              isExpanded={expanded}
-              onToggle={() => taskGroupHeader.onToggle(taskGroup.key)}
-              onResume={() => taskGroupHeader.onResumeGroup(taskGroup)}
-            />
-            {expanded &&
-              taskGroup.entries.map((entry) => renderEntryCard(entry, true))}
+          <div key={group.dateKey}>
+            {/* Day group header — static in day view, collapsible otherwise */}
+            {view === 'day' ? (
+              <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-sm font-bold text-foreground">
+                    {group.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+                  </span>
+                </div>
+                <LiveGroupTotal
+                  completedSeconds={group.completedSeconds}
+                  runningEntry={group.runningEntry}
+                  formatTime={formatTime}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => toggleDayGroup(group.dateKey)}
+                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  {dayCollapsed ? (
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="text-sm font-bold text-foreground">
+                    {group.label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+                    {group.taskGroups.length > 1 && (
+                      <span className="ml-1 text-muted-foreground/60">
+                        · {group.taskGroups.length} tasks
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <LiveGroupTotal
+                  completedSeconds={group.completedSeconds}
+                  runningEntry={group.runningEntry}
+                  formatTime={formatTime}
+                />
+              </button>
+            )}
+
+            {/* Expanded day content — always visible in day view */}
+            {(view === 'day' || !dayCollapsed) && (
+              <>
+                {/* Desktop table */}
+                <div className="hidden border-t border-border/40 sm:block">
+                  <Table className="table-fixed">
+                    <TableHeader className="bg-muted/60">
+                      <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
+                        <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
+                          Task
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
+                          Client / Project
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[14%] text-muted-foreground font-medium">
+                          Tags
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
+                          Billable
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[12%] text-center text-muted-foreground font-medium">
+                          Time
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
+                          Duration
+                        </TableHead>
+                        <TableHead className="px-4 py-2.5 w-[12%]" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.taskGroups.map((taskGroup) => {
+                        const isGrouped = taskGroup.entries.length > 1
+                        const expanded = isTaskGroupExpanded(
+                          group.dateKey,
+                          taskGroup.key,
+                        )
+
+                        if (!isGrouped) {
+                          const entry = taskGroup.entries[0]
+                          return (
+                            <EntryRow
+                              key={entry.id}
+                              entry={entry}
+                              clients={clients}
+                              projects={projects}
+                              tags={tags}
+                              pending={pending}
+                              isPending={pendingEntryIds?.has(entry.id)}
+                              formatTime={formatTime}
+                              hasActiveTimer={hasActiveTimer}
+                              currency={currency}
+                              rateLookup={rateLookup}
+                              onStartEdit={() => onStartEdit(entry)}
+                              onUpdate={(patch) => onUpdate(entry.id, patch)}
+                              onResume={() => onResume(entry)}
+                              onDuplicate={() => onDuplicate(entry.id)}
+                              onDelete={() => onDelete(entry.id)}
+                            />
+                          )
+                        }
+
+                        return (
+                          <Fragment key={taskGroup.key}>
+                            <TaskGroupHeaderRow
+                              key={`header-${taskGroup.key}`}
+                              group={taskGroup}
+                              projects={projects}
+                              hasActiveTimer={hasActiveTimer}
+                              isExpanded={expanded}
+                              onToggle={() =>
+                                toggleTaskGroup(group.dateKey, taskGroup.key)
+                              }
+                              onResume={() => onResume(taskGroup.entries[0])}
+                            />
+                            {expanded &&
+                              taskGroup.entries.map((entry) => (
+                                <EntryRow
+                                  key={entry.id}
+                                  entry={entry}
+                                  clients={clients}
+                                  projects={projects}
+                                  tags={tags}
+                                  pending={pending}
+                                  isPending={pendingEntryIds?.has(entry.id)}
+                                  formatTime={formatTime}
+                                  hasActiveTimer={hasActiveTimer}
+                                  isSubEntry
+                                  currency={currency}
+                                  rateLookup={rateLookup}
+                                  onStartEdit={() => onStartEdit(entry)}
+                                  onUpdate={(patch) =>
+                                    onUpdate(entry.id, patch)
+                                  }
+                                  onResume={() => onResume(entry)}
+                                  onDuplicate={() => onDuplicate(entry.id)}
+                                  onDelete={() => onDelete(entry.id)}
+                                />
+                              ))}
+                          </Fragment>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="grid gap-2 border-t border-border/40 p-3 sm:hidden">
+                  {group.taskGroups.map((taskGroup) => {
+                    const isGrouped = taskGroup.entries.length > 1
+                    const expanded = isTaskGroupExpanded(
+                      group.dateKey,
+                      taskGroup.key,
+                    )
+
+                    if (!isGrouped) {
+                      const entry = taskGroup.entries[0]
+                      return (
+                        <EntryCard
+                          key={entry.id}
+                          entry={entry}
+                          projects={projects}
+                          tags={tags}
+                          currency={currency}
+                          rateLookup={rateLookup}
+                          pending={pending}
+                          isPending={pendingEntryIds?.has(entry.id)}
+                          formatTime={formatTime}
+                          hasActiveTimer={hasActiveTimer}
+                          onStartEdit={() => onStartEdit(entry)}
+                          onResume={() => onResume(entry)}
+                          onDuplicate={() => onDuplicate(entry.id)}
+                          onDelete={() => onDelete(entry.id)}
+                        />
+                      )
+                    }
+
+                    return (
+                      <div
+                        key={`group-${taskGroup.key}`}
+                        className="grid gap-1.5"
+                      >
+                        <TaskGroupHeaderCard
+                          group={taskGroup}
+                          projects={projects}
+                          tags={tags}
+                          formatTime={formatTime}
+                          hasActiveTimer={hasActiveTimer}
+                          isExpanded={expanded}
+                          onToggle={() =>
+                            toggleTaskGroup(group.dateKey, taskGroup.key)
+                          }
+                          onResume={() => onResume(taskGroup.entries[0])}
+                        />
+                        {expanded &&
+                          taskGroup.entries.map((entry) => (
+                            <EntryCard
+                              key={entry.id}
+                              entry={entry}
+                              projects={projects}
+                              tags={tags}
+                              currency={currency}
+                              rateLookup={rateLookup}
+                              pending={pending}
+                              isPending={pendingEntryIds?.has(entry.id)}
+                              formatTime={formatTime}
+                              hasActiveTimer={hasActiveTimer}
+                              isSubEntry
+                              onStartEdit={() => onStartEdit(entry)}
+                              onResume={() => onResume(entry)}
+                              onDuplicate={() => onDuplicate(entry.id)}
+                              onDelete={() => onDelete(entry.id)}
+                            />
+                          ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
           </div>
         )
       })}
