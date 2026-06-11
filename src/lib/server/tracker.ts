@@ -13,9 +13,19 @@ const createRoleSchema = z.object({
   color: z.string().default('#6366f1'),
 })
 
-const entryInputSchema = z.object({
+const entryTimesAreOrdered = {
+  check: (data: { startedAt: string; endedAt: string | null }) =>
+    !data.endedAt ||
+    new Date(data.endedAt).getTime() > new Date(data.startedAt).getTime(),
+  params: {
+    message: 'End time must be after start time.',
+    path: ['endedAt'],
+  },
+}
+
+const entryInputShape = z.object({
   description: z.string().trim().min(1),
-  projectId: z.string().min(1),
+  projectId: z.string().trim().min(1),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
   startedAt: z.string().datetime(),
@@ -24,11 +34,18 @@ const entryInputSchema = z.object({
   notes: z.string().trim().default(''),
 })
 
+const entryInputSchema = entryInputShape.refine(
+  entryTimesAreOrdered.check,
+  entryTimesAreOrdered.params,
+)
+
 const startTimerSchema = z.object({
   description: z.string().trim().default(''),
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
+  // Offline replay: the real client-side start time. Server clamps to now.
+  startedAt: z.string().datetime().optional(),
 })
 
 const updateActiveTimerSchema = z.object({
@@ -50,11 +67,16 @@ const stopTimerSchema = z.object({
   projectId: z.string().optional(),
   tagIds: z.array(z.string().min(1)).optional(),
   billable: z.boolean().optional(),
+  // Offline replay: the real client-side stop time. Server clamps to
+  // [startedAt, now] and falls back to now when the value is implausible.
+  endedAt: z.string().datetime().optional(),
 })
 
-const updateEntrySchema = entryInputSchema.extend({
-  id: z.string().min(1),
-})
+const updateEntrySchema = entryInputShape
+  .extend({
+    id: z.string().min(1),
+  })
+  .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
 const analyticsRangeSchema = z.object({
   startDate: z.string().date(),

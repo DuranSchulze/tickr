@@ -8,7 +8,17 @@ export const MAX_DESCRIPTION_LENGTH = 200
 const descriptionRequired = z.string().trim().min(1).max(MAX_DESCRIPTION_LENGTH)
 const descriptionOptional = z.string().trim().max(MAX_DESCRIPTION_LENGTH)
 
-export const entryInputSchema = z.object({
+const entryTimesAreOrdered = {
+  check: (data: { startedAt: string; endedAt: string | null }) =>
+    !data.endedAt ||
+    new Date(data.endedAt).getTime() > new Date(data.startedAt).getTime(),
+  params: {
+    message: 'End time must be after start time.',
+    path: ['endedAt'],
+  },
+}
+
+const entryInputShape = z.object({
   description: descriptionRequired,
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
@@ -19,11 +29,18 @@ export const entryInputSchema = z.object({
   notes: z.string().trim().default(''),
 })
 
+export const entryInputSchema = entryInputShape.refine(
+  entryTimesAreOrdered.check,
+  entryTimesAreOrdered.params,
+)
+
 export const startTimerSchema = z.object({
   description: descriptionOptional.default(''),
   projectId: z.string().default(''),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
+  // Offline replay: the real client-side start time. Server clamps to now.
+  startedAt: z.string().datetime().optional(),
 })
 
 export const updateActiveTimerSchema = z.object({
@@ -45,11 +62,16 @@ export const stopTimerSchema = z.object({
   projectId: z.string().optional(),
   tagIds: z.array(z.string().min(1)).optional(),
   billable: z.boolean().optional(),
+  // Offline replay: the real client-side stop time. Server clamps to
+  // [startedAt, now] and falls back to now when the value is implausible.
+  endedAt: z.string().datetime().optional(),
 })
 
-export const updateEntrySchema = entryInputSchema.extend({
-  id: z.string().min(1),
-})
+export const updateEntrySchema = entryInputShape
+  .extend({
+    id: z.string().min(1),
+  })
+  .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
 // ─── Analytics ────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Building2, ChevronDown } from 'lucide-react'
 import {
   Popover,
@@ -31,30 +31,48 @@ export function InlineClientProjectPopover({
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
-  const selectedClient = clients.find((c) => c.id === clientId)
-  const selectedProject = projects.find((p) => p.id === projectId)
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === clientId),
+    [clients, clientId],
+  )
+  const selectedProject = useMemo(
+    () => projects.find((p) => p.id === projectId),
+    [projects, projectId],
+  )
   const hasSelection = !!clientId && !!projectId
 
-  // Build grouped rows filtered by search
-  const rows: GroupedRow[] = []
-  const q = query.toLowerCase()
-
-  for (const client of clients) {
-    const clientMatches = client.name.toLowerCase().includes(q)
-    const clientProjects = projects.filter((p) => p.clientId === client.id)
-    const matchingProjects = q
-      ? clientMatches
-        ? clientProjects
-        : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
-      : clientProjects
-
-    if (matchingProjects.length === 0 && !clientMatches) continue
-
-    rows.push({ kind: 'client', client })
-    for (const project of matchingProjects) {
-      rows.push({ kind: 'project', project, client })
+  // Build grouped rows filtered by search — only while the popover is open.
+  // This component renders in every entry row, so doing this work per render
+  // while closed multiplied across the whole list.
+  const rows = useMemo<GroupedRow[]>(() => {
+    if (!open) return []
+    const q = query.toLowerCase()
+    const projectsByClient = new Map<string, ProjectItem[]>()
+    for (const project of projects) {
+      const list = projectsByClient.get(project.clientId)
+      if (list) list.push(project)
+      else projectsByClient.set(project.clientId, [project])
     }
-  }
+
+    const result: GroupedRow[] = []
+    for (const client of clients) {
+      const clientMatches = client.name.toLowerCase().includes(q)
+      const clientProjects = projectsByClient.get(client.id) ?? []
+      const matchingProjects = q
+        ? clientMatches
+          ? clientProjects
+          : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
+        : clientProjects
+
+      if (matchingProjects.length === 0 && !clientMatches) continue
+
+      result.push({ kind: 'client', client })
+      for (const project of matchingProjects) {
+        result.push({ kind: 'project', project, client })
+      }
+    }
+    return result
+  }, [open, query, clients, projects])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

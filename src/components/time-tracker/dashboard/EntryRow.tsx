@@ -245,15 +245,18 @@ export const EntryRow = memo(function EntryRow({
   isSubEntry?: boolean
   currency?: string
   rateLookup?: (memberId: string) => number
-  onStartEdit: () => void
-  onUpdate: (patch: InlinePatch) => void
-  onResume: () => void
-  onDuplicate: () => void
-  onDelete: () => void
+  // Entry-aware handlers: the same stable function reference is shared by
+  // every row, so React.memo can actually skip unchanged rows.
+  onStartEdit: (entry: TimeEntry) => void
+  onUpdate: (entryId: string, patch: InlinePatch) => void
+  onResume: (entry: TimeEntry) => void
+  onDuplicate: (entryId: string) => void
+  onDelete: (entryId: string) => void
 }) {
   const isRunning = !entry.endedAt
   const tick = useNowTick(isRunning ? 1000 : null)
   const seconds = getEntrySeconds(entry, tick)
+  const update = (patch: InlinePatch) => onUpdate(entry.id, patch)
 
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -288,7 +291,7 @@ export const EntryRow = memo(function EntryRow({
       return
     }
     const next = draftDesc.trim()
-    if (next && next !== entry.description) onUpdate({ description: next })
+    if (next && next !== entry.description) update({ description: next })
     setEditDesc(false)
   }
 
@@ -347,7 +350,7 @@ export const EntryRow = memo(function EntryRow({
           projects={projects}
           clientId={entryProject?.clientId ?? ''}
           projectId={entry.projectId}
-          onChange={(_clientId, projectId) => onUpdate({ projectId })}
+          onChange={(_clientId, projectId) => update({ projectId })}
           disabled={actionsDisabled}
         />
       </TableCell>
@@ -357,7 +360,7 @@ export const EntryRow = memo(function EntryRow({
         <InlineTagPopover
           tags={tags}
           value={entry.tagIds}
-          onChange={(ids) => onUpdate({ tagIds: ids })}
+          onChange={(ids) => update({ tagIds: ids })}
           disabled={actionsDisabled}
         />
       </TableCell>
@@ -366,14 +369,14 @@ export const EntryRow = memo(function EntryRow({
       <TableCell className="py-3 px-4 w-[8%] text-center">
         <BillableToggleButton
           pressed={entry.billable}
-          onPressedChange={(b) => onUpdate({ billable: b })}
+          onPressedChange={(b) => update({ billable: b })}
           className="size-8 mx-auto"
         />
       </TableCell>
 
       {/* Time — start/end with calendar date picker */}
       <TableCell className="py-3 px-4 w-[12%] text-center">
-        <EntryTimeCell key={entry.id} entry={entry} onUpdate={onUpdate} />
+        <EntryTimeCell key={entry.id} entry={entry} onUpdate={update} />
       </TableCell>
 
       {/* Duration */}
@@ -389,7 +392,7 @@ export const EntryRow = memo(function EntryRow({
           {entry.endedAt && (
             <button
               type="button"
-              onClick={onResume}
+              onClick={() => onResume(entry)}
               disabled={actionsDisabled || hasActiveTimer}
               title={
                 hasActiveTimer
@@ -412,7 +415,7 @@ export const EntryRow = memo(function EntryRow({
               <MoreHorizontal className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onStartEdit}>
+              <DropdownMenuItem onClick={() => onStartEdit(entry)}>
                 <Clock className="mr-2 size-4" />
                 Edit date / time
               </DropdownMenuItem>
@@ -441,7 +444,7 @@ export const EntryRow = memo(function EntryRow({
         confirmLabel="Duplicate"
         onConfirm={() => {
           if (actionsDisabled) return
-          onDuplicate()
+          onDuplicate(entry.id)
           setShowDuplicateDialog(false)
         }}
         pending={pending}
@@ -457,7 +460,7 @@ export const EntryRow = memo(function EntryRow({
         variant="destructive"
         onConfirm={() => {
           if (actionsDisabled) return
-          onDelete()
+          onDelete(entry.id)
           setShowDeleteDialog(false)
         }}
         pending={pending}

@@ -74,6 +74,18 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
     throw new Error('Stop your current timer before starting a new one.')
   }
 
+  // Offline replay sends the real start time; clamp so it can't be in the
+  // future (untrusted client clock). A missing/invalid value means a live
+  // start — use the server clock.
+  const now = new Date()
+  const clientStartedAt = data.startedAt ? new Date(data.startedAt) : null
+  const startedAt =
+    clientStartedAt &&
+    !Number.isNaN(clientStartedAt.getTime()) &&
+    clientStartedAt <= now
+      ? clientStartedAt
+      : now
+
   const [entry] = await db
     .insert(timeEntries)
     .values({
@@ -82,7 +94,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       description: data.description,
       projectId,
       billable: data.billable,
-      startedAt: new Date(),
+      startedAt,
       endedAt: null,
       durationSeconds: 0,
       notes: '',
@@ -193,7 +205,18 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
     throw new Error('Add at least one tag before stopping the timer.')
   }
 
-  const endedAt = new Date()
+  // Offline replay sends the real stop time; accept it only when it falls in
+  // (startedAt, now] — anything else (future, before start, unparsable) means
+  // an untrusted client clock, so fall back to the server clock.
+  const now = new Date()
+  const clientEndedAt = data.endedAt ? new Date(data.endedAt) : null
+  const endedAt =
+    clientEndedAt &&
+    !Number.isNaN(clientEndedAt.getTime()) &&
+    clientEndedAt > entry.startedAt &&
+    clientEndedAt <= now
+      ? clientEndedAt
+      : now
   const hasOverrides =
     data.description !== undefined ||
     data.projectId !== undefined ||

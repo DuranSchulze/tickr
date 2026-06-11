@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Building2, ChevronDown, X } from 'lucide-react'
 import { cn } from '#/lib/utils'
 
@@ -70,31 +70,54 @@ export function ClientProjectPicker({
     })
   }, [open, projectId])
 
-  const selectedClient = clients.find((c) => c.id === clientId)
-  const selectedProject = projects.find((p) => p.id === projectId)
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === clientId),
+    [clients, clientId],
+  )
+  const selectedProject = useMemo(
+    () => projects.find((p) => p.id === projectId),
+    [projects, projectId],
+  )
 
   const hasSelection = !!clientId && !!projectId
 
-  // Build grouped rows filtered by search
-  const rows: GroupedRow[] = []
-  const q = search.toLowerCase()
-
-  for (const client of clients) {
-    const clientMatches = client.name.toLowerCase().includes(q)
-    const clientProjects = projects.filter((p) => p.clientId === client.id)
-    const matchingProjects = q
-      ? clientMatches
-        ? clientProjects
-        : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
-      : clientProjects
-
-    if (matchingProjects.length === 0 && !clientMatches) continue
-
-    rows.push({ kind: 'client', client })
-    for (const project of matchingProjects) {
-      rows.push({ kind: 'project', project, client })
+  // Index projects once per catalog change instead of re-filtering the whole
+  // project list for every client on every render.
+  const projectsByClient = useMemo(() => {
+    const map = new Map<string, ProjectItem[]>()
+    for (const project of projects) {
+      const list = map.get(project.clientId)
+      if (list) list.push(project)
+      else map.set(project.clientId, [project])
     }
-  }
+    return map
+  }, [projects])
+
+  // Build grouped rows filtered by search — only while the dropdown is open,
+  // so closed pickers cost nothing when the parent re-renders.
+  const rows = useMemo<GroupedRow[]>(() => {
+    if (!open) return []
+    const q = search.toLowerCase()
+    const result: GroupedRow[] = []
+
+    for (const client of clients) {
+      const clientMatches = client.name.toLowerCase().includes(q)
+      const clientProjects = projectsByClient.get(client.id) ?? []
+      const matchingProjects = q
+        ? clientMatches
+          ? clientProjects
+          : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
+        : clientProjects
+
+      if (matchingProjects.length === 0 && !clientMatches) continue
+
+      result.push({ kind: 'client', client })
+      for (const project of matchingProjects) {
+        result.push({ kind: 'project', project, client })
+      }
+    }
+    return result
+  }, [open, search, clients, projectsByClient])
 
   function handleSelect(nextClientId: string, nextProjectId: string) {
     onChange(nextClientId, nextProjectId)

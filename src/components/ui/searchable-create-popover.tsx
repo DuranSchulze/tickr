@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown, Plus } from 'lucide-react'
 
@@ -67,10 +67,23 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   const isSelected = (id: string) =>
     props.multi ? props.value.includes(id) : props.value === id
 
-  const selectedItems = items.filter((i) => isSelected(i.id))
+  const value = props.value
+  const multi = props.multi
+  const selectedItems = useMemo(
+    () => items.filter((i) => (multi ? value.includes(i.id) : value === i.id)),
+    [items, multi, value],
+  )
 
-  const filtered = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase()),
+  // Only filter while the dropdown is open — closed pickers shouldn't pay for
+  // every parent re-render.
+  const filtered = useMemo(
+    () =>
+      open
+        ? items.filter((i) =>
+            i.name.toLowerCase().includes(search.toLowerCase()),
+          )
+        : [],
+    [open, items, search],
   )
 
   function handleSelect(id: string) {

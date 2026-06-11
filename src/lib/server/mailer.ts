@@ -8,11 +8,26 @@ export type SendEmailInput = {
   text: string
 }
 
-function getFromAddress(): string {
+/** From address for SMTP (Brevo) — supports any format Brevo accepts. */
+function getSmtpFromAddress(): string {
   return (
     process.env.EMAIL_FROM ??
     process.env.SMTP_FROM ??
     `${BRAND.name} <no-reply@localhost>`
+  )
+}
+
+/**
+ * From address for Resend — the domain MUST be verified in your Resend
+ * dashboard (https://resend.com/domains). Falls back to `onboarding@resend.dev`
+ * which only works for sending to the account owner's email during testing.
+ */
+function getResendFromAddress(): string {
+  return (
+    process.env.RESEND_FROM ?? //
+    process.env.EMAIL_FROM ??
+    process.env.SMTP_FROM ??
+    `${BRAND.name} <onboarding@resend.dev>`
   )
 }
 
@@ -54,70 +69,107 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
   }
 }
 
-// Performs the actual provider delivery. Throws on failure so sendEmail can log
-// it; in dev with no provider configured it's a no-op (the link is already
-// logged above).
+async function sendViaSmtp(input: SendEmailInput): Promise<void> {
+  const smtpPort = Number(process.env.SMTP_PORT ?? 587)
+  // SMTP_SECURE=true enables direct TLS (port 465). Default false uses STARTTLS (port 587).
+  const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: smtpPort,
+    secure: smtpSecure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  })
+  await transporter.sendMail({
+    from: getSmtpFromAddress(),
+    to: input.to,
+    subject: input.subject,
+    text: input.text,
+    html: input.html,
+  })
+}
+
+async function sendViaResend(
+  apiKey: string,
+  input: SendEmailInput,
+): Promise<void> {
+  const fromAddress = getResendFromAddress()
+  console.info(
+    `[mailer] Sending via Resend from="${fromAddress}" (set RESEND_FROM or EMAIL_FROM env var to change)`,
+  )
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: fromAddress,
+      to: [input.to],
+      subject: input.subject,
+      html: input.html,
+      text: input.text,
+    }),
+  })
+
+  if (!response.ok) {
+    // Resend returns a JSON body explaining the failure (unverified domain,
+    // bad from address, …) — surface it in full so the user can fix it.
+    const body = await response.json().catch(() => null)
+    const message =
+      body?.error?.message ??
+      body?.message ??
+      (typeof body === 'string' ? body : `HTTP ${response.status}`)
+    throw new Error(`Resend: ${message}`)
+  }
+}
+
+// Performs the actual provider delivery. SMTP is the primary provider; when it
+// fails (e.g. the host rejects our IP) and RESEND_API_KEY is set, delivery
+// falls back to Resend so invites and password resets still go out. Throws
+// only when every configured provider failed.
 async function deliverEmail(input: SendEmailInput): Promise<void> {
   const smtpHost = process.env.SMTP_HOST
   const resendApiKey = process.env.RESEND_API_KEY
 
-  if (smtpHost) {
-    const smtpPort = Number(process.env.SMTP_PORT ?? 587)
-    // SMTP_SECURE=true enables direct TLS (port 465). Default false uses STARTTLS (port 587).
-    const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    })
-    await transporter.sendMail({
-      from: getFromAddress(),
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      html: input.html,
-    })
-    return
-  }
-
-  if (resendApiKey) {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: getFromAddress(),
-        to: input.to,
-        subject: input.subject,
-        html: input.html,
-        text: input.text,
-      }),
-    })
-    if (!response.ok) {
+  if (!smtpHost && !resendApiKey) {
+    if (process.env.NODE_ENV === 'production') {
       throw new Error(
-        `Email provider request failed with status ${response.status}`,
+        'No email provider configured. Set SMTP_HOST or RESEND_API_KEY.',
       )
     }
+    // Dev-only: no provider configured. The link is already logged by
+    // sendEmail, so there's nothing more to deliver.
+    console.warn(
+      '[mailer] No email provider configured — email not sent (link logged above).',
+    )
     return
   }
 
-  if (process.env.NODE_ENV === 'production') {
+  if (smtpHost) {
+    try {
+      await sendViaSmtp(input)
+      return
+    } catch (err) {
+      if (!resendApiKey) throw err
+      console.warn(
+        `[mailer] SMTP delivery failed — falling back to Resend:`,
+        err instanceof Error ? err.message : err,
+      )
+    }
+  }
+
+  if (!resendApiKey) {
     throw new Error(
-      'No email provider configured. Set SMTP_HOST or RESEND_API_KEY.',
+      'SMTP failed and no RESEND_API_KEY configured for fallback.',
     )
   }
 
-  // Dev-only: no provider configured. The link is already logged by sendEmail,
-  // so there's nothing more to deliver.
-  console.warn(
-    '[mailer] No email provider configured — email not sent (link logged above).',
-  )
+  await sendViaResend(resendApiKey, input)
+  console.info('[mailer] Delivered via Resend fallback.')
 }
 
 export async function sendInviteEmail(params: {

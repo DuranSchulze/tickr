@@ -7,7 +7,11 @@ import {
   removePendingEntry,
   savePendingEntry,
 } from '#/lib/time-tracker/pending-entries'
-import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
+import {
+  enqueueOfflineMutation,
+  hasQueuedStart,
+  removeQueuedItemsForEntry,
+} from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
 import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
@@ -443,7 +447,11 @@ export function useTimerCore({
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, {
         type: 'stopTimer',
-        payload: { id: entryToStop.id },
+        payload: {
+          id: entryToStop.id,
+          endedAt: stoppedEntry.endedAt!,
+          ...fields,
+        },
       })
       return
     }
@@ -529,7 +537,7 @@ export function useTimerCore({
       enqueueOfflineMutation(state.workspace.id, {
         type: 'startTimer',
         optimisticId: optimisticEntry.id,
-        payload: resumeInput,
+        payload: { ...resumeInput, startedAt },
       })
       setTimerOperation({
         kind: 'runningOptimistic',
@@ -598,6 +606,10 @@ export function useTimerCore({
             : nextOperationToken(),
         entryId: entryToDiscard.id,
       })
+      // If the start (and any stop) is still waiting in the offline queue,
+      // drop those items — otherwise the drain would replay the start and
+      // leave a ghost running timer on the server.
+      removeQueuedItemsForEntry(state.workspace.id, entryToDiscard.id)
       gooeyToast.success('Timer discarded')
       return
     }
@@ -686,7 +698,7 @@ export function useTimerCore({
       enqueueOfflineMutation(state.workspace.id, {
         type: 'startTimer',
         optimisticId: optimisticEntry.id,
-        payload: nextInput,
+        payload: { ...nextInput, startedAt },
       })
       setTimerOperation({
         kind: 'runningOptimistic',
@@ -759,7 +771,25 @@ export function useTimerCore({
         token,
         entryId: entryToStop.id,
       })
-      upsertOptimisticStoppedEntry(buildStoppedEntry(entryToStop))
+      const stoppedEntry = buildStoppedEntry(entryToStop)
+      upsertOptimisticStoppedEntry(stoppedEntry)
+      // The start itself is waiting in the offline queue (offline start →
+      // stop before reconnect). Queue the stop behind it — the drain remaps
+      // the optimistic id once the start has been replayed. Without this the
+      // replayed timer would keep running on the server forever.
+      if (hasQueuedStart(state.workspace.id, entryToStop.id)) {
+        enqueueOfflineMutation(state.workspace.id, {
+          type: 'stopTimer',
+          payload: {
+            id: entryToStop.id,
+            endedAt: stoppedEntry.endedAt!,
+            description: timerDescription.trim(),
+            projectId: timerProjectId,
+            tagIds: timerTagIds.filter(Boolean),
+            billable: timerBillable,
+          },
+        })
+      }
       clearTimerInputs()
       return
     }
@@ -784,6 +814,11 @@ export function useTimerCore({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    // Pending-entry store access — used by offline manual creation (to show
+    // the queued entry instantly) and by the reconnect drain (to clear
+    // optimistic entries once their server counterparts exist).
+    upsertOptimisticStoppedEntry,
+    removeOptimisticStoppedEntry,
     // State machine pending flags — keyed off the operation state, not raw network calls
     isTimerStarting: timerOperation.kind === 'starting',
     isTimerStopping:

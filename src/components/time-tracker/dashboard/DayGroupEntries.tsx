@@ -14,6 +14,8 @@ import { EntryCard } from './EntryCard'
 import { EntryRow } from './EntryRow'
 import type { DayGroup, TaskGroup } from './entries-grouping'
 import { useNowTick } from './hooks/useNowTick'
+import { useIsDesktop } from './hooks/useIsDesktop'
+import { useStableCallback } from './hooks/useStableCallback'
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -315,6 +317,19 @@ export function DayGroupsList({
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
 }) {
+  // Mount only the layout that's actually visible — rendering both the table
+  // and the card list (one hidden by CSS) doubled the rows held in the DOM.
+  const isDesktop = useIsDesktop()
+
+  // Stable identities so the memoized rows/cards skip re-rendering when an
+  // unrelated piece of dashboard state (timer inputs, pickers) changes —
+  // the dashboard recreates these handlers on every render.
+  const handleStartEdit = useStableCallback(onStartEdit)
+  const handleUpdate = useStableCallback(onUpdate)
+  const handleResume = useStableCallback(onResume)
+  const handleDuplicate = useStableCallback(onDuplicate)
+  const handleDelete = useStableCallback(onDelete)
+
   return (
     <div className="divide-y divide-border">
       {groups.map((group) => {
@@ -378,179 +393,183 @@ export function DayGroupsList({
             {(view === 'day' || !dayCollapsed) && (
               <>
                 {/* Desktop table */}
-                <div className="hidden border-t border-border/40 sm:block">
-                  <Table className="table-fixed">
-                    <TableHeader className="bg-muted/60">
-                      <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-                        <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
-                          Task
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
-                          Client / Project
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[14%] text-muted-foreground font-medium">
-                          Tags
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
-                          Billable
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[12%] text-center text-muted-foreground font-medium">
-                          Time
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
-                          Duration
-                        </TableHead>
-                        <TableHead className="px-4 py-2.5 w-[12%]" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {group.taskGroups.map((taskGroup) => {
-                        const isGrouped = taskGroup.entries.length > 1
-                        const expanded = isTaskGroupExpanded(
-                          group.dateKey,
-                          taskGroup.key,
-                        )
-
-                        if (!isGrouped) {
-                          const entry = taskGroup.entries[0]
-                          return (
-                            <EntryRow
-                              key={entry.id}
-                              entry={entry}
-                              clients={clients}
-                              projects={projects}
-                              tags={tags}
-                              pending={pending}
-                              isPending={pendingEntryIds?.has(entry.id)}
-                              formatTime={formatTime}
-                              hasActiveTimer={hasActiveTimer}
-                              currency={currency}
-                              rateLookup={rateLookup}
-                              onStartEdit={() => onStartEdit(entry)}
-                              onUpdate={(patch) => onUpdate(entry.id, patch)}
-                              onResume={() => onResume(entry)}
-                              onDuplicate={() => onDuplicate(entry.id)}
-                              onDelete={() => onDelete(entry.id)}
-                            />
+                {isDesktop && (
+                  <div className="hidden border-t border-border/40 sm:block">
+                    <Table className="table-fixed">
+                      <TableHeader className="bg-muted/60">
+                        <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
+                          <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
+                            Task
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
+                            Client / Project
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[14%] text-muted-foreground font-medium">
+                            Tags
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
+                            Billable
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[12%] text-center text-muted-foreground font-medium">
+                            Time
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
+                            Duration
+                          </TableHead>
+                          <TableHead className="px-4 py-2.5 w-[12%]" />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.taskGroups.map((taskGroup) => {
+                          const isGrouped = taskGroup.entries.length > 1
+                          const expanded = isTaskGroupExpanded(
+                            group.dateKey,
+                            taskGroup.key,
                           )
-                        }
 
-                        return (
-                          <Fragment key={taskGroup.key}>
-                            <TaskGroupHeaderRow
-                              key={`header-${taskGroup.key}`}
-                              group={taskGroup}
-                              projects={projects}
-                              hasActiveTimer={hasActiveTimer}
-                              isExpanded={expanded}
-                              onToggle={() =>
-                                toggleTaskGroup(group.dateKey, taskGroup.key)
-                              }
-                              onResume={() => onResume(taskGroup.entries[0])}
-                            />
-                            {expanded &&
-                              taskGroup.entries.map((entry) => (
-                                <EntryRow
-                                  key={entry.id}
-                                  entry={entry}
-                                  clients={clients}
-                                  projects={projects}
-                                  tags={tags}
-                                  pending={pending}
-                                  isPending={pendingEntryIds?.has(entry.id)}
-                                  formatTime={formatTime}
-                                  hasActiveTimer={hasActiveTimer}
-                                  isSubEntry
-                                  currency={currency}
-                                  rateLookup={rateLookup}
-                                  onStartEdit={() => onStartEdit(entry)}
-                                  onUpdate={(patch) =>
-                                    onUpdate(entry.id, patch)
-                                  }
-                                  onResume={() => onResume(entry)}
-                                  onDuplicate={() => onDuplicate(entry.id)}
-                                  onDelete={() => onDelete(entry.id)}
-                                />
-                              ))}
-                          </Fragment>
-                        )
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
+                          if (!isGrouped) {
+                            const entry = taskGroup.entries[0]
+                            return (
+                              <EntryRow
+                                key={entry.id}
+                                entry={entry}
+                                clients={clients}
+                                projects={projects}
+                                tags={tags}
+                                pending={pending}
+                                isPending={pendingEntryIds?.has(entry.id)}
+                                formatTime={formatTime}
+                                hasActiveTimer={hasActiveTimer}
+                                currency={currency}
+                                rateLookup={rateLookup}
+                                onStartEdit={handleStartEdit}
+                                onUpdate={handleUpdate}
+                                onResume={handleResume}
+                                onDuplicate={handleDuplicate}
+                                onDelete={handleDelete}
+                              />
+                            )
+                          }
+
+                          return (
+                            <Fragment key={taskGroup.key}>
+                              <TaskGroupHeaderRow
+                                key={`header-${taskGroup.key}`}
+                                group={taskGroup}
+                                projects={projects}
+                                hasActiveTimer={hasActiveTimer}
+                                isExpanded={expanded}
+                                onToggle={() =>
+                                  toggleTaskGroup(group.dateKey, taskGroup.key)
+                                }
+                                onResume={() =>
+                                  handleResume(taskGroup.entries[0])
+                                }
+                              />
+                              {expanded &&
+                                taskGroup.entries.map((entry) => (
+                                  <EntryRow
+                                    key={entry.id}
+                                    entry={entry}
+                                    clients={clients}
+                                    projects={projects}
+                                    tags={tags}
+                                    pending={pending}
+                                    isPending={pendingEntryIds?.has(entry.id)}
+                                    formatTime={formatTime}
+                                    hasActiveTimer={hasActiveTimer}
+                                    isSubEntry
+                                    currency={currency}
+                                    rateLookup={rateLookup}
+                                    onStartEdit={handleStartEdit}
+                                    onUpdate={handleUpdate}
+                                    onResume={handleResume}
+                                    onDuplicate={handleDuplicate}
+                                    onDelete={handleDelete}
+                                  />
+                                ))}
+                            </Fragment>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
 
                 {/* Mobile cards */}
-                <div className="grid gap-2 border-t border-border/40 p-3 sm:hidden">
-                  {group.taskGroups.map((taskGroup) => {
-                    const isGrouped = taskGroup.entries.length > 1
-                    const expanded = isTaskGroupExpanded(
-                      group.dateKey,
-                      taskGroup.key,
-                    )
-
-                    if (!isGrouped) {
-                      const entry = taskGroup.entries[0]
-                      return (
-                        <EntryCard
-                          key={entry.id}
-                          entry={entry}
-                          projects={projects}
-                          tags={tags}
-                          currency={currency}
-                          rateLookup={rateLookup}
-                          pending={pending}
-                          isPending={pendingEntryIds?.has(entry.id)}
-                          formatTime={formatTime}
-                          hasActiveTimer={hasActiveTimer}
-                          onStartEdit={() => onStartEdit(entry)}
-                          onResume={() => onResume(entry)}
-                          onDuplicate={() => onDuplicate(entry.id)}
-                          onDelete={() => onDelete(entry.id)}
-                        />
+                {!isDesktop && (
+                  <div className="grid gap-2 border-t border-border/40 p-3 sm:hidden">
+                    {group.taskGroups.map((taskGroup) => {
+                      const isGrouped = taskGroup.entries.length > 1
+                      const expanded = isTaskGroupExpanded(
+                        group.dateKey,
+                        taskGroup.key,
                       )
-                    }
 
-                    return (
-                      <div
-                        key={`group-${taskGroup.key}`}
-                        className="grid gap-1.5"
-                      >
-                        <TaskGroupHeaderCard
-                          group={taskGroup}
-                          projects={projects}
-                          tags={tags}
-                          formatTime={formatTime}
-                          hasActiveTimer={hasActiveTimer}
-                          isExpanded={expanded}
-                          onToggle={() =>
-                            toggleTaskGroup(group.dateKey, taskGroup.key)
-                          }
-                          onResume={() => onResume(taskGroup.entries[0])}
-                        />
-                        {expanded &&
-                          taskGroup.entries.map((entry) => (
-                            <EntryCard
-                              key={entry.id}
-                              entry={entry}
-                              projects={projects}
-                              tags={tags}
-                              currency={currency}
-                              rateLookup={rateLookup}
-                              pending={pending}
-                              isPending={pendingEntryIds?.has(entry.id)}
-                              formatTime={formatTime}
-                              hasActiveTimer={hasActiveTimer}
-                              isSubEntry
-                              onStartEdit={() => onStartEdit(entry)}
-                              onResume={() => onResume(entry)}
-                              onDuplicate={() => onDuplicate(entry.id)}
-                              onDelete={() => onDelete(entry.id)}
-                            />
-                          ))}
-                      </div>
-                    )
-                  })}
-                </div>
+                      if (!isGrouped) {
+                        const entry = taskGroup.entries[0]
+                        return (
+                          <EntryCard
+                            key={entry.id}
+                            entry={entry}
+                            projects={projects}
+                            tags={tags}
+                            currency={currency}
+                            rateLookup={rateLookup}
+                            pending={pending}
+                            isPending={pendingEntryIds?.has(entry.id)}
+                            formatTime={formatTime}
+                            hasActiveTimer={hasActiveTimer}
+                            onStartEdit={handleStartEdit}
+                            onResume={handleResume}
+                            onDuplicate={handleDuplicate}
+                            onDelete={handleDelete}
+                          />
+                        )
+                      }
+
+                      return (
+                        <div
+                          key={`group-${taskGroup.key}`}
+                          className="grid gap-1.5"
+                        >
+                          <TaskGroupHeaderCard
+                            group={taskGroup}
+                            projects={projects}
+                            tags={tags}
+                            formatTime={formatTime}
+                            hasActiveTimer={hasActiveTimer}
+                            isExpanded={expanded}
+                            onToggle={() =>
+                              toggleTaskGroup(group.dateKey, taskGroup.key)
+                            }
+                            onResume={() => handleResume(taskGroup.entries[0])}
+                          />
+                          {expanded &&
+                            taskGroup.entries.map((entry) => (
+                              <EntryCard
+                                key={entry.id}
+                                entry={entry}
+                                projects={projects}
+                                tags={tags}
+                                currency={currency}
+                                rateLookup={rateLookup}
+                                pending={pending}
+                                isPending={pendingEntryIds?.has(entry.id)}
+                                formatTime={formatTime}
+                                hasActiveTimer={hasActiveTimer}
+                                isSubEntry
+                                onStartEdit={handleStartEdit}
+                                onResume={handleResume}
+                                onDuplicate={handleDuplicate}
+                                onDelete={handleDelete}
+                              />
+                            ))}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </>
             )}
           </div>

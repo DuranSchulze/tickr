@@ -18,10 +18,11 @@ export async function createManualEntry(
 ) {
   const access = await requireWorkspaceAccess()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
+  const projectId = data.projectId.trim() || null
   const startedAt = new Date(data.startedAt)
   const endedAt = data.endedAt ? new Date(data.endedAt) : null
 
-  await assertWorkspaceCatalogs(access.workspace.id, data.projectId, tagIds)
+  await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
 
   const [entry] = await db
     .insert(timeEntries)
@@ -29,7 +30,7 @@ export async function createManualEntry(
       workspaceId: access.workspace.id,
       workspaceMemberId: access.member.id,
       description: data.description,
-      projectId: data.projectId,
+      projectId,
       billable: data.billable,
       startedAt,
       endedAt,
@@ -62,10 +63,11 @@ export async function createManualEntry(
 export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
   const access = await requireWorkspaceAccess()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
+  const projectId = data.projectId.trim() || null
   const startedAt = new Date(data.startedAt)
   const endedAt = data.endedAt ? new Date(data.endedAt) : null
 
-  await assertWorkspaceCatalogs(access.workspace.id, data.projectId, tagIds)
+  await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
 
   const [existingEntry] = await db
     .select()
@@ -89,7 +91,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
     .update(timeEntries)
     .set({
       description: data.description,
-      projectId: data.projectId,
+      projectId,
       billable: data.billable,
       startedAt,
       endedAt,
@@ -107,9 +109,9 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
       .onConflictDoNothing()
   }
 
-  if (endedAt && !existingEntry.endedAt) {
-    await enqueueTimeEntry(access.workspace.id, existingEntry.id)
-  }
+  // Any edit can change what the synced sheet shows (times, description,
+  // project, billable), so always flag the workspace for re-sync.
+  await enqueueTimeEntry(access.workspace.id, existingEntry.id)
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -125,7 +127,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
 export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
   const access = await requireWorkspaceAccess()
 
-  await db
+  const deleted = await db
     .delete(timeEntries)
     .where(
       and(
@@ -134,6 +136,11 @@ export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
         eq(timeEntries.workspaceMemberId, access.member.id),
       ),
     )
+    .returning({ id: timeEntries.id })
+
+  if (deleted.length > 0) {
+    await enqueueTimeEntry(access.workspace.id, data.id)
+  }
 
   void createAuditLog({
     workspaceId: access.workspace.id,

@@ -33,10 +33,12 @@ export const EntryCard = memo(function EntryCard({
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isSubEntry?: boolean
-  onStartEdit: () => void
-  onResume: () => void
-  onDuplicate: () => void
-  onDelete: () => void
+  // Entry-aware handlers: the same stable function reference is shared by
+  // every card, so React.memo can actually skip unchanged cards.
+  onStartEdit: (entry: TimeEntry) => void
+  onResume: (entry: TimeEntry) => void
+  onDuplicate: (entryId: string) => void
+  onDelete: (entryId: string) => void
 }) {
   const isRunning = !entry.endedAt
   const tick = useNowTick(isRunning ? 1000 : null)
@@ -81,7 +83,7 @@ export const EntryCard = memo(function EntryCard({
             <div className="flex gap-1">
               <button
                 type="button"
-                onClick={onStartEdit}
+                onClick={() => onStartEdit(entry)}
                 disabled={actionsDisabled}
                 className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
                 aria-label="Edit entry"
@@ -110,7 +112,7 @@ export const EntryCard = memo(function EntryCard({
           variant="destructive"
           onConfirm={() => {
             if (actionsDisabled) return
-            onDelete()
+            onDelete(entry.id)
             setShowDeleteDialog(false)
           }}
           pending={pending}
@@ -193,7 +195,7 @@ export const EntryCard = memo(function EntryCard({
           {entry.endedAt && (
             <button
               type="button"
-              onClick={onResume}
+              onClick={() => onResume(entry)}
               disabled={actionsDisabled || hasActiveTimer}
               title={
                 hasActiveTimer
@@ -208,7 +210,7 @@ export const EntryCard = memo(function EntryCard({
           )}
           <button
             type="button"
-            onClick={onStartEdit}
+            onClick={() => onStartEdit(entry)}
             disabled={actionsDisabled}
             className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
             aria-label="Edit entry"
@@ -244,7 +246,7 @@ export const EntryCard = memo(function EntryCard({
         confirmLabel="Duplicate"
         onConfirm={() => {
           if (actionsDisabled) return
-          onDuplicate()
+          onDuplicate(entry.id)
           setShowDuplicateDialog(false)
         }}
         pending={pending}
@@ -259,7 +261,7 @@ export const EntryCard = memo(function EntryCard({
         variant="destructive"
         onConfirm={() => {
           if (actionsDisabled) return
-          onDelete()
+          onDelete(entry.id)
           setShowDeleteDialog(false)
         }}
         pending={pending}

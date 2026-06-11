@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
+import { gooeyToast } from 'goey-toast'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
+import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { calculateManualSeconds, emptyDraft, toEntryPayload } from '../utils'
 import type { DraftEntry } from '../utils'
@@ -10,6 +12,8 @@ export function useDraftAndEdit({
   mutations,
   lookupEntries,
   onMutated,
+  isOnline = true,
+  onOfflineCreate,
 }: {
   state: TrackerState
   mutations: ReturnType<typeof useTrackerMutations>
@@ -20,6 +24,10 @@ export function useDraftAndEdit({
   // Called after a successful create/update so views backed by their own
   // local list (the paginated "all" view) can refresh.
   onMutated?: () => void
+  isOnline?: boolean
+  // Shows an offline-queued manual entry in the dashboard immediately
+  // (it lands in the pending-entries store until the reconnect drain syncs it).
+  onOfflineCreate?: (entry: TimeEntry) => void
 }) {
   // Fall back to state.entries when no explicit lookup list is provided.
   const entries = lookupEntries ?? state.entries
@@ -60,6 +68,16 @@ export function useDraftAndEdit({
     [resolvedEditingId, entries],
   )
 
+  function resetDraft() {
+    setDraft(
+      emptyDraft(
+        initialClientId,
+        initialProject?.id || '',
+        state.tags[0]?.id || '',
+      ),
+    )
+  }
+
   function addManualEntry() {
     if (
       !draft.description.trim() ||
@@ -68,15 +86,38 @@ export function useDraftAndEdit({
       calculateManualSeconds(draft) <= 0
     )
       return
-    void mutations.addManualEntry(toEntryPayload(draft), {
+
+    const payload = toEntryPayload(draft)
+
+    if (!isOnline) {
+      const optimisticId = `optimistic-manual-${crypto.randomUUID()}`
+      enqueueOfflineMutation(state.workspace.id, {
+        type: 'createManualEntry',
+        optimisticId,
+        payload,
+      })
+      onOfflineCreate?.({
+        id: optimisticId,
+        workspaceMemberId: state.currentMemberId,
+        description: payload.description,
+        projectId: payload.projectId,
+        tagIds: payload.tagIds,
+        billable: payload.billable,
+        startedAt: payload.startedAt,
+        endedAt: payload.endedAt,
+        durationSeconds: payload.durationSeconds,
+        notes: payload.notes,
+      })
+      gooeyToast.success('Entry saved offline', {
+        description: 'It will sync when you reconnect.',
+      })
+      resetDraft()
+      return
+    }
+
+    void mutations.addManualEntry(payload, {
       onSuccess: () => {
-        setDraft(
-          emptyDraft(
-            initialClientId,
-            initialProject?.id || '',
-            state.tags[0]?.id || '',
-          ),
-        )
+        resetDraft()
         onMutated?.()
       },
     })

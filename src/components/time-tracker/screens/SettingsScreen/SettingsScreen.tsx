@@ -6,6 +6,7 @@ import { GoogleSheetSyncButton } from '../../dashboard/GoogleSheetSyncButton'
 import { TimeFormatPicker } from '../../dashboard/TimeFormatPicker'
 import { Page } from '../shared/Page'
 import { SmtpTestPanel } from './SmtpTestPanel'
+import { ResendTestPanel } from './ResendTestPanel'
 import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
 
 export function SettingsScreen({ state }: { state: TrackerState }) {
@@ -87,6 +88,8 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
       />
 
       {isOwnerOrAdmin && <SmtpTestPanel defaultEmail={currentMember.email} />}
+
+      {isOwnerOrAdmin && <ResendTestPanel defaultEmail={currentMember.email} />}
     </Page>
   )
 }
