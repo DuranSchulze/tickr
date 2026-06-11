@@ -1,18 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Clockify Timer",
+  "name": "Time Tracker",
   "version": "1.0.0",
-  "description": "Quick time tracking from your browser side panel",
+  "description": "Track time effortlessly from your browser side panel",
   "permissions": ["sidePanel", "storage", "activeTab", "tabs"],
   "host_permissions": [
     "http://localhost:3000/*",
-    "https://flow-track-theta.vercel.app/*"
+    "https://flow-track-theta.vercel.app/*",
+    "https://tickr-nu.vercel.app/*"
   ],
   "side_panel": {
     "default_path": "sidepanel.html"
   },
   "action": {
-    "default_title": "Open Clockify Timer",
+    "default_title": "Open Time Tracker",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

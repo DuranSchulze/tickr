@@ -8,6 +8,7 @@ export function DescriptionAutocomplete({
   onSubmit,
   disabled = false,
   placeholder = 'What are you working on?',
+  bare = false,
 }: {
   value: string
   onChange: (value: string) => void
@@ -16,6 +17,8 @@ export function DescriptionAutocomplete({
   onSubmit?: () => void
   disabled?: boolean
   placeholder?: string
+  /** Borderless variant for use inside the unified timer bar. */
+  bare?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -34,7 +37,7 @@ export function DescriptionAutocomplete({
   }, [])
 
   return (
-    <div ref={wrapperRef} className="relative">
+    <div ref={wrapperRef} className={bare ? 'relative h-full' : 'relative'}>
       <input
         value={value}
         onChange={(e) => {
@@ -49,7 +52,11 @@ export function DescriptionAutocomplete({
         placeholder={placeholder}
         aria-label={placeholder}
         disabled={disabled}
-        className="h-11 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
+        className={
+          bare
+            ? 'h-full w-full bg-transparent px-3 text-sm font-medium text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground disabled:text-muted-foreground'
+            : 'h-11 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground'
+        }
       />
       {open && suggestions.length > 0 && !disabled && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg">

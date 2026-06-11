@@ -27,7 +27,11 @@
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:seed": "dotenv -e .env.local -- tsx src/db/seed.ts",
     "prepare": "husky || true",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "npx react-doctor@latest",
+    "extension:dev": "echo 'Extension is ready at extension/ — edit config.js and load unpacked in chrome://extensions'",
+    "extension:build": "./extension/build.sh",
+    "extension:build:prod": "APP_URL=https://tickr-nu.vercel.app ./extension/build.sh",
+    "extension:zip": "./extension/build.sh"
   },
   "dependencies": {
     "@better-auth/infra": "^0.2.3",

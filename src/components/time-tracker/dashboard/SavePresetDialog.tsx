@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { DollarSign } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,9 @@ import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
 import { savePreset } from '#/lib/time-tracker/presets'
 import type { Client, Project } from '#/lib/time-tracker/types'
+import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
+import { TagPicker } from '../pickers/TagPicker'
 
 type SavePresetDialogProps = {
   open: boolean
@@ -22,9 +26,14 @@ type SavePresetDialogProps = {
   billable: boolean
   clients: Client[]
   projects: Project[]
-  tags: { id: string; name: string }[]
+  tags: SearchableItem[]
 }
 
+/**
+ * Create a timer preset. The selection is fully editable here — the current
+ * timer values only pre-fill the form, so a preset can be built from scratch
+ * without first configuring the timer.
+ */
 export function SavePresetDialog({
   open,
   onOpenChange,
@@ -38,14 +47,28 @@ export function SavePresetDialog({
   tags,
 }: SavePresetDialogProps) {
   const [name, setName] = useState('')
+  const [draftClientId, setDraftClientId] = useState(clientId)
+  const [draftProjectId, setDraftProjectId] = useState(projectId)
+  const [draftTagIds, setDraftTagIds] = useState<string[]>(tagIds)
+  const [draftBillable, setDraftBillable] = useState(billable)
   const [error, setError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
-  const client = clients.find((c) => c.id === clientId)
-  const project = projects.find((p) => p.id === projectId)
-  const selectedTags = tags.filter((t) => tagIds.includes(t.id))
+  // Re-seed the form from the timer's current selection each time it opens.
+  useEffect(() => {
+    if (open) {
+      setName('')
+      setDraftClientId(clientId)
+      setDraftProjectId(projectId)
+      setDraftTagIds(tagIds)
+      setDraftBillable(billable)
+      setError(null)
+    }
+  }, [open, clientId, projectId, tagIds, billable])
 
-  const canSave = name.trim().length > 0 && clientId && projectId
+  const activeClients = clients.filter((c) => c.clientStatus === 'ACTIVE')
+
+  const canSave = name.trim().length > 0 && draftClientId && draftProjectId
 
   function handleSave() {
     if (!canSave) return
@@ -55,14 +78,13 @@ export function SavePresetDialog({
 
     const result = savePreset(workspaceId, {
       name: name.trim(),
-      clientId,
-      projectId,
-      tagIds,
-      billable,
+      clientId: draftClientId,
+      projectId: draftProjectId,
+      tagIds: draftTagIds.filter(Boolean),
+      billable: draftBillable,
     })
 
     if (result.success) {
-      setName('')
       onOpenChange(false)
     } else {
       setError(result.error || 'Failed to save preset')
@@ -72,24 +94,23 @@ export function SavePresetDialog({
   }
 
   function handleClose() {
-    setName('')
-    setError(null)
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md overflow-visible">
         <DialogHeader>
-          <DialogTitle>Save Timer Preset</DialogTitle>
+          <DialogTitle>New Timer Preset</DialogTitle>
           <DialogDescription>
-            Give this timer configuration a name to reuse it later.
+            Pick a client, project and tags, then name the preset to reuse it
+            with one click.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="preset-name">Preset Name</Label>
+        <div className="grid gap-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="preset-name">Preset name</Label>
             <Input
               id="preset-name"
               value={name}
@@ -101,30 +122,45 @@ export function SavePresetDialog({
             />
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/50 p-3 text-sm">
-            <p className="m-0 mb-2 font-semibold text-muted-foreground">
-              Current selection:
-            </p>
-            <div className="grid gap-1 text-muted-foreground">
-              <div>
-                <span className="font-medium">Client:</span>{' '}
-                {client?.name || 'None selected'}
-              </div>
-              <div>
-                <span className="font-medium">Project:</span>{' '}
-                {project?.name || 'None selected'}
-              </div>
-              <div>
-                <span className="font-medium">Tags:</span>{' '}
-                {selectedTags.length > 0
-                  ? selectedTags.map((t) => t.name).join(', ')
-                  : 'None'}
-              </div>
-              <div>
-                <span className="font-medium">Billable:</span>{' '}
-                {billable ? 'Yes' : 'No'}
-              </div>
+          <div className="grid gap-1.5">
+            <Label>Client / Project</Label>
+            <ClientProjectPicker
+              clients={activeClients}
+              projects={projects}
+              clientId={draftClientId}
+              projectId={draftProjectId}
+              onChange={(cid, pid) => {
+                setDraftClientId(cid)
+                setDraftProjectId(pid)
+              }}
+            />
+          </div>
+
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
+            <div className="grid gap-1.5">
+              <Label>Tags</Label>
+              <TagPicker
+                tags={tags}
+                value={draftTagIds}
+                onChange={setDraftTagIds}
+                onCreate={async () => {}}
+                canCreate={false}
+              />
             </div>
+            <button
+              type="button"
+              onClick={() => setDraftBillable(!draftBillable)}
+              aria-pressed={draftBillable}
+              title={draftBillable ? 'Billable' : 'Non-billable'}
+              className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+                draftBillable
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <DollarSign className="size-4" />
+              Billable
+            </button>
           </div>
 
           {error && (

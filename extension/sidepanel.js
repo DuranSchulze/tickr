@@ -5,14 +5,20 @@ const frame = document.getElementById('app-frame')
 frame.addEventListener('load', () => {
   overlay.classList.add('hidden')
   // After fade, remove from layout
-  setTimeout(() => { overlay.style.display = 'none' }, 250)
+  setTimeout(() => {
+    overlay.style.display = 'none'
+  }, 250)
 })
 
 // Relay timer state messages from the iframe to the background service worker
 // so it can update the extension badge
 window.addEventListener('message', (event) => {
   if (event.data?.type === 'CLOCKIFY_TIMER_STATE') {
-    chrome.runtime.sendMessage({ type: 'TIMER_UPDATE', ...event.data }).catch(() => {})
+    // Relay timer state to the background service worker for badge updates.
+    // NOTE: type must come AFTER the spread to override event.data.type.
+    chrome.runtime
+      .sendMessage({ ...event.data, type: 'TIMER_UPDATE' })
+      .catch(() => {})
   }
 })
 
@@ -22,7 +28,9 @@ async function capturePageInfo() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     if (!tab?.id || !tab.url || tab.url.startsWith('chrome://')) return
 
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_PAGE_INFO' }).catch(() => null)
+    const response = await chrome.tabs
+      .sendMessage(tab.id, { type: 'GET_PAGE_INFO' })
+      .catch(() => null)
     if (response) {
       await chrome.storage.session.set({ pageInfo: response })
     }

@@ -1,7 +1,13 @@
 // Open side panel when the action icon is clicked
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {})
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch(() => {
+    // Already set or not available — silently ignore
+  })
 
-// Update badge based on timer state messages relayed from the side panel
+// ── Timer badge ──────────────────────────────────────────────────────────────
+// The side panel relays timer state from the iframe; we update the extension
+// badge to show the current running time at a glance.
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type !== 'TIMER_UPDATE') return
 
@@ -16,5 +22,16 @@ chrome.runtime.onMessage.addListener((msg) => {
     chrome.action.setBadgeTextColor({ color: '#ffffff' })
   } else {
     chrome.action.setBadgeText({ text: '' })
+  }
+})
+
+// ── Install / update handler ─────────────────────────────────────────────────
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    console.log(
+      '[Time Tracker] Extension installed. Click the toolbar icon to open the side panel.',
+    )
+  } else if (details.reason === 'update') {
+    console.log('[Time Tracker] Extension updated.')
   }
 })

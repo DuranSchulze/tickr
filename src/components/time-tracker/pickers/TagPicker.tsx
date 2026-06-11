@@ -8,6 +8,7 @@ export function TagPicker({
   onCreate,
   disabled = false,
   canCreate = true,
+  bare = false,
 }: {
   tags: SearchableItem[]
   value: string[]
@@ -15,6 +16,8 @@ export function TagPicker({
   onCreate: (name: string, color: string) => Promise<void>
   disabled?: boolean
   canCreate?: boolean
+  /** Borderless trigger variant for use inside the unified timer bar. */
+  bare?: boolean
 }) {
   return (
     <SearchableCreatePopover
@@ -25,6 +28,7 @@ export function TagPicker({
       onCreate={onCreate}
       disabled={disabled}
       canCreate={canCreate}
+      bare={bare}
       searchPlaceholder="Search tags…"
       emptyText="No tags found"
       createLabel="New tag"
@@ -39,8 +43,9 @@ export function TagPicker({
             {selected.slice(0, 2).map((t) => (
               <span
                 key={t.id}
-                className="shrink-0 rounded px-1.5 py-0.5 text-xs font-bold"
+                className="max-w-[100px] truncate rounded px-1.5 py-0.5 text-xs font-bold"
                 style={{ backgroundColor: t.color + '22', color: t.color }}
+                title={t.name}
               >
                 {t.name}
               </span>

@@ -139,57 +139,102 @@ export function TimerPanel({
 
   return (
     <div className="grid min-w-0 gap-3">
-      <div
-        className={
-          'grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] md:grid-cols-[minmax(0,1fr)_160px_44px_auto_130px] lg:grid-cols-[minmax(0,1fr)_180px_180px_44px_auto_130px]'
-        }
-      >
-        <DescriptionAutocomplete
-          value={description}
-          onChange={onDescriptionChange}
-          suggestions={descriptionSuggestions}
-          onApplySuggestion={onApplySuggestion}
-          onSubmit={activeEntry ? onStop : onStart}
-        />
-        <div className="hidden md:block">
-          <ClientProjectPicker
-            clients={activeClients}
-            projects={projects}
-            clientId={clientId}
-            projectId={projectId}
-            onChange={(cid, pid) => {
-              onClientIdChange(cid)
-              onProjectIdChange(pid)
-            }}
-          />
+      {/* Unified Clockify-style bar: description | client/project | tags | $ |
+          presets | start-stop — one continuous control with thin dividers
+          instead of separate boxed inputs. */}
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex h-12 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
+          <div className="min-w-0 flex-1">
+            <DescriptionAutocomplete
+              value={description}
+              onChange={onDescriptionChange}
+              suggestions={descriptionSuggestions}
+              onApplySuggestion={onApplySuggestion}
+              onSubmit={activeEntry ? onStop : onStart}
+              bare
+            />
+          </div>
+
+          <div className="my-2.5 hidden w-px bg-border md:block" />
+          <div className="hidden w-44 overflow-hidden md:block lg:w-52">
+            <ClientProjectPicker
+              clients={activeClients}
+              projects={projects}
+              clientId={clientId}
+              projectId={projectId}
+              onChange={(cid, pid) => {
+                onClientIdChange(cid)
+                onProjectIdChange(pid)
+              }}
+              bare
+            />
+          </div>
+
+          <div className="my-2.5 hidden w-px bg-border lg:block" />
+          <div className="hidden w-40 overflow-hidden lg:block">
+            <TagPicker
+              tags={tags}
+              value={tagIds}
+              onChange={onTagIdsChange}
+              onCreate={onCreateTag}
+              canCreate={canManageCatalog}
+              bare
+            />
+          </div>
+
+          <div className="my-2.5 hidden w-px bg-border md:block" />
+          <div className="hidden items-center gap-0.5 px-1.5 md:flex">
+            <BillableToggleButton
+              pressed={billable}
+              onPressedChange={onBillableChange}
+              className="size-9 border-0 shadow-none"
+            />
+            <PresetDropdown
+              workspaceId={workspaceId}
+              clientId={clientId}
+              projectId={projectId}
+              tagIds={tagIds}
+              billable={billable}
+              clients={clients}
+              projects={projects}
+              tags={tags as Tag[]}
+              onApplyPreset={onApplyPreset}
+              bare
+            />
+          </div>
+
+          <div className="hidden items-center py-1.5 pr-1.5 sm:flex">
+            <button
+              type="button"
+              onClick={activeEntry ? onStop : onStart}
+              disabled={activeEntry ? stopPending || stopBlocked : startPending}
+              title={stopBlocked ? stopBlockedReason : undefined}
+              className={`inline-flex h-full items-center justify-center gap-2 rounded-md px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[110px] ${
+                activeEntry
+                  ? 'bg-destructive text-destructive-foreground hover:brightness-110'
+                  : 'bg-primary text-primary-foreground hover:brightness-110'
+              }`}
+            >
+              {activeEntry ? (
+                stopPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Square className="size-4 fill-current" />
+                )
+              ) : startPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Play className="size-4" />
+              )}
+              {activeEntry ? 'Stop' : 'Start'}
+              <Kbd className="bg-white/20 text-white/80 hidden lg:inline-flex">
+                ↵
+              </Kbd>
+            </button>
+          </div>
         </div>
-        <div className="hidden lg:block">
-          <TagPicker
-            tags={tags}
-            value={tagIds}
-            onChange={onTagIdsChange}
-            onCreate={onCreateTag}
-            canCreate={canManageCatalog}
-          />
-        </div>
-        <BillableToggleButton
-          pressed={billable}
-          onPressedChange={onBillableChange}
-          className="hidden md:inline-flex"
-        />
-        <div className="hidden md:block">
-          <PresetDropdown
-            workspaceId={workspaceId}
-            clientId={clientId}
-            projectId={projectId}
-            tagIds={tagIds}
-            billable={billable}
-            clients={clients}
-            projects={projects}
-            tags={tags as Tag[]}
-            onApplyPreset={onApplyPreset}
-          />
-        </div>
+
+        {/* Mobile-only controls below/beside the bar */}
         <button
           type="button"
           onClick={() => setOptionsOpen(true)}
@@ -203,7 +248,7 @@ export function TimerPanel({
           onClick={activeEntry ? onStop : onStart}
           disabled={activeEntry ? stopPending || stopBlocked : startPending}
           title={stopBlocked ? stopBlockedReason : undefined}
-          className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[130px] sm:w-auto ${
+          className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:hidden ${
             activeEntry
               ? 'bg-destructive text-destructive-foreground hover:brightness-110'
               : 'bg-primary text-primary-foreground hover:brightness-110'
@@ -221,9 +266,6 @@ export function TimerPanel({
             <Play className="size-4" />
           )}
           {activeEntry ? 'Stop timer' : 'Start'}
-          <Kbd className="bg-white/20 text-white/80 hidden sm:inline-flex">
-            ↵
-          </Kbd>
         </button>
       </div>
 

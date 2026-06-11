@@ -74,73 +74,77 @@ export async function ensureAllCatalogHeaders(
     ]),
   )
 
-  for (const { tab, headers } of configs) {
-    const numericSheetId = numericIdByTitle.get(tab)
-    if (numericSheetId == null) continue
+  // Tabs are independent — check/fix all four in parallel instead of paying
+  // up to 12 sequential Sheets API round trips.
+  await Promise.all(
+    configs.map(async ({ tab, headers }) => {
+      const numericSheetId = numericIdByTitle.get(tab)
+      if (numericSheetId == null) return
 
-    try {
-      const lastCol = String.fromCharCode(
-        'A'.charCodeAt(0) + headers.length - 1,
-      )
-      const res = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: `${tab}!A1:${lastCol}1`,
-      })
-      const existing = res.data.values?.[0] ?? []
-      const needsWrite = headers.some((h, i) => existing[i]?.trim() !== h)
+      try {
+        const lastCol = String.fromCharCode(
+          'A'.charCodeAt(0) + headers.length - 1,
+        )
+        const res = await sheets.spreadsheets.values.get({
+          spreadsheetId: sheetId,
+          range: `${tab}!A1:${lastCol}1`,
+        })
+        const existing = res.data.values?.[0] ?? []
+        const needsWrite = headers.some((h, i) => existing[i]?.trim() !== h)
 
-      if (!needsWrite) continue
+        if (!needsWrite) return
 
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: sheetId,
-        range: `${tab}!A1`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [headers as unknown as string[]] },
-      })
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: sheetId,
+          range: `${tab}!A1`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [headers as unknown as string[]] },
+        })
 
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: sheetId,
-        requestBody: {
-          requests: [
-            {
-              updateSheetProperties: {
-                properties: {
-                  sheetId: numericSheetId,
-                  gridProperties: { frozenRowCount: 1 },
-                },
-                fields: 'gridProperties.frozenRowCount',
-              },
-            },
-            {
-              repeatCell: {
-                range: {
-                  sheetId: numericSheetId,
-                  startRowIndex: 0,
-                  endRowIndex: 1,
-                  startColumnIndex: 0,
-                  endColumnIndex: headers.length,
-                },
-                cell: { userEnteredFormat: { textFormat: { bold: true } } },
-                fields: 'userEnteredFormat.textFormat.bold',
-              },
-            },
-            {
-              autoResizeDimensions: {
-                dimensions: {
-                  sheetId: numericSheetId,
-                  dimension: 'COLUMNS',
-                  startIndex: 0,
-                  endIndex: headers.length,
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: sheetId,
+          requestBody: {
+            requests: [
+              {
+                updateSheetProperties: {
+                  properties: {
+                    sheetId: numericSheetId,
+                    gridProperties: { frozenRowCount: 1 },
+                  },
+                  fields: 'gridProperties.frozenRowCount',
                 },
               },
-            },
-          ],
-        },
-      })
-    } catch {
-      // Tab may not exist yet or sheet permissions error — skip silently
-    }
-  }
+              {
+                repeatCell: {
+                  range: {
+                    sheetId: numericSheetId,
+                    startRowIndex: 0,
+                    endRowIndex: 1,
+                    startColumnIndex: 0,
+                    endColumnIndex: headers.length,
+                  },
+                  cell: { userEnteredFormat: { textFormat: { bold: true } } },
+                  fields: 'userEnteredFormat.textFormat.bold',
+                },
+              },
+              {
+                autoResizeDimensions: {
+                  dimensions: {
+                    sheetId: numericSheetId,
+                    dimension: 'COLUMNS',
+                    startIndex: 0,
+                    endIndex: headers.length,
+                  },
+                },
+              },
+            ],
+          },
+        })
+      } catch {
+        // Tab may not exist yet or sheet permissions error — skip silently
+      }
+    }),
+  )
 }
 
 export async function ensureCatalogTabsForWorkspace(): Promise<void> {
@@ -259,11 +263,18 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
       byNameMap.get(c.name.toLowerCase()) ??
       null
     if (existing) {
-      toUpdate.push({
-        id: existing.id,
-        name: c.name,
-        clientStatus: c.clientStatus,
-      })
+      // Only write rows that actually changed — on a routine sync nearly all
+      // rows are unchanged, and each update is a full DB round trip.
+      if (
+        existing.name !== c.name ||
+        existing.clientStatus !== c.clientStatus
+      ) {
+        toUpdate.push({
+          id: existing.id,
+          name: c.name,
+          clientStatus: c.clientStatus,
+        })
+      }
       resolvedIds.set(sheetRow, existing.id)
     } else {
       toInsert.push({
@@ -415,13 +426,22 @@ export async function importProjectsFromSheet(): Promise<ImportStepResult> {
     const clientId = clientNameToId.get(p.clientName.toLowerCase())
 
     if (existing) {
-      toUpdate.push({
-        id: existing.id,
-        name: p.name,
-        color: p.color,
-        archived: p.archived,
-        clientId: clientId ?? existing.clientId,
-      })
+      const nextClientId = clientId ?? existing.clientId
+      // Only write rows that actually changed (see clients step).
+      if (
+        existing.name !== p.name ||
+        existing.color !== p.color ||
+        existing.archived !== p.archived ||
+        existing.clientId !== nextClientId
+      ) {
+        toUpdate.push({
+          id: existing.id,
+          name: p.name,
+          color: p.color,
+          archived: p.archived,
+          clientId: nextClientId,
+        })
+      }
       resolvedIds.set(sheetRow, existing.id)
     } else {
       if (!clientId) {
@@ -441,10 +461,12 @@ export async function importProjectsFromSheet(): Promise<ImportStepResult> {
     }
   }
 
-  await runInBatches(toUpdate, ({ id, name, color, archived }) =>
+  // clientId is included so re-assigning a project to another client in the
+  // sheet actually moves it (it was previously silently ignored).
+  await runInBatches(toUpdate, ({ id, name, color, archived, clientId }) =>
     db
       .update(projects)
-      .set({ name, color, archived })
+      .set({ name, color, archived, clientId })
       .where(eq(projects.id, id))
       .then(() => undefined),
   )
@@ -560,12 +582,19 @@ export async function importTagsFromSheet(): Promise<ImportStepResult> {
       byNameMap.get(t.name.toLowerCase()) ??
       null
     if (existing) {
-      toUpdate.push({
-        id: existing.id,
-        name: t.name,
-        color: t.color,
-        archived: t.archived,
-      })
+      // Only write rows that actually changed (see clients step).
+      if (
+        existing.name !== t.name ||
+        existing.color !== t.color ||
+        existing.archived !== t.archived
+      ) {
+        toUpdate.push({
+          id: existing.id,
+          name: t.name,
+          color: t.color,
+          archived: t.archived,
+        })
+      }
       resolvedIds.set(sheetRow, existing.id)
     } else {
       toInsert.push({
@@ -709,12 +738,20 @@ export async function importDepartmentsFromSheet(): Promise<ImportStepResult> {
       byNameMap.get(d.name.toLowerCase()) ??
       null
     if (existing) {
-      toUpdate.push({
-        id: existing.id,
-        name: d.name,
-        color: d.color,
-        description: d.description || null,
-      })
+      const nextDescription = d.description || null
+      // Only write rows that actually changed (see clients step).
+      if (
+        existing.name !== d.name ||
+        existing.color !== d.color ||
+        (existing.description ?? null) !== nextDescription
+      ) {
+        toUpdate.push({
+          id: existing.id,
+          name: d.name,
+          color: d.color,
+          description: nextDescription,
+        })
+      }
       resolvedIds.set(sheetRow, existing.id)
     } else {
       toInsert.push({
@@ -810,11 +847,15 @@ export type SyncResult = {
 export async function syncCatalogsWithSheet(): Promise<SyncResult> {
   const { access, workspace } = await resolveWorkspaceSheet()
 
-  // importClientsFromSheet ensures tabs/headers exist, then does the upsert
+  // importClientsFromSheet ensures tabs/headers exist, then does the upsert.
+  // Projects need clients resolved first; tags and departments are independent
+  // of both, so they run in parallel with the projects step.
   const clientsResult = await importClientsFromSheet()
-  const projectsResult = await importProjectsFromSheet()
-  const tagsResult = await importTagsFromSheet()
-  const departmentsResult = await importDepartmentsFromSheet()
+  const [projectsResult, tagsResult, departmentsResult] = await Promise.all([
+    importProjectsFromSheet(),
+    importTagsFromSheet(),
+    importDepartmentsFromSheet(),
+  ])
 
   void createAuditLog({
     workspaceId: workspace.id,
@@ -852,16 +893,23 @@ export type ImportResult = {
 
 export async function importCatalogsFromSheet(): Promise<ImportResult> {
   const clientsResult = await importClientsFromSheet()
-  const projectsResult = await importProjectsFromSheet()
-  const tagsResult = await importTagsFromSheet()
-  const departmentsResult = await importDepartmentsFromSheet()
+  const [projectsResult, tagsResult, departmentsResult] = await Promise.all([
+    importProjectsFromSheet(),
+    importTagsFromSheet(),
+    importDepartmentsFromSheet(),
+  ])
 
   return {
     clients: clientsResult.count,
     projects: projectsResult.count,
     tags: tagsResult.count,
     departments: departmentsResult.count,
-    warnings: [...projectsResult.warnings],
+    warnings: [
+      ...clientsResult.warnings,
+      ...projectsResult.warnings,
+      ...tagsResult.warnings,
+      ...departmentsResult.warnings,
+    ],
   }
 }
 

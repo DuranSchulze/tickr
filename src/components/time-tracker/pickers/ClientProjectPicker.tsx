@@ -18,6 +18,8 @@ interface Props {
   onChange: (clientId: string, projectId: string) => void
   disabled?: boolean
   placeholder?: string
+  /** Borderless variant for use inside the unified timer bar. */
+  bare?: boolean
 }
 
 type GroupedRow =
@@ -32,6 +34,7 @@ export function ClientProjectPicker({
   onChange,
   disabled = false,
   placeholder = 'Client / Project',
+  bare = false,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -130,14 +133,18 @@ export function ClientProjectPicker({
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={bare ? 'relative h-full' : 'relative'}>
       {/* Trigger — wrapped in a group so the tooltip can use group-hover */}
-      <div className="group relative">
+      <div className={bare ? 'group relative h-full' : 'group relative'}>
         <button
           type="button"
           disabled={disabled}
           onClick={() => !disabled && setOpen((o) => !o)}
-          className="flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          className={
+            bare
+              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
+              : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+          }
         >
           <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
             {hasSelection ? (
@@ -146,7 +153,10 @@ export function ClientProjectPicker({
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: selectedProject!.color }}
                 />
-                <span className="truncate text-left">
+                <div
+                  className="min-w-0 truncate text-left"
+                  title={`${selectedClient?.name ?? ''} › ${selectedProject!.name}`}
+                >
                   {selectedClient?.name ?? ''}
                   <span className="text-muted-foreground">
                     {' '}
@@ -155,7 +165,7 @@ export function ClientProjectPicker({
                       {selectedProject!.name}
                     </span>
                   </span>
-                </span>
+                </div>
               </>
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>

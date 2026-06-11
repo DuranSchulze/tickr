@@ -27,6 +27,8 @@ type PresetDropdownProps = {
     tagIds: string[]
     billable: boolean
   }) => void
+  /** Compact icon-only trigger for use inside the unified timer bar. */
+  bare?: boolean
 }
 
 export function PresetDropdown({
@@ -39,14 +41,13 @@ export function PresetDropdown({
   projects,
   tags,
   onApplyPreset,
+  bare = false,
 }: PresetDropdownProps) {
   const [open, setOpen] = useState(false)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
   const [, forceUpdate] = useState({})
 
   const presets = useMemo(() => getPresets(workspaceId), [workspaceId, open])
-
-  const canSaveCurrent = clientId && projectId
 
   function handleApplyPreset(preset: {
     clientId: string
@@ -80,20 +81,34 @@ export function PresetDropdown({
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="inline-flex h-11 items-center justify-center gap-2 px-3"
-          >
-            <Bookmark className="size-4" />
-            <span className="hidden sm:inline">Presets</span>
-            <ChevronDown className="size-4" />
-          </Button>
+          {bare ? (
+            <button
+              type="button"
+              title="Presets"
+              aria-label="Presets"
+              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <Bookmark className="size-4" />
+            </button>
+          ) : (
+            <Button
+              variant="outline"
+              className="inline-flex h-11 items-center justify-center gap-2 px-3"
+            >
+              <Bookmark className="size-4" />
+              <span className="hidden sm:inline">Presets</span>
+              <ChevronDown className="size-4" />
+            </Button>
+          )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuContent align="end" className="w-72">
+          <p className="m-0 px-2 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Presets
+          </p>
           {presets.length === 0 ? (
-            <DropdownMenuItem disabled>
-              <span className="text-muted-foreground">No saved presets</span>
-            </DropdownMenuItem>
+            <p className="m-0 px-2 pb-2 pt-1 text-sm text-muted-foreground">
+              No presets yet — create one below.
+            </p>
           ) : (
             presets.map((preset) => {
               const client = clients.find((c) => c.id === preset.clientId)
@@ -106,21 +121,39 @@ export function PresetDropdown({
                 <DropdownMenuItem
                   key={preset.id}
                   onClick={() => handleApplyPreset(preset)}
-                  className="flex items-start justify-between gap-2 py-2"
+                  className="group flex items-center justify-between gap-2 py-2"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{preset.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {client?.name || 'Unknown client'} •{' '}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: project?.color ?? '#94a3b8' }}
+                      />
+                      <span className="truncate font-semibold">
+                        {preset.name}
+                      </span>
+                      {preset.billable && (
+                        <span className="shrink-0 rounded bg-primary/15 px-1 text-[10px] font-bold text-primary">
+                          $
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className="mt-0.5 truncate pl-3.5 text-xs text-muted-foreground"
+                      title={`${client?.name || 'Unknown client'} › ${project?.name || 'Unknown project'}${presetTags.length > 0 ? ` · ${presetTags.map((t) => t.name).join(', ')}` : ''}`}
+                    >
+                      {client?.name || 'Unknown client'} ›{' '}
                       {project?.name || 'Unknown project'}
                       {presetTags.length > 0 &&
-                        ` • ${presetTags.map((t) => t.name).join(', ')}`}
+                        ` · ${presetTags.map((t) => t.name).join(', ')}`}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={(e) => handleDeletePreset(e, preset.id)}
-                    className="shrink-0 p-1 rounded-sm hover:bg-accent hover:text-destructive opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    aria-label={`Delete preset ${preset.name}`}
+                    title="Delete preset"
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
                     tabIndex={-1}
                   >
                     <Trash2 className="size-3.5" />
@@ -132,12 +165,9 @@ export function PresetDropdown({
 
           <DropdownMenuSeparator />
 
-          <DropdownMenuItem
-            onClick={handleOpenSaveDialog}
-            disabled={!canSaveCurrent}
-          >
+          <DropdownMenuItem onClick={handleOpenSaveDialog}>
             <Plus className="mr-2 size-4" />
-            Save current as preset...
+            New preset…
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

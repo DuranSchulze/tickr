@@ -90,113 +90,119 @@ export function InputSection({
 }) {
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
 
+  const modeToggle = (
+    <div
+      className="flex shrink-0 flex-row items-center justify-center gap-1 border-border/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
+      role="tablist"
+      aria-label="Entry mode"
+    >
+      <button
+        type="button"
+        onClick={() => setMode('timer')}
+        role="tab"
+        aria-selected={mode === 'timer'}
+        title="Timer"
+        className={`grid size-8 place-items-center rounded-md transition-colors ${
+          mode === 'timer'
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        }`}
+      >
+        <Play className="size-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setMode('manual')}
+        role="tab"
+        aria-selected={mode === 'manual'}
+        title="Manual entry"
+        className={`grid size-8 place-items-center rounded-md transition-colors ${
+          mode === 'manual'
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        }`}
+      >
+        <Pencil className="size-4" />
+      </button>
+    </div>
+  )
+
   return (
-    <section className="min-w-0 rounded-xl border border-border bg-card shadow-sm">
-      {/* ── Modern segmented tab bar ────────────────────────────────── */}
-      <div className="px-4 pt-3">
-        <div className="flex gap-1 rounded-lg bg-muted/60 p-1" role="tablist">
-          <button
-            type="button"
-            onClick={() => setMode('timer')}
-            role="tab"
-            aria-selected={mode === 'timer'}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all ${
-              mode === 'timer'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Play
-              className={`size-4 ${mode === 'timer' ? 'text-primary' : 'text-muted-foreground'}`}
-            />
-            Timer
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode('manual')}
-            role="tab"
-            aria-selected={mode === 'manual'}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-bold transition-all ${
-              mode === 'manual'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Pencil
-              className={`size-4 ${mode === 'manual' ? 'text-primary' : 'text-muted-foreground'}`}
-            />
-            Manual entry
-          </button>
+    // Elevated above the rest of the page (shadow + ring) so the entry point
+    // for tracking time is the first thing the eye lands on — Clockify-style
+    // single bar with a compact timer/manual toggle on the right edge.
+    <section className="min-w-0 rounded-xl border border-border bg-card p-3 shadow-lg shadow-black/[0.06] ring-1 ring-black/[0.03] dark:shadow-black/30 dark:ring-white/[0.04]">
+      <div className="flex min-w-0 gap-2 max-sm:flex-col sm:items-stretch">
+        {/* justify-center keeps the h-12 bar vertically centered against the
+            taller mode-toggle column instead of pinned to the card's top. */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <AnimatePresence mode="wait">
+            {mode === 'timer' && (
+              <motion.div
+                key="timer"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: 'easeInOut' }}
+              >
+                <TimerPanel
+                  workspaceId={workspaceId}
+                  clients={clients}
+                  projects={projects}
+                  tags={tags}
+                  description={description}
+                  onDescriptionChange={onDescriptionChange}
+                  descriptionSuggestions={descriptionSuggestions}
+                  onApplySuggestion={onApplySuggestion}
+                  clientId={clientId}
+                  onClientIdChange={onClientIdChange}
+                  projectId={projectId}
+                  onProjectIdChange={onProjectIdChange}
+                  tagIds={tagIds}
+                  onTagIdsChange={onTagIdsChange}
+                  billable={billable}
+                  onBillableChange={onBillableChange}
+                  onCreateTag={onCreateTag}
+                  canManageCatalog={canManageCatalog}
+                  activeEntry={activeEntry}
+                  startPending={startPending}
+                  stopPending={stopPending}
+                  formatTime={formatTime}
+                  onApplyPreset={onApplyPreset}
+                  onStart={onStart}
+                  onStop={onStop}
+                  onDiscard={onDiscard}
+                  onUpdateStartedAt={onUpdateStartedAt}
+                />
+              </motion.div>
+            )}
+
+            {mode === 'manual' && (
+              <motion.div
+                key="manual"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: 'easeInOut' }}
+              >
+                <ManualEntryPanel
+                  draft={draft}
+                  setDraft={setDraft}
+                  clients={clients}
+                  projects={projects}
+                  tags={tags}
+                  onCreateClient={onCreateClient}
+                  onCreateProject={onCreateProject}
+                  onCreateTag={onCreateTag}
+                  canManageCatalog={canManageCatalog}
+                  pending={pending}
+                  onSubmit={onAddManual}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-
-      {/* ── Content with fade/slide animation ──────────────────────── */}
-      <div className="border-t border-border/50 mt-3 px-4 pb-4 pt-4">
-        <AnimatePresence mode="wait">
-          {mode === 'timer' && (
-            <motion.div
-              key="timer"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: 'easeInOut' }}
-            >
-              <TimerPanel
-                workspaceId={workspaceId}
-                clients={clients}
-                projects={projects}
-                tags={tags}
-                description={description}
-                onDescriptionChange={onDescriptionChange}
-                descriptionSuggestions={descriptionSuggestions}
-                onApplySuggestion={onApplySuggestion}
-                clientId={clientId}
-                onClientIdChange={onClientIdChange}
-                projectId={projectId}
-                onProjectIdChange={onProjectIdChange}
-                tagIds={tagIds}
-                onTagIdsChange={onTagIdsChange}
-                billable={billable}
-                onBillableChange={onBillableChange}
-                onCreateTag={onCreateTag}
-                canManageCatalog={canManageCatalog}
-                activeEntry={activeEntry}
-                startPending={startPending}
-                stopPending={stopPending}
-                formatTime={formatTime}
-                onApplyPreset={onApplyPreset}
-                onStart={onStart}
-                onStop={onStop}
-                onDiscard={onDiscard}
-                onUpdateStartedAt={onUpdateStartedAt}
-              />
-            </motion.div>
-          )}
-
-          {mode === 'manual' && (
-            <motion.div
-              key="manual"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18, ease: 'easeInOut' }}
-            >
-              <ManualEntryPanel
-                draft={draft}
-                setDraft={setDraft}
-                clients={clients}
-                projects={projects}
-                tags={tags}
-                onCreateClient={onCreateClient}
-                onCreateProject={onCreateProject}
-                onCreateTag={onCreateTag}
-                canManageCatalog={canManageCatalog}
-                pending={pending}
-                onSubmit={onAddManual}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {modeToggle}
       </div>
     </section>
   )

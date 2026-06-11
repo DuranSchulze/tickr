@@ -10,6 +10,8 @@ type CommonProps = {
   disabled?: boolean
   /** When false, the "+ New …" footer is hidden. Defaults to true. */
   canCreate?: boolean
+  /** Borderless trigger variant for use inside the unified timer bar. */
+  bare?: boolean
   searchPlaceholder?: string
   emptyText?: string
   createLabel: string
@@ -36,6 +38,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
     onCreate,
     disabled = false,
     canCreate = true,
+    bare = false,
     searchPlaceholder = 'Search…',
     emptyText = 'Nothing found',
     createLabel,
@@ -116,12 +119,16 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={bare ? 'relative h-full' : 'relative'}>
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        className="flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+        className={
+          bare
+            ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
+            : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+        }
       >
         <div className="flex flex-1 items-center gap-1 overflow-hidden">
           {renderTrigger(selectedItems)}
