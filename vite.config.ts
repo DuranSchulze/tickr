@@ -25,11 +25,6 @@ const config = defineConfig(({ mode }) => ({
             },
           }
         : {}),
-      routeRules: {
-        '/**': {
-          headers: { 'Document-Policy': 'js-profiling' },
-        },
-      },
     }),
     viteReact(),
     // Uploads source maps to Sentry on production builds when SENTRY_AUTH_TOKEN is set.

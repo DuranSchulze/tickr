@@ -105,7 +105,7 @@ export function BulkExportButton({
         },
       })
       if (format === 'pdf') {
-        downloadBulkReportPdf(report)
+        await downloadBulkReportPdf(report)
       } else {
         downloadBulkReportCsv(report)
       }

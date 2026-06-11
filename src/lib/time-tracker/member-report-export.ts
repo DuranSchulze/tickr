@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import type { MemberMonthlyReport } from '#/lib/server/tracker/member-report.server'
 import {
   buildCsv,
@@ -20,7 +18,16 @@ function reportFilename(report: MemberMonthlyReport, ext: string): string {
  * The member's billable rate is shown once in the header (it is constant per
  * member) rather than repeated on every row.
  */
-export function downloadMemberReportPdf(report: MemberMonthlyReport): void {
+export async function downloadMemberReportPdf(
+  report: MemberMonthlyReport,
+): Promise<void> {
+  // jsPDF + autotable are heavy; load them only when a PDF export is actually
+  // requested instead of shipping them with every screen that can open the
+  // export dialog.
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
   const margin = 40
   let y = margin

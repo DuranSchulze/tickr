@@ -77,7 +77,7 @@ export function MemberExportDialog({
         data: { memberId, startDate, endDate },
       })
       if (format === 'pdf') {
-        downloadMemberReportPdf(report)
+        await downloadMemberReportPdf(report)
       } else {
         downloadMemberReportCsv(report)
       }

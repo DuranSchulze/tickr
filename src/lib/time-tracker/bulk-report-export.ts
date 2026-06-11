@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import type { BulkReport } from '#/lib/server/tracker/bulk-report.server'
 import {
   buildCsv,
@@ -20,7 +18,14 @@ function bulkFilename(report: BulkReport, ext: string): string {
  * Generates and downloads a grouped bulk report PDF. Entries are sectioned by
  * member, each with its own subtotal, under a grand-total summary.
  */
-export function downloadBulkReportPdf(report: BulkReport): void {
+export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
+  // jsPDF + autotable are heavy; load them only when a PDF export is actually
+  // requested instead of shipping them with every screen that can open the
+  // export dialog.
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ])
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
   const margin = 40
   const pageHeight = doc.internal.pageSize.getHeight()

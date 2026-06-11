@@ -4,17 +4,12 @@ if (typeof window !== 'undefined' && import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     environment: import.meta.env.MODE,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.browserProfilingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    // Capture 100% of transactions in dev/staging; tune down in production if needed
+    // Error reporting + light tracing only. Session replay and profiling were
+    // removed deliberately: replay observes every DOM mutation (the dashboard
+    // mutates every second while a timer runs) and profiling ran on 100% of
+    // sessions — both added constant CPU/memory overhead on user machines.
+    // Use react-scan + web-vitals for performance work instead.
+    integrations: [Sentry.browserTracingIntegration()],
     tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
-    // Profile every session
-    profileSessionSampleRate: 1.0,
-    // Record 10% of sessions, but always capture sessions that had an error
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
   })
 }
