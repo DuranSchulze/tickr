@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Copy, KeyRound, LogIn, X } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { DEV_CREDENTIALS, DEV_PASSWORD } from '#/lib/dev-credentials'
 import type { DevCredential } from '#/lib/dev-credentials'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { ExternalLink, Save } from 'lucide-react'
 import {

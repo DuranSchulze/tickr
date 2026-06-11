@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { Send } from 'lucide-react'
 import { sendResendTestFn } from '#/lib/server/resend-test'
 

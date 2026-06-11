@@ -33,17 +33,29 @@ function HomePage() {
 
       {/* ── Hero ────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden">
-        {/* Decorative gradient blobs */}
+        {/* Decorative gradient blobs — isolate + will-change for GPU compositing */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 opacity-60 dark:opacity-40"
+          className="pointer-events-none isolate absolute inset-0 -z-10 opacity-60 dark:opacity-40"
         >
-          <div className="absolute -left-24 top-10 size-72 rounded-full bg-[var(--primary)] blur-3xl opacity-30" />
-          <div className="absolute right-0 top-40 size-80 rounded-full bg-[var(--primary)] blur-3xl opacity-20" />
+          <div className="absolute -left-24 top-10 size-72 rounded-full bg-[var(--primary)] blur-3xl opacity-30 will-change-transform" />
+          <div className="absolute right-0 top-40 size-80 rounded-full bg-[var(--primary)] blur-3xl opacity-20 will-change-transform" />
         </div>
+        {/* Grid pattern — use a simpler CSS approach and contain paint */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,color-mix(in_oklab,var(--border)_45%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklab,var(--border)_45%,transparent)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]"
+          className="pointer-events-none absolute inset-0 -z-10 opacity-[0.03] dark:opacity-[0.06]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+            maskImage:
+              'radial-gradient(ellipse at center, black 40%, transparent 80%)',
+            WebkitMaskImage:
+              'radial-gradient(ellipse at center, black 40%, transparent 80%)',
+            color: 'var(--border)',
+            contain: 'paint',
+          }}
         />
 
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:py-24">
@@ -177,7 +189,11 @@ function HomePage() {
       </section>
 
       {/* ── Features ────────────────────────────────────────────────── */}
-      <section id="features" className="border-t border-border bg-muted/30">
+      <section
+        id="features"
+        className="border-t border-border bg-muted/30"
+        style={{ contentVisibility: 'auto' }}
+      >
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-2xl">
             <p className="m-0 text-sm font-bold uppercase tracking-wider text-[var(--primary)]">
@@ -228,7 +244,11 @@ function HomePage() {
       </section>
 
       {/* ── How it works ────────────────────────────────────────────── */}
-      <section id="how-it-works" className="bg-background">
+      <section
+        id="how-it-works"
+        className="bg-background"
+        style={{ contentVisibility: 'auto' }}
+      >
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-2xl">
             <p className="m-0 text-sm font-bold uppercase tracking-wider text-[var(--primary)]">
@@ -260,7 +280,10 @@ function HomePage() {
       </section>
 
       {/* ── CTA band ────────────────────────────────────────────────── */}
-      <section className="border-y border-border bg-muted/30">
+      <section
+        className="border-y border-border bg-muted/30"
+        style={{ contentVisibility: 'auto' }}
+      >
         <div className="mx-auto max-w-6xl px-4 py-16">
           <div className="relative overflow-hidden border border-border bg-gradient-to-br from-[var(--primary)] to-[var(--primary)]/80 p-10 shadow-xl sm:p-14">
             <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
@@ -282,18 +305,18 @@ function HomePage() {
             </div>
             <div
               aria-hidden
-              className="absolute -right-16 -top-16 size-64 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
+              className="absolute -right-16 -top-16 size-64 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl will-change-transform"
             />
             <div
               aria-hidden
-              className="absolute -bottom-20 -left-10 size-56 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl"
+              className="absolute -bottom-20 -left-10 size-56 rounded-full bg-[var(--primary-foreground)]/10 blur-3xl will-change-transform"
             />
           </div>
         </div>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────────── */}
-      <footer className="bg-background">
+      <footer className="bg-background" style={{ contentVisibility: 'auto' }}>
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row">
           <p className="m-0">
             © {new Date().getFullYear()} {BRAND.name} (internal workspace).
@@ -422,7 +445,7 @@ function TimerPreview() {
     <div className="relative mx-auto w-full max-w-md lg:mx-0">
       <div
         aria-hidden
-        className="absolute -inset-4 bg-gradient-to-br from-[var(--primary)]/30 to-transparent blur-2xl"
+        className="absolute -inset-4 bg-gradient-to-br from-[var(--primary)]/30 to-transparent blur-2xl will-change-transform"
       />
       <div className="relative rotate-1 border border-border bg-card p-6 shadow-2xl transition-transform hover:rotate-0">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">

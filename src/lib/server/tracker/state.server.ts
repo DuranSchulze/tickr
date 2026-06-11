@@ -12,12 +12,15 @@ import {
   timeEntries,
   timeEntryTags,
 } from '#/db/schema'
-import { and, eq, gte, inArray, isNull, or, asc } from 'drizzle-orm'
+import { and, eq, gte, isNull, or, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { toIso } from './shared/dates'
 
-const ENTRIES_WINDOW_DAYS = 90
+// 62 days guarantees the month view can navigate one full month back even
+// from the last day of a 31-day month (31 + 31). Older entries live in the
+// paginated "all" view, so a bigger window only inflates every dashboard load.
+const ENTRIES_WINDOW_DAYS = 62
 
 export async function getTrackerState(): Promise<TrackerState> {
   const access = await requireWorkspaceAccess()
@@ -28,6 +31,15 @@ export async function getTrackerState(): Promise<TrackerState> {
   windowStart.setUTCDate(windowStart.getUTCDate() - ENTRIES_WINDOW_DAYS)
   windowStart.setUTCHours(0, 0, 0, 0)
 
+  // Everything runs as ONE parallel wave. Lookups that used to need a second
+  // wave (users, roles, cohort members, entry tags) are joined or derived
+  // instead — on the Neon HTTP driver each wave is a full network round trip.
+  const entriesWhere = and(
+    eq(timeEntries.workspaceId, workspaceId),
+    eq(timeEntries.workspaceMemberId, memberId),
+    or(gte(timeEntries.startedAt, windowStart), isNull(timeEntries.endedAt)),
+  )
+
   const [
     rolesRows,
     departmentsRows,
@@ -37,6 +49,8 @@ export async function getTrackerState(): Promise<TrackerState> {
     tagsRows,
     memberRows,
     entryRows,
+    cohortMemberData,
+    entryTagData,
   ] = await Promise.all([
     db
       .select()
@@ -73,67 +87,45 @@ export async function getTrackerState(): Promise<TrackerState> {
       .from(tags)
       .where(and(eq(tags.workspaceId, workspaceId), eq(tags.archived, false)))
       .orderBy(asc(tags.name)),
+    // Members with their linked user resolved in the same query.
     db
-      .select()
+      .select({
+        member: workspaceMembers,
+        userName: users.name,
+        userImage: users.image,
+      })
       .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
       .where(eq(workspaceMembers.workspaceId, workspaceId))
       .orderBy(asc(workspaceMembers.email)),
     db
       .select()
       .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.workspaceId, workspaceId),
-          eq(timeEntries.workspaceMemberId, memberId),
-          or(
-            gte(timeEntries.startedAt, windowStart),
-            isNull(timeEntries.endedAt),
-          ),
-        ),
-      )
+      .where(entriesWhere)
       .orderBy(asc(timeEntries.startedAt)),
+    // Cohort memberships scoped through the workspace's cohorts.
+    db
+      .select({
+        memberId: cohortMembers.memberId,
+        cohortId: cohortMembers.cohortId,
+      })
+      .from(cohortMembers)
+      .innerJoin(cohorts, eq(cohortMembers.cohortId, cohorts.id))
+      .where(eq(cohorts.workspaceId, workspaceId)),
+    // Tag links for exactly the entries the entries query returns.
+    db
+      .select({
+        timeEntryId: timeEntryTags.timeEntryId,
+        tagId: timeEntryTags.tagId,
+      })
+      .from(timeEntryTags)
+      .innerJoin(timeEntries, eq(timeEntryTags.timeEntryId, timeEntries.id))
+      .where(entriesWhere),
   ])
 
-  // Fetch member relations in parallel
-  const memberIds = memberRows.map((m) => m.id)
-  const roleIds = memberRows
-    .map((m) => m.workspaceRoleId)
-    .filter((id): id is string => id != null)
-  const userIds = memberRows
-    .map((m) => m.userId)
-    .filter((id): id is string => id != null)
-  const entryIds = entryRows.map((e) => e.id)
-
-  const [memberUsersData, memberRolesData, cohortMemberData, entryTagData] =
-    await Promise.all([
-      userIds.length > 0
-        ? db
-            .select({ id: users.id, name: users.name, image: users.image })
-            .from(users)
-            .where(inArray(users.id, userIds))
-        : Promise.resolve([]),
-      roleIds.length > 0
-        ? db
-            .select()
-            .from(workspaceRoles)
-            .where(inArray(workspaceRoles.id, roleIds))
-        : Promise.resolve([]),
-      memberIds.length > 0
-        ? db
-            .select()
-            .from(cohortMembers)
-            .where(inArray(cohortMembers.memberId, memberIds))
-        : Promise.resolve([]),
-      entryIds.length > 0
-        ? db
-            .select()
-            .from(timeEntryTags)
-            .where(inArray(timeEntryTags.timeEntryId, entryIds))
-        : Promise.resolve([]),
-    ])
-
-  const userMap = new Map(memberUsersData.map((u) => [u.id, u]))
-  const roleMap = new Map(memberRolesData.map((r) => [r.id, r]))
+  // Member roles are always roles of this workspace, so the full roles list
+  // already fetched above doubles as the lookup table.
+  const roleMap = new Map(rolesRows.map((r) => [r.id, r]))
   const cohortsByMember = new Map<string, string[]>()
   for (const cm of cohortMemberData) {
     const list = cohortsByMember.get(cm.memberId) ?? []
@@ -193,16 +185,15 @@ export async function getTrackerState(): Promise<TrackerState> {
       name: t.name,
       color: t.color,
     })),
-    members: memberRows.map((member) => {
-      const user = member.userId ? userMap.get(member.userId) : null
+    members: memberRows.map(({ member, userName, userImage }) => {
       const role = member.workspaceRoleId
         ? roleMap.get(member.workspaceRoleId)
         : null
       return {
         id: member.id,
-        name: user?.name ?? member.email,
+        name: userName ?? member.email,
         email: member.email,
-        image: user?.image ?? null,
+        image: userImage ?? null,
         workspaceRoleId: member.workspaceRoleId ?? '',
         roleName: role?.name ?? 'No role',
         permissionLevel: role?.permissionLevel ?? 'EMPLOYEE',

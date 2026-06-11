@@ -9,7 +9,7 @@ import {
   Loader2,
   Plus,
 } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,

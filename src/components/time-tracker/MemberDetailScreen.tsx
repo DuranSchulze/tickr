@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { ArrowLeft, DollarSign, IdCard, UserRound } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Loader2, Mail } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { createWorkspaceInviteFn } from '#/lib/server/workspace-invites'
 import {
   Dialog,

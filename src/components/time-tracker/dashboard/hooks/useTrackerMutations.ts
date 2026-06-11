@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { TimeEntry } from '#/lib/time-tracker/types'

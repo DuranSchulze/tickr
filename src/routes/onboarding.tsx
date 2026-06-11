@@ -15,7 +15,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { BRAND } from '#/lib/brand'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { listUserWorkspacesFn } from '#/lib/server/workspace-access'

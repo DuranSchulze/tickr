@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
 import { FileText, Loader2, Play, Square } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import {
   formatDuration,
   formatViewRangeLabel,
@@ -326,15 +326,20 @@ export function TimeTrackerDashboard({
 
   // Update the browser tab title and emit state to the Chrome extension side panel.
   // Owns its own interval so the dashboard doesn't re-render every second.
+  // The entry is read through a ref so the interval survives dashboard
+  // re-renders (activeEntry gets a fresh identity on each one) and is only
+  // re-created when the timer actually starts or stops.
+  const activeEntryRef = useRef(activeEntry)
+  activeEntryRef.current = activeEntry
+  const activeEntryId = activeEntry?.id
   useEffect(() => {
     function update() {
-      const elapsedSeconds = activeEntry
-        ? getEntrySeconds(activeEntry, Date.now())
-        : 0
+      const entry = activeEntryRef.current
+      const elapsedSeconds = entry ? getEntrySeconds(entry, Date.now()) : 0
 
-      if (activeEntry) {
+      if (entry) {
         const elapsed = formatDuration(elapsedSeconds)
-        const desc = activeEntry.description.trim() || 'Timer running'
+        const desc = entry.description.trim() || 'Timer running'
         document.title = `${elapsed} · ${desc} — ${BRAND.name}`
       } else {
         const now = new Date()
@@ -350,7 +355,7 @@ export function TimeTrackerDashboard({
         window.parent.postMessage(
           {
             type: 'CLOCKIFY_TIMER_STATE',
-            running: !!activeEntry,
+            running: !!entry,
             elapsedSeconds,
           },
           '*',
@@ -361,7 +366,7 @@ export function TimeTrackerDashboard({
     update()
     const id = setInterval(update, 1000)
     return () => clearInterval(id)
-  }, [activeEntry])
+  }, [activeEntryId])
 
   const {
     filteredEntries: serverFilteredEntries,

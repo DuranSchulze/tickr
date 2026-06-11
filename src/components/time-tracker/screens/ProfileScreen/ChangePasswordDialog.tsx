@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { KeyRound, X } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
 import { PasswordInput } from '#/components/ui/password-input'

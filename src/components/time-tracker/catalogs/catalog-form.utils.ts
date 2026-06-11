@@ -1,4 +1,4 @@
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import type { useRouter } from '@tanstack/react-router'
 
 export function parseBulkNames(raw: string): string[] {

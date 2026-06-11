@@ -42,7 +42,10 @@ export const Route = createFileRoute('/app/time-tracker/')({
 
 function TimeTrackerRoute() {
   const state = Route.useLoaderData()
-  const { view = 'all', date = getLocalDateKey() } = Route.useSearch()
+  // Default to the day view: it renders straight from the loader's payload.
+  // The 'all' view ignores that payload and fires a second, paginated request
+  // after mount — a slower first paint for no benefit as a landing view.
+  const { view = 'day', date = getLocalDateKey() } = Route.useSearch()
 
   return <TimeTrackerDashboard state={state} view={view} date={date} />
 }

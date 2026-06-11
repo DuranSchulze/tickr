@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
 import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'

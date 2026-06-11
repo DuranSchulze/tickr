@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { createClientFn } from '#/lib/server/tracker'
 import {
   BulkNamesInput,

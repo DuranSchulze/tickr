@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { Building2, CheckCircle2, Plus, Trash2, X } from 'lucide-react'
 import {
   archiveClientFn,

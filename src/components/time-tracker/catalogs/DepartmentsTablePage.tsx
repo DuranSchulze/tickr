@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import {
   FileSpreadsheet,
   Loader2,

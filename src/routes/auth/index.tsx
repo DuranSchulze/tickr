@@ -8,7 +8,7 @@ import {
 import { useState } from 'react'
 import { BarChart3, Clock, Users } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { BRAND } from '#/lib/brand'
 import { PasswordInput } from '#/components/ui/password-input'

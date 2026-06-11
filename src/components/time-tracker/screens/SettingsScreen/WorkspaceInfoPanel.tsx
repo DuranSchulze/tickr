@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { Pencil } from 'lucide-react'
 import { updateWorkspaceSettingsFn } from '#/lib/server/tracker'
 import type { Workspace } from '#/lib/time-tracker/types'

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { ExternalLink, RefreshCcw } from 'lucide-react'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'

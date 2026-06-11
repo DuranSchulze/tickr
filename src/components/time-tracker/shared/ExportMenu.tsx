@@ -6,7 +6,7 @@ import {
   Printer,
   RefreshCcw,
 } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import {
   DropdownMenu,
   DropdownMenuContent,

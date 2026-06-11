@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FileDown, FileSpreadsheet, FileText, Loader2 } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import {
   Dialog,
   DialogClose,

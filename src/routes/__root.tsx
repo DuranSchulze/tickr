@@ -1,10 +1,10 @@
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   HeadContent,
   Link,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import { GooeyToaster } from 'goey-toast'
 import 'goey-toast/styles.css'
 import { Button } from '../components/ui/button'
 import { Monitoring } from '../components/dev/Monitoring'
@@ -13,6 +13,26 @@ import appCss from '../styles.css?url'
 import { BRAND } from '#/lib/brand'
 
 import type { QueryClient } from '@tanstack/react-query'
+
+// The toast library (goey-toast + sonner) is ~190 KB. Mount the toaster only
+// after first paint on the client so it never competes with the initial load —
+// toasts are triggered by user actions, which can't happen before then.
+// Imperative toast calls go through the matching lazy facade in #/lib/toast.
+const GooeyToaster = lazy(() =>
+  import('goey-toast').then((mod) => ({ default: mod.GooeyToaster })),
+)
+
+// oxlint-disable-next-line react/only-export-components
+function DeferredToaster() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+  return (
+    <Suspense fallback={null}>
+      <GooeyToaster position="top-right" />
+    </Suspense>
+  )
+}
 
 // oxlint-disable-next-line react/only-export-components
 function NotFoundComponent() {
@@ -85,7 +105,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20 selection:text-foreground">
         {children}
         <Monitoring />
-        <GooeyToaster position="top-right" />
+        <DeferredToaster />
         <Scripts />
       </body>
     </html>

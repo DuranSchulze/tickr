@@ -1,7 +1,7 @@
 import type { z } from 'zod'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, notInArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration } from './shared/dates'
@@ -39,15 +39,17 @@ export async function createManualEntry(
     })
     .returning()
 
-  if (tagIds.length) {
-    await db
-      .insert(timeEntryTags)
-      .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
-  }
-
-  if (endedAt) {
-    await enqueueTimeEntry(access.workspace.id, entry.id)
-  }
+  // Tag links and the sync flag are independent — one round trip wave.
+  await Promise.all([
+    tagIds.length
+      ? db
+          .insert(timeEntryTags)
+          .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
+      : Promise.resolve(),
+    endedAt
+      ? enqueueTimeEntry(access.workspace.id, entry.id)
+      : Promise.resolve(),
+  ])
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -67,47 +69,64 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
   const startedAt = new Date(data.startedAt)
   const endedAt = data.endedAt ? new Date(data.endedAt) : null
 
-  await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+  // Catalog validation and the entry lookup are independent reads — one wave.
+  const [, existingRows] = await Promise.all([
+    assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds),
+    db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.id, data.id),
+          eq(timeEntries.workspaceId, access.workspace.id),
+          eq(timeEntries.workspaceMemberId, access.member.id),
+        ),
+      )
+      .limit(1),
+  ])
 
-  const [existingEntry] = await db
-    .select()
-    .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.id, data.id),
-        eq(timeEntries.workspaceId, access.workspace.id),
-        eq(timeEntries.workspaceMemberId, access.member.id),
-      ),
-    )
-    .limit(1)
-
+  const [existingEntry] = existingRows
   if (!existingEntry) throw new Error('Time entry not found.')
 
-  await db
-    .delete(timeEntryTags)
-    .where(eq(timeEntryTags.timeEntryId, existingEntry.id))
-
-  await db
-    .update(timeEntries)
-    .set({
-      description: data.description,
-      projectId,
-      billable: data.billable,
-      startedAt,
-      endedAt,
-      durationSeconds: calculateDuration(startedAt, endedAt),
-      notes: data.notes,
-    })
-    .where(eq(timeEntries.id, existingEntry.id))
-
-  if (tagIds.length) {
-    await db
-      .insert(timeEntryTags)
-      .values(tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })))
-      // Defensive: if two updates for the same entry race, the second insert
-      // would otherwise hit a duplicate-key error.
-      .onConflictDoNothing()
-  }
+  // One parallel write wave: update the entry while diffing the tag links in
+  // place (delete stale + upsert new with onConflictDoNothing — also safe if
+  // two updates for the same entry race). Unlike the previous
+  // delete-all-then-reinsert sequence, tags that stay are never removed, so a
+  // failure mid-way can no longer strand the entry without its tags.
+  await Promise.all([
+    db
+      .update(timeEntries)
+      .set({
+        description: data.description,
+        projectId,
+        billable: data.billable,
+        startedAt,
+        endedAt,
+        durationSeconds: calculateDuration(startedAt, endedAt),
+        notes: data.notes,
+      })
+      .where(eq(timeEntries.id, existingEntry.id)),
+    tagIds.length
+      ? db
+          .delete(timeEntryTags)
+          .where(
+            and(
+              eq(timeEntryTags.timeEntryId, existingEntry.id),
+              notInArray(timeEntryTags.tagId, tagIds),
+            ),
+          )
+      : db
+          .delete(timeEntryTags)
+          .where(eq(timeEntryTags.timeEntryId, existingEntry.id)),
+    tagIds.length
+      ? db
+          .insert(timeEntryTags)
+          .values(
+            tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })),
+          )
+          .onConflictDoNothing()
+      : Promise.resolve(),
+  ])
 
   // Any edit can change what the synced sheet shows (times, description,
   // project, billable), so always flag the workspace for re-sync.

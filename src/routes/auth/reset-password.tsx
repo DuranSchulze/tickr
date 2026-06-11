@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, KeyRound } from 'lucide-react'
-import { gooeyToast } from 'goey-toast'
+import { gooeyToast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { AuthSplitLayout } from '#/components/auth/AuthSplitLayout'
 import { PasswordInput } from '#/components/ui/password-input'

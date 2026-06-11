@@ -2,7 +2,7 @@ import type { TimeEntry } from '#/lib/time-tracker/types'
 import type { z } from 'zod'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, notInArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration, toIso } from './shared/dates'
@@ -54,23 +54,25 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
 
-  if (projectId || tagIds.length) {
-    await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
-  }
+  // Both pre-checks are reads — run them in one round trip wave.
+  const [activeRows] = await Promise.all([
+    db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.workspaceId, access.workspace.id),
+          eq(timeEntries.workspaceMemberId, access.member.id),
+          isNull(timeEntries.endedAt),
+        ),
+      )
+      .limit(1),
+    projectId || tagIds.length
+      ? assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+      : Promise.resolve(),
+  ])
 
-  const [activeEntry] = await db
-    .select()
-    .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.workspaceId, access.workspace.id),
-        eq(timeEntries.workspaceMemberId, access.member.id),
-        isNull(timeEntries.endedAt),
-      ),
-    )
-    .limit(1)
-
-  if (activeEntry) {
+  if (activeRows[0]) {
     throw new Error('Stop your current timer before starting a new one.')
   }
 
@@ -107,8 +109,11 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
   }
 
-  const tags = await getEntryTags(entry.id)
-  return serializeTimeEntry(entry, tags)
+  // The tags we just inserted ARE the entry's tags — no need to re-read them.
+  return serializeTimeEntry(
+    entry,
+    tagIds.map((tagId) => ({ tagId })),
+  )
 }
 
 export async function updateActiveTimer(
@@ -118,68 +123,90 @@ export async function updateActiveTimer(
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
 
-  const [entry] = await db
-    .select()
-    .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.id, data.id),
-        eq(timeEntries.workspaceId, access.workspace.id),
-        eq(timeEntries.workspaceMemberId, access.member.id),
-        isNull(timeEntries.endedAt),
-      ),
-    )
-    .limit(1)
+  // Both pre-checks are reads — run them in one round trip wave.
+  const [entryRows] = await Promise.all([
+    db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.id, data.id),
+          eq(timeEntries.workspaceId, access.workspace.id),
+          eq(timeEntries.workspaceMemberId, access.member.id),
+          isNull(timeEntries.endedAt),
+        ),
+      )
+      .limit(1),
+    projectId || tagIds.length
+      ? assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+      : Promise.resolve(),
+  ])
 
+  const [entry] = entryRows
   if (!entry) {
     throw new Error('No running timer to update.')
   }
 
-  if (projectId || tagIds.length) {
-    await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
-  }
+  // One parallel write wave: update the entry while diffing the tags in place.
+  // The diff (delete stale + upsert new) never removes tags that should stay,
+  // so there is no window where the entry has lost tags it keeps — unlike the
+  // previous delete-all-then-reinsert sequence.
+  const [updatedRows] = await Promise.all([
+    db
+      .update(timeEntries)
+      .set({
+        description: data.description,
+        projectId,
+        billable: data.billable,
+        ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
+      })
+      .where(eq(timeEntries.id, entry.id))
+      .returning(),
+    tagIds.length
+      ? db
+          .delete(timeEntryTags)
+          .where(
+            and(
+              eq(timeEntryTags.timeEntryId, entry.id),
+              notInArray(timeEntryTags.tagId, tagIds),
+            ),
+          )
+      : db.delete(timeEntryTags).where(eq(timeEntryTags.timeEntryId, entry.id)),
+    tagIds.length
+      ? db
+          .insert(timeEntryTags)
+          .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
+          .onConflictDoNothing()
+      : Promise.resolve(),
+  ])
 
-  await db.delete(timeEntryTags).where(eq(timeEntryTags.timeEntryId, entry.id))
-
-  const [updatedEntry] = await db
-    .update(timeEntries)
-    .set({
-      description: data.description,
-      projectId,
-      billable: data.billable,
-      ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
-    })
-    .where(eq(timeEntries.id, entry.id))
-    .returning()
-
-  if (tagIds.length) {
-    await db
-      .insert(timeEntryTags)
-      .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
-  }
-
-  const tags = await getEntryTags(updatedEntry.id)
-  return serializeTimeEntry(updatedEntry, tags)
+  return serializeTimeEntry(
+    updatedRows[0],
+    tagIds.map((tagId) => ({ tagId })),
+  )
 }
 
 export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
   const access = await requireWorkspaceAccess()
-  const [entry] = await db
-    .select()
-    .from(timeEntries)
-    .where(
-      and(
-        eq(timeEntries.id, data.id),
-        eq(timeEntries.workspaceId, access.workspace.id),
-        eq(timeEntries.workspaceMemberId, access.member.id),
-        isNull(timeEntries.endedAt),
-      ),
-    )
-    .limit(1)
+  // Entry and its current tags are independent reads — one round trip wave.
+  const [entryRows, existingTags] = await Promise.all([
+    db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.id, data.id),
+          eq(timeEntries.workspaceId, access.workspace.id),
+          eq(timeEntries.workspaceMemberId, access.member.id),
+          isNull(timeEntries.endedAt),
+        ),
+      )
+      .limit(1),
+    getEntryTags(data.id),
+  ])
 
+  const [entry] = entryRows
   if (!entry) return null
-
-  const existingTags = await getEntryTags(entry.id)
 
   // Resolve effective values — prefer the override from the client, fall back to DB
   const effectiveDescription =
@@ -249,16 +276,33 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
     updatedEntry = updated
 
     if (data.tagIds !== undefined) {
-      await db
-        .delete(timeEntryTags)
-        .where(eq(timeEntryTags.timeEntryId, entry.id))
-      if (effectiveTagIds.length) {
-        await db
-          .insert(timeEntryTags)
-          .values(
-            effectiveTagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })),
-          )
-      }
+      // Non-destructive diff in one parallel wave: drop stale links, upsert
+      // the new set. Tags that stay are never deleted in between.
+      await Promise.all([
+        effectiveTagIds.length
+          ? db
+              .delete(timeEntryTags)
+              .where(
+                and(
+                  eq(timeEntryTags.timeEntryId, entry.id),
+                  notInArray(timeEntryTags.tagId, effectiveTagIds),
+                ),
+              )
+          : db
+              .delete(timeEntryTags)
+              .where(eq(timeEntryTags.timeEntryId, entry.id)),
+        effectiveTagIds.length
+          ? db
+              .insert(timeEntryTags)
+              .values(
+                effectiveTagIds.map((tagId) => ({
+                  timeEntryId: entry.id,
+                  tagId,
+                })),
+              )
+              .onConflictDoNothing()
+          : Promise.resolve(),
+      ])
     }
 
     finalTags = effectiveTagIds.map((id) => ({ tagId: id }))
