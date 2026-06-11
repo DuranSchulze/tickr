@@ -32,7 +32,10 @@
   "dependencies": {
     "@better-auth/infra": "^0.2.3",
     "@fontsource-variable/dm-sans": "^5.2.8",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/nunito": "^5.2.7",
     "@fontsource-variable/roboto": "^5.2.10",
+    "@fontsource-variable/work-sans": "^5.2.8",
     "@imagekit/react": "^5.0.2",
     "@neondatabase/serverless": "^1.1.0",
     "@opentelemetry/api": "^1.9.1",

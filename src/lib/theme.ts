@@ -25,6 +25,82 @@ export const PRIMARY_COLORS: ReadonlyArray<PrimaryColor> = [
 ]
 
 export const DEFAULT_PRIMARY: PrimaryColorId = 'teal'
+export const FONT_STORAGE_KEY = 'font'
+
+export type FontId = 'roboto' | 'dm-sans' | 'inter' | 'nunito' | 'work-sans'
+
+export type FontOption = {
+  id: FontId
+  label: string
+  /** CSS font-family value for body text */
+  body: string
+  /** CSS font-family value for headings */
+  heading: string
+}
+
+export const FONT_OPTIONS: ReadonlyArray<FontOption> = [
+  {
+    id: 'roboto',
+    label: 'Roboto',
+    body: "'Roboto Variable', system-ui, sans-serif",
+    heading: "'DM Sans Variable', 'Roboto Variable', system-ui, sans-serif",
+  },
+  {
+    id: 'dm-sans',
+    label: 'DM Sans',
+    body: "'DM Sans Variable', system-ui, sans-serif",
+    heading: "'DM Sans Variable', system-ui, sans-serif",
+  },
+  {
+    id: 'inter',
+    label: 'Inter',
+    body: "'Inter Variable', system-ui, sans-serif",
+    heading: "'Inter Variable', system-ui, sans-serif",
+  },
+  {
+    id: 'nunito',
+    label: 'Nunito',
+    body: "'Nunito Variable', system-ui, sans-serif",
+    heading: "'Nunito Variable', system-ui, sans-serif",
+  },
+  {
+    id: 'work-sans',
+    label: 'Work Sans',
+    body: "'Work Sans Variable', system-ui, sans-serif",
+    heading: "'Work Sans Variable', system-ui, sans-serif",
+  },
+]
+
+export const DEFAULT_FONT: FontId = 'roboto'
+
+export function isFontId(value: unknown): value is FontId {
+  return typeof value === 'string' && FONT_OPTIONS.some((f) => f.id === value)
+}
+
+export function getStoredFont(): FontId {
+  if (typeof window === 'undefined') return DEFAULT_FONT
+  try {
+    const raw = window.localStorage.getItem(FONT_STORAGE_KEY)
+    return isFontId(raw) ? raw : DEFAULT_FONT
+  } catch {
+    return DEFAULT_FONT
+  }
+}
+
+export function applyFont(id: FontId): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-font', id)
+  try {
+    window.localStorage.setItem(FONT_STORAGE_KEY, id)
+  } catch {
+    // ignore storage errors
+  }
+  try {
+    window.dispatchEvent(new CustomEvent('font-change', { detail: id }))
+  } catch {
+    // ignore
+  }
+}
 
 export function isPrimaryColorId(value: unknown): value is PrimaryColorId {
   return typeof value === 'string' && PRIMARY_COLORS.some((c) => c.id === value)

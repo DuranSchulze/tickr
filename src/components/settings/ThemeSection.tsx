@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Check, Moon, Palette, Sun } from 'lucide-react'
+import { Check, Moon, Palette, Sun, Type } from 'lucide-react'
 import {
+  applyFont,
   applyPrimaryColor,
   applyTheme,
+  DEFAULT_FONT,
   DEFAULT_PRIMARY,
+  FONT_OPTIONS,
+  getStoredFont,
   getStoredPrimaryColor,
   getStoredTheme,
+  isFontId,
   isPrimaryColorId,
   PRIMARY_COLORS,
 } from '#/lib/theme'
-import type { PrimaryColorId, ThemeMode } from '#/lib/theme'
+import type { FontId, PrimaryColorId, ThemeMode } from '#/lib/theme'
 import { cn } from '#/lib/utils'
 
 export function ThemeSection() {
@@ -44,10 +49,12 @@ export function ThemeSection() {
 export function ThemeControls() {
   const [mode, setMode] = useState<ThemeMode>('light')
   const [color, setColor] = useState<PrimaryColorId>(DEFAULT_PRIMARY)
+  const [font, setFont] = useState<FontId>(DEFAULT_FONT)
 
   useEffect(() => {
     setMode(getStoredTheme())
     setColor(getStoredPrimaryColor())
+    setFont(getStoredFont())
     function onThemeChange(event: Event) {
       const detail = (event as CustomEvent<unknown>).detail
       if (detail === 'light' || detail === 'dark') setMode(detail)
@@ -56,11 +63,17 @@ export function ThemeControls() {
       const detail = (event as CustomEvent<unknown>).detail
       if (isPrimaryColorId(detail)) setColor(detail)
     }
+    function onFontChange(event: Event) {
+      const detail = (event as CustomEvent<unknown>).detail
+      if (isFontId(detail)) setFont(detail)
+    }
     window.addEventListener('theme-change', onThemeChange)
     window.addEventListener('primary-color-change', onColorChange)
+    window.addEventListener('font-change', onFontChange)
     return () => {
       window.removeEventListener('theme-change', onThemeChange)
       window.removeEventListener('primary-color-change', onColorChange)
+      window.removeEventListener('font-change', onFontChange)
     }
   }, [])
 
@@ -72,6 +85,11 @@ export function ThemeControls() {
   function selectColor(id: PrimaryColorId) {
     applyPrimaryColor(id)
     setColor(id)
+  }
+
+  function selectFont(id: FontId) {
+    applyFont(id)
+    setFont(id)
   }
 
   return (
@@ -144,6 +162,25 @@ export function ThemeControls() {
             {PRIMARY_COLORS.find((c) => c.id === color)?.label}
           </span>
         </p>
+      </div>
+
+      <div>
+        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <Type className="mr-1 inline size-3 align-middle" />
+          Font
+        </p>
+        <select
+          aria-label="Font"
+          value={font}
+          onChange={(e) => selectFont(e.target.value as FontId)}
+          className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+        >
+          {FONT_OPTIONS.map((f) => (
+            <option key={f.id} value={f.id} style={{ fontFamily: f.body }}>
+              {f.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   )

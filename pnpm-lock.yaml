@@ -14,9 +14,18 @@ importers:
       '@fontsource-variable/dm-sans':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource-variable/inter':
+        specifier: ^5.2.8
+        version: 5.2.8
+      '@fontsource-variable/nunito':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@fontsource-variable/roboto':
         specifier: ^5.2.10
         version: 5.2.10
+      '@fontsource-variable/work-sans':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@imagekit/react':
         specifier: ^5.0.2
         version: 5.0.2(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -1105,8 +1114,17 @@ packages:
   '@fontsource-variable/dm-sans@5.2.8':
     resolution: {integrity: sha512-AxkvMTvNWgfrmlyjiV05vlHYJa+nRQCf1EfvIrQAPBpFJW0O9VTz7oAFr9S3lvbWdmnFoBk7yFqQL86u64nl2g==}
 
+  '@fontsource-variable/inter@5.2.8':
+    resolution: {integrity: sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ==}
+
+  '@fontsource-variable/nunito@5.2.7':
+    resolution: {integrity: sha512-2N8QhatkyKgSUbAGZO2FYLioxA32+RyI1EplVLawbpkGjUeui9Qg9VMrpkCaik1ydjFjfLV+kzQ0cGEsMrMenQ==}
+
   '@fontsource-variable/roboto@5.2.10':
     resolution: {integrity: sha512-LJ0iLg6aHbLzN515gyHzmdTqJzd9NlI95cCg1DW0F5G7KkFqRLBBKBbqEJx4nSu4aby3IKmw3ZH6Fe928IfaSQ==}
+
+  '@fontsource-variable/work-sans@5.2.8':
+    resolution: {integrity: sha512-8uWtTt0/B5NxGie9xUVD5y5Ch4Q+Hy7kFYKtUpwYbzSAgJEoaMxT8rMnfnK7zfAYSLC8GnGO1/tXrFtKIYYQVQ==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -7626,7 +7644,13 @@ snapshots:
 
   '@fontsource-variable/dm-sans@5.2.8': {}
 
+  '@fontsource-variable/inter@5.2.8': {}
+
+  '@fontsource-variable/nunito@5.2.7': {}
+
   '@fontsource-variable/roboto@5.2.10': {}
+
+  '@fontsource-variable/work-sans@5.2.8': {}
 
   '@hono/node-server@1.19.11(hono@4.12.12)':
     dependencies:
