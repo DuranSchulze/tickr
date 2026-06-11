@@ -388,3 +388,22 @@ html[data-primary='amber'].dark {
   --sidebar-primary: oklch(0.82 0.15 75);
   --sidebar-primary-foreground: oklch(0.18 0.04 75);
 }
+
+html[data-primary='pink'] {
+  --primary: oklch(0.72 0.16 350);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.72 0.16 350);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.72 0.16 350);
+  --sidebar-primary: oklch(0.72 0.16 350);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='pink'].dark {
+  --primary: oklch(0.82 0.14 350);
+  --primary-foreground: oklch(0.15 0.05 350);
+  --accent: oklch(0.82 0.14 350);
+  --accent-foreground: oklch(0.15 0.05 350);
+  --ring: oklch(0.82 0.14 350);
+  --sidebar-primary: oklch(0.82 0.14 350);
+  --sidebar-primary-foreground: oklch(0.15 0.05 350);
+}

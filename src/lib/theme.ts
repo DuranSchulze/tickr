@@ -8,6 +8,7 @@ export type PrimaryColorId =
   | 'emerald'
   | 'rose'
   | 'amber'
+  | 'pink'
 
 export type PrimaryColor = {
   id: PrimaryColorId
@@ -22,6 +23,7 @@ export const PRIMARY_COLORS: ReadonlyArray<PrimaryColor> = [
   { id: 'emerald', label: 'Emerald', swatch: 'oklch(0.6 0.14 155)' },
   { id: 'rose', label: 'Rose', swatch: 'oklch(0.62 0.2 15)' },
   { id: 'amber', label: 'Amber', swatch: 'oklch(0.72 0.17 75)' },
+  { id: 'pink', label: 'Pink', swatch: 'oklch(0.72 0.16 350)' },
 ]
 
 export const DEFAULT_PRIMARY: PrimaryColorId = 'teal'
