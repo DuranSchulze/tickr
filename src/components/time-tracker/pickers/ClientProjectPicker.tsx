@@ -31,6 +31,10 @@ type GroupedRow =
   | { kind: 'client'; client: ClientItem }
   | { kind: 'project'; project: ProjectItem; client: ClientItem }
 
+// Cap how many projects mount at once. Opening the popover commits every row
+// synchronously, so an uncapped list is what makes a large catalog slow.
+const MAX_VISIBLE_PROJECTS = 50
+
 export function ClientProjectPicker({
   clients,
   projects,
@@ -86,13 +90,26 @@ export function ClientProjectPicker({
   }, [projects])
 
   // Build grouped rows filtered by search — only while the dropdown is open,
-  // so closed pickers cost nothing when the parent re-renders.
-  const rows = useMemo<GroupedRow[]>(() => {
-    if (!open) return []
+  // so closed pickers cost nothing when the parent re-renders. The result is
+  // capped: mounting every project at once is what makes opening the popover
+  // slow on large catalogs (all nodes commit synchronously and Radix's
+  // FocusScope/Popper run over the whole subtree). The search box narrows the
+  // rest.
+  const { rows, truncated } = useMemo<{
+    rows: GroupedRow[]
+    truncated: boolean
+  }>(() => {
+    if (!open) return { rows: [], truncated: false }
     const q = search.toLowerCase()
     const result: GroupedRow[] = []
+    let projectCount = 0
+    let cut = false
 
     for (const client of clients) {
+      if (projectCount >= MAX_VISIBLE_PROJECTS) {
+        cut = true
+        break
+      }
       const clientMatches = client.name.toLowerCase().includes(q)
       const clientProjects = projectsByClient.get(client.id) ?? []
       const matchingProjects = q
@@ -105,10 +122,15 @@ export function ClientProjectPicker({
 
       result.push({ kind: 'client', client })
       for (const project of matchingProjects) {
+        if (projectCount >= MAX_VISIBLE_PROJECTS) {
+          cut = true
+          break
+        }
         result.push({ kind: 'project', project, client })
+        projectCount++
       }
     }
-    return result
+    return { rows: result, truncated: cut }
   }, [open, search, clients, projectsByClient])
 
   function handleSelect(nextClientId: string, nextProjectId: string) {
@@ -274,6 +296,11 @@ export function ClientProjectPicker({
                 </button>
               )
             })
+          )}
+          {truncated && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              Showing first {MAX_VISIBLE_PROJECTS} — type to narrow results.
+            </p>
           )}
         </div>
       </PopoverContent>

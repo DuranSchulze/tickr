@@ -5,6 +5,10 @@ import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export type SearchableItem = { id: string; name: string; color: string }
 
+// Cap how many items mount at once. Opening the popover commits every row
+// synchronously, so an uncapped list is what makes a large catalog slow.
+const MAX_VISIBLE_ITEMS = 50
+
 type CommonProps = {
   items: SearchableItem[]
   onCreate: (name: string, color: string) => Promise<void>
@@ -75,16 +79,17 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   )
 
   // Only filter while the dropdown is open — closed pickers shouldn't pay for
-  // every parent re-render.
-  const filtered = useMemo(
-    () =>
-      open
-        ? items.filter((i) =>
-            i.name.toLowerCase().includes(search.toLowerCase()),
-          )
-        : [],
-    [open, items, search],
-  )
+  // every parent re-render. Capped so a large catalog doesn't commit every row
+  // at once on open; the search box narrows the rest.
+  const { filtered, truncated } = useMemo(() => {
+    if (!open) return { filtered: [] as SearchableItem[], truncated: false }
+    const q = search.toLowerCase()
+    const matches = items.filter((i) => i.name.toLowerCase().includes(q))
+    return {
+      filtered: matches.slice(0, MAX_VISIBLE_ITEMS),
+      truncated: matches.length > MAX_VISIBLE_ITEMS,
+    }
+  }, [open, items, search])
 
   function handleSelect(id: string) {
     if (props.multi) {
@@ -182,6 +187,11 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                 </button>
               )
             })
+          )}
+          {truncated && (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              Showing first {MAX_VISIBLE_ITEMS} — type to narrow results.
+            </p>
           )}
         </div>
         {canCreate && (
