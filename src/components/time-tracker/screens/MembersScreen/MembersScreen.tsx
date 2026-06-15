@@ -13,6 +13,7 @@ import {
 } from '../../WorkspaceMembersSummary'
 import { Page } from '../shared/Page'
 import { MembersFilterBar } from './MembersFilterBar'
+import type { MembersFilters } from './MembersFilterBar'
 
 interface MembersScreenProps {
   state: TrackerState
@@ -67,9 +68,13 @@ export function MembersScreen({
     [memberStats, canManage],
   )
 
-  const cohortFilterOptions = state.cohorts.filter(
-    (c) => !deptFilter || c.departmentId === deptFilter,
-  )
+  const filters: MembersFilters = {
+    search,
+    role: roleFilter,
+    dept: deptFilter,
+    cohort: cohortFilter,
+    status: statusFilter,
+  }
 
   const hasActiveFilters = Boolean(
     search || roleFilter || deptFilter || cohortFilter || statusFilter,
@@ -125,32 +130,16 @@ export function MembersScreen({
 
         <MembersFilterBar
           state={state}
-          search={search}
-          onSearchChange={(v) => onFilterChange({ search: v || undefined })}
-          filterRole={roleFilter}
-          onFilterRoleChange={(v) => onFilterChange({ role: v || undefined })}
-          filterDept={deptFilter}
-          onFilterDeptChange={(v) => {
-            const updates: Record<string, string | undefined> = {
-              dept: v || undefined,
-            }
-            if (cohortFilter) {
-              const cohort = state.cohorts.find((c) => c.id === cohortFilter)
-              if (cohort && cohort.departmentId !== v) {
-                updates.cohort = undefined
-              }
-            }
-            onFilterChange(updates)
-          }}
-          filterCohort={cohortFilter}
-          onFilterCohortChange={(v) =>
-            onFilterChange({ cohort: v || undefined })
+          filters={filters}
+          onFiltersChange={(next) =>
+            onFilterChange({
+              search: next.search || undefined,
+              role: next.role || undefined,
+              dept: next.dept || undefined,
+              cohort: next.cohort || undefined,
+              status: next.status || undefined,
+            })
           }
-          filterStatus={statusFilter}
-          onFilterStatusChange={(v) =>
-            onFilterChange({ status: v || undefined })
-          }
-          cohortFilterOptions={cohortFilterOptions}
           hasActiveFilters={hasActiveFilters}
           onClear={() =>
             onFilterChange({

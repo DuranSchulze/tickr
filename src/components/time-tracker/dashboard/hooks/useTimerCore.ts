@@ -14,7 +14,11 @@ import {
 } from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
-import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
+import {
+  invalidateTrackerState,
+  removeTrackerStateEntry,
+  upsertTrackerStateEntry,
+} from '#/lib/time-tracker/query-keys'
 import type { useTrackerMutations } from './useTrackerMutations'
 import { useDescriptionSuggestions } from './useDescriptionSuggestions'
 
@@ -182,7 +186,13 @@ export function useTimerCore({
   // Drop pending entries that have been confirmed by the server.
   useEffect(() => {
     if (optimisticStoppedEntries.length === 0) return
-    const confirmedIds = new Set(state.entries.map((e) => e.id))
+    // Only treat an entry as confirmed once the server reports it as *stopped*.
+    // A running entry shares its id with its optimistic stopped copy, so keying
+    // off id alone would drop the optimistic row while the server still has it
+    // running — flickering the row back to "running" until the next refetch.
+    const confirmedIds = new Set(
+      state.entries.filter((e) => e.endedAt).map((e) => e.id),
+    )
     const toRemove = optimisticStoppedEntries.filter((e) =>
       confirmedIds.has(e.id),
     )
@@ -468,11 +478,18 @@ export function useTimerCore({
         }
 
         if (confirmedEntry) {
+          // Splice the finalized row into the cache instead of refetching the
+          // whole dashboard. The optimistic copy stays visible until the
+          // reconciliation effect drops it (now that state.entries reports the
+          // entry as stopped) — no spinner-until-refetch, no cost that scales
+          // with the number of entries.
           upsertOptimisticStoppedEntry(confirmedEntry)
+          upsertTrackerStateEntry(queryClient, confirmedEntry)
         } else {
           removeOptimisticStoppedEntry(entryToStop.id)
+          removeTrackerStateEntry(queryClient, entryToStop.id)
         }
-        invalidateDashboard()
+        void router.invalidate()
         onMutated?.()
       })
       .catch((err: unknown) => {
@@ -548,6 +565,7 @@ export function useTimerCore({
     }
 
     void mutations.startTimer(resumeInput, {
+      invalidate: false,
       onSuccess: (newEntry) => {
         const op = timerOperationRef.current
         if (!operationHasToken(op, token)) return
@@ -575,6 +593,10 @@ export function useTimerCore({
           token,
           entryId: newEntry.id,
         })
+        // Patch the running entry into the cache so serverActiveEntry resolves
+        // it without a full dashboard refetch.
+        upsertTrackerStateEntry(queryClient, newEntry)
+        void router.invalidate()
       },
       onError: () => {
         if (!operationHasToken(timerOperationRef.current, token)) return
@@ -642,7 +664,8 @@ export function useTimerCore({
         ) {
           return
         }
-        invalidateDashboard()
+        removeTrackerStateEntry(queryClient, entryToDiscard.id)
+        void router.invalidate()
       })
       .catch((err: unknown) => {
         const op = timerOperationRef.current
@@ -709,6 +732,7 @@ export function useTimerCore({
     }
 
     void mutations.startTimer(nextInput, {
+      invalidate: false,
       onSuccess: (entry) => {
         const op = timerOperationRef.current
         if (!operationHasToken(op, token)) return
@@ -736,6 +760,10 @@ export function useTimerCore({
           token,
           entryId: entry.id,
         })
+        // Patch the running entry into the cache so serverActiveEntry resolves
+        // it without a full dashboard refetch.
+        upsertTrackerStateEntry(queryClient, entry)
+        void router.invalidate()
       },
       onError: () => {
         if (!operationHasToken(timerOperationRef.current, token)) return

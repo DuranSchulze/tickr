@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query'
+import type { TimeEntry, TrackerState } from './types'
 
 // Centralized React Query keys for time-tracker route loaders. Keeping them in
 // one place lets route loaders cache via queryClient.ensureQueryData and lets
@@ -23,4 +24,33 @@ export const trackerKeys = {
 // instead of returning the cached (still-within-staleTime) value.
 export function invalidateTrackerState(queryClient: QueryClient) {
   return queryClient.invalidateQueries({ queryKey: trackerKeys.state })
+}
+
+// Patch a single entry straight into the cached tracker state instead of
+// refetching the whole dashboard. A timer start/stop already returns the
+// authoritative row, so we splice it in and let the loader serve the (now
+// fresh) cache — avoiding a full getTrackerState round trip whose cost grows
+// with every entry in the 62-day window.
+export function upsertTrackerStateEntry(
+  queryClient: QueryClient,
+  entry: TimeEntry,
+) {
+  queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) => {
+    if (!prev) return prev
+    const exists = prev.entries.some((e) => e.id === entry.id)
+    return {
+      ...prev,
+      entries: exists
+        ? prev.entries.map((e) => (e.id === entry.id ? entry : e))
+        : [...prev.entries, entry],
+    }
+  })
+}
+
+// Drop an entry from the cached tracker state (e.g. a discarded timer) without
+// a refetch.
+export function removeTrackerStateEntry(queryClient: QueryClient, id: string) {
+  queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) =>
+    prev ? { ...prev, entries: prev.entries.filter((e) => e.id !== id) } : prev,
+  )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown, Plus } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export type SearchableItem = { id: string; name: string; color: string }
 
@@ -10,7 +11,7 @@ type CommonProps = {
   disabled?: boolean
   /** When false, the "+ New …" footer is hidden. Defaults to true. */
   canCreate?: boolean
-  /** Borderless trigger variant for use inside the unified timer bar. */
+  /** Borderless trigger variant for use inside the unified timer bar / rows. */
   bare?: boolean
   searchPlaceholder?: string
   emptyText?: string
@@ -53,19 +54,15 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(defaultColor)
   const [createPending, setCreatePending] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
+  // Reset transient state whenever the popover closes.
   useEffect(() => {
-    function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-        setCreating(false)
-        setSearch('')
-      }
+    if (!open) {
+      setSearch('')
+      setCreating(false)
     }
-    document.addEventListener('mousedown', handle)
-    return () => document.removeEventListener('mousedown', handle)
-  }, [])
+  }, [open])
 
   const isSelected = (id: string) =>
     props.multi ? props.value.includes(id) : props.value === id
@@ -99,7 +96,6 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
     } else {
       props.onChange(id)
       setOpen(false)
-      setSearch('')
     }
   }
 
@@ -119,121 +115,129 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   }
 
   return (
-    <div ref={ref} className={bare ? 'relative h-full' : 'relative'}>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => !disabled && setOpen((o) => !o)}
-        className={
-          bare
-            ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
-            : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
-        }
-      >
-        <div className="flex flex-1 items-center gap-1 overflow-hidden">
-          {renderTrigger(selectedItems)}
-        </div>
-        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-      </button>
+    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          className={
+            bare
+              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
+              : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+          }
+        >
+          <div className="flex flex-1 items-center gap-1 overflow-hidden">
+            {renderTrigger(selectedItems)}
+          </div>
+          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+        </button>
+      </PopoverTrigger>
 
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 w-64 overflow-hidden rounded-xl border border-border bg-card shadow-xl">
-          <div className="border-b border-border p-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              className="h-8 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div className="max-h-48 overflow-y-auto py-1">
-            {filtered.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">
-                {emptyText}
-              </p>
-            ) : (
-              filtered.map((item) => {
-                const checked = isSelected(item.id)
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSelect(item.id)}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent ${
-                      checked
-                        ? 'font-semibold text-foreground'
-                        : 'text-foreground'
-                    }`}
-                  >
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="flex-1 truncate text-left">
-                      {item.name}
-                    </span>
-                    {checked && <Check className="size-3.5 text-primary" />}
-                  </button>
-                )
-              })
-            )}
-          </div>
-          {canCreate && (
-            <div className="border-t border-border p-2">
-              {creating ? (
-                <form onSubmit={handleCreate} className="grid gap-2">
-                  <div className="flex gap-2">
-                    <input
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      placeholder={newNamePlaceholder}
-                      aria-label={newNamePlaceholder}
-                      className="h-8 flex-1 rounded-lg border border-border bg-card text-foreground px-2 text-sm outline-none focus:border-primary"
-                    />
-                    <input
-                      type="color"
-                      value={newColor}
-                      onChange={(e) => setNewColor(e.target.value)}
-                      title="Pick a color"
-                      aria-label="Color"
-                      className="h-8 w-10 cursor-pointer rounded-lg border border-border bg-card p-0.5"
-                    />
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button
-                      type="submit"
-                      disabled={createPending || !newName.trim()}
-                      className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
-                    >
-                      {createPending ? 'Creating…' : 'Create'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCreating(false)
-                        setNewName('')
-                      }}
-                      className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              ) : (
+      {/* Dropdown — rendered in a portal so it's never clipped by an
+          overflow-hidden ancestor (timer bar) or overflow-x-auto table. */}
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }}
+        className="w-64 gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+      >
+        <div className="border-b border-border p-2">
+          <input
+            ref={inputRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
+            className="h-8 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div className="max-h-48 overflow-y-auto py-1">
+          {filtered.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              {emptyText}
+            </p>
+          ) : (
+            filtered.map((item) => {
+              const checked = isSelected(item.id)
+              return (
                 <button
+                  key={item.id}
                   type="button"
-                  onClick={() => setCreating(true)}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+                  onClick={() => handleSelect(item.id)}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent ${
+                    checked
+                      ? 'font-semibold text-foreground'
+                      : 'text-foreground'
+                  }`}
                 >
-                  <Plus className="size-3.5" />
-                  {createLabel}
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="flex-1 truncate text-left">{item.name}</span>
+                  {checked && <Check className="size-3.5 text-primary" />}
                 </button>
-              )}
-            </div>
+              )
+            })
           )}
         </div>
-      )}
-    </div>
+        {canCreate && (
+          <div className="border-t border-border p-2">
+            {creating ? (
+              <form onSubmit={handleCreate} className="grid gap-2">
+                <div className="flex gap-2">
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder={newNamePlaceholder}
+                    aria-label={newNamePlaceholder}
+                    className="h-8 flex-1 rounded-lg border border-border bg-card text-foreground px-2 text-sm outline-none focus:border-primary"
+                  />
+                  <input
+                    type="color"
+                    value={newColor}
+                    onChange={(e) => setNewColor(e.target.value)}
+                    title="Pick a color"
+                    aria-label="Color"
+                    className="h-8 w-10 cursor-pointer rounded-lg border border-border bg-card p-0.5"
+                  />
+                </div>
+                <div className="flex gap-1.5">
+                  <button
+                    type="submit"
+                    disabled={createPending || !newName.trim()}
+                    className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+                  >
+                    {createPending ? 'Creating…' : 'Create'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreating(false)
+                      setNewName('')
+                    }}
+                    className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCreating(true)}
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
+              >
+                <Plus className="size-3.5" />
+                {createLabel}
+              </button>
+            )}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
   )
 }

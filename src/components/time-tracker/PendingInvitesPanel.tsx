@@ -2,7 +2,16 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
-import { Copy, Check } from 'lucide-react'
+import { Check, Copy, Mail } from 'lucide-react'
+import { Button } from '#/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '#/components/ui/dialog'
 import {
   listWorkspaceInvitesFn,
   resendWorkspaceInviteFn,
@@ -18,6 +27,7 @@ export function PendingInvitesPanel() {
   })
   const [busyId, setBusyId] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   async function handleCopyCode(id: string, code: string) {
     await navigator.clipboard.writeText(code)
@@ -60,84 +70,116 @@ export function PendingInvitesPanel() {
 
   return (
     <section className="rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border p-4">
-        <h2 className="m-0 text-lg font-bold text-foreground">
-          Pending invitations ({invites.length})
-        </h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">
-          These people have been sent an invite link but have not joined yet.
-        </p>
-      </div>
-      <ul className="m-0 grid list-none gap-0 p-0">
-        {invites.map((invite) => {
-          const expires = new Date(invite.expiresAt)
-          const isExpired = expires < new Date()
-          return (
-            <li
-              key={invite.id}
-              className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="m-0 truncate text-sm font-semibold text-foreground">
-                  {invite.email}
-                </p>
-                <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-                  {invite.roleName ?? 'Member'}
-                  {invite.departmentName ? ` · ${invite.departmentName}` : ''}
-                  {' · '}
-                  {isExpired ? (
-                    <span className="font-semibold text-amber-600 dark:text-amber-400">
-                      Expired {expires.toLocaleDateString()}
-                    </span>
-                  ) : (
-                    <>Expires {expires.toLocaleDateString()}</>
-                  )}
-                </p>
-                {invite.joinCode && (
-                  <div className="mt-1.5 flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">Code:</span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground">
-                      {invite.joinCode}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        void handleCopyCode(invite.id, invite.joinCode!)
-                      }
-                      className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
-                      title="Copy join code"
-                    >
-                      {copiedId === invite.id ? (
-                        <Check className="size-3 text-emerald-500" />
-                      ) : (
-                        <Copy className="size-3" />
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div className="flex items-center gap-3">
+          <div className="grid size-10 place-items-center rounded-full bg-primary/10">
+            <Mail className="size-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="m-0 text-base font-bold text-foreground">
+              Pending invitations
+            </h2>
+            <p className="m-0 text-sm text-muted-foreground">
+              {invites.length} pending invitation
+              {invites.length === 1 ? '' : 's'} · awaiting response
+            </p>
+          </div>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" className="h-9">
+              View invitations
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-h-[80vh] max-w-lg overflow-hidden p-0">
+            <DialogHeader className="border-b border-border p-4">
+              <DialogTitle className="text-left text-lg">
+                Pending invitations ({invites.length})
+              </DialogTitle>
+              <DialogDescription className="text-left">
+                These people have been sent an invite link but have not joined
+                yet.
+              </DialogDescription>
+            </DialogHeader>
+
+            <ul className="m-0 max-h-[60vh] list-none overflow-y-auto p-0">
+              {invites.map((invite) => {
+                const expires = new Date(invite.expiresAt)
+                const isExpired = expires < new Date()
+                return (
+                  <li
+                    key={invite.id}
+                    className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="m-0 truncate text-sm font-semibold text-foreground">
+                        {invite.email}
+                      </p>
+                      <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                        {invite.roleName ?? 'Member'}
+                        {invite.departmentName
+                          ? ` · ${invite.departmentName}`
+                          : ''}
+                        {' · '}
+                        {isExpired ? (
+                          <span className="font-semibold text-amber-600 dark:text-amber-400">
+                            Expired {expires.toLocaleDateString()}
+                          </span>
+                        ) : (
+                          <>Expires {expires.toLocaleDateString()}</>
+                        )}
+                      </p>
+                      {invite.joinCode && (
+                        <div className="mt-1.5 flex items-center gap-1.5">
+                          <span className="text-xs text-muted-foreground">
+                            Code:
+                          </span>
+                          <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground">
+                            {invite.joinCode}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleCopyCode(invite.id, invite.joinCode!)
+                            }
+                            className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                            title="Copy join code"
+                          >
+                            {copiedId === invite.id ? (
+                              <Check className="size-3 text-emerald-500" />
+                            ) : (
+                              <Copy className="size-3" />
+                            )}
+                          </button>
+                        </div>
                       )}
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void handleResend(invite.id)}
-                  disabled={busyId === invite.id}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-                >
-                  Resend
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleRevoke(invite.id)}
-                  disabled={busyId === invite.id}
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                >
-                  Revoke
-                </button>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleResend(invite.id)}
+                        disabled={busyId === invite.id}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                      >
+                        Resend
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleRevoke(invite.id)}
+                        disabled={busyId === invite.id}
+                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                      >
+                        Revoke
+                      </button>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </DialogContent>
+        </Dialog>
+      </div>
     </section>
   )
 }

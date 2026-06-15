@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
+import { useRouter } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { gooeyToast } from '#/lib/toast'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
 import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
+import { upsertTrackerStateEntry } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { calculateManualSeconds, emptyDraft, toEntryPayload } from '../utils'
 import type { DraftEntry } from '../utils'
@@ -29,8 +32,19 @@ export function useDraftAndEdit({
   // (it lands in the pending-entries store until the reconnect drain syncs it).
   onOfflineCreate?: (entry: TimeEntry) => void
 }) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
   // Fall back to state.entries when no explicit lookup list is provided.
   const entries = lookupEntries ?? state.entries
+
+  // Reflect an edit in the cached tracker state immediately so the row updates
+  // in the frontend without waiting for the (heavy) getTrackerState refetch.
+  // The loader re-runs against the now-fresh cache, so no network round trip.
+  function patchEntryOptimistically(updated: TimeEntry) {
+    upsertTrackerStateEntry(queryClient, updated)
+    void router.invalidate()
+  }
   const activeClients = state.clients.filter((c) => c.clientStatus === 'ACTIVE')
   const initialClientId = activeClients[0]?.id || ''
   const initialProject =
@@ -139,49 +153,57 @@ export function useDraftAndEdit({
   }
 
   function saveEdit() {
-    if (!editingId || !editingDraft.description.trim()) return
+    if (!editingId || !editingDraft.description.trim() || !editingEntry) return
+    const prev = editingEntry
 
     // Running entry — update without touching endedAt to keep the timer alive
-    if (!editingEntry?.endedAt) {
+    if (!prev.endedAt) {
       const startedAt = new Date(editingDraft.startedAt)
       if (isNaN(startedAt.getTime()) || startedAt >= new Date()) return
+      const tagIds = editingDraft.tagIds.filter(Boolean)
+      patchEntryOptimistically({
+        ...prev,
+        description: editingDraft.description.trim(),
+        projectId: editingDraft.projectId,
+        tagIds,
+        billable: editingDraft.billable,
+        startedAt: startedAt.toISOString(),
+      })
+      setEditingId(null)
       void mutations.updateActiveTimer(
         {
           id: editingId,
           description: editingDraft.description.trim(),
           projectId: editingDraft.projectId,
-          tagIds: editingDraft.tagIds.filter(Boolean),
+          tagIds,
           billable: editingDraft.billable,
           startedAt: startedAt.toISOString(),
         },
         {
-          onSuccess: () => {
-            setEditingId(null)
-            onMutated?.()
-          },
+          invalidate: false,
+          onSuccess: () => onMutated?.(),
+          onError: () => patchEntryOptimistically(prev),
         },
       )
       return
     }
 
-    const origStart = dateTimeLocalValue(new Date(editingEntry.startedAt))
-    const origEnd = dateTimeLocalValue(new Date(editingEntry.endedAt))
+    const origStart = dateTimeLocalValue(new Date(prev.startedAt))
+    const origEnd = dateTimeLocalValue(new Date(prev.endedAt))
     const timesUnchanged =
       editingDraft.startedAt === origStart && editingDraft.endedAt === origEnd
     const durationSeconds = timesUnchanged
-      ? editingEntry.durationSeconds
+      ? prev.durationSeconds
       : calculateManualSeconds(editingDraft)
 
-    void mutations.updateEntry(
-      editingId,
-      { ...toEntryPayload(editingDraft), durationSeconds },
-      {
-        onSuccess: () => {
-          setEditingId(null)
-          onMutated?.()
-        },
-      },
-    )
+    const payload = { ...toEntryPayload(editingDraft), durationSeconds }
+    patchEntryOptimistically({ ...prev, ...payload })
+    setEditingId(null)
+    void mutations.updateEntry(editingId, payload, {
+      invalidate: false,
+      onSuccess: () => onMutated?.(),
+      onError: () => patchEntryOptimistically(prev),
+    })
   }
 
   function handleInlineUpdate(
@@ -203,22 +225,42 @@ export function useDraftAndEdit({
 
     // Running entry — route through updateActiveTimer so endedAt is never set
     if (!entry.endedAt) {
+      const description = (patch.description ?? entry.description).trim()
+      const projectId = patch.projectId ?? entry.projectId
+      const tagIds = patch.tagIds ?? entry.tagIds
+      const billable = patch.billable ?? entry.billable
+      const startedAt = patch.startedAt ?? entry.startedAt
+      patchEntryOptimistically({
+        ...entry,
+        description,
+        projectId,
+        tagIds,
+        billable,
+        startedAt,
+      })
       void mutations.updateActiveTimer(
         {
           id: entryId,
-          description: (patch.description ?? entry.description).trim(),
-          projectId: patch.projectId ?? entry.projectId,
-          tagIds: patch.tagIds ?? entry.tagIds,
-          billable: patch.billable ?? entry.billable,
+          description,
+          projectId,
+          tagIds,
+          billable,
           ...(patch.startedAt ? { startedAt: patch.startedAt } : {}),
         },
-        { onSuccess: onMutated },
+        {
+          invalidate: false,
+          onSuccess: onMutated,
+          onError: () => patchEntryOptimistically(entry),
+        },
       )
       return
     }
 
     const description = (patch.description ?? entry.description).trim()
     if (!description) return
+    const projectId = patch.projectId ?? entry.projectId
+    const tagIds = patch.tagIds ?? entry.tagIds
+    const billable = patch.billable ?? entry.billable
     const startedAt = patch.startedAt ?? entry.startedAt
     const endedAt = patch.endedAt ?? entry.endedAt
     const durationSeconds = Math.max(
@@ -227,19 +269,33 @@ export function useDraftAndEdit({
         (new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000,
       ),
     )
+    patchEntryOptimistically({
+      ...entry,
+      description,
+      projectId,
+      tagIds,
+      billable,
+      startedAt,
+      endedAt,
+      durationSeconds,
+    })
     void mutations.updateEntry(
       entryId,
       {
         description,
-        projectId: patch.projectId ?? entry.projectId,
-        tagIds: patch.tagIds ?? entry.tagIds,
-        billable: patch.billable ?? entry.billable,
+        projectId,
+        tagIds,
+        billable,
         startedAt,
         endedAt,
         durationSeconds,
         notes: entry.notes,
       },
-      { onSuccess: onMutated },
+      {
+        invalidate: false,
+        onSuccess: onMutated,
+        onError: () => patchEntryOptimistically(entry),
+      },
     )
   }
 

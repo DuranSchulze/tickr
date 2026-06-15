@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Building2, ChevronDown, X } from 'lucide-react'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
 import { cn } from '#/lib/utils'
 
 export type ClientItem = { id: string; name: string }
@@ -18,7 +23,7 @@ interface Props {
   onChange: (clientId: string, projectId: string) => void
   disabled?: boolean
   placeholder?: string
-  /** Borderless variant for use inside the unified timer bar. */
+  /** Borderless variant for use inside the unified timer bar / table rows. */
   bare?: boolean
 }
 
@@ -38,31 +43,15 @@ export function ClientProjectPicker({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
+  // Reset the search whenever the popover closes.
   useEffect(() => {
-    function handleOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-        setSearch('')
-      }
-    }
-    document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
-  }, [])
-
-  useEffect(() => {
-    if (open) {
-      const id = setTimeout(() => inputRef.current?.focus(), 0)
-      return () => clearTimeout(id)
-    } else {
-      setSearch('')
-    }
+    if (!open) setSearch('')
   }, [open])
 
-  // Scroll the selected project into view when dropdown opens
+  // Scroll the selected project into view when the dropdown opens.
   useEffect(() => {
     if (!open || !projectId) return
     requestAnimationFrame(() => {
@@ -82,7 +71,7 @@ export function ClientProjectPicker({
     [projects, projectId],
   )
 
-  const hasSelection = !!clientId && !!projectId
+  const hasSelection = !!clientId && !!projectId && !!selectedProject
 
   // Index projects once per catalog change instead of re-filtering the whole
   // project list for every client on every render.
@@ -127,69 +116,70 @@ export function ClientProjectPicker({
     setOpen(false)
   }
 
-  function handleClear(e: React.MouseEvent) {
+  function handleClear(e: React.MouseEvent | React.KeyboardEvent) {
     e.stopPropagation()
     onChange('', '')
   }
 
   return (
-    <div ref={ref} className={bare ? 'relative h-full' : 'relative'}>
+    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
       {/* Trigger — wrapped in a group so the tooltip can use group-hover */}
       <div className={bare ? 'group relative h-full' : 'group relative'}>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => !disabled && setOpen((o) => !o)}
-          className={
-            bare
-              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
-              : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
-          }
-        >
-          <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
-            {hasSelection ? (
-              <>
-                <span
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: selectedProject!.color }}
-                />
-                <div
-                  className="min-w-0 truncate text-left"
-                  title={`${selectedClient?.name ?? ''} › ${selectedProject!.name}`}
-                >
-                  {selectedClient?.name ?? ''}
-                  <span className="text-muted-foreground">
-                    {' '}
-                    ›{' '}
-                    <span className="text-foreground">
-                      {selectedProject!.name}
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            disabled={disabled}
+            className={
+              bare
+                ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
+                : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+            }
+          >
+            <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+              {hasSelection ? (
+                <>
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: selectedProject.color }}
+                  />
+                  <div
+                    className="min-w-0 truncate text-left"
+                    title={`${selectedClient?.name ?? ''} › ${selectedProject.name}`}
+                  >
+                    {selectedClient?.name ?? ''}
+                    <span className="text-muted-foreground">
+                      {' '}
+                      ›{' '}
+                      <span className="text-foreground">
+                        {selectedProject.name}
+                      </span>
                     </span>
-                  </span>
-                </div>
-              </>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
-          </div>
+                  </div>
+                </>
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+            </div>
 
-          <div className="flex shrink-0 items-center gap-1">
-            {hasSelection && (
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={handleClear}
-                onKeyDown={(e) => e.key === 'Enter' && handleClear(e as never)}
-                aria-label="Clear client and project"
-                className={cn(
-                  'grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
-                )}
-              >
-                <X className="size-3" />
-              </span>
-            )}
-            <ChevronDown className="size-3.5 text-muted-foreground" />
-          </div>
-        </button>
+            <div className="flex shrink-0 items-center gap-1">
+              {hasSelection && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleClear}
+                  onKeyDown={(e) => e.key === 'Enter' && handleClear(e)}
+                  aria-label="Clear client and project"
+                  className={cn(
+                    'grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <X className="size-3" />
+                </span>
+              )}
+              <ChevronDown className="size-3.5 text-muted-foreground" />
+            </div>
+          </button>
+        </PopoverTrigger>
 
         {/* Tooltip — only shows when something is selected and dropdown is closed */}
         {hasSelection && !open && (
@@ -202,7 +192,7 @@ export function ClientProjectPicker({
                 {selectedClient?.name}
                 <span className="mx-1">›</span>
                 <span className="font-semibold text-foreground">
-                  {selectedProject?.name}
+                  {selectedProject.name}
                 </span>
               </p>
             </div>
@@ -213,73 +203,80 @@ export function ClientProjectPicker({
         )}
       </div>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute left-0 top-[calc(100%+4px)] z-50 min-w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
-          {/* Search */}
-          <div className="border-b border-border p-2">
-            <input
-              ref={inputRef}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search clients or projects…"
-              aria-label="Search clients or projects"
-              className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-            />
-          </div>
+      {/* Dropdown — rendered in a portal so it's never clipped by an
+          overflow-hidden ancestor (timer bar) or overflow-x-auto table. */}
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          inputRef.current?.focus()
+        }}
+        className="w-72 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+      >
+        {/* Search */}
+        <div className="border-b border-border p-2">
+          <input
+            ref={inputRef}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clients or projects…"
+            aria-label="Search clients or projects"
+            className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+        </div>
 
-          {/* Results */}
-          <div ref={listRef} className="max-h-56 overflow-y-auto py-1">
-            {rows.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">
-                No clients or projects found
-              </p>
-            ) : (
-              rows.map((row, i) => {
-                if (row.kind === 'client') {
-                  return (
-                    <div
-                      key={`client-${row.client.id}`}
-                      className={cn(
-                        'flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground',
-                        i > 0 && 'mt-1 border-t border-border/50 pt-2',
-                      )}
-                    >
-                      <Building2 className="size-3 shrink-0" />
-                      <span className="truncate">{row.client.name}</span>
-                    </div>
-                  )
-                }
-
-                const isActive = row.project.id === projectId
+        {/* Results */}
+        <div ref={listRef} className="max-h-56 overflow-y-auto py-1">
+          {rows.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-muted-foreground">
+              No clients or projects found
+            </p>
+          ) : (
+            rows.map((row, i) => {
+              if (row.kind === 'client') {
                 return (
-                  <button
-                    key={`project-${row.project.id}`}
-                    type="button"
-                    data-selected={isActive ? 'true' : undefined}
-                    onClick={() => handleSelect(row.client.id, row.project.id)}
+                  <div
+                    key={`client-${row.client.id}`}
                     className={cn(
-                      'flex w-full items-center gap-2 py-1.5 pl-7 pr-3 text-left text-xs transition-colors hover:bg-accent',
-                      isActive
-                        ? 'bg-accent/50 font-medium text-foreground'
-                        : 'font-normal text-muted-foreground hover:text-foreground',
+                      'flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground',
+                      i > 0 && 'mt-1 border-t border-border/50 pt-2',
                     )}
                   >
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: row.project.color }}
-                    />
-                    <span className="flex-1 truncate">{row.project.name}</span>
-                    {isActive && (
-                      <span className="size-1.5 shrink-0 rounded-full bg-primary" />
-                    )}
-                  </button>
+                    <Building2 className="size-3 shrink-0" />
+                    <span className="truncate">{row.client.name}</span>
+                  </div>
                 )
-              })
-            )}
-          </div>
+              }
+
+              const isActive = row.project.id === projectId
+              return (
+                <button
+                  key={`project-${row.project.id}`}
+                  type="button"
+                  data-selected={isActive ? 'true' : undefined}
+                  onClick={() => handleSelect(row.client.id, row.project.id)}
+                  className={cn(
+                    'flex w-full items-center gap-2 py-1.5 pl-7 pr-3 text-left text-xs transition-colors hover:bg-accent',
+                    isActive
+                      ? 'bg-accent/50 font-medium text-foreground'
+                      : 'font-normal text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: row.project.color }}
+                  />
+                  <span className="flex-1 truncate">{row.project.name}</span>
+                  {isActive && (
+                    <span className="size-1.5 shrink-0 rounded-full bg-primary" />
+                  )}
+                </button>
+              )
+            })
+          )}
         </div>
-      )}
-    </div>
+      </PopoverContent>
+    </Popover>
   )
 }

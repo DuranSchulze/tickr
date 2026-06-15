@@ -25,11 +25,13 @@ import {
   PopoverTrigger,
 } from '#/components/ui/popover'
 import { TableCell, TableRow } from '#/components/ui/table'
+import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
+import { TagPicker } from '../pickers/TagPicker'
 import { BillableToggleButton } from './BillableToggleButton'
 import { ConfirmDialog } from './ConfirmDialog'
-import { InlineClientProjectPopover } from './InlineClientProjectPopover'
-import { InlineTagPopover } from './InlineTagPopover'
 import { useNowTick } from './hooks/useNowTick'
+
+const noopCreate = () => Promise.resolve()
 
 type InlinePatch = Partial<
   Pick<
@@ -343,26 +345,34 @@ export const EntryRow = memo(function EntryRow({
         )}
       </TableCell>
 
-      {/* Client + Project */}
+      {/* Client + Project — same picker used in the timer bar & edit drawer */}
       <TableCell className="py-3 px-4 w-[18%]">
-        <InlineClientProjectPopover
-          clients={activeClients}
-          projects={projects}
-          clientId={entryProject?.clientId ?? ''}
-          projectId={entry.projectId}
-          onChange={(_clientId, projectId) => update({ projectId })}
-          disabled={actionsDisabled}
-        />
+        <div className="h-9">
+          <ClientProjectPicker
+            clients={activeClients}
+            projects={projects}
+            clientId={entryProject?.clientId ?? ''}
+            projectId={entry.projectId}
+            onChange={(_clientId, projectId) => update({ projectId })}
+            disabled={actionsDisabled}
+            bare
+          />
+        </div>
       </TableCell>
 
-      {/* Tags */}
+      {/* Tags — same picker used in the timer bar & edit drawer */}
       <TableCell className="py-3 px-4 w-[14%]">
-        <InlineTagPopover
-          tags={tags}
-          value={entry.tagIds}
-          onChange={(ids) => update({ tagIds: ids })}
-          disabled={actionsDisabled}
-        />
+        <div className="h-9">
+          <TagPicker
+            tags={tags}
+            value={entry.tagIds}
+            onChange={(ids) => update({ tagIds: ids })}
+            onCreate={noopCreate}
+            canCreate={false}
+            disabled={actionsDisabled}
+            bare
+          />
+        </div>
       </TableCell>
 
       {/* Billable */}
