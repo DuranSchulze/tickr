@@ -19,7 +19,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
-import { CatalogSearchBar } from './CatalogTableLayout'
 
 function formatSeconds(seconds: number): string {
   if (seconds === 0) return '—'
@@ -215,39 +214,5 @@ export function ClientSheetMenu({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
-
-/** Search + status-filter toolbar for the Clients table. */
-export function ClientsToolbar({
-  search,
-  statusFilter,
-  onFilterChange,
-}: {
-  search: string
-  statusFilter: string
-  onFilterChange: (updates: Record<string, string | undefined>) => void
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search clients…"
-        />
-      </div>
-      <select
-        value={statusFilter}
-        onChange={(e) =>
-          onFilterChange({ status: e.target.value || undefined })
-        }
-        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-      >
-        <option value="">All statuses</option>
-        <option value="ACTIVE">Active</option>
-        <option value="INACTIVE">Inactive</option>
-      </select>
-    </div>
   )
 }

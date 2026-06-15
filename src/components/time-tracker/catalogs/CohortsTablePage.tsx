@@ -9,8 +9,8 @@ import type {
   PaginatedCohortsResult,
 } from '#/lib/server/tracker/catalogs/paginated.server'
 import {
+  CatalogFilterBar,
   CatalogFormDialog,
-  CatalogSearchBar,
   CatalogTablePage,
 } from './CatalogTableLayout'
 import { CohortForm } from './CohortForm'
@@ -22,8 +22,11 @@ interface Props {
   data: PaginatedCohortsResult
   page: number
   pageSize: number
-  search: string
-  departmentFilter: string
+  appliedFilters: {
+    search: string
+    departmentId: string
+    sort: string
+  }
   canManage: boolean
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
@@ -33,8 +36,7 @@ export function CohortsTablePage({
   data,
   page,
   pageSize,
-  search,
-  departmentFilter,
+  appliedFilters,
   canManage,
   onFilterChange,
   onPageChange,
@@ -130,29 +132,30 @@ export function CohortsTablePage({
     : null
 
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search groups…"
-        />
-      </div>
-      <select
-        value={departmentFilter}
-        onChange={(e) =>
-          onFilterChange({ departmentId: e.target.value || undefined })
-        }
-        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-      >
-        <option value="">All departments</option>
-        {data.departments.map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.name}
-          </option>
-        ))}
-      </select>
-    </div>
+    <CatalogFilterBar
+      searchPlaceholder="Search groups…"
+      appliedValues={appliedFilters}
+      onApply={onFilterChange}
+      filters={[
+        {
+          key: 'departmentId',
+          label: 'Department',
+          options: [
+            { value: '', label: 'All departments' },
+            ...data.departments.map((d) => ({ value: d.id, label: d.name })),
+          ],
+        },
+        {
+          key: 'sort',
+          label: 'Sort',
+          defaultValue: 'name_asc',
+          options: [
+            { value: 'name_asc', label: 'Name A–Z' },
+            { value: 'name_desc', label: 'Name Z–A' },
+          ],
+        },
+      ]}
+    />
   )
 
   return (
@@ -172,7 +175,7 @@ export function CohortsTablePage({
         createLabel="New Group"
         toolbar={toolbar}
         emptyMessage={
-          search || departmentFilter
+          appliedFilters.search || appliedFilters.departmentId
             ? 'No groups match your filters.'
             : 'No groups yet. Add your first group to get started.'
         }

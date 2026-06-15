@@ -5,25 +5,31 @@ import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
+type NameSort = 'name_asc' | 'name_desc'
+
 type TagsSearch = {
   page?: number
   search?: string
-  showArchived?: boolean
+  showArchived?: 'yes'
+  sort?: NameSort
 }
+
+const NAME_SORTS: NameSort[] = ['name_asc', 'name_desc']
 
 export const Route = createFileRoute('/app/workspace/catalogs/tags')({
   validateSearch: (search: Record<string, unknown>): TagsSearch => ({
     page: typeof search.page === 'number' ? search.page : undefined,
     search: typeof search.search === 'string' ? search.search : undefined,
-    showArchived:
-      typeof search.showArchived === 'boolean'
-        ? search.showArchived
-        : undefined,
+    showArchived: search.showArchived === 'yes' ? 'yes' : undefined,
+    sort: NAME_SORTS.includes(search.sort as NameSort)
+      ? (search.sort as NameSort)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({
     page: search.page ?? 0,
     search: search.search ?? '',
-    showArchived: search.showArchived ?? false,
+    showArchived: search.showArchived ?? '',
+    sort: search.sort,
   }),
   loader: async ({ deps }) => {
     const [access, paginatedTags] = await Promise.all([
@@ -33,7 +39,8 @@ export const Route = createFileRoute('/app/workspace/catalogs/tags')({
           page: deps.page,
           pageSize: PAGE_SIZE,
           search: deps.search || undefined,
-          includeArchived: deps.showArchived || undefined,
+          includeArchived: deps.showArchived === 'yes' || undefined,
+          sort: deps.sort,
         },
       }),
     ])
@@ -65,8 +72,11 @@ function TagsRoute() {
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
-      search={search.search ?? ''}
-      showArchived={search.showArchived ?? false}
+      appliedFilters={{
+        search: search.search ?? '',
+        showArchived: search.showArchived ?? '',
+        sort: search.sort ?? 'name_asc',
+      }}
       canManage={canManage}
       canImportSheet={canImportSheet}
       googleSheetUrl={googleSheetUrl}

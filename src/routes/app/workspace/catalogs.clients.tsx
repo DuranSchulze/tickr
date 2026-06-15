@@ -5,22 +5,31 @@ import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
+type NameSort = 'name_asc' | 'name_desc'
+
 type ClientsSearch = {
   page?: number
   search?: string
   status?: string
+  sort?: NameSort
 }
+
+const NAME_SORTS: NameSort[] = ['name_asc', 'name_desc']
 
 export const Route = createFileRoute('/app/workspace/catalogs/clients')({
   validateSearch: (search: Record<string, unknown>): ClientsSearch => ({
     page: typeof search.page === 'number' ? search.page : undefined,
     search: typeof search.search === 'string' ? search.search : undefined,
     status: typeof search.status === 'string' ? search.status : undefined,
+    sort: NAME_SORTS.includes(search.sort as NameSort)
+      ? (search.sort as NameSort)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({
     page: search.page ?? 0,
     search: search.search ?? '',
     status: search.status ?? '',
+    sort: search.sort,
   }),
   loader: async ({ deps }) => {
     const [access, paginatedClients] = await Promise.all([
@@ -31,6 +40,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/clients')({
           pageSize: PAGE_SIZE,
           search: deps.search || undefined,
           status: deps.status || undefined,
+          sort: deps.sort,
         },
       }),
     ])
@@ -66,8 +76,11 @@ function ClientsRoute() {
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
-      search={search.search ?? ''}
-      statusFilter={search.status ?? ''}
+      appliedFilters={{
+        search: search.search ?? '',
+        status: search.status ?? '',
+        sort: search.sort ?? 'name_asc',
+      }}
       canManage={canManage}
       canImportSheet={canImportSheet}
       canViewBillable={canViewBillable}

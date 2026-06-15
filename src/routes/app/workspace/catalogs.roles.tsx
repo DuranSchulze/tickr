@@ -5,19 +5,35 @@ import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
+type PermissionLevel = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+type RoleSort = 'permission' | 'name_asc' | 'name_desc'
+
 type RolesSearch = {
   page?: number
   search?: string
+  permissionLevel?: PermissionLevel
+  sort?: RoleSort
 }
+
+const LEVELS: PermissionLevel[] = ['OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE']
+const ROLE_SORTS: RoleSort[] = ['permission', 'name_asc', 'name_desc']
 
 export const Route = createFileRoute('/app/workspace/catalogs/roles')({
   validateSearch: (search: Record<string, unknown>): RolesSearch => ({
     page: typeof search.page === 'number' ? search.page : undefined,
     search: typeof search.search === 'string' ? search.search : undefined,
+    permissionLevel: LEVELS.includes(search.permissionLevel as PermissionLevel)
+      ? (search.permissionLevel as PermissionLevel)
+      : undefined,
+    sort: ROLE_SORTS.includes(search.sort as RoleSort)
+      ? (search.sort as RoleSort)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({
     page: search.page ?? 0,
     search: search.search ?? '',
+    permissionLevel: search.permissionLevel,
+    sort: search.sort,
   }),
   beforeLoad: async ({ context }) => {
     const access = await context.queryClient.ensureQueryData({
@@ -35,6 +51,8 @@ export const Route = createFileRoute('/app/workspace/catalogs/roles')({
         page: deps.page,
         pageSize: PAGE_SIZE,
         search: deps.search || undefined,
+        permissionLevel: deps.permissionLevel,
+        sort: deps.sort,
       },
     })
     return { data: paginatedRoles, pageSize: PAGE_SIZE }
@@ -54,7 +72,11 @@ function RolesRoute() {
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
-      search={search.search ?? ''}
+      appliedFilters={{
+        search: search.search ?? '',
+        permissionLevel: search.permissionLevel ?? '',
+        sort: search.sort ?? 'permission',
+      }}
       onFilterChange={(updates) => {
         void navigate({
           search: (prev) => ({ ...prev, ...updates, page: 0 }),

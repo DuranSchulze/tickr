@@ -5,28 +5,34 @@ import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
+type NameSort = 'name_asc' | 'name_desc'
+
 type ProjectsSearch = {
   page?: number
   search?: string
   clientId?: string
-  showArchived?: boolean
+  showArchived?: 'yes'
+  sort?: NameSort
 }
+
+const NAME_SORTS: NameSort[] = ['name_asc', 'name_desc']
 
 export const Route = createFileRoute('/app/workspace/catalogs/projects')({
   validateSearch: (search: Record<string, unknown>): ProjectsSearch => ({
     page: typeof search.page === 'number' ? search.page : undefined,
     search: typeof search.search === 'string' ? search.search : undefined,
     clientId: typeof search.clientId === 'string' ? search.clientId : undefined,
-    showArchived:
-      typeof search.showArchived === 'boolean'
-        ? search.showArchived
-        : undefined,
+    showArchived: search.showArchived === 'yes' ? 'yes' : undefined,
+    sort: NAME_SORTS.includes(search.sort as NameSort)
+      ? (search.sort as NameSort)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({
     page: search.page ?? 0,
     search: search.search ?? '',
     clientId: search.clientId ?? '',
-    showArchived: search.showArchived ?? false,
+    showArchived: search.showArchived ?? '',
+    sort: search.sort,
   }),
   loader: async ({ deps }) => {
     const [access, paginatedProjects] = await Promise.all([
@@ -37,7 +43,8 @@ export const Route = createFileRoute('/app/workspace/catalogs/projects')({
           pageSize: PAGE_SIZE,
           search: deps.search || undefined,
           clientId: deps.clientId || undefined,
-          includeArchived: deps.showArchived || undefined,
+          includeArchived: deps.showArchived === 'yes' || undefined,
+          sort: deps.sort,
         },
       }),
     ])
@@ -73,9 +80,12 @@ function ProjectsRoute() {
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
-      search={search.search ?? ''}
-      clientFilter={search.clientId ?? ''}
-      showArchived={search.showArchived ?? false}
+      appliedFilters={{
+        search: search.search ?? '',
+        clientId: search.clientId ?? '',
+        showArchived: search.showArchived ?? '',
+        sort: search.sort ?? 'name_asc',
+      }}
       canManage={canManage}
       canImportSheet={canImportSheet}
       canViewBillable={canViewBillable}

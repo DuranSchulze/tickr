@@ -35,8 +35,8 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import {
+  CatalogFilterBar,
   CatalogFormDialog,
-  CatalogSearchBar,
   CatalogTablePage,
 } from './CatalogTableLayout'
 import { ProjectForm } from './ProjectForm'
@@ -58,17 +58,18 @@ interface Props {
   data: PaginatedProjectsResult
   page: number
   pageSize: number
-  search: string
-  clientFilter: string
-  showArchived: boolean
+  appliedFilters: {
+    search: string
+    clientId: string
+    showArchived: string
+    sort: string
+  }
   canManage: boolean
   canImportSheet: boolean
   canViewBillable: boolean
   currency: string
   googleSheetUrl: string | null
-  onFilterChange: (
-    updates: Record<string, string | boolean | undefined>,
-  ) => void
+  onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
 
@@ -76,9 +77,7 @@ export function ProjectsTablePage({
   data,
   page,
   pageSize,
-  search,
-  clientFilter,
-  showArchived,
+  appliedFilters,
   canManage,
   canImportSheet,
   canViewBillable,
@@ -319,40 +318,38 @@ export function ProjectsTablePage({
   ) : null
 
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search projects…"
-        />
-      </div>
-      <select
-        value={clientFilter}
-        onChange={(e) =>
-          onFilterChange({ clientId: e.target.value || undefined })
-        }
-        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-      >
-        <option value="">All clients</option>
-        {data.clients.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-      <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={showArchived}
-          onChange={(e) =>
-            onFilterChange({ showArchived: e.target.checked || undefined })
-          }
-          className="size-4 rounded border-border accent-primary"
-        />
-        Show archived
-      </label>
-    </div>
+    <CatalogFilterBar
+      searchPlaceholder="Search projects…"
+      appliedValues={appliedFilters}
+      onApply={onFilterChange}
+      filters={[
+        {
+          key: 'clientId',
+          label: 'Client',
+          options: [
+            { value: '', label: 'All clients' },
+            ...data.clients.map((c) => ({ value: c.id, label: c.name })),
+          ],
+        },
+        {
+          key: 'showArchived',
+          label: 'Archived',
+          options: [
+            { value: '', label: 'Active only' },
+            { value: 'yes', label: 'Include archived' },
+          ],
+        },
+        {
+          key: 'sort',
+          label: 'Sort',
+          defaultValue: 'name_asc',
+          options: [
+            { value: 'name_asc', label: 'Name A–Z' },
+            { value: 'name_desc', label: 'Name Z–A' },
+          ],
+        },
+      ]}
+    />
   )
 
   const clientsForForm = data.clients.map((c) => ({
@@ -387,7 +384,9 @@ export function ProjectsTablePage({
         headerActions={sheetButton}
         toolbar={toolbar}
         emptyMessage={
-          search || clientFilter
+          appliedFilters.search ||
+          appliedFilters.clientId ||
+          appliedFilters.showArchived
             ? 'No projects match your filters.'
             : 'No projects yet. Add your first project to get started.'
         }

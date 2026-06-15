@@ -11,7 +11,7 @@ import {
   cohorts,
   workspaceRoles,
 } from '#/db/schema'
-import { and, eq, ilike, asc, sql, inArray } from 'drizzle-orm'
+import { and, eq, ilike, asc, desc, sql, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { toFiniteRate } from '#/lib/time-tracker/billing'
 
@@ -108,16 +108,20 @@ export type PaginatedClient = {
   activeMembersCount: number
 }
 
+export type NameSort = 'name_asc' | 'name_desc'
+
 export async function getPaginatedClients({
   page,
   pageSize,
   search,
   status,
+  sort = 'name_asc',
 }: {
   page: number
   pageSize: number
   search?: string
   status?: string
+  sort?: NameSort
 }): Promise<PaginatedResult<PaginatedClient>> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
@@ -132,6 +136,7 @@ export async function getPaginatedClients({
   }
 
   const whereClause = and(...conditions)
+  const orderBy = sort === 'name_desc' ? desc(clients.name) : asc(clients.name)
 
   const [countResult, rows] = await Promise.all([
     db
@@ -146,7 +151,7 @@ export async function getPaginatedClients({
       })
       .from(clients)
       .where(whereClause)
-      .orderBy(asc(clients.name))
+      .orderBy(orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
   ])
@@ -195,12 +200,14 @@ export async function getPaginatedProjects({
   search,
   clientId,
   includeArchived,
+  sort = 'name_asc',
 }: {
   page: number
   pageSize: number
   search?: string
   clientId?: string
   includeArchived?: boolean
+  sort?: NameSort
 }): Promise<PaginatedProjectsResult> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
@@ -214,6 +221,8 @@ export async function getPaginatedProjects({
   if (clientId) conditions.push(eq(projects.clientId, clientId))
 
   const whereClause = and(...conditions)
+  const orderBy =
+    sort === 'name_desc' ? desc(projects.name) : asc(projects.name)
 
   const [countResult, rows, clientRows] = await Promise.all([
     db
@@ -230,7 +239,7 @@ export async function getPaginatedProjects({
       })
       .from(projects)
       .where(whereClause)
-      .orderBy(asc(projects.name))
+      .orderBy(orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
     db
@@ -287,11 +296,13 @@ export async function getPaginatedTags({
   pageSize,
   search,
   includeArchived,
+  sort = 'name_asc',
 }: {
   page: number
   pageSize: number
   search?: string
   includeArchived?: boolean
+  sort?: NameSort
 }): Promise<PaginatedResult<PaginatedTag>> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
@@ -301,6 +312,7 @@ export async function getPaginatedTags({
   if (search) conditions.push(ilike(tags.name, `%${search}%`))
 
   const whereClause = and(...conditions)
+  const orderBy = sort === 'name_desc' ? desc(tags.name) : asc(tags.name)
 
   const [countResult, rows] = await Promise.all([
     db
@@ -316,7 +328,7 @@ export async function getPaginatedTags({
       })
       .from(tags)
       .where(whereClause)
-      .orderBy(asc(tags.name))
+      .orderBy(orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
   ])
@@ -347,29 +359,78 @@ export type PaginatedDepartment = {
   name: string
   description: string
   color: string
+  memberCount: number
 }
+
+export type DepartmentSort =
+  | 'name_asc'
+  | 'name_desc'
+  | 'members_desc'
+  | 'members_asc'
 
 export async function getPaginatedDepartments({
   page,
   pageSize,
   search,
+  hasDescription,
+  hasMembers,
+  sort = 'name_asc',
 }: {
   page: number
   pageSize: number
   search?: string
+  hasDescription?: 'yes' | 'no'
+  hasMembers?: 'yes' | 'no'
+  sort?: DepartmentSort
 }): Promise<PaginatedResult<PaginatedDepartment>> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
 
+  // Member counts per department, scoped to the workspace. LEFT-joined below so
+  // departments with zero members still appear (memberCount coalesced to 0).
+  const memberCounts = db
+    .select({
+      departmentId: workspaceMembers.departmentId,
+      memberCount: sql<number>`count(*)::int`.as('member_count'),
+    })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.workspaceId, workspaceId))
+    .groupBy(workspaceMembers.departmentId)
+    .as('member_counts')
+
+  const memberCountExpr = sql<number>`coalesce(${memberCounts.memberCount}, 0)`
+
   const conditions = [eq(departments.workspaceId, workspaceId)]
   if (search) conditions.push(ilike(departments.name, `%${search}%`))
+  if (hasDescription === 'yes') {
+    conditions.push(
+      sql`${departments.description} is not null and ${departments.description} <> ''`,
+    )
+  }
+  if (hasDescription === 'no') {
+    conditions.push(
+      sql`(${departments.description} is null or ${departments.description} = '')`,
+    )
+  }
+  if (hasMembers === 'yes') conditions.push(sql`${memberCountExpr} > 0`)
+  if (hasMembers === 'no') conditions.push(sql`${memberCountExpr} = 0`)
 
   const whereClause = and(...conditions)
+
+  const orderBy =
+    sort === 'name_desc'
+      ? [desc(departments.name)]
+      : sort === 'members_desc'
+        ? [desc(memberCountExpr), asc(departments.name)]
+        : sort === 'members_asc'
+          ? [asc(memberCountExpr), asc(departments.name)]
+          : [asc(departments.name)]
 
   const [countResult, rows] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(departments)
+      .leftJoin(memberCounts, eq(memberCounts.departmentId, departments.id))
       .where(whereClause),
     db
       .select({
@@ -377,10 +438,12 @@ export async function getPaginatedDepartments({
         name: departments.name,
         description: departments.description,
         color: departments.color,
+        memberCount: sql<number>`${memberCountExpr}::int`,
       })
       .from(departments)
+      .leftJoin(memberCounts, eq(memberCounts.departmentId, departments.id))
       .where(whereClause)
-      .orderBy(asc(departments.name))
+      .orderBy(...orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
   ])
@@ -393,6 +456,7 @@ export async function getPaginatedDepartments({
       name: d.name,
       description: d.description ?? '',
       color: d.color,
+      memberCount: d.memberCount ?? 0,
     })),
     totalCount,
     totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
@@ -417,11 +481,13 @@ export async function getPaginatedCohorts({
   pageSize,
   search,
   departmentId,
+  sort = 'name_asc',
 }: {
   page: number
   pageSize: number
   search?: string
   departmentId?: string
+  sort?: NameSort
 }): Promise<PaginatedCohortsResult> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
@@ -431,6 +497,7 @@ export async function getPaginatedCohorts({
   if (departmentId) conditions.push(eq(cohorts.departmentId, departmentId))
 
   const whereClause = and(...conditions)
+  const orderBy = sort === 'name_desc' ? desc(cohorts.name) : asc(cohorts.name)
 
   const [countResult, rows, deptRows] = await Promise.all([
     db
@@ -445,7 +512,7 @@ export async function getPaginatedCohorts({
       })
       .from(cohorts)
       .where(whereClause)
-      .orderBy(asc(cohorts.name))
+      .orderBy(orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
     db
@@ -486,22 +553,37 @@ export type PaginatedRole = {
   color: string
 }
 
+export type RoleSort = 'permission' | 'name_asc' | 'name_desc'
+
 export async function getPaginatedRoles({
   page,
   pageSize,
   search,
+  permissionLevel,
+  sort = 'permission',
 }: {
   page: number
   pageSize: number
   search?: string
+  permissionLevel?: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+  sort?: RoleSort
 }): Promise<PaginatedResult<PaginatedRole>> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
 
   const conditions = [eq(workspaceRoles.workspaceId, workspaceId)]
   if (search) conditions.push(ilike(workspaceRoles.name, `%${search}%`))
+  if (permissionLevel) {
+    conditions.push(eq(workspaceRoles.permissionLevel, permissionLevel))
+  }
 
   const whereClause = and(...conditions)
+  const orderBy =
+    sort === 'name_desc'
+      ? [desc(workspaceRoles.name)]
+      : sort === 'name_asc'
+        ? [asc(workspaceRoles.name)]
+        : [asc(workspaceRoles.permissionLevel), asc(workspaceRoles.name)]
 
   const [countResult, rows] = await Promise.all([
     db
@@ -517,7 +599,7 @@ export async function getPaginatedRoles({
       })
       .from(workspaceRoles)
       .where(whereClause)
-      .orderBy(asc(workspaceRoles.permissionLevel), asc(workspaceRoles.name))
+      .orderBy(...orderBy)
       .limit(pageSize)
       .offset(page * pageSize),
   ])

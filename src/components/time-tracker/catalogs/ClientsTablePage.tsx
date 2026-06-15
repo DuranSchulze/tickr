@@ -12,15 +12,15 @@ import {
   syncCatalogsWithSheetFn,
 } from '#/lib/server/gsheets/sync'
 import type { PaginatedClient } from '#/lib/server/tracker/catalogs/paginated.server'
-import { CatalogFormDialog, CatalogTablePage } from './CatalogTableLayout'
+import {
+  CatalogFilterBar,
+  CatalogFormDialog,
+  CatalogTablePage,
+} from './CatalogTableLayout'
 import { ClientForm } from './ClientForm'
 import { EditClientForm } from './EditClientForm'
 import { SyncSheetDialog } from './SyncSheetDialog'
-import {
-  ClientSheetMenu,
-  ClientsToolbar,
-  useClientColumns,
-} from './ClientsTableParts'
+import { ClientSheetMenu, useClientColumns } from './ClientsTableParts'
 
 interface Props {
   data: {
@@ -30,8 +30,11 @@ interface Props {
   }
   page: number
   pageSize: number
-  search: string
-  statusFilter: string
+  appliedFilters: {
+    search: string
+    status: string
+    sort: string
+  }
   canManage: boolean
   canImportSheet: boolean
   canViewBillable: boolean
@@ -45,8 +48,7 @@ export function ClientsTablePage({
   data,
   page,
   pageSize,
-  search,
-  statusFilter,
+  appliedFilters,
   canManage,
   canImportSheet,
   canViewBillable,
@@ -192,14 +194,34 @@ export function ClientsTablePage({
           />
         }
         toolbar={
-          <ClientsToolbar
-            search={search}
-            statusFilter={statusFilter}
-            onFilterChange={onFilterChange}
+          <CatalogFilterBar
+            searchPlaceholder="Search clients…"
+            appliedValues={appliedFilters}
+            onApply={onFilterChange}
+            filters={[
+              {
+                key: 'status',
+                label: 'Status',
+                options: [
+                  { value: '', label: 'All statuses' },
+                  { value: 'ACTIVE', label: 'Active' },
+                  { value: 'INACTIVE', label: 'Inactive' },
+                ],
+              },
+              {
+                key: 'sort',
+                label: 'Sort',
+                defaultValue: 'name_asc',
+                options: [
+                  { value: 'name_asc', label: 'Name A–Z' },
+                  { value: 'name_desc', label: 'Name Z–A' },
+                ],
+              },
+            ]}
           />
         }
         emptyMessage={
-          search || statusFilter
+          appliedFilters.search || appliedFilters.status
             ? 'No clients match your filters.'
             : 'No clients yet. Add your first client to get started.'
         }

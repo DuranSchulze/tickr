@@ -5,11 +5,16 @@ import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 const PAGE_SIZE = 20
 
+type NameSort = 'name_asc' | 'name_desc'
+
 type CohortsSearch = {
   page?: number
   search?: string
   departmentId?: string
+  sort?: NameSort
 }
+
+const NAME_SORTS: NameSort[] = ['name_asc', 'name_desc']
 
 export const Route = createFileRoute('/app/workspace/catalogs/cohorts')({
   validateSearch: (search: Record<string, unknown>): CohortsSearch => ({
@@ -17,11 +22,15 @@ export const Route = createFileRoute('/app/workspace/catalogs/cohorts')({
     search: typeof search.search === 'string' ? search.search : undefined,
     departmentId:
       typeof search.departmentId === 'string' ? search.departmentId : undefined,
+    sort: NAME_SORTS.includes(search.sort as NameSort)
+      ? (search.sort as NameSort)
+      : undefined,
   }),
   loaderDeps: ({ search }) => ({
     page: search.page ?? 0,
     search: search.search ?? '',
     departmentId: search.departmentId ?? '',
+    sort: search.sort,
   }),
   loader: async ({ deps }) => {
     const [access, paginatedCohorts] = await Promise.all([
@@ -32,6 +41,7 @@ export const Route = createFileRoute('/app/workspace/catalogs/cohorts')({
           pageSize: PAGE_SIZE,
           search: deps.search || undefined,
           departmentId: deps.departmentId || undefined,
+          sort: deps.sort,
         },
       }),
     ])
@@ -56,8 +66,11 @@ function CohortsRoute() {
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
-      search={search.search ?? ''}
-      departmentFilter={search.departmentId ?? ''}
+      appliedFilters={{
+        search: search.search ?? '',
+        departmentId: search.departmentId ?? '',
+        sort: search.sort ?? 'name_asc',
+      }}
       canManage={canManage}
       onFilterChange={(updates) => {
         void navigate({

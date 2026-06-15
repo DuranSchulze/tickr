@@ -501,6 +501,12 @@ export const projects = pgTable(
       table.name,
     ),
     index('projects_client_id_idx').on(table.clientId),
+    // Supports the catalog page query: WHERE workspace_id = ? ORDER BY name.
+    // Without this, listing projects (5k+ rows) does a full seq scan + sort on
+    // every page load. With it, pagination is a bounded, pre-sorted index scan.
+    // This index also serves name-ordered search, so a separate trigram index
+    // is unnecessary — the planner prefers this one given ORDER BY name LIMIT.
+    index('projects_workspace_name_idx').on(table.workspaceId, table.name),
   ],
 )
 

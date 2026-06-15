@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { createColumnHelper } from '@tanstack/react-table'
 import type { PaginatedRole } from '#/lib/server/tracker/catalogs/paginated.server'
-import { CatalogSearchBar, CatalogTablePage } from './CatalogTableLayout'
+import { CatalogFilterBar, CatalogTablePage } from './CatalogTableLayout'
 
 const col = createColumnHelper<PaginatedRole>()
 
@@ -20,7 +20,11 @@ interface Props {
   }
   page: number
   pageSize: number
-  search: string
+  appliedFilters: {
+    search: string
+    permissionLevel: string
+    sort: string
+  }
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
@@ -29,7 +33,7 @@ export function RolesTablePage({
   data,
   page,
   pageSize,
-  search,
+  appliedFilters,
   onFilterChange,
   onPageChange,
 }: Props) {
@@ -63,13 +67,34 @@ export function RolesTablePage({
   )
 
   const toolbar = (
-    <div className="w-full max-w-xs">
-      <CatalogSearchBar
-        value={search}
-        onChange={(v) => onFilterChange({ search: v || undefined })}
-        placeholder="Search roles…"
-      />
-    </div>
+    <CatalogFilterBar
+      searchPlaceholder="Search roles…"
+      appliedValues={appliedFilters}
+      onApply={onFilterChange}
+      filters={[
+        {
+          key: 'permissionLevel',
+          label: 'Permission level',
+          options: [
+            { value: '', label: 'All levels' },
+            { value: 'OWNER', label: 'Owner' },
+            { value: 'ADMIN', label: 'Admin' },
+            { value: 'MANAGER', label: 'Manager' },
+            { value: 'EMPLOYEE', label: 'Employee' },
+          ],
+        },
+        {
+          key: 'sort',
+          label: 'Sort',
+          defaultValue: 'permission',
+          options: [
+            { value: 'permission', label: 'By permission' },
+            { value: 'name_asc', label: 'Name A–Z' },
+            { value: 'name_desc', label: 'Name Z–A' },
+          ],
+        },
+      ]}
+    />
   )
 
   return (
@@ -86,7 +111,9 @@ export function RolesTablePage({
       canManage={false}
       toolbar={toolbar}
       emptyMessage={
-        search ? 'No roles match your search.' : 'No roles configured.'
+        appliedFilters.search || appliedFilters.permissionLevel
+          ? 'No roles match your filters.'
+          : 'No roles configured.'
       }
     />
   )

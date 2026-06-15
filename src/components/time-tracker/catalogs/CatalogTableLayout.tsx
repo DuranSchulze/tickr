@@ -118,6 +118,163 @@ export function CatalogSearchBar({
   )
 }
 
+// ─── Staged Filter Bar ────────────────────────────────────────────────────────
+
+export type CatalogFilterField = {
+  key: string
+  label: string
+  /** Value treated as "no filter" — not emitted to the URL and not counted as active. */
+  defaultValue?: string
+  options: Array<{ value: string; label: string }>
+}
+
+/**
+ * A filter toolbar whose inputs are *staged*: typing and changing dropdowns only
+ * updates local draft state. Nothing navigates (and therefore nothing re-fetches
+ * from the server) until the user clicks Search. This avoids a server round-trip
+ * per keystroke — the old debounced-navigate behavior that felt laggy.
+ *
+ * `appliedValues` is the currently-active filter set (from the URL). When it
+ * changes externally (browser back/forward, Clear), the draft re-syncs.
+ */
+export function CatalogFilterBar({
+  searchKey = 'search',
+  searchPlaceholder = 'Search…',
+  filters = [],
+  appliedValues,
+  onApply,
+  extra,
+}: {
+  searchKey?: string
+  searchPlaceholder?: string
+  filters?: CatalogFilterField[]
+  appliedValues: Record<string, string>
+  onApply: (next: Record<string, string | undefined>) => void
+  extra?: ReactNode
+}) {
+  const [draft, setDraft] = useState<Record<string, string>>(appliedValues)
+
+  // Re-sync the draft whenever the applied values change from outside this bar.
+  const appliedKey = JSON.stringify(appliedValues)
+  useEffect(() => {
+    setDraft(appliedValues)
+  }, [appliedKey, appliedValues])
+
+  const fieldKeys = useMemo(
+    () => [searchKey, ...filters.map((f) => f.key)],
+    [searchKey, filters],
+  )
+
+  const isDefault = (key: string, value: string | undefined) => {
+    const def = key === searchKey ? '' : (defaultFor(key) ?? '')
+    return !value || value === def
+  }
+  function defaultFor(key: string) {
+    return filters.find((f) => f.key === key)?.defaultValue
+  }
+
+  const draftKey = JSON.stringify(draft)
+  const isDirty = draftKey !== appliedKey
+  const hasActiveFilters = fieldKeys.some(
+    (k) => !isDefault(k, appliedValues[k]),
+  )
+
+  function buildUpdates(source: Record<string, string>) {
+    const updates: Record<string, string | undefined> = {}
+    for (const k of fieldKeys) {
+      updates[k] = isDefault(k, source[k]) ? undefined : source[k]
+    }
+    return updates
+  }
+
+  function apply() {
+    onApply(buildUpdates(draft))
+  }
+
+  function clear() {
+    setDraft({})
+    const updates: Record<string, string | undefined> = {}
+    for (const k of fieldKeys) updates[k] = undefined
+    onApply(updates)
+  }
+
+  const searchValue = draft[searchKey] ?? ''
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 w-full">
+      {/* Search box */}
+      <div className="relative w-full max-w-xs">
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchValue}
+          onChange={(e) =>
+            setDraft((d) => ({ ...d, [searchKey]: e.target.value }))
+          }
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') apply()
+          }}
+          placeholder={searchPlaceholder}
+          aria-label={searchPlaceholder}
+          className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        />
+        {searchValue && (
+          <button
+            type="button"
+            onClick={() => setDraft((d) => ({ ...d, [searchKey]: '' }))}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label="Clear search text"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Filter dropdowns */}
+      {filters.map((f) => (
+        <select
+          key={f.key}
+          value={draft[f.key] || f.defaultValue || ''}
+          onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+          aria-label={f.label}
+          className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        >
+          {f.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      ))}
+
+      {/* Apply / Clear */}
+      <button
+        type="button"
+        onClick={apply}
+        className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+      >
+        <Search className="size-4" />
+        Search
+        {isDirty && (
+          <span className="size-1.5 rounded-full bg-primary-foreground/80" />
+        )}
+      </button>
+      {(hasActiveFilters || isDirty) && (
+        <button
+          type="button"
+          onClick={clear}
+          className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <X className="size-4" />
+          Clear
+        </button>
+      )}
+
+      {extra && <div className="ml-auto flex items-center gap-2">{extra}</div>}
+    </div>
+  )
+}
+
 // ─── Selection Checkbox ───────────────────────────────────────────────────────
 
 function SelectionCheckbox({
@@ -227,9 +384,9 @@ export function CatalogTablePage<TData>({
 
   function toggleSelectAll() {
     if (allSelected) {
-      setSelectionState((prev) => ({ page, ids: new Set() }))
+      setSelectionState(() => ({ page, ids: new Set() }))
     } else {
-      setSelectionState((prev) => ({ page, ids: new Set(allIds) }))
+      setSelectionState(() => ({ page, ids: new Set(allIds) }))
     }
   }
 

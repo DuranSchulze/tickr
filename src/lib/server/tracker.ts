@@ -773,10 +773,12 @@ const paginatedCatalogBaseSchema = z.object({
   search: z.string().optional(),
 })
 
+const nameSortSchema = z.enum(['name_asc', 'name_desc']).optional()
+
 export const getPaginatedClientsFn = createServerFn({ method: 'GET' })
   .inputValidator((input) =>
     paginatedCatalogBaseSchema
-      .extend({ status: z.string().optional() })
+      .extend({ status: z.string().optional(), sort: nameSortSchema })
       .parse(input),
   )
   .handler(async ({ data }) => {
@@ -791,6 +793,7 @@ export const getPaginatedProjectsFn = createServerFn({ method: 'GET' })
       .extend({
         clientId: z.string().optional(),
         includeArchived: z.boolean().optional(),
+        sort: nameSortSchema,
       })
       .parse(input),
   )
@@ -803,7 +806,7 @@ export const getPaginatedProjectsFn = createServerFn({ method: 'GET' })
 export const getPaginatedTagsFn = createServerFn({ method: 'GET' })
   .inputValidator((input) =>
     paginatedCatalogBaseSchema
-      .extend({ includeArchived: z.boolean().optional() })
+      .extend({ includeArchived: z.boolean().optional(), sort: nameSortSchema })
       .parse(input),
   )
   .handler(async ({ data }) => {
@@ -813,7 +816,17 @@ export const getPaginatedTagsFn = createServerFn({ method: 'GET' })
   })
 
 export const getPaginatedDepartmentsFn = createServerFn({ method: 'GET' })
-  .inputValidator((input) => paginatedCatalogBaseSchema.parse(input))
+  .inputValidator((input) =>
+    paginatedCatalogBaseSchema
+      .extend({
+        hasDescription: z.enum(['yes', 'no']).optional(),
+        hasMembers: z.enum(['yes', 'no']).optional(),
+        sort: z
+          .enum(['name_asc', 'name_desc', 'members_desc', 'members_asc'])
+          .optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { getPaginatedDepartments } =
       await import('./tracker/catalogs/paginated.server')
@@ -823,7 +836,7 @@ export const getPaginatedDepartmentsFn = createServerFn({ method: 'GET' })
 export const getPaginatedCohortsFn = createServerFn({ method: 'GET' })
   .inputValidator((input) =>
     paginatedCatalogBaseSchema
-      .extend({ departmentId: z.string().optional() })
+      .extend({ departmentId: z.string().optional(), sort: nameSortSchema })
       .parse(input),
   )
   .handler(async ({ data }) => {
@@ -833,7 +846,16 @@ export const getPaginatedCohortsFn = createServerFn({ method: 'GET' })
   })
 
 export const getPaginatedRolesFn = createServerFn({ method: 'GET' })
-  .inputValidator((input) => paginatedCatalogBaseSchema.parse(input))
+  .inputValidator((input) =>
+    paginatedCatalogBaseSchema
+      .extend({
+        permissionLevel: z
+          .enum(['OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE'])
+          .optional(),
+        sort: z.enum(['permission', 'name_asc', 'name_desc']).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { getPaginatedRoles } =
       await import('./tracker/catalogs/paginated.server')

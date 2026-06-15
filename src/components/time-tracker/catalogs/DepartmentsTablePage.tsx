@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Table as TableIcon,
   Trash2,
+  Users,
 } from 'lucide-react'
 import { deleteDepartmentFn } from '#/lib/server/tracker'
 import {
@@ -23,8 +24,8 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import {
+  CatalogFilterBar,
   CatalogFormDialog,
-  CatalogSearchBar,
   CatalogTablePage,
 } from './CatalogTableLayout'
 import { DepartmentForm } from './DepartmentForm'
@@ -41,7 +42,12 @@ interface Props {
   }
   page: number
   pageSize: number
-  search: string
+  appliedFilters: {
+    search: string
+    hasDescription: string
+    hasMembers: string
+    sort: string
+  }
   canManage: boolean
   canImportSheet: boolean
   googleSheetUrl: string | null
@@ -53,7 +59,7 @@ export function DepartmentsTablePage({
   data,
   page,
   pageSize,
-  search,
+  appliedFilters,
   canManage,
   canImportSheet,
   googleSheetUrl,
@@ -153,6 +159,15 @@ export function DepartmentsTablePage({
           </span>
         ),
       }),
+      col.accessor('memberCount', {
+        header: 'Members',
+        cell: ({ getValue }) => (
+          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Users className="size-3.5" />
+            {getValue()}
+          </span>
+        ),
+      }),
       ...(canManage
         ? [
             col.display({
@@ -227,16 +242,43 @@ export function DepartmentsTablePage({
   ) : null
 
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search departments…"
-        />
-      </div>
-      {sheetButton}
-    </div>
+    <CatalogFilterBar
+      searchPlaceholder="Search departments…"
+      appliedValues={appliedFilters}
+      onApply={onFilterChange}
+      extra={sheetButton}
+      filters={[
+        {
+          key: 'hasMembers',
+          label: 'Members',
+          options: [
+            { value: '', label: 'All members' },
+            { value: 'yes', label: 'Has members' },
+            { value: 'no', label: 'No members' },
+          ],
+        },
+        {
+          key: 'hasDescription',
+          label: 'Description',
+          options: [
+            { value: '', label: 'Any description' },
+            { value: 'yes', label: 'Has description' },
+            { value: 'no', label: 'No description' },
+          ],
+        },
+        {
+          key: 'sort',
+          label: 'Sort',
+          defaultValue: 'name_asc',
+          options: [
+            { value: 'name_asc', label: 'Name A–Z' },
+            { value: 'name_desc', label: 'Name Z–A' },
+            { value: 'members_desc', label: 'Most members' },
+            { value: 'members_asc', label: 'Fewest members' },
+          ],
+        },
+      ]}
+    />
   )
 
   return (
@@ -256,8 +298,10 @@ export function DepartmentsTablePage({
         createLabel="New Department"
         toolbar={toolbar}
         emptyMessage={
-          search
-            ? 'No departments match your search.'
+          appliedFilters.search ||
+          appliedFilters.hasDescription ||
+          appliedFilters.hasMembers
+            ? 'No departments match your filters.'
             : 'No departments yet. Add your first department to get started.'
         }
       />

@@ -31,8 +31,8 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import {
+  CatalogFilterBar,
   CatalogFormDialog,
-  CatalogSearchBar,
   CatalogTablePage,
 } from './CatalogTableLayout'
 import { TagForm } from './TagForm'
@@ -58,14 +58,15 @@ interface Props {
   }
   page: number
   pageSize: number
-  search: string
-  showArchived: boolean
+  appliedFilters: {
+    search: string
+    showArchived: string
+    sort: string
+  }
   canManage: boolean
   canImportSheet: boolean
   googleSheetUrl: string | null
-  onFilterChange: (
-    updates: Record<string, string | boolean | undefined>,
-  ) => void
+  onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
 
@@ -73,8 +74,7 @@ export function TagsTablePage({
   data,
   page,
   pageSize,
-  search,
-  showArchived,
+  appliedFilters,
   canManage,
   canImportSheet,
   googleSheetUrl,
@@ -306,26 +306,30 @@ export function TagsTablePage({
   ) : null
 
   const toolbar = (
-    <div className="flex flex-wrap items-center gap-3 w-full">
-      <div className="w-full max-w-xs">
-        <CatalogSearchBar
-          value={search}
-          onChange={(v) => onFilterChange({ search: v || undefined })}
-          placeholder="Search tags…"
-        />
-      </div>
-      <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={showArchived}
-          onChange={(e) =>
-            onFilterChange({ showArchived: e.target.checked || undefined })
-          }
-          className="size-4 rounded border-border accent-primary"
-        />
-        Show archived
-      </label>
-    </div>
+    <CatalogFilterBar
+      searchPlaceholder="Search tags…"
+      appliedValues={appliedFilters}
+      onApply={onFilterChange}
+      filters={[
+        {
+          key: 'showArchived',
+          label: 'Archived',
+          options: [
+            { value: '', label: 'Active only' },
+            { value: 'yes', label: 'Include archived' },
+          ],
+        },
+        {
+          key: 'sort',
+          label: 'Sort',
+          defaultValue: 'name_asc',
+          options: [
+            { value: 'name_asc', label: 'Name A–Z' },
+            { value: 'name_desc', label: 'Name Z–A' },
+          ],
+        },
+      ]}
+    />
   )
 
   return (
@@ -346,8 +350,8 @@ export function TagsTablePage({
         headerActions={sheetButton}
         toolbar={toolbar}
         emptyMessage={
-          search
-            ? 'No tags match your search.'
+          appliedFilters.search || appliedFilters.showArchived
+            ? 'No tags match your filters.'
             : 'No tags yet. Add your first tag to get started.'
         }
         getRowId={(tag) => tag.id}
