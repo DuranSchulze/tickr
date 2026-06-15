@@ -156,7 +156,7 @@ export function TimerPanel({
           </div>
 
           <div className="my-2.5 hidden w-px bg-border md:block" />
-          <div className="hidden w-44 overflow-hidden md:block lg:w-52">
+          <div className="hidden w-44 md:block lg:w-52">
             <ClientProjectPicker
               clients={activeClients}
               projects={projects}
@@ -171,7 +171,7 @@ export function TimerPanel({
           </div>
 
           <div className="my-2.5 hidden w-px bg-border lg:block" />
-          <div className="hidden w-40 overflow-hidden lg:block">
+          <div className="hidden w-40 lg:block">
             <TagPicker
               tags={tags}
               value={tagIds}
