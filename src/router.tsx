@@ -44,7 +44,14 @@ export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
     context,
-    scrollRestoration: true,
+    // scrollRestoration is disabled because TanStack Router's internal
+    // position-save mechanism calls history.replaceState() on each flush.
+    // Under heavy scroll (macOS momentum) the combined scroll events +
+    // onBeforeLoad/onRendered subscriptions can trigger >100 replaceState
+    // calls in 10 s — hitting Chrome's SecurityError rate limit.
+    // Browsers already restore scroll positions natively for same-document
+    // navigations via history.scrollRestoration = 'auto' (the default).
+    scrollRestoration: false,
     // 'intent' preloading fires route loaders on hover, which triggers DB
     // queries on every sidebar mouseover and makes the page unresponsive.
     // Disabled here because routes already have staleTime caching — navigating
