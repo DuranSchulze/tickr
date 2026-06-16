@@ -33,6 +33,26 @@ import { useNowTick } from './hooks/useNowTick'
 
 const noopCreate = () => Promise.resolve()
 
+// ─── Live ticking duration ────────────────────────────────────────────────
+// Extracted from EntryRow so only the tiny duration text re-renders every
+// second — the entire row (pickers, dropdowns, editors) stays memoized.
+
+const LiveDuration = memo(function LiveDuration({
+  entry,
+  formatTime,
+}: {
+  entry: TimeEntry
+  formatTime: (seconds: number) => string
+}) {
+  const isRunning = !entry.endedAt
+  const tick = useNowTick(isRunning ? 1000 : null)
+  return (
+    <span className="font-mono text-sm font-bold tabular-nums text-foreground">
+      {formatTime(getEntrySeconds(entry, tick))}
+    </span>
+  )
+})
+
 type InlinePatch = Partial<
   Pick<
     TimeEntry,
@@ -258,9 +278,6 @@ export const EntryRow = memo(function EntryRow({
   onDuplicate: (entryId: string) => void
   onDelete: (entryId: string) => void
 }) {
-  const isRunning = !entry.endedAt
-  const tick = useNowTick(isRunning ? 1000 : null)
-  const seconds = getEntrySeconds(entry, tick)
   const update = (patch: InlinePatch) => onUpdate(entry.id, patch)
 
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
@@ -398,9 +415,7 @@ export const EntryRow = memo(function EntryRow({
 
       {/* Duration */}
       <TableCell className="py-3 px-4 w-[10%] text-right">
-        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
-          {formatTime(seconds)}
-        </span>
+        <LiveDuration entry={entry} formatTime={formatTime} />
       </TableCell>
 
       {/* Actions */}

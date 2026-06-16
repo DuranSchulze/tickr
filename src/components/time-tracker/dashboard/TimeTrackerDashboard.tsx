@@ -79,7 +79,7 @@ export function TimeTrackerDashboard({
   const queryClient = useQueryClient()
   const mutations = useTrackerMutations()
   const { isOnline } = useNetworkStatus()
-  const { formatTime } = useTimeFormat(state.workspace.id)
+  const { formatTime } = useTimeFormat()
 
   // ── "All entries" paginated state ────────────────────────────────────────────
   // Declared before useDraftAndEdit so edits in the "all" view can resolve

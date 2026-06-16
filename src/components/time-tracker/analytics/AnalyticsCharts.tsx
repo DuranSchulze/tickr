@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Area,
   AreaChart,
@@ -17,6 +17,17 @@ import type { AnalyticsPayload } from '#/lib/server/tracker.server'
 import { formatChartDate, formatHours, toChartHours } from './analytics.utils'
 
 const fallbackColors = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
+
+/** Delays children until after the first browser paint so ResponsiveContainer
+ *  can measure real DOM dimensions instead of -1. */
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  if (!mounted) return <div aria-hidden="true" />
+  return <>{children}</>
+}
 
 function EmptyPanel({ label }: { label: string }) {
   return (
@@ -90,48 +101,58 @@ export function AnalyticsCharts({
           <EmptyPanel label="No completed time entries in this range." />
         ) : (
           <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData}>
-                <defs>
-                  <linearGradient
-                    id="analyticsTrend"
-                    x1="0"
-                    x2="0"
-                    y1="0"
-                    y2="1"
-                  >
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  minTickGap={16}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={32}
-                />
-                <Tooltip
-                  formatter={(value) => [`${value}h`, 'Hours']}
-                  labelFormatter={(_, payload) => payload[0]?.payload.date}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="hours"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  fill="url(#analyticsTrend)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <ClientOnly>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient
+                      id="analyticsTrend"
+                      x1="0"
+                      x2="0"
+                      y1="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor="#2563eb"
+                        stopOpacity={0.28}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="#2563eb"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    minTickGap={16}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={32}
+                  />
+                  <Tooltip
+                    formatter={(value) => [`${value}h`, 'Hours']}
+                    labelFormatter={(_, payload) => payload[0]?.payload.date}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="hours"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fill="url(#analyticsTrend)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </ClientOnly>
           </div>
         )}
       </ChartShell>
@@ -144,23 +165,25 @@ export function AnalyticsCharts({
           <EmptyPanel label="No billable data yet." />
         ) : (
           <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={billableData}
-                  dataKey="seconds"
-                  nameKey="name"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={3}
-                >
-                  {billableData.map((entry, index) => (
-                    <Cell key={`${entry.name}-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatHours(Number(value))} />
-              </PieChart>
-            </ResponsiveContainer>
+            <ClientOnly>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={billableData}
+                    dataKey="seconds"
+                    nameKey="name"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                  >
+                    {billableData.map((entry, index) => (
+                      <Cell key={`${entry.name}-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatHours(Number(value))} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ClientOnly>
           </div>
         )}
       </ChartShell>
@@ -174,41 +197,43 @@ export function AnalyticsCharts({
           <EmptyPanel label="Projects will appear after entries are completed." />
         ) : (
           <div className="h-[260px] sm:h-[300px] lg:h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={projectData}
-                layout="vertical"
-                margin={{ left: 4, right: 16 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis
-                  type="number"
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={100}
-                />
-                <Tooltip formatter={(value) => [`${value}h`, 'Hours']} />
-                <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
-                  {projectData.map((entry, index) => (
-                    <Cell
-                      key={`${entry.name}-${index}`}
-                      fill={
-                        entry.color ||
-                        fallbackColors[index % fallbackColors.length]
-                      }
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <ClientOnly>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={projectData}
+                  layout="vertical"
+                  margin={{ left: 4, right: 16 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={100}
+                  />
+                  <Tooltip formatter={(value) => [`${value}h`, 'Hours']} />
+                  <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
+                    {projectData.map((entry, index) => (
+                      <Cell
+                        key={`${entry.name}-${index}`}
+                        fill={
+                          entry.color ||
+                          fallbackColors[index % fallbackColors.length]
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ClientOnly>
           </div>
         )}
       </ChartShell>

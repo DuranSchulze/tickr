@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useCallback, useMemo } from 'react'
 import { AnalyticsScreen } from '#/components/time-tracker/analytics/AnalyticsScreen'
 import type {
   AnalyticsQuery,
@@ -104,25 +105,40 @@ function AnalyticsRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate()
 
-  function changeQuery(updates: Partial<AnalyticsQuery & AnalyticsSearch>) {
-    void navigate({
-      to: '/app/analytics',
-      search: (prev) => ({ ...prev, ...updates }),
-    })
-  }
+  const changeQuery = useCallback(
+    (updates: Partial<AnalyticsQuery & AnalyticsSearch>) => {
+      void navigate({
+        to: '/app/analytics',
+        search: (prev) => ({ ...prev, ...updates }),
+      })
+    },
+    [navigate],
+  )
+
+  const currentFilters = useMemo(
+    () => ({
+      projectId: search.projectId,
+      clientId: search.clientId,
+      tagIds: search.tagIds,
+      memberIds: search.memberIds,
+      billable: search.billable,
+      page: search.page,
+    }),
+    [
+      search.projectId,
+      search.clientId,
+      search.tagIds,
+      search.memberIds,
+      search.billable,
+      search.page,
+    ],
+  )
 
   return (
     <AnalyticsScreen
       analytics={analytics}
       state={state}
-      currentFilters={{
-        projectId: search.projectId,
-        clientId: search.clientId,
-        tagIds: search.tagIds,
-        memberIds: search.memberIds,
-        billable: search.billable,
-        page: search.page,
-      }}
+      currentFilters={currentFilters}
       onChangeQuery={changeQuery}
     />
   )

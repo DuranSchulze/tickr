@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -18,7 +18,7 @@ export type AnalyticsFilters = {
   page?: number
 }
 
-function FilterSelect({
+const FilterSelect = memo(function FilterSelect({
   label,
   value,
   onChange,
@@ -47,9 +47,9 @@ function FilterSelect({
       </select>
     </div>
   )
-}
+})
 
-function MultiSelectDropdown({
+const MultiSelectDropdown = memo(function MultiSelectDropdown({
   label,
   values,
   onChange,
@@ -178,7 +178,7 @@ function MultiSelectDropdown({
       </DropdownMenu>
     </div>
   )
-}
+})
 
 export function AnalyticsFilterBar({
   state,
@@ -223,82 +223,129 @@ export function AnalyticsFilterBar({
       permissionLevel === 'ADMIN' ||
       permissionLevel === 'MANAGER')
 
+  // ── Stabilized references so FilterSelect / MultiSelectDropdown can memo ──
+
+  const billableOptions = useMemo(
+    () => [
+      { value: '', label: 'All entries' },
+      { value: 'true', label: 'Billable only' },
+      { value: 'false', label: 'Non-billable only' },
+    ],
+    [],
+  )
+
+  const clientOptions = useMemo(
+    () => [
+      { value: '', label: 'All clients' },
+      ...state.clients.map((c) => ({ value: c.id, label: c.name })),
+    ],
+    [state.clients],
+  )
+
+  const projectOptions = useMemo(
+    () => [
+      { value: '', label: 'All projects' },
+      ...filteredProjects.map((p) => ({ value: p.id, label: p.name })),
+    ],
+    [filteredProjects],
+  )
+
+  const tagOptions = useMemo(
+    () =>
+      state.tags.map((t) => ({
+        value: t.id,
+        label: t.name,
+        color: t.color,
+      })),
+    [state.tags],
+  )
+
+  const memberOptions = useMemo(
+    () =>
+      state.members
+        .filter((m) => m.status === 'ACTIVE')
+        .map((m) => ({ value: m.id, label: m.name || m.email })),
+    [state.members],
+  )
+
+  const handleBillableChange = useCallback(
+    (v: string) =>
+      onChange({
+        billable: v === 'true' ? 'true' : v === 'false' ? 'false' : undefined,
+        page: undefined,
+      }),
+    [onChange],
+  )
+
+  const handleClientChange = useCallback(
+    (v: string) =>
+      onChange({
+        clientId: v || undefined,
+        projectId: undefined,
+        page: undefined,
+      }),
+    [onChange],
+  )
+
+  const handleProjectChange = useCallback(
+    (v: string) => onChange({ projectId: v || undefined, page: undefined }),
+    [onChange],
+  )
+
+  const handleTagsChange = useCallback(
+    (ids: string[]) =>
+      onChange({
+        tagIds: ids.length > 0 ? ids.join(',') : undefined,
+        page: undefined,
+      }),
+    [onChange],
+  )
+
+  const handleMembersChange = useCallback(
+    (ids: string[]) =>
+      onChange({
+        memberIds: ids.length > 0 ? ids.join(',') : undefined,
+        page: undefined,
+      }),
+    [onChange],
+  )
+
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
       <FilterSelect
         label="Billable"
         value={filters.billable ?? ''}
-        onChange={(v) =>
-          onChange({
-            billable:
-              v === 'true' ? 'true' : v === 'false' ? 'false' : undefined,
-            page: undefined,
-          })
-        }
-        options={[
-          { value: '', label: 'All entries' },
-          { value: 'true', label: 'Billable only' },
-          { value: 'false', label: 'Non-billable only' },
-        ]}
+        onChange={handleBillableChange}
+        options={billableOptions}
       />
 
       <FilterSelect
         label="Client"
         value={filters.clientId ?? ''}
-        onChange={(v) =>
-          onChange({
-            clientId: v || undefined,
-            projectId: undefined,
-            page: undefined,
-          })
-        }
-        options={[
-          { value: '', label: 'All clients' },
-          ...state.clients.map((c) => ({ value: c.id, label: c.name })),
-        ]}
+        onChange={handleClientChange}
+        options={clientOptions}
       />
 
       <FilterSelect
         label="Project"
         value={filters.projectId ?? ''}
-        onChange={(v) =>
-          onChange({ projectId: v || undefined, page: undefined })
-        }
-        options={[
-          { value: '', label: 'All projects' },
-          ...filteredProjects.map((p) => ({ value: p.id, label: p.name })),
-        ]}
+        onChange={handleProjectChange}
+        options={projectOptions}
       />
 
       <MultiSelectDropdown
         label="Tags"
         values={tagIdList}
-        onChange={(ids) =>
-          onChange({
-            tagIds: ids.length > 0 ? ids.join(',') : undefined,
-            page: undefined,
-          })
-        }
-        options={state.tags.map((t) => ({
-          value: t.id,
-          label: t.name,
-          color: t.color,
-        }))}
+        onChange={handleTagsChange}
+        options={tagOptions}
       />
 
       {showMemberFilter && (
         <MultiSelectDropdown
           label="Members"
           values={memberIdList}
-          onChange={(ids) =>
-            onChange({
-              memberIds: ids.length > 0 ? ids.join(',') : undefined,
-              page: undefined,
-            })
-          }
-          options={state.members
-            .filter((m) => m.status === 'ACTIVE')
-            .map((m) => ({ value: m.id, label: m.name || m.email }))}
+          onChange={handleMembersChange}
+          options={memberOptions}
         />
       )}
 

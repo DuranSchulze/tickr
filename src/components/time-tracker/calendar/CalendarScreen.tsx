@@ -10,7 +10,7 @@ export function CalendarScreen({
   calendar: CalendarEntriesPayload
   onChangeMonth: (month: string) => void
 }) {
-  const { formatTime } = useTimeFormat(calendar.workspaceId)
+  const { formatTime } = useTimeFormat()
 
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-5">

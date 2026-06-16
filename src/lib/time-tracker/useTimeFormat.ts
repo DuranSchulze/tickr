@@ -2,18 +2,13 @@ import { useCallback, useState } from 'react'
 import { getTimeFormat, saveTimeFormat, getFormatter } from './time-format'
 import type { TimeFormat } from './time-format'
 
-export function useTimeFormat(workspaceId: string) {
-  const [format, setFormatState] = useState<TimeFormat>(() =>
-    getTimeFormat(workspaceId),
-  )
+export function useTimeFormat() {
+  const [format, setFormatState] = useState<TimeFormat>(() => getTimeFormat())
 
-  const setFormat = useCallback(
-    (next: TimeFormat) => {
-      saveTimeFormat(workspaceId, next)
-      setFormatState(next)
-    },
-    [workspaceId],
-  )
+  const setFormat = useCallback((next: TimeFormat) => {
+    saveTimeFormat(next)
+    setFormatState(next)
+  }, [])
 
   const formatTime = useCallback(
     (seconds: number) => getFormatter(format)(seconds),

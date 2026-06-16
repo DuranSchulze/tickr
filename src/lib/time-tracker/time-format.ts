@@ -17,12 +17,12 @@ export const TimeFormatSchema = z.enum(TIME_FORMATS)
 
 const DEFAULT_FORMAT: TimeFormat = 'precise'
 
-const storageKey = (workspaceId: string) => `time-format:${workspaceId}`
+const STORAGE_KEY = 'time-format'
 
-export function getTimeFormat(workspaceId: string): TimeFormat {
+export function getTimeFormat(): TimeFormat {
   if (typeof window === 'undefined') return DEFAULT_FORMAT
   try {
-    const raw = localStorage.getItem(storageKey(workspaceId))
+    const raw = localStorage.getItem(STORAGE_KEY)
     const result = TimeFormatSchema.safeParse(raw)
     return result.success ? result.data : DEFAULT_FORMAT
   } catch {
@@ -30,9 +30,9 @@ export function getTimeFormat(workspaceId: string): TimeFormat {
   }
 }
 
-export function saveTimeFormat(workspaceId: string, format: TimeFormat): void {
+export function saveTimeFormat(format: TimeFormat): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(storageKey(workspaceId), format)
+  localStorage.setItem(STORAGE_KEY, format)
 }
 
 export function getFormatter(format: TimeFormat): (seconds: number) => string {

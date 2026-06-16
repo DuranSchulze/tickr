@@ -12,9 +12,11 @@ export function useEntriesFilterSort(entries: TimeEntry[]) {
   const [filterBillable, setFilterBillable] = useState<BillableFilter>('all')
   const [sortKey, setSortKey] = useState<SortKey>('newest')
 
-  // Only tick when the selected sort depends on live durations.
+  // Only tick when the selected sort depends on live durations, and only
+  // every 5s — the individual LiveDuration components handle sub-second
+  // display updates already. This avoids re-sorting the entire list 60x/min.
   const isDurationSort = sortKey === 'longest' || sortKey === 'shortest'
-  const tick = useNowTick(isDurationSort ? 1000 : null)
+  const tick = useNowTick(isDurationSort ? 5000 : null)
   const tickForSort = isDurationSort ? tick : 0
 
   const filteredEntries = useMemo(() => {

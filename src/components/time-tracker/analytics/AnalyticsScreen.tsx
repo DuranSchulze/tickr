@@ -12,7 +12,7 @@ import { AnalyticsHeatmap } from './AnalyticsHeatmap'
 import { AnalyticsSummaryCards } from './AnalyticsSummaryCards'
 import type { AnalyticsQuery, AnalyticsScopeSearch } from './analytics.utils'
 import { formatRange } from './analytics.utils'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 type AnalyticsChartsComponent = (props: {
   analytics: AnalyticsPayload
@@ -69,6 +69,24 @@ export function AnalyticsScreen({
     .filter(Boolean)
   const singleSelectedMemberId =
     selectedMemberIds.length === 1 ? selectedMemberIds[0] : null
+
+  const handleFilterChange = useCallback(
+    (updates: Partial<AnalyticsFilters>) => onChangeQuery(updates),
+    [onChangeQuery],
+  )
+
+  const handleClearFilters = useCallback(
+    () =>
+      onChangeQuery({
+        projectId: undefined,
+        clientId: undefined,
+        tagIds: undefined,
+        memberIds: undefined,
+        billable: undefined,
+        page: undefined,
+      }),
+    [onChangeQuery],
+  )
 
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-5">
@@ -145,17 +163,8 @@ export function AnalyticsScreen({
           state={state}
           filters={currentFilters}
           selectedScope={analytics.selectedScope}
-          onChange={(updates) => onChangeQuery(updates)}
-          onClear={() =>
-            onChangeQuery({
-              projectId: undefined,
-              clientId: undefined,
-              tagIds: undefined,
-              memberIds: undefined,
-              billable: undefined,
-              page: undefined,
-            })
-          }
+          onChange={handleFilterChange}
+          onClear={handleClearFilters}
         />
       </div>
 

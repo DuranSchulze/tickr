@@ -7,6 +7,40 @@ import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useNowTick } from './hooks/useNowTick'
 
+// ─── Live ticking duration + billable for cards ────────────────────────────
+// Extracted so only the tiny duration text re-renders every second — the
+// entire card (tags, buttons, dialogs) stays memoized.
+
+const CardDuration = memo(function CardDuration({
+  entry,
+  formatTime,
+  currency,
+  rateLookup,
+}: {
+  entry: TimeEntry
+  formatTime: (seconds: number) => string
+  currency: string
+  rateLookup: (memberId: string) => number
+}) {
+  const tick = useNowTick(!entry.endedAt ? 1000 : null)
+  const seconds = getEntrySeconds(entry, tick)
+  return (
+    <>
+      <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
+        {formatTime(seconds)}
+      </span>
+      {entry.billable && (
+        <p className="m-0 mt-0.5 text-xs font-semibold text-muted-foreground">
+          {formatCurrency(
+            (seconds / 3600) * rateLookup(entry.workspaceMemberId),
+            currency,
+          )}
+        </p>
+      )}
+    </>
+  )
+})
+
 export const EntryCard = memo(function EntryCard({
   entry,
   projects,
@@ -40,9 +74,6 @@ export const EntryCard = memo(function EntryCard({
   onDuplicate: (entryId: string) => void
   onDelete: (entryId: string) => void
 }) {
-  const isRunning = !entry.endedAt
-  const tick = useNowTick(isRunning ? 1000 : null)
-
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
@@ -54,7 +85,6 @@ export const EntryCard = memo(function EntryCard({
     () => tags.filter((t) => entry.tagIds.includes(t.id)),
     [tags, entry.tagIds],
   )
-  const seconds = getEntrySeconds(entry, tick)
   const actionsDisabled = pending || !!isPending
 
   const start = new Date(entry.startedAt)
@@ -77,9 +107,12 @@ export const EntryCard = memo(function EntryCard({
             {isPending && <Loader2 className="size-3 animate-spin" />}
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-bold tabular-nums text-foreground">
-              {formatTime(seconds)}
-            </span>
+            <CardDuration
+              entry={entry}
+              formatTime={formatTime}
+              currency={currency}
+              rateLookup={rateLookup}
+            />
             <div className="flex gap-1">
               <button
                 type="button"
@@ -124,7 +157,9 @@ export const EntryCard = memo(function EntryCard({
   return (
     <div
       className={`rounded-lg border bg-background p-3 shadow-sm ${
-        isRunning ? 'border-primary/40 ring-1 ring-primary/20' : 'border-border'
+        !entry.endedAt
+          ? 'border-primary/40 ring-1 ring-primary/20'
+          : 'border-border'
       }`}
     >
       <div className="flex items-start justify-between gap-2 min-w-0">
@@ -136,9 +171,12 @@ export const EntryCard = memo(function EntryCard({
             <span className="text-muted-foreground">No description</span>
           )}
         </p>
-        <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
-          {formatTime(seconds)}
-        </span>
+        <CardDuration
+          entry={entry}
+          formatTime={formatTime}
+          currency={currency}
+          rateLookup={rateLookup}
+        />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -165,7 +203,7 @@ export const EntryCard = memo(function EntryCard({
             Billable
           </span>
         )}
-        {isRunning && (
+        {!entry.endedAt && (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
             <span className="size-1.5 rounded-full bg-destructive animate-pulse" />
             Running
@@ -182,14 +220,6 @@ export const EntryCard = memo(function EntryCard({
       <div className="mt-2.5 flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="m-0 text-xs text-muted-foreground">{timeRange}</p>
-          {entry.billable && (
-            <p className="m-0 mt-0.5 text-xs font-semibold text-muted-foreground">
-              {formatCurrency(
-                (seconds / 3600) * rateLookup(entry.workspaceMemberId),
-                currency,
-              )}
-            </p>
-          )}
         </div>
         <div className="flex gap-1.5">
           {entry.endedAt && (
