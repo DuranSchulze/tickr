@@ -213,7 +213,7 @@ export const startTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => startTimerSchema.parse(input))
   .handler(async ({ data }) => {
     const { startTimer } = await import('./tracker.server')
-    return startTimer(data)
+    return startTimer({ ...data, taskId: (data as any).taskId ?? null })
   })
 
 export const stopTimerFn = createServerFn({ method: 'POST' })
@@ -227,7 +227,7 @@ export const updateActiveTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateActiveTimerSchema.parse(input))
   .handler(async ({ data }) => {
     const { updateActiveTimer } = await import('./tracker.server')
-    return updateActiveTimer(data)
+    return updateActiveTimer({ ...data, taskId: (data as any).taskId ?? null })
   })
 
 export const createManualEntryFn = createServerFn({ method: 'POST' })
@@ -860,4 +860,44 @@ export const getPaginatedRolesFn = createServerFn({ method: 'GET' })
     const { getPaginatedRoles } =
       await import('./tracker/catalogs/paginated.server')
     return getPaginatedRoles(data)
+  })
+
+// ─── Project Tasks ─────────────────────────────────────────────────────────────
+
+const createTaskSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().trim().min(1).max(200),
+})
+
+const updateTaskSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(200),
+})
+
+export const createTaskFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => createTaskSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { createTask } = await import('./tracker.server')
+    return createTask(data)
+  })
+
+export const updateTaskFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => updateTaskSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { updateTask } = await import('./tracker.server')
+    return updateTask(data)
+  })
+
+export const archiveTaskFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { archiveTask } = await import('./tracker.server')
+    return archiveTask(data)
+  })
+
+export const activateTaskFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { activateTask } = await import('./tracker.server')
+    return activateTask(data)
   })

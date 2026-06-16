@@ -21,6 +21,7 @@ type EditEntryDrawerProps = {
   setEditingDraft: (draft: DraftEntry) => void
   clients: Client[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   canManageCatalog?: boolean
   pending: boolean
@@ -32,6 +33,7 @@ type EditEntryDrawerProps = {
     color: string,
     clientId: string,
   ) => Promise<void>
+  onCreateTask?: (projectId: string, name: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
 }
 
@@ -43,6 +45,7 @@ export function EditEntryDrawer({
   setEditingDraft,
   clients,
   projects,
+  projectTasks,
   tags,
   canManageCatalog = true,
   pending,
@@ -50,6 +53,7 @@ export function EditEntryDrawer({
   onCancel,
   onCreateClient,
   onCreateProject,
+  onCreateTask,
   onCreateTag,
 }: EditEntryDrawerProps) {
   // If the entry disappears while the drawer is open (race condition between
@@ -89,9 +93,11 @@ export function EditEntryDrawer({
                 setDraft={setEditingDraft}
                 clients={clients}
                 projects={projects}
+                projectTasks={projectTasks}
                 tags={tags}
                 onCreateClient={onCreateClient}
                 onCreateProject={onCreateProject}
+                onCreateTask={onCreateTask}
                 onCreateTag={onCreateTag}
                 canManageCatalog={canManageCatalog}
                 isRunning={!entry.endedAt}

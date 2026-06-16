@@ -58,6 +58,37 @@ export const auth = betterAuth({
         }
       : {}),
   },
+  // Rate limiting prevents brute-force attacks on auth endpoints.
+  // better-auth enables this automatically in production (window: 60 s,
+  // max: 100 req) with a built-in stricter rule for /sign-in/email
+  // (window: 10 s, max: 3 req). Configuring it explicitly makes the
+  // policy visible to developers and enables testing in dev mode.
+  //
+  // Storage is "memory" for now — switch to "database" if you deploy
+  // across multiple instances (Vercel/serverless) so rate-limit state
+  // is shared.  Run `npx @better-auth/cli migrate` afterwards to create
+  // the rateLimit table.
+  rateLimit: {
+    enabled: true, // enable in all environments (default: only prod)
+    window: 60,
+    max: 100,
+    storage: 'memory',
+    customRules: {
+      // Stricter limits on auth-sensitive paths
+      '/sign-up/email': {
+        window: 10,
+        max: 3,
+      },
+      '/forgot-password': {
+        window: 60,
+        max: 3,
+      },
+      '/reset-password': {
+        window: 60,
+        max: 5,
+      },
+    },
+  },
   databaseHooks: {
     user: {
       create: {

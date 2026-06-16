@@ -2,7 +2,7 @@ import type { z } from 'zod'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
 import { and, eq, notInArray } from 'drizzle-orm'
-import { requireWorkspaceAccess } from '../workspace-access.server'
+import { requireWorkspaceMembership } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
@@ -16,7 +16,7 @@ import type {
 export async function createManualEntry(
   data: z.infer<typeof entryInputSchema>,
 ) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const startedAt = new Date(data.startedAt)
@@ -63,7 +63,7 @@ export async function createManualEntry(
 }
 
 export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const startedAt = new Date(data.startedAt)
@@ -144,7 +144,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
 }
 
 export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
 
   const deleted = await db
     .delete(timeEntries)

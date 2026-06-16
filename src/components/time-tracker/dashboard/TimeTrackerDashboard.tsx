@@ -153,6 +153,7 @@ export function TimeTrackerDashboard({
     timerDescription,
     timerClientId,
     timerProjectId,
+    timerTaskId,
     timerTagIds,
     timerBillable,
     activeEntry,
@@ -167,6 +168,7 @@ export function TimeTrackerDashboard({
     applyDescriptionSuggestion,
     changeTimerClient,
     changeTimerProject,
+    changeTimerTask,
     changeTimerTagIds,
     changeTimerBillable,
     applyPreset,
@@ -472,6 +474,9 @@ export function TimeTrackerDashboard({
     onClientIdChange: changeTimerClient,
     projectId: timerProjectId,
     onProjectIdChange: changeTimerProject,
+    taskId: timerTaskId,
+    onTaskIdChange: changeTimerTask,
+    projectTasks: state.projectTasks,
     tagIds: timerTagIds,
     onTagIdsChange: changeTimerTagIds,
     billable: timerBillable,
@@ -487,6 +492,8 @@ export function TimeTrackerDashboard({
     onAddManual: addManualEntry,
     onCreateClient: mutations.createClient,
     onCreateProject: mutations.createProject,
+    onCreateTask: (projectId: string, name: string) =>
+      mutations.createTask(projectId, name).then(() => undefined as void),
     onCreateTag: mutations.createTag,
     canManageCatalog,
     pending: mutations.pending,
@@ -544,6 +551,7 @@ export function TimeTrackerDashboard({
           filterControls={filterControls}
           clients={state.clients}
           projects={state.projects}
+          projectTasks={state.projectTasks}
           tags={state.tags}
           currency={currency}
           rateLookup={rateLookup}
@@ -568,6 +576,7 @@ export function TimeTrackerDashboard({
           filterControls={filterControls}
           clients={state.clients}
           projects={state.projects}
+          projectTasks={state.projectTasks}
           tags={state.tags}
           currency={currency}
           rateLookup={rateLookup}
@@ -593,6 +602,7 @@ export function TimeTrackerDashboard({
         setEditingDraft={setEditingDraft}
         clients={state.clients}
         projects={state.projects}
+        projectTasks={state.projectTasks}
         tags={state.tags}
         canManageCatalog={canManageCatalog}
         pending={mutations.pending}
@@ -600,6 +610,9 @@ export function TimeTrackerDashboard({
         onCancel={() => setEditingId(null)}
         onCreateClient={mutations.createClient}
         onCreateProject={mutations.createProject}
+        onCreateTask={(projectId, name) =>
+          mutations.createTask(projectId, name).then(() => undefined)
+        }
         onCreateTag={mutations.createTag}
       />
 

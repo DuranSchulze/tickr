@@ -279,6 +279,7 @@ export function DayGroupsList({
   view,
   clients,
   projects,
+  projectTasks,
   tags,
   currency,
   rateLookup,
@@ -300,6 +301,7 @@ export function DayGroupsList({
   view?: ViewMode
   clients: ClientItem[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   currency: string
   rateLookup: (memberId: string) => number
@@ -435,6 +437,7 @@ export function DayGroupsList({
                                 entry={entry}
                                 clients={clients}
                                 projects={projects}
+                                projectTasks={projectTasks}
                                 tags={tags}
                                 pending={pending}
                                 isPending={pendingEntryIds?.has(entry.id)}
@@ -473,6 +476,7 @@ export function DayGroupsList({
                                     entry={entry}
                                     clients={clients}
                                     projects={projects}
+                                    projectTasks={projectTasks}
                                     tags={tags}
                                     pending={pending}
                                     isPending={pendingEntryIds?.has(entry.id)}

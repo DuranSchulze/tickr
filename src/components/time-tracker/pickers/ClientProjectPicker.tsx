@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Building2, ChevronDown, X } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Building2, ChevronDown, ChevronRight, ListPlus, X } from 'lucide-react'
 import {
   Popover,
   PopoverContent,
@@ -8,6 +8,7 @@ import {
 import { cn } from '#/lib/utils'
 
 export type ClientItem = { id: string; name: string }
+
 export type ProjectItem = {
   id: string
   name: string
@@ -15,56 +16,101 @@ export type ProjectItem = {
   clientId: string
 }
 
+export type ProjectTaskItem = {
+  id: string
+  projectId: string
+  name: string
+}
+
 interface Props {
   clients: ClientItem[]
   projects: ProjectItem[]
+  tasks: ProjectTaskItem[]
   clientId: string
   projectId: string
-  onChange: (clientId: string, projectId: string) => void
+  taskId: string
+  onChange: (clientId: string, projectId: string, taskId?: string) => void
+  onCreateTask?: (projectId: string, name: string) => Promise<void>
   disabled?: boolean
   placeholder?: string
-  /** Borderless variant for use inside the unified timer bar / table rows. */
   bare?: boolean
+  /** Compact badge style — minimal text-only trigger for table rows. */
+  compact?: boolean
 }
 
 type GroupedRow =
   | { kind: 'client'; client: ClientItem }
   | { kind: 'project'; project: ProjectItem; client: ClientItem }
+  | { kind: 'task'; task: ProjectTaskItem; project: ProjectItem }
+  | { kind: 'add-task'; project: ProjectItem }
 
-// Cap how many projects mount at once. Opening the popover commits every row
-// synchronously, so an uncapped list is what makes a large catalog slow.
 const MAX_VISIBLE_PROJECTS = 50
 
 export function ClientProjectPicker({
   clients,
   projects,
+  tasks,
   clientId,
   projectId,
+  taskId,
   onChange,
+  onCreateTask,
   disabled = false,
   placeholder = 'Client / Project',
   bare = false,
+  compact = false,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [addingTaskFor, setAddingTaskFor] = useState<string | null>(null)
+  const [newTaskName, setNewTaskName] = useState('')
+  const [submittingTask, setSubmittingTask] = useState(false)
+  const [collapsedClients, setCollapsedClients] = useState<Set<string>>(
+    new Set(),
+  )
+  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(
+    new Set(),
+  )
+
   const inputRef = useRef<HTMLInputElement>(null)
+  const newTaskInputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Reset the search whenever the popover closes.
+  // Seed collapsed projects when popover opens so every project starts closed.
+  const seedCollapsed = useCallback(() => {
+    setCollapsedProjects(new Set(projects.map((p) => p.id)))
+  }, [projects])
+
   useEffect(() => {
-    if (!open) setSearch('')
+    if (open) seedCollapsed()
+  }, [open, seedCollapsed])
+
+  // Reset search when popover closes.
+  useEffect(() => {
+    if (!open) {
+      setSearch('')
+      setAddingTaskFor(null)
+      setNewTaskName('')
+    }
   }, [open])
 
-  // Scroll the selected project into view when the dropdown opens.
+  // Focus new-task input when it appears.
   useEffect(() => {
-    if (!open || !projectId) return
+    if (addingTaskFor) {
+      requestAnimationFrame(() => newTaskInputRef.current?.focus())
+    }
+  }, [addingTaskFor])
+
+  // Scroll selected into view when popover opens.
+  useEffect(() => {
+    if (!open) return
     requestAnimationFrame(() => {
       const el = listRef.current?.querySelector<HTMLElement>(
         '[data-selected="true"]',
       )
       el?.scrollIntoView({ block: 'nearest' })
     })
-  }, [open, projectId])
+  }, [open])
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.id === clientId),
@@ -74,11 +120,13 @@ export function ClientProjectPicker({
     () => projects.find((p) => p.id === projectId),
     [projects, projectId],
   )
+  const selectedTask = useMemo(
+    () => (taskId ? tasks.find((t) => t.id === taskId) : undefined),
+    [tasks, taskId],
+  )
 
   const hasSelection = !!clientId && !!projectId && !!selectedProject
 
-  // Index projects once per catalog change instead of re-filtering the whole
-  // project list for every client on every render.
   const projectsByClient = useMemo(() => {
     const map = new Map<string, ProjectItem[]>()
     for (const project of projects) {
@@ -89,17 +137,18 @@ export function ClientProjectPicker({
     return map
   }, [projects])
 
-  // Build grouped rows filtered by search — only while the dropdown is open,
-  // so closed pickers cost nothing when the parent re-renders. The result is
-  // capped: mounting every project at once is what makes opening the popover
-  // slow on large catalogs (all nodes commit synchronously and Radix's
-  // FocusScope/Popper run over the whole subtree). The search box narrows the
-  // rest.
-  const { rows, truncated } = useMemo<{
-    rows: GroupedRow[]
-    truncated: boolean
-  }>(() => {
-    if (!open) return { rows: [], truncated: false }
+  const tasksByProject = useMemo(() => {
+    const map = new Map<string, ProjectTaskItem[]>()
+    for (const task of tasks) {
+      const list = map.get(task.projectId)
+      if (list) list.push(task)
+      else map.set(task.projectId, [task])
+    }
+    return map
+  }, [tasks])
+
+  const { rows, truncated } = useMemo(() => {
+    if (!open) return { rows: [] as GroupedRow[], truncated: false }
     const q = search.toLowerCase()
     const result: GroupedRow[] = []
     let projectCount = 0
@@ -118,92 +167,236 @@ export function ClientProjectPicker({
           : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
         : clientProjects
 
-      if (matchingProjects.length === 0 && !clientMatches) continue
+      const matchingTaskProjects =
+        q && !clientMatches
+          ? clientProjects.filter((p) => {
+              const ptasks = tasksByProject.get(p.id) ?? []
+              return ptasks.some((t) => t.name.toLowerCase().includes(q))
+            })
+          : []
 
+      if (
+        matchingProjects.length === 0 &&
+        matchingTaskProjects.length === 0 &&
+        !clientMatches
+      )
+        continue
+
+      const clientCollapsed = collapsedClients.has(client.id)
       result.push({ kind: 'client', client })
-      for (const project of matchingProjects) {
+
+      if (clientCollapsed && !q) continue
+
+      const visibleProjects =
+        matchingProjects.length > 0
+          ? matchingProjects
+          : matchingTaskProjects.length > 0
+            ? matchingTaskProjects
+            : clientProjects
+
+      for (const project of visibleProjects) {
         if (projectCount >= MAX_VISIBLE_PROJECTS) {
           cut = true
           break
         }
         result.push({ kind: 'project', project, client })
         projectCount++
+
+        const projectTasks = tasksByProject.get(project.id) ?? []
+        const projectCollapsed = collapsedProjects.has(project.id)
+
+        if (q || !projectCollapsed) {
+          for (const task of projectTasks) {
+            if (q && !task.name.toLowerCase().includes(q)) continue
+            result.push({ kind: 'task', task, project })
+          }
+        }
+
+        if (onCreateTask && (q || !projectCollapsed)) {
+          result.push({ kind: 'add-task', project })
+        }
       }
     }
     return { rows: result, truncated: cut }
-  }, [open, search, clients, projectsByClient])
+  }, [
+    open,
+    search,
+    clients,
+    projectsByClient,
+    tasksByProject,
+    collapsedClients,
+    collapsedProjects,
+    onCreateTask,
+  ])
 
-  function handleSelect(nextClientId: string, nextProjectId: string) {
-    onChange(nextClientId, nextProjectId)
+  function toggleClient(cid: string) {
+    setCollapsedClients((prev) => {
+      const next = new Set(prev)
+      if (next.has(cid)) next.delete(cid)
+      else next.add(cid)
+      return next
+    })
+  }
+
+  function toggleProject(pid: string) {
+    setCollapsedProjects((prev) => {
+      const next = new Set(prev)
+      if (next.has(pid)) next.delete(pid)
+      else next.add(pid)
+      return next
+    })
+  }
+
+  function openAddTaskFor(pid: string) {
+    setCollapsedProjects((prev) => {
+      const next = new Set(prev)
+      next.delete(pid)
+      return next
+    })
+    setAddingTaskFor(pid)
+    setNewTaskName('')
+  }
+
+  function handleSelect(
+    nextClientId: string,
+    nextProjectId: string,
+    nextTaskId?: string,
+  ) {
+    onChange(nextClientId, nextProjectId, nextTaskId)
     setOpen(false)
   }
 
   function handleClear(e: React.MouseEvent | React.KeyboardEvent) {
     e.stopPropagation()
-    onChange('', '')
+    onChange('', '', undefined)
+  }
+
+  async function handleCreateTask(pid: string) {
+    if (!onCreateTask || !newTaskName.trim() || submittingTask) return
+    setSubmittingTask(true)
+    try {
+      await onCreateTask(pid, newTaskName.trim())
+      setAddingTaskFor(null)
+      setNewTaskName('')
+    } catch {
+      // Error handled by toast in parent
+    } finally {
+      setSubmittingTask(false)
+    }
   }
 
   return (
     <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
-      {/* Trigger — wrapped in a group so the tooltip can use group-hover */}
-      <div className={bare ? 'group relative h-full' : 'group relative'}>
+      {/* Trigger */}
+      <div
+        className={
+          bare
+            ? 'group relative h-full'
+            : compact
+              ? 'group relative'
+              : 'group relative'
+        }
+      >
         <PopoverTrigger asChild>
           <button
             type="button"
             disabled={disabled}
             className={
-              bare
-                ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
-                : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+              compact
+                ? 'flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
+                : bare
+                  ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
+                  : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
             }
           >
             <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
               {hasSelection ? (
-                <>
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: selectedProject.color }}
-                  />
-                  <div
-                    className="min-w-0 truncate text-left"
-                    title={`${selectedClient?.name ?? ''} › ${selectedProject.name}`}
-                  >
-                    {selectedClient?.name ?? ''}
-                    <span className="text-muted-foreground">
-                      {' '}
-                      ›{' '}
-                      <span className="text-foreground">
+                compact ? (
+                  <span className="flex min-w-0 items-center gap-0 text-left">
+                    {selectedClient?.name ? (
+                      <>
+                        <span className="truncate max-w-[80px]">
+                          {selectedClient.name}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          &nbsp;/&nbsp;
+                        </span>
+                      </>
+                    ) : null}
+                    {selectedTask ? (
+                      <>
+                        <span className="shrink-0 whitespace-nowrap">
+                          {selectedTask.name}
+                        </span>
+                        <span className="shrink-0 text-muted-foreground">
+                          &nbsp;-&nbsp;
+                        </span>
+                      </>
+                    ) : null}
+                    <span className="truncate">{selectedProject.name}</span>
+                  </span>
+                ) : (
+                  <>
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: selectedProject.color }}
+                    />
+                    <div
+                      className="flex min-w-0 items-center gap-0 text-left"
+                      title={`${selectedClient?.name ? selectedClient.name + ' / ' : ''}${selectedTask ? selectedTask.name + ' - ' : ''}${selectedProject.name}`}
+                    >
+                      {selectedClient?.name ? (
+                        <>
+                          <span className="truncate max-w-[100px]">
+                            {selectedClient.name}
+                          </span>
+                          <span className="shrink-0 text-muted-foreground">
+                            &nbsp;/&nbsp;
+                          </span>
+                        </>
+                      ) : null}
+                      {selectedTask ? (
+                        <>
+                          <span className="shrink-0 whitespace-nowrap text-foreground">
+                            {selectedTask.name}
+                          </span>
+                          <span className="shrink-0 text-muted-foreground">
+                            &nbsp;-&nbsp;
+                          </span>
+                        </>
+                      ) : null}
+                      <span className="truncate text-foreground">
                         {selectedProject.name}
                       </span>
-                    </span>
-                  </div>
-                </>
+                    </div>
+                  </>
+                )
               ) : (
                 <span className="text-muted-foreground">{placeholder}</span>
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-1">
-              {hasSelection && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={handleClear}
-                  onKeyDown={(e) => e.key === 'Enter' && handleClear(e)}
-                  aria-label="Clear client and project"
-                  className={cn(
-                    'grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
-                  )}
-                >
-                  <X className="size-3" />
-                </span>
-              )}
-              <ChevronDown className="size-3.5 text-muted-foreground" />
-            </div>
+            {!compact && (
+              <div className="flex shrink-0 items-center gap-1">
+                {hasSelection && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleClear}
+                    onKeyDown={(e) => e.key === 'Enter' && handleClear(e)}
+                    aria-label="Clear client and project"
+                    className="grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  >
+                    <X className="size-3" />
+                  </span>
+                )}
+                <ChevronDown className="size-3.5 text-muted-foreground" />
+              </div>
+            )}
           </button>
         </PopoverTrigger>
 
-        {/* Tooltip — only shows when something is selected and dropdown is closed */}
+        {/* Tooltip */}
         {hasSelection && !open && (
           <div
             aria-hidden="true"
@@ -211,22 +404,30 @@ export function ClientProjectPicker({
           >
             <div className="whitespace-nowrap rounded-lg border border-border bg-popover px-2.5 py-1.5 shadow-md">
               <p className="text-xs text-muted-foreground">
-                {selectedClient?.name}
-                <span className="mx-1">›</span>
+                {selectedClient?.name ? (
+                  <>
+                    {selectedClient.name}
+                    <span className="mx-1">/</span>
+                  </>
+                ) : null}
+                {selectedTask ? (
+                  <>
+                    {selectedTask.name}
+                    <span className="mx-1">-</span>
+                  </>
+                ) : null}
                 <span className="font-semibold text-foreground">
                   {selectedProject.name}
                 </span>
               </p>
             </div>
-            {/* Arrow pointing down */}
             <div className="absolute left-1/2 top-full -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-border" />
             <div className="absolute left-1/2 top-[calc(100%-1px)] -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-popover" />
           </div>
         )}
       </div>
 
-      {/* Dropdown — rendered in a portal so it's never clipped by an
-          overflow-hidden ancestor (timer bar) or overflow-x-auto table. */}
+      {/* Dropdown */}
       <PopoverContent
         align="start"
         sideOffset={4}
@@ -234,7 +435,7 @@ export function ClientProjectPicker({
           e.preventDefault()
           inputRef.current?.focus()
         }}
-        className="w-72 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+        className="w-80 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
       >
         {/* Search */}
         <div className="border-b border-border p-2">
@@ -242,59 +443,191 @@ export function ClientProjectPicker({
             ref={inputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search clients or projects…"
-            aria-label="Search clients or projects"
+            placeholder="Search clients, projects or tasks…"
+            aria-label="Search clients, projects or tasks"
             className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
           />
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-56 overflow-y-auto py-1">
+        <div ref={listRef} className="max-h-64 overflow-y-auto py-1">
           {rows.length === 0 ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">
-              No clients or projects found
+              No clients, projects or tasks found
             </p>
           ) : (
             rows.map((row, i) => {
+              // ── Client header ──
               if (row.kind === 'client') {
+                const cCollapsed = collapsedClients.has(row.client.id)
                 return (
-                  <div
+                  <button
                     key={`client-${row.client.id}`}
+                    type="button"
+                    onClick={() => toggleClient(row.client.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground',
+                      'flex w-full items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-accent/50',
                       i > 0 && 'mt-1 border-t border-border/50 pt-2',
                     )}
                   >
+                    {cCollapsed ? (
+                      <ChevronRight className="size-3.5 shrink-0" />
+                    ) : (
+                      <ChevronDown className="size-3.5 shrink-0" />
+                    )}
                     <Building2 className="size-3 shrink-0" />
                     <span className="truncate">{row.client.name}</span>
+                  </button>
+                )
+              }
+
+              // ── Project row ──
+              if (row.kind === 'project') {
+                const pCollapsed = collapsedProjects.has(row.project.id)
+                const pActive = row.project.id === projectId && !taskId
+                const hasTasks =
+                  (tasksByProject.get(row.project.id)?.length ?? 0) > 0
+                return (
+                  <div
+                    key={`project-${row.project.id}`}
+                    className={cn(
+                      'flex w-full items-center gap-0.5 py-1.5 pl-7 pr-2 text-left text-xs transition-colors hover:bg-accent/30',
+                      pActive && 'bg-accent/50',
+                    )}
+                  >
+                    {/* Chevron — only when there are tasks to show/hide */}
+                    {hasTasks ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleProject(row.project.id)
+                        }}
+                        className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                        aria-label={pCollapsed ? 'Show tasks' : 'Hide tasks'}
+                      >
+                        {pCollapsed ? (
+                          <ChevronRight className="size-3" />
+                        ) : (
+                          <ChevronDown className="size-3" />
+                        )}
+                      </button>
+                    ) : (
+                      <span className="w-5 shrink-0" />
+                    )}
+
+                    {/* Select project */}
+                    <button
+                      type="button"
+                      data-selected={pActive ? 'true' : undefined}
+                      onClick={() =>
+                        handleSelect(row.client.id, row.project.id)
+                      }
+                      className={cn(
+                        'flex flex-1 items-center gap-2 rounded py-0.5 -my-0.5',
+                        pActive
+                          ? 'font-medium text-foreground'
+                          : 'font-normal text-muted-foreground',
+                      )}
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: row.project.color }}
+                      />
+                      <span className="truncate">{row.project.name}</span>
+                      {pActive && (
+                        <span className="size-1.5 shrink-0 rounded-full bg-primary" />
+                      )}
+                    </button>
+
+                    {/* Add-task icon — one click to expand + open inline textbox */}
+                    {onCreateTask && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openAddTaskFor(row.project.id)
+                        }}
+                        className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                        aria-label="Add task"
+                        title="Add task"
+                      >
+                        <ListPlus className="size-3.5" />
+                      </button>
+                    )}
                   </div>
                 )
               }
 
-              const isActive = row.project.id === projectId
-              return (
-                <button
-                  key={`project-${row.project.id}`}
-                  type="button"
-                  data-selected={isActive ? 'true' : undefined}
-                  onClick={() => handleSelect(row.client.id, row.project.id)}
-                  className={cn(
-                    'flex w-full items-center gap-2 py-1.5 pl-7 pr-3 text-left text-xs transition-colors hover:bg-accent',
-                    isActive
-                      ? 'bg-accent/50 font-medium text-foreground'
-                      : 'font-normal text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: row.project.color }}
-                  />
-                  <span className="flex-1 truncate">{row.project.name}</span>
-                  {isActive && (
-                    <span className="size-1.5 shrink-0 rounded-full bg-primary" />
-                  )}
-                </button>
-              )
+              // ── Task row ──
+              if (row.kind === 'task') {
+                const tActive = row.task.id === taskId
+                return (
+                  <button
+                    key={`task-${row.task.id}`}
+                    type="button"
+                    data-selected={tActive ? 'true' : undefined}
+                    onClick={() =>
+                      handleSelect(row.project.id, row.project.id, row.task.id)
+                    }
+                    className={cn(
+                      'flex w-full items-center gap-2 py-1.5 pl-12 pr-3 text-left text-xs transition-colors hover:bg-accent',
+                      tActive
+                        ? 'bg-accent/50 font-medium text-foreground'
+                        : 'font-normal text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <span className="flex-1 truncate">{row.task.name}</span>
+                    {tActive && (
+                      <span className="size-1.5 shrink-0 rounded-full bg-primary" />
+                    )}
+                  </button>
+                )
+              }
+
+              // ── Inline add-task input ──
+              {
+                const isAdding = addingTaskFor === row.project.id
+                if (isAdding) {
+                  return (
+                    <div
+                      key={`add-task-${row.project.id}`}
+                      className="flex items-center gap-1 py-1 pl-12 pr-3"
+                    >
+                      <input
+                        ref={newTaskInputRef}
+                        value={newTaskName}
+                        onChange={(e) => setNewTaskName(e.target.value)}
+                        placeholder="New task name…"
+                        className="h-7 flex-1 rounded border border-border bg-background px-2 text-xs focus:border-primary focus:outline-none"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter')
+                            handleCreateTask(row.project.id)
+                          if (e.key === 'Escape') {
+                            setAddingTaskFor(null)
+                            setNewTaskName('')
+                          }
+                        }}
+                        onBlur={() => {
+                          if (!submittingTask) {
+                            setAddingTaskFor(null)
+                            setNewTaskName('')
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        disabled={submittingTask || !newTaskName.trim()}
+                        onClick={() => handleCreateTask(row.project.id)}
+                        className="grid size-7 place-items-center rounded text-primary hover:bg-primary/10 disabled:opacity-40"
+                      >
+                        <ChevronRight className="size-3.5" />
+                      </button>
+                    </div>
+                  )
+                }
+                return null
+              }
             })
           )}
           {truncated && (

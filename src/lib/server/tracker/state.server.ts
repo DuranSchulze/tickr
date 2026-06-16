@@ -11,6 +11,7 @@ import {
   users,
   timeEntries,
   timeEntryTags,
+  projectTasks,
 } from '#/db/schema'
 import { and, eq, gte, isNull, or, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
@@ -51,6 +52,7 @@ export async function getTrackerState(): Promise<TrackerState> {
     entryRows,
     cohortMemberData,
     entryTagData,
+    projectTasksRows,
   ] = await Promise.all([
     db
       .select()
@@ -121,6 +123,16 @@ export async function getTrackerState(): Promise<TrackerState> {
       .from(timeEntryTags)
       .innerJoin(timeEntries, eq(timeEntryTags.timeEntryId, timeEntries.id))
       .where(entriesWhere),
+    db
+      .select()
+      .from(projectTasks)
+      .where(
+        and(
+          eq(projectTasks.workspaceId, workspaceId),
+          eq(projectTasks.archived, false),
+        ),
+      )
+      .orderBy(asc(projectTasks.name)),
   ])
 
   // Member roles are always roles of this workspace, so the full roles list
@@ -175,6 +187,12 @@ export async function getTrackerState(): Promise<TrackerState> {
       color: p.color,
       clientId: p.clientId,
     })),
+    projectTasks: projectTasksRows.map((t) => ({
+      id: t.id,
+      projectId: t.projectId,
+      name: t.name,
+      archived: t.archived,
+    })),
     clients: clientsRows.map((c) => ({
       id: c.id,
       name: c.name,
@@ -209,6 +227,7 @@ export async function getTrackerState(): Promise<TrackerState> {
       workspaceMemberId: entry.workspaceMemberId,
       description: entry.description,
       projectId: entry.projectId ?? '',
+      taskId: entry.taskId ?? null,
       tagIds: tagsByEntry.get(entry.id) ?? [],
       billable: entry.billable,
       startedAt: entry.startedAt.toISOString(),

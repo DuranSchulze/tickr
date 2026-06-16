@@ -39,6 +39,13 @@ export type Project = {
   clientId: string
 }
 
+export type ProjectTask = {
+  id: string
+  projectId: string
+  name: string
+  archived: boolean
+}
+
 export type Client = {
   id: string
   name: string
@@ -70,6 +77,7 @@ export type TimeEntry = {
   workspaceMemberId: string
   description: string
   projectId: string
+  taskId: string | null
   tagIds: string[]
   billable: boolean
   startedAt: string
@@ -85,6 +93,7 @@ export type TrackerState = {
   departments: Department[]
   cohorts: Cohort[]
   projects: Project[]
+  projectTasks: ProjectTask[]
   clients: Client[]
   tags: Tag[]
   members: Member[]

@@ -16,7 +16,9 @@ export function EntryDraftForm({
   setDraft,
   clients,
   projects,
+  projectTasks,
   tags,
+  onCreateTask,
   onCreateTag,
   canManageCatalog = true,
   compact = false,
@@ -26,6 +28,7 @@ export function EntryDraftForm({
   setDraft: (draft: DraftEntry) => void
   clients: ClientItem[]
   projects: ProjectItem[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: { id: string; name: string; color: string }[]
   onCreateClient?: (name: string) => Promise<void>
   onCreateProject?: (
@@ -33,6 +36,7 @@ export function EntryDraftForm({
     color: string,
     clientId: string,
   ) => Promise<void>
+  onCreateTask?: (projectId: string, name: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   compact?: boolean
@@ -61,11 +65,19 @@ export function EntryDraftForm({
         <ClientProjectPicker
           clients={activeClients}
           projects={projects}
+          tasks={projectTasks}
           clientId={draft.clientId}
           projectId={draft.projectId}
-          onChange={(cid, pid) =>
-            setDraft({ ...draft, clientId: cid, projectId: pid })
+          taskId={draft.taskId}
+          onChange={(cid, pid, tid) =>
+            setDraft({
+              ...draft,
+              clientId: cid,
+              projectId: pid,
+              taskId: tid ?? '',
+            })
           }
+          onCreateTask={onCreateTask}
         />
         <TagPicker
           tags={tags}

@@ -9,6 +9,7 @@ import {
   workspaceMembers,
   cohortMembers,
   users,
+  projectTasks,
 } from '#/db/schema'
 import { and, eq, inArray, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
@@ -32,6 +33,7 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
     clientsRows,
     tagsRows,
     memberRows,
+    projectTasksRows,
   ] = await Promise.all([
     db
       .select()
@@ -73,6 +75,16 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
       .from(workspaceMembers)
       .where(eq(workspaceMembers.workspaceId, workspaceId))
       .orderBy(asc(workspaceMembers.email)),
+    db
+      .select()
+      .from(projectTasks)
+      .where(
+        and(
+          eq(projectTasks.workspaceId, workspaceId),
+          eq(projectTasks.archived, false),
+        ),
+      )
+      .orderBy(asc(projectTasks.name)),
   ])
 
   const memberIds = memberRows.map((m) => m.id)
@@ -149,6 +161,12 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
       name: p.name,
       color: p.color,
       clientId: p.clientId,
+    })),
+    projectTasks: projectTasksRows.map((t) => ({
+      id: t.id,
+      projectId: t.projectId,
+      name: t.name,
+      archived: t.archived,
     })),
     clients: clientsRows.map((c) => ({
       id: c.id,

@@ -8,94 +8,76 @@ email delivery, and performance across `src/lib/auth.ts`, `src/lib/server/*`, an
 
 ## Issues
 
-### 1. No Rate Limiting on Sign-in Endpoints
+### 1. ~~No Rate Limiting on Sign-in Endpoints~~ ✅ RESOLVED
 
 **Severity:** Medium
 **Category:** Security
+**Status:** Fixed 2026-06-16
 
-better-auth's `emailAndPassword` plugin does not ship with built-in rate limiting for
-sign-in attempts. The suspicious-login alert (session.create.after hook) notifies the user
-_after_ a successful login from a new IP, but it does not prevent brute-force password
-guessing. An attacker can hammer `/api/auth/sign-in/email` without friction.
+Upon deeper review, better-auth v1.6 **does** have built-in rate limiting enabled by
+default in production (100 req/60 s), with a stricter built-in rule for `/sign-in/email`
+(3 req/10 s). However, it was:
 
-**Fix:**
+- Invisible in the codebase (no explicit config → unclear to developers)
+- Disabled in dev mode (can't test rate-limiting behavior locally)
+- Missing custom rules for `/sign-up/email`, `/forgot-password`, and `/reset-password`
 
-```ts
-// src/lib/auth.ts — add to the betterAuth({...}) config
-rateLimit: {
-  window: 60,        // seconds
-  max: 5,            // attempts per window per IP
-  storage: 'memory', // or 'database' for multi-instance deploys
-}
-```
+**What was done:**
 
-> Note: `storage: 'memory'` works for single-instance deploys. For Vercel/serverless or
-> multi-instance, use `storage: 'database'` so rate-limit state is shared across instances.
+Added an explicit `rateLimit` block to `src/lib/auth.ts` that:
+
+- Enables rate limiting in **all** environments (`enabled: true`)
+- Keeps the production defaults (window: 60 s, max: 100 req)
+- Adds custom strict rules:
+  - `/sign-up/email` → 3 req / 10 s (same as sign-in)
+  - `/forgot-password` → 3 req / 60 s (prevents enumeration)
+  - `/reset-password` → 5 req / 60 s (allows retries, blocks abuse)
+- Uses `storage: 'memory'` (switch to `'database'` for multi-instance deploys)
+- Documents the `npx @better-auth/cli migrate` step for database storage
 
 **References:**
 
-- `src/lib/auth.ts` L14 — `betterAuth({...})` config
+- `src/lib/auth.ts` L61-91 — `rateLimit` config
 - `src/routes/auth/index.tsx` L145-157 — sign-in/sign-up calls
 
 ---
 
-### 2. Heavy `requireWorkspaceAccess()` Runs on Every Mutation
+### 2. ~~Heavy `requireWorkspaceAccess()` Runs on Every Mutation~~ ✅ RESOLVED
 
 **Severity:** Medium
 **Category:** Performance
+**Status:** Fixed 2026-06-16
 
-Every timer action (start, stop, update description, resume, discard) calls
-`requireWorkspaceAccess()` → `_fetchWorkspaceAccess()`, which fetches **all** of the user's
-workspace memberships **and** their full relations:
+Every timer action (start, stop, update description, resume, discard) was calling
+`requireWorkspaceAccess()` → `_fetchWorkspaceAccess()`, which fetched **all** of the user's
+workspace memberships **and** their full relations (6+ parallel DB queries). A timer
+start/stop only needs `{ workspaceId, memberId }`.
 
-```
-5+ parallel DB queries per mutation:
-  ├── workspaceMembers (base rows)
-  ├── workspaces
-  ├── workspaceRoles
-  ├── departments
-  ├── cohortMembers ⋈ cohorts
-  └── employeeProfiles ⟕ employeeGovernmentIds
-```
+**What was done:**
 
-A timer start/stop only needs `{ workspaceId, memberId }` — roughly 200 ms of database
-round-trips for a mutation that should complete in <50 ms.
+Added `requireWorkspaceMembership()` in `src/lib/server/workspace-access.server.ts` that
+performs a lightweight auth check (~2 queries instead of 6+):
 
-The `WeakMap` request-scoped cache prevents duplicate calls _within_ the same HTTP request,
-but start/stop are separate requests. Route-level `staleTime: 5 min` does not apply to
-POST server functions.
+- 1× `workspaceMembers` (selecting 4 columns: id, workspaceId, userId, status)
+- 1× `workspaces` (selecting 2 columns: id, slug — for cookie resolution)
+- User id/email from the session (zero query cost)
+- Same CSRF protection (`assertTrustedOrigin`) and membership-linking logic
 
-**Affected endpoints:**
+Wired into the 7 high-frequency mutations:
 
-| Server Function       | Called By                                         |
-| --------------------- | ------------------------------------------------- |
-| `startTimerFn`        | Timer start button                                |
-| `stopTimerFn`         | Timer stop button                                 |
-| `updateActiveTimerFn` | Description/project/tag changes (debounced 1.5 s) |
-| `createManualEntryFn` | Manual entry form                                 |
-| `updateEntryFn`       | Inline row edits                                  |
-| `deleteEntryFn`       | Row delete                                        |
-| `duplicateEntryFn`    | Row duplicate                                     |
+- `tracker/timer.server.ts` — startTimer, stopTimer, updateActiveTimer, duplicateEntry
+- `tracker/manual-entries.server.ts` — createManualEntry, updateEntry, deleteEntry
 
-**Fix:** Split into two layers:
+**All other 60+ callers** (analytics, catalogs, gsheets, settings, profile, etc.) still
+use `requireWorkspaceAccess()` since they need the full workspace data.
 
-```ts
-// Lightweight — session + workspace membership only (~2 queries)
-async function requireWorkspaceMembership(): Promise<{ workspaceId, memberId }> { ... }
-
-// Full — session + membership + all relations (existing behavior)
-async function requireWorkspaceAccess(slug?: string): Promise<WorkspaceAccess> { ... }
-```
-
-Use `requireWorkspaceMembership()` for high-frequency mutations. Use
-`requireWorkspaceAccess()` for route loaders and catalog/profile endpoints that actually
-render member data.
+**Query reduction:** 6 → 2 per mutation (~150 ms saved per timer action)
 
 **References:**
 
-- `src/lib/server/workspace-access.server.ts` L206-269 — `_fetchWorkspaceAccess`
-- `src/lib/server/workspace-access.server.ts` L61-153 — `fetchMembersWithRelations`
-- `src/lib/server/tracker/timer.server.ts` L52-53 — `startTimer` entry point
+- `src/lib/server/workspace-access.server.ts` L204-291 — `requireWorkspaceMembership`
+- `src/lib/server/tracker/timer.server.ts` L6, L55, L124, L192, L330 — mutation call sites
+- `src/lib/server/tracker/manual-entries.server.ts` L5, L19, L66, L147 — mutation call sites
 
 ---
 
@@ -174,9 +156,9 @@ export function assertTrustedOrigin(): void {
 
 ## Priority
 
-| #   | Issue                          | Priority | Effort |
-| --- | ------------------------------ | -------- | ------ |
-| 1   | Rate limiting on sign-in       | **High** | Small  |
-| 2   | Lightweight auth for mutations | **High** | Medium |
-| 3   | `HttpOnly` on workspace cookie | Low      | Tiny   |
-| 4   | CSRF check scope on GET        | Low      | Tiny   |
+| #   | Issue                          | Priority | Effort | Status  |
+| --- | ------------------------------ | -------- | ------ | ------- |
+| 1   | Rate limiting on sign-in       | **High** | Small  | ✅ Done |
+| 2   | Lightweight auth for mutations | **High** | Medium | ✅ Done |
+| 3   | `HttpOnly` on workspace cookie | Low      | Tiny   | —       |
+| 4   | CSRF check scope on GET        | Low      | Tiny   | —       |

@@ -8,6 +8,7 @@ import {
   createClientFn,
   createManualEntryFn,
   createProjectFn,
+  createTaskFn,
   createTagFn,
   deleteEntryFn,
   duplicateEntryFn,
@@ -139,6 +140,8 @@ export function useTrackerMutations() {
     ) => run(() => createClientFn({ data: { name, clientStatus } })),
     createProject: (name: string, color: string, clientId: string) =>
       run(() => createProjectFn({ data: { name, color, clientId } })),
+    createTask: (projectId: string, name: string) =>
+      run(async () => createTaskFn({ data: { projectId, name } })),
     createTag: (name: string, color: string) =>
       run(() => createTagFn({ data: { name, color } })),
   }

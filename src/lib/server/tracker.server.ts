@@ -117,3 +117,9 @@ export {
   type BulkReportEntry,
   type BulkReportScopeType,
 } from './tracker/bulk-report.server'
+export {
+  createTask,
+  updateTask,
+  archiveTask,
+  activateTask,
+} from './tracker/catalogs/tasks.server'

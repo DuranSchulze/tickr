@@ -38,6 +38,7 @@ type InlinePatch = Partial<
     TimeEntry,
     | 'description'
     | 'billable'
+    | 'taskId'
     | 'projectId'
     | 'tagIds'
     | 'startedAt'
@@ -224,6 +225,7 @@ export const EntryRow = memo(function EntryRow({
   entry,
   clients,
   projects,
+  projectTasks,
   tags,
   pending,
   isPending,
@@ -239,6 +241,7 @@ export const EntryRow = memo(function EntryRow({
   entry: TimeEntry
   clients: ClientItem[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   pending: boolean
   isPending?: boolean
@@ -351,11 +354,15 @@ export const EntryRow = memo(function EntryRow({
           <ClientProjectPicker
             clients={activeClients}
             projects={projects}
+            tasks={projectTasks}
             clientId={entryProject?.clientId ?? ''}
             projectId={entry.projectId}
-            onChange={(_clientId, projectId) => update({ projectId })}
+            taskId={entry.taskId ?? ''}
+            onChange={(_clientId, projectId, taskId) =>
+              update({ projectId, taskId: taskId ?? null })
+            }
             disabled={actionsDisabled}
-            bare
+            compact
           />
         </div>
       </TableCell>

@@ -4,6 +4,7 @@ export type DraftEntry = {
   description: string
   clientId: string
   projectId: string
+  taskId: string
   tagIds: string[]
   billable: boolean
   startedAt: string
@@ -25,6 +26,7 @@ export function emptyDraft(
     description: '',
     clientId,
     projectId,
+    taskId: '',
     tagIds: tagId ? [tagId] : [],
     billable: false,
     startedAt: dateTimeLocalValue(start),
@@ -46,6 +48,7 @@ export function toEntryPayload(d: DraftEntry) {
   return {
     description: d.description.trim(),
     projectId: d.projectId,
+    taskId: d.taskId || null,
     tagIds: d.tagIds.filter(Boolean),
     billable: d.billable,
     startedAt: new Date(d.startedAt).toISOString(),

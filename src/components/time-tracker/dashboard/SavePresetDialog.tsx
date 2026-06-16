@@ -66,8 +66,6 @@ export function SavePresetDialog({
     }
   }, [open, clientId, projectId, tagIds, billable])
 
-  const activeClients = clients.filter((c) => c.clientStatus === 'ACTIVE')
-
   const canSave = name.trim().length > 0 && draftClientId && draftProjectId
 
   function handleSave() {
@@ -125,10 +123,12 @@ export function SavePresetDialog({
           <div className="grid gap-1.5">
             <Label>Client / Project</Label>
             <ClientProjectPicker
-              clients={activeClients}
+              clients={clients.filter((c) => c.clientStatus === 'ACTIVE')}
               projects={projects}
-              clientId={draftClientId}
-              projectId={draftProjectId}
+              tasks={[]}
+              clientId={clientId}
+              projectId={projectId}
+              taskId={''}
               onChange={(cid, pid) => {
                 setDraftClientId(cid)
                 setDraftProjectId(pid)

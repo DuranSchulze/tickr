@@ -27,6 +27,7 @@ export function EntriesSection({
   filterControls,
   clients,
   projects,
+  projectTasks,
   tags,
   currency,
   rateLookup,
@@ -58,6 +59,7 @@ export function EntriesSection({
   }
   clients: Array<{ id: string; name: string; clientStatus: string }>
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   currency: string
   rateLookup: (memberId: string) => number
@@ -227,6 +229,7 @@ export function EntriesSection({
         view={view}
         clients={clients}
         projects={projects}
+        projectTasks={projectTasks}
         tags={tags}
         currency={currency}
         rateLookup={rateLookup}

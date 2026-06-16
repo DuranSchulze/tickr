@@ -21,6 +21,9 @@ export function InputSection({
   onClientIdChange,
   projectId,
   onProjectIdChange,
+  taskId,
+  onTaskIdChange,
+  projectTasks,
   tagIds,
   onTagIdsChange,
   billable,
@@ -38,6 +41,7 @@ export function InputSection({
   // shared
   onCreateClient,
   onCreateProject,
+  onCreateTask,
   onCreateTag,
   canManageCatalog = true,
   pending,
@@ -57,6 +61,9 @@ export function InputSection({
   onClientIdChange: (id: string) => void
   projectId: string
   onProjectIdChange: (id: string) => void
+  taskId: string
+  onTaskIdChange: (id: string) => void
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tagIds: string[]
   onTagIdsChange: (ids: string[]) => void
   billable: boolean
@@ -81,6 +88,7 @@ export function InputSection({
     color: string,
     clientId: string,
   ) => Promise<void>
+  onCreateTask: (projectId: string, name: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   pending: boolean
@@ -158,10 +166,14 @@ export function InputSection({
                   onClientIdChange={onClientIdChange}
                   projectId={projectId}
                   onProjectIdChange={onProjectIdChange}
+                  taskId={taskId}
+                  onTaskIdChange={onTaskIdChange}
+                  projectTasks={projectTasks}
                   tagIds={tagIds}
                   onTagIdsChange={onTagIdsChange}
                   billable={billable}
                   onBillableChange={onBillableChange}
+                  onCreateTask={onCreateTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   activeEntry={activeEntry}
@@ -190,9 +202,11 @@ export function InputSection({
                   setDraft={setDraft}
                   clients={clients}
                   projects={projects}
+                  projectTasks={projectTasks}
                   tags={tags}
                   onCreateClient={onCreateClient}
                   onCreateProject={onCreateProject}
+                  onCreateTask={onCreateTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   pending={pending}

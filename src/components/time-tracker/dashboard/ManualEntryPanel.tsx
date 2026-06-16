@@ -10,9 +10,11 @@ export function ManualEntryPanel({
   setDraft,
   clients,
   projects,
+  projectTasks,
   tags,
   onCreateClient,
   onCreateProject,
+  onCreateTask,
   onCreateTag,
   canManageCatalog = true,
   pending,
@@ -22,6 +24,7 @@ export function ManualEntryPanel({
   setDraft: (draft: DraftEntry) => void
   clients: Client[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   onCreateClient: (name: string) => Promise<void>
   onCreateProject: (
@@ -29,6 +32,7 @@ export function ManualEntryPanel({
     color: string,
     clientId: string,
   ) => Promise<void>
+  onCreateTask: (projectId: string, name: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   pending: boolean
@@ -44,9 +48,11 @@ export function ManualEntryPanel({
         setDraft={setDraft}
         clients={clients}
         projects={projects}
+        projectTasks={projectTasks}
         tags={tags}
         onCreateClient={onCreateClient}
         onCreateProject={onCreateProject}
+        onCreateTask={onCreateTask}
         onCreateTag={onCreateTag}
         canManageCatalog={canManageCatalog}
       />

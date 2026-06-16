@@ -4,16 +4,19 @@ import type { ClientItem, ProjectItem } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
 import { BillableToggleButton } from './BillableToggleButton'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import { useMemo } from 'react'
 
 export function TimerOptionsSheet({
   clients,
   projects,
+  projectTasks,
   tags,
   clientId,
   projectId,
+  taskId,
   onClientProjectChange,
-  tagIds,
   onTagIdsChange,
+  tagIds,
   billable,
   onBillableChange,
   onCreateTag,
@@ -22,10 +25,16 @@ export function TimerOptionsSheet({
 }: {
   clients: ClientItem[]
   projects: ProjectItem[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   clientId: string
   projectId: string
-  onClientProjectChange: (clientId: string, projectId: string) => void
+  taskId: string
+  onClientProjectChange: (
+    clientId: string,
+    projectId: string,
+    taskId?: string,
+  ) => void
   tagIds: string[]
   onTagIdsChange: (ids: string[]) => void
   billable: boolean
@@ -34,6 +43,14 @@ export function TimerOptionsSheet({
   canManageCatalog?: boolean
   onClose: () => void
 }) {
+  const activeClients = useMemo(
+    () =>
+      clients.filter((c) =>
+        'clientStatus' in c ? (c as any).clientStatus === 'ACTIVE' : true,
+      ),
+    [clients],
+  )
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center lg:hidden">
       <button
@@ -59,10 +76,12 @@ export function TimerOptionsSheet({
 
         <div className="grid gap-3">
           <ClientProjectPicker
-            clients={clients}
+            clients={activeClients}
             projects={projects}
+            tasks={projectTasks}
             clientId={clientId}
             projectId={projectId}
+            taskId={taskId}
             onChange={onClientProjectChange}
           />
           <TagPicker

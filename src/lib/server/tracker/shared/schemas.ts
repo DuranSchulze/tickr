@@ -37,6 +37,7 @@ export const entryInputSchema = entryInputShape.refine(
 export const startTimerSchema = z.object({
   description: descriptionOptional.default(''),
   projectId: z.string().default(''),
+  taskId: z.string().nullable().default(null),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
   // Offline replay: the real client-side start time. Server clamps to now.
@@ -47,6 +48,7 @@ export const updateActiveTimerSchema = z.object({
   id: z.string().min(1),
   description: descriptionOptional.default(''),
   projectId: z.string().default(''),
+  taskId: z.string().nullable().default(null),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
   startedAt: z.string().datetime().optional(),
@@ -60,6 +62,7 @@ export const stopTimerSchema = z.object({
   id: z.string().min(1),
   description: descriptionOptional.optional(),
   projectId: z.string().optional(),
+  taskId: z.string().nullable().optional(),
   tagIds: z.array(z.string().min(1)).optional(),
   billable: z.boolean().optional(),
   // Offline replay: the real client-side stop time. Server clamps to

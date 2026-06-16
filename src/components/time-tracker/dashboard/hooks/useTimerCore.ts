@@ -122,6 +122,7 @@ export function useTimerCore({
   const [timerDescription, setTimerDescription] = useState('')
   const [timerClientId, setTimerClientId] = useState('')
   const [timerProjectId, setTimerProjectId] = useState('')
+  const [timerTaskId, setTimerTaskId] = useState('')
   const [timerTagIds, setTimerTagIds] = useState<string[]>([])
   const [timerBillable, setTimerBillable] = useState(false)
   const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null)
@@ -378,6 +379,11 @@ export function useTimerCore({
     }
   }
 
+  function changeTimerTask(nextTaskId: string) {
+    timerInputDirtyRef.current = true
+    setTimerTaskId(nextTaskId)
+  }
+
   function changeTimerTagIds(nextTagIds: string[]) {
     timerInputDirtyRef.current = true
     setTimerTagIds(nextTagIds)
@@ -533,6 +539,7 @@ export function useTimerCore({
       workspaceMemberId: state.currentMemberId,
       description,
       projectId,
+      taskId: null,
       tagIds,
       billable,
       startedAt,
@@ -700,6 +707,7 @@ export function useTimerCore({
       workspaceMemberId: state.currentMemberId,
       description,
       projectId: timerProjectId,
+      taskId: null,
       tagIds: nextInput.tagIds,
       billable: timerBillable,
       startedAt,
@@ -836,6 +844,7 @@ export function useTimerCore({
     timerDescription,
     timerClientId,
     timerProjectId,
+    timerTaskId,
     timerTagIds,
     timerBillable,
     // Derived
@@ -859,6 +868,7 @@ export function useTimerCore({
     applyDescriptionSuggestion,
     changeTimerClient,
     changeTimerProject,
+    changeTimerTask,
     changeTimerTagIds,
     changeTimerBillable,
     applyPreset,

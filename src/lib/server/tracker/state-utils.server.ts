@@ -9,6 +9,7 @@ import {
   clients,
   tags,
   workspaceMembers,
+  projectTasks,
 } from '#/db/schema'
 import { and, eq, asc, inArray } from 'drizzle-orm'
 import type { RolePermission, TrackerState } from '#/lib/time-tracker/types'
@@ -140,6 +141,7 @@ export async function fetchCatalogQueries(workspaceId: string) {
     clientsRows,
     tagsRows,
     memberRows,
+    projectTasksRows,
   ] = await Promise.all([
     db
       .select()
@@ -181,6 +183,16 @@ export async function fetchCatalogQueries(workspaceId: string) {
       .from(workspaceMembers)
       .where(eq(workspaceMembers.workspaceId, workspaceId))
       .orderBy(asc(workspaceMembers.email)),
+    db
+      .select()
+      .from(projectTasks)
+      .where(
+        and(
+          eq(projectTasks.workspaceId, workspaceId),
+          eq(projectTasks.archived, false),
+        ),
+      )
+      .orderBy(asc(projectTasks.name)),
   ])
 
   return {
@@ -188,6 +200,7 @@ export async function fetchCatalogQueries(workspaceId: string) {
     departmentsRows,
     cohortsRows,
     projectsRows,
+    projectTasksRows,
     clientsRows,
     tagsRows,
     memberRows,
@@ -248,6 +261,12 @@ export function buildTrackerStateBase(
   departmentsRows: DepartmentsRow[],
   cohortsRows: CohortsRow[],
   projectsRows: ProjectsRow[],
+  projectTasksRows: {
+    id: string
+    projectId: string
+    name: string
+    archived: boolean
+  }[],
   clientsRows: ClientsRow[],
   tagsRows: TagsRow[],
   memberRows: MemberRow[],
@@ -298,6 +317,12 @@ export function buildTrackerStateBase(
       name: p.name,
       color: p.color,
       clientId: p.clientId,
+    })),
+    projectTasks: projectTasksRows.map((t) => ({
+      id: t.id,
+      projectId: t.projectId,
+      name: t.name,
+      archived: t.archived,
     })),
     clients: clientsRows.map((c) => ({
       id: c.id,

@@ -75,6 +75,7 @@ export async function getPaginatedEntries(data: {
     workspaceMemberId: entry.workspaceMemberId,
     description: entry.description,
     projectId: entry.projectId ?? '',
+    taskId: entry.taskId ?? null,
     tagIds: tagsByEntry.get(entry.id) ?? [],
     billable: entry.billable,
     startedAt: entry.startedAt.toISOString(),

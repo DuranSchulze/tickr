@@ -510,6 +510,38 @@ export const projects = pgTable(
   ],
 )
 
+export const projectTasks = pgTable(
+  'project_tasks',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    projectId: varchar('project_id', { length: 30 })
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 200 }).notNull(),
+    archived: boolean('archived').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('project_tasks_workspace_project_name_unique').on(
+      table.workspaceId,
+      table.projectId,
+      table.name,
+    ),
+    index('project_tasks_project_id_idx').on(table.projectId),
+  ],
+)
+
 export const tags = pgTable(
   'tags',
   {
@@ -557,6 +589,10 @@ export const timeEntries = pgTable(
       () => projects.id,
       { onDelete: 'set null' },
     ),
+    taskId: varchar('task_id', { length: 30 }).references(
+      () => projectTasks.id,
+      { onDelete: 'set null' },
+    ),
     billable: boolean('billable').notNull().default(false),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
     endedAt: timestamp('ended_at', { withTimezone: true }),
@@ -585,6 +621,7 @@ export const timeEntries = pgTable(
       table.endedAt,
     ),
     index('time_entries_project_id_idx').on(table.projectId),
+    index('time_entries_task_id_idx').on(table.taskId),
   ],
 )
 

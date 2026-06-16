@@ -3,7 +3,7 @@ import type { z } from 'zod'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
 import { and, eq, isNull, notInArray } from 'drizzle-orm'
-import { requireWorkspaceAccess } from '../workspace-access.server'
+import { requireWorkspaceMembership } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
@@ -27,6 +27,7 @@ function serializeTimeEntry(
     workspaceMemberId: string
     description: string
     projectId: string | null
+    taskId: string | null
     billable: boolean
     startedAt: Date
     endedAt: Date | null
@@ -40,6 +41,7 @@ function serializeTimeEntry(
     workspaceMemberId: entry.workspaceMemberId,
     description: entry.description,
     projectId: entry.projectId ?? '',
+    taskId: entry.taskId ?? null,
     tagIds: tags.map((tag) => tag.tagId),
     billable: entry.billable,
     startedAt: entry.startedAt.toISOString(),
@@ -50,7 +52,7 @@ function serializeTimeEntry(
 }
 
 export async function startTimer(data: z.infer<typeof startTimerSchema>) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
 
@@ -95,6 +97,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       workspaceMemberId: access.member.id,
       description: data.description,
       projectId,
+      taskId: data.taskId ?? null,
       billable: data.billable,
       startedAt,
       endedAt: null,
@@ -119,7 +122,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
 export async function updateActiveTimer(
   data: z.infer<typeof updateActiveTimerSchema>,
 ) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
 
@@ -157,6 +160,7 @@ export async function updateActiveTimer(
       .set({
         description: data.description,
         projectId,
+        taskId: data.taskId ?? null,
         billable: data.billable,
         ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
       })
@@ -187,7 +191,7 @@ export async function updateActiveTimer(
 }
 
 export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   // Entry and its current tags are independent reads — one round trip wave.
   const [entryRows, existingTags] = await Promise.all([
     db
@@ -221,6 +225,8 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
     data.tagIds !== undefined
       ? [...new Set(data.tagIds.filter(Boolean))]
       : existingTags.map((t) => t.tagId)
+  const effectiveTaskId =
+    data.taskId !== undefined ? data.taskId || null : entry.taskId
 
   if (!effectiveDescription) {
     throw new Error('Add a task description before stopping the timer.')
@@ -247,6 +253,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
   const hasOverrides =
     data.description !== undefined ||
     data.projectId !== undefined ||
+    data.taskId !== undefined ||
     data.tagIds !== undefined ||
     data.billable !== undefined
 
@@ -267,6 +274,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
           ? { projectId: effectiveProjectId }
           : {}),
         ...(data.billable !== undefined ? { billable: data.billable } : {}),
+        ...(data.taskId !== undefined ? { taskId: effectiveTaskId } : {}),
         endedAt,
         durationSeconds: calculateDuration(entry.startedAt, endedAt),
       })
@@ -325,7 +333,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
 }
 
 export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
-  const access = await requireWorkspaceAccess()
+  const access = await requireWorkspaceMembership()
   const [entry] = await db
     .select()
     .from(timeEntries)
@@ -353,6 +361,7 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
       workspaceMemberId: access.member.id,
       description: entry.description,
       projectId: entry.projectId,
+      taskId: entry.taskId ?? null,
       billable: entry.billable,
       startedAt,
       endedAt,

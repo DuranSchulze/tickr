@@ -31,10 +31,14 @@ export function TimerPanel({
   onClientIdChange,
   projectId,
   onProjectIdChange,
+  taskId,
+  onTaskIdChange,
+  projectTasks,
   tagIds,
   onTagIdsChange,
   billable,
   onBillableChange,
+  onCreateTask,
   onCreateTag,
   canManageCatalog = true,
   activeEntry,
@@ -59,10 +63,14 @@ export function TimerPanel({
   onClientIdChange: (id: string) => void
   projectId: string
   onProjectIdChange: (id: string) => void
+  taskId: string
+  onTaskIdChange: (id: string) => void
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tagIds: string[]
   onTagIdsChange: (ids: string[]) => void
   billable: boolean
   onBillableChange: (next: boolean) => void
+  onCreateTask: (projectId: string, name: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   activeEntry: TimeEntry | undefined
@@ -144,7 +152,7 @@ export function TimerPanel({
           instead of separate boxed inputs. */}
       <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex h-12 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-[1.2]">
             <DescriptionAutocomplete
               value={description}
               onChange={onDescriptionChange}
@@ -156,22 +164,25 @@ export function TimerPanel({
           </div>
 
           <div className="my-2.5 hidden w-px bg-border md:block" />
-          <div className="hidden w-44 md:block lg:w-52">
+          <div className="hidden min-w-0 flex-[1] md:flex">
             <ClientProjectPicker
               clients={activeClients}
               projects={projects}
+              tasks={projectTasks}
               clientId={clientId}
               projectId={projectId}
-              onChange={(cid, pid) => {
+              taskId={taskId}
+              onChange={(cid, pid, tid) => {
                 onClientIdChange(cid)
                 onProjectIdChange(pid)
+                onTaskIdChange(tid ?? '')
               }}
+              onCreateTask={onCreateTask}
               bare
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-border lg:block" />
-          <div className="hidden w-40 lg:block">
+          <div className="hidden min-w-0 flex-[0.4] lg:flex">
             <TagPicker
               tags={tags}
               value={tagIds}
@@ -202,72 +213,73 @@ export function TimerPanel({
               bare
             />
           </div>
-
-          <div className="hidden items-center py-1.5 pr-1.5 sm:flex">
-            <button
-              type="button"
-              onClick={activeEntry ? onStop : onStart}
-              disabled={activeEntry ? stopPending || stopBlocked : startPending}
-              title={stopBlocked ? stopBlockedReason : undefined}
-              className={`inline-flex h-full items-center justify-center gap-2 rounded-md px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[110px] ${
-                activeEntry
-                  ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-                  : 'bg-primary text-primary-foreground hover:brightness-110'
-              }`}
-            >
-              {activeEntry ? (
-                stopPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Square className="size-4 fill-current" />
-                )
-              ) : startPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Play className="size-4" />
-              )}
-              {activeEntry ? 'Stop' : 'Start'}
-              <Kbd className="bg-white/20 text-white/80 hidden lg:inline-flex">
-                ↵
-              </Kbd>
-            </button>
-          </div>
         </div>
 
-        {/* Mobile-only controls below/beside the bar */}
-        <button
-          type="button"
-          onClick={() => setOptionsOpen(true)}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent sm:w-auto md:hidden"
-        >
-          <SlidersHorizontal className="size-4" />
-          Options
-        </button>
-        <button
-          type="button"
-          onClick={activeEntry ? onStop : onStart}
-          disabled={activeEntry ? stopPending || stopBlocked : startPending}
-          title={stopBlocked ? stopBlockedReason : undefined}
-          className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:hidden ${
-            activeEntry
-              ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-              : 'bg-primary text-primary-foreground hover:brightness-110'
-          }`}
-        >
-          {activeEntry ? (
-            stopPending ? (
+        {/* Start / Stop — anchored outside the bar so it never shifts */}
+        <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={activeEntry ? onStop : onStart}
+            disabled={activeEntry ? stopPending || stopBlocked : startPending}
+            title={stopBlocked ? stopBlockedReason : undefined}
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[120px] ${
+              activeEntry
+                ? 'bg-destructive text-destructive-foreground hover:brightness-110'
+                : 'bg-primary text-primary-foreground hover:brightness-110'
+            }`}
+          >
+            {activeEntry ? (
+              stopPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Square className="size-4 fill-current" />
+              )
+            ) : startPending ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Square className="size-4 fill-current" />
-            )
-          ) : startPending ? (
+              <Play className="size-4" />
+            )}
+            {activeEntry ? 'Stop' : 'Start'}
+            <Kbd className="bg-white/20 text-white/80 hidden lg:inline-flex">
+              ↵
+            </Kbd>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile-only controls below/beside the bar */}
+      <button
+        type="button"
+        onClick={() => setOptionsOpen(true)}
+        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent sm:w-auto md:hidden"
+      >
+        <SlidersHorizontal className="size-4" />
+        Options
+      </button>
+      <button
+        type="button"
+        onClick={activeEntry ? onStop : onStart}
+        disabled={activeEntry ? stopPending || stopBlocked : startPending}
+        title={stopBlocked ? stopBlockedReason : undefined}
+        className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:hidden ${
+          activeEntry
+            ? 'bg-destructive text-destructive-foreground hover:brightness-110'
+            : 'bg-primary text-primary-foreground hover:brightness-110'
+        }`}
+      >
+        {activeEntry ? (
+          stopPending ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Play className="size-4" />
-          )}
-          {activeEntry ? 'Stop timer' : 'Start'}
-        </button>
-      </div>
+            <Square className="size-4 fill-current" />
+          )
+        ) : startPending ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Play className="size-4" />
+        )}
+        {activeEntry ? 'Stop timer' : 'Start'}
+      </button>
 
       {stopBlocked && (
         <p className="m-0 text-xs font-bold text-destructive">
@@ -390,14 +402,17 @@ export function TimerPanel({
 
       {optionsOpen && !activeEntry && (
         <TimerOptionsSheet
-          clients={activeClients}
+          clients={clients}
           projects={projects}
+          projectTasks={projectTasks}
           tags={tags}
           clientId={clientId}
           projectId={projectId}
-          onClientProjectChange={(cid, pid) => {
+          taskId={taskId}
+          onClientProjectChange={(cid, pid, tid) => {
             onClientIdChange(cid)
             onProjectIdChange(pid)
+            onTaskIdChange(tid ?? '')
           }}
           tagIds={tagIds}
           onTagIdsChange={onTagIdsChange}
