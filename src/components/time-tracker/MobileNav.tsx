@@ -60,7 +60,6 @@ export const MobileNav = memo(function ({
     setOpen(false)
   }
 
-  const canAccessAnalytics = permissionLevel !== 'EMPLOYEE'
   const isOwnerOrAdmin =
     permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const hasSettingsChildren = settingsChildren.length > 0
@@ -111,20 +110,18 @@ export const MobileNav = memo(function ({
               <span>Timer</span>
             </Link>
 
-            {canAccessAnalytics && (
-              <Link
-                to="/app/analytics"
-                onClick={close}
-                className={`flex h-10 w-full items-center gap-3 px-3 text-sm font-semibold transition-colors ${
-                  analyticsActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                }`}
-              >
-                <BarChart3 className="size-4 shrink-0" />
-                <span>Analytics</span>
-              </Link>
-            )}
+            <Link
+              to="/app/analytics"
+              onClick={close}
+              className={`flex h-10 w-full items-center gap-3 px-3 text-sm font-semibold transition-colors ${
+                analyticsActive
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+              }`}
+            >
+              <BarChart3 className="size-4 shrink-0" />
+              <span>Analytics</span>
+            </Link>
 
             <Link
               to="/app/calendar"

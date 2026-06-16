@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useMemo } from 'react'
 import { AnalyticsScreen } from '#/components/time-tracker/analytics/AnalyticsScreen'
 import type {
@@ -71,14 +71,11 @@ export const Route = createFileRoute('/app/analytics')({
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
+    await context.queryClient.ensureQueryData({
       queryKey: ['workspace-access'],
       queryFn: () => getWorkspaceAccessFn(),
       staleTime: 5 * 60 * 1000,
     })
-    if (access.member.permissionLevel === 'EMPLOYEE') {
-      throw redirect({ to: '/app/time-tracker' })
-    }
   },
   loader: async ({ context, deps }) => {
     const [analytics, state] = await Promise.all([
