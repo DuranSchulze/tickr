@@ -1,36 +1,4 @@
-export const FREE_EMAIL_DOMAINS: string[] = [
-  'gmail.com',
-  'googlemail.com',
-  'yahoo.com',
-  'yahoo.co.uk',
-  'yahoo.co.in',
-  'ymail.com',
-  'hotmail.com',
-  'hotmail.co.uk',
-  'outlook.com',
-  'live.com',
-  'msn.com',
-  'icloud.com',
-  'me.com',
-  'mac.com',
-  'aol.com',
-  'protonmail.com',
-  'proton.me',
-  'tutanota.com',
-  'tutanota.de',
-  'zoho.com',
-  'gmx.com',
-  'gmx.net',
-  'mail.com',
-  'inbox.com',
-  'yandex.com',
-  'yandex.ru',
-  'qq.com',
-  '163.com',
-  '126.com',
-  'rediffmail.com',
-  'rocketmail.com',
-]
+export const FREE_EMAIL_DOMAINS: string[] = []
 
 export function isBlockedDomain(email: string): boolean {
   const at = email.lastIndexOf('@')
