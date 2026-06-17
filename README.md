@@ -5,8 +5,10 @@ Internal time tracking platform for Duran File Pino. Designed for professional s
 ## Key Features
 
 - Time tracking — start/stop timer, manual entry, duplicate, live centisecond display
+- Project tasks — create, select, and delete tasks under projects; all workspace roles can manage tasks
 - Multi-view dashboard — day, week, and month views with date navigation
-- Preset configurations — save up to 10 timer presets (project, tags, billable) per workspace
+- Preset configurations — save up to 10 timer presets (client, project, task, tags, billable) per workspace
+- Suspicious login alerts — emailed when signing in from a new IP address
 - Analytics — heatmap and charts scoped to workspace, department, or personal
 - Member management — invite, role assignment, per-member analytics and billable rates
 - Catalog management — clients, projects, tags, departments, and cohorts
@@ -29,7 +31,7 @@ Internal time tracking platform for Duran File Pino. Designed for professional s
 - **Icons** — Lucide React, Tabler Icons
 - **Charts** — Recharts
 - **Forms** — TanStack Form + Zod
-- **Email** — Nodemailer
+- **Email** — Resend (primary) with Nodemailer SMTP fallback
 - **Package manager** — pnpm
 
 ---
@@ -56,6 +58,11 @@ DIRECT_URL="postgresql://user:password@ep-xxx.neon.tech/neondb?sslmode=require"
 # Auth
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=   # generate with: pnpm dlx @better-auth/cli secret
+
+# Email — Resend (primary) with optional SMTP fallback
+RESEND_API_KEY=        # https://resend.com/api-keys
+RESEND_FROM=           # verified domain from address (e.g. "Tickr <noreply@yourdomain.com>")
+# SMTP_HOST=           # fallback SMTP server (optional, used if Resend fails)
 
 # Google Sheets sync (Option A — recommended)
 # Copy client_email and private_key from the service-account JSON downloaded
@@ -162,11 +169,18 @@ src/
 ├── integrations/
 │   └── tanstack-query/ # TanStack Query root provider and devtools
 ├── lib/
-│   ├── auth.ts         # Better Auth server config
-│   ├── auth-client.ts  # Better Auth client
-│   ├── utils.ts        # cn() utility
-│   ├── gsheets/        # Google Sheets service (auth.server.ts, sync.server.ts)
-│   └── time-tracker/   # store.ts (pure utils) + types.ts
+│   ├── auth.ts              # Better Auth server config
+│   ├── auth-client.ts       # Better Auth client
+│   ├── auth-validation.ts   # Blocked email domains
+│   ├── brand.ts             # BRAND name/constants
+│   ├── utils.ts             # cn() utility
+│   ├── gsheets/             # Google Sheets service
+│   ├── server/
+│   │   ├── mailer.ts        # Email delivery (Resend + SMTP)
+│   │   ├── auth-security.server.ts  # Suspicious login detection
+│   │   ├── geoip.ts         # IP geolocation
+│   │   └── tracker/         # Server functions (timer, catalogs, analytics)
+│   └── time-tracker/        # Client store, types, presets, query keys
 ├── routes/
 │   ├── index.tsx               # Landing page (/)
 │   ├── lounge.tsx              # Public lounge page

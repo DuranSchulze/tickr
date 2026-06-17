@@ -379,4 +379,9 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
   }
 
   await enqueueTimeEntry(access.workspace.id, newEntry.id)
+
+  const newTags = entryTags.length
+    ? entryTags.map((t) => ({ tagId: t.tagId }))
+    : []
+  return serializeTimeEntry(newEntry, newTags)
 }

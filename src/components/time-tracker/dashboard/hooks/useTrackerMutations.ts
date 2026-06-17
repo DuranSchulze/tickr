@@ -134,10 +134,20 @@ export function useTrackerMutations() {
         ...options,
       }),
     duplicateEntry: (id: string, options?: MutationOptions<unknown>) =>
-      run(() => duplicateEntryFn({ data: { id } }), {
-        successMessage: 'Entry duplicated',
-        ...options,
-      }),
+      run(
+        async () => {
+          const duplicated = await duplicateEntryFn({ data: { id } })
+          // Splice the duplicate into cached state immediately.
+          queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) =>
+            prev ? { ...prev, entries: [...prev.entries, duplicated] } : prev,
+          )
+          return duplicated
+        },
+        {
+          successMessage: 'Entry duplicated',
+          ...options,
+        },
+      ),
     createClient: (
       name: string,
       clientStatus: 'ACTIVE' | 'INACTIVE' = 'ACTIVE',

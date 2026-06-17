@@ -198,16 +198,23 @@ export function AnalyticsFilterBar({
   )
   const permissionLevel = currentMember?.permissionLevel ?? 'EMPLOYEE'
 
-  const tagIdList = filters.tagIds
-    ? filters.tagIds.split(',').filter(Boolean)
-    : []
-  const memberIdList = filters.memberIds
-    ? filters.memberIds.split(',').filter(Boolean)
-    : []
+  const tagIdList = useMemo(
+    () => (filters.tagIds ? filters.tagIds.split(',').filter(Boolean) : []),
+    [filters.tagIds],
+  )
+  const memberIdList = useMemo(
+    () =>
+      filters.memberIds ? filters.memberIds.split(',').filter(Boolean) : [],
+    [filters.memberIds],
+  )
 
-  const filteredProjects = filters.clientId
-    ? state.projects.filter((p) => p.clientId === filters.clientId)
-    : state.projects
+  const filteredProjects = useMemo(
+    () =>
+      filters.clientId
+        ? state.projects.filter((p) => p.clientId === filters.clientId)
+        : state.projects,
+    [filters.clientId, state.projects],
+  )
 
   const hasActiveFilters = Boolean(
     filters.projectId ||

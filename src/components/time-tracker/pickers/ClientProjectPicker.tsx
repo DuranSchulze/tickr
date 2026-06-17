@@ -622,7 +622,7 @@ export function ClientProjectPicker({
                       data-selected={tActive ? 'true' : undefined}
                       onClick={() =>
                         handleSelect(
-                          row.project.id,
+                          row.project.clientId,
                           row.project.id,
                           row.task.id,
                         )
@@ -630,7 +630,7 @@ export function ClientProjectPicker({
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ')
                           handleSelect(
-                            row.project.id,
+                            row.project.clientId,
                             row.project.id,
                             row.task.id,
                           )

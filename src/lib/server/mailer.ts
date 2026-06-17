@@ -24,7 +24,7 @@ function getSmtpFromAddress(): string {
  */
 function getResendFromAddress(): string {
   return (
-    process.env.RESEND_FROM ?? //
+    process.env.RESEND_FROM ??
     process.env.EMAIL_FROM ??
     process.env.SMTP_FROM ??
     `${BRAND.name} <onboarding@resend.dev>`
@@ -71,7 +71,6 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
 
 async function sendViaSmtp(input: SendEmailInput): Promise<void> {
   const smtpPort = Number(process.env.SMTP_PORT ?? 587)
-  // SMTP_SECURE=true enables direct TLS (port 465). Default false uses STARTTLS (port 587).
   const smtpSecure = process.env.SMTP_SECURE === 'true' || smtpPort === 465
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
@@ -116,8 +115,6 @@ async function sendViaResend(
   })
 
   if (!response.ok) {
-    // Resend returns a JSON body explaining the failure (unverified domain,
-    // bad from address, …) — surface it in full so the user can fix it.
     const body = await response.json().catch(() => null)
     const message =
       body?.error?.message ??
@@ -127,10 +124,9 @@ async function sendViaResend(
   }
 }
 
-// Performs the actual provider delivery. SMTP is the primary provider; when it
-// fails (e.g. the host rejects our IP) and RESEND_API_KEY is set, delivery
-// falls back to Resend so invites and password resets still go out. Throws
-// only when every configured provider failed.
+// Resend is the primary provider when RESEND_API_KEY is configured.
+// Falls back to SMTP if Resend fails or isn't configured.
+// Throws only when every configured provider failed.
 async function deliverEmail(input: SendEmailInput): Promise<void> {
   const smtpHost = process.env.SMTP_HOST
   const resendApiKey = process.env.RESEND_API_KEY
@@ -141,35 +137,31 @@ async function deliverEmail(input: SendEmailInput): Promise<void> {
         'No email provider configured. Set SMTP_HOST or RESEND_API_KEY.',
       )
     }
-    // Dev-only: no provider configured. The link is already logged by
-    // sendEmail, so there's nothing more to deliver.
     console.warn(
       '[mailer] No email provider configured — email not sent (link logged above).',
     )
     return
   }
 
-  if (smtpHost) {
+  if (resendApiKey) {
     try {
-      await sendViaSmtp(input)
+      await sendViaResend(resendApiKey, input)
       return
     } catch (err) {
-      if (!resendApiKey) throw err
+      if (!smtpHost) throw err
       console.warn(
-        `[mailer] SMTP delivery failed — falling back to Resend:`,
+        `[mailer] Resend delivery failed — falling back to SMTP:`,
         err instanceof Error ? err.message : err,
       )
     }
   }
 
-  if (!resendApiKey) {
-    throw new Error(
-      'SMTP failed and no RESEND_API_KEY configured for fallback.',
-    )
+  if (!smtpHost) {
+    throw new Error('Resend failed and no SMTP_HOST configured for fallback.')
   }
 
-  await sendViaResend(resendApiKey, input)
-  console.info('[mailer] Delivered via Resend fallback.')
+  await sendViaSmtp(input)
+  console.info('[mailer] Delivered via SMTP fallback.')
 }
 
 export async function sendInviteEmail(params: {
