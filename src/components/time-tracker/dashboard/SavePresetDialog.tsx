@@ -22,10 +22,12 @@ type SavePresetDialogProps = {
   workspaceId: string
   clientId: string
   projectId: string
+  taskId: string
   tagIds: string[]
   billable: boolean
   clients: Client[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
 }
 
@@ -40,15 +42,18 @@ export function SavePresetDialog({
   workspaceId,
   clientId,
   projectId,
+  taskId,
   tagIds,
   billable,
   clients,
   projects,
+  projectTasks,
   tags,
 }: SavePresetDialogProps) {
   const [name, setName] = useState('')
   const [draftClientId, setDraftClientId] = useState(clientId)
   const [draftProjectId, setDraftProjectId] = useState(projectId)
+  const [draftTaskId, setDraftTaskId] = useState(taskId)
   const [draftTagIds, setDraftTagIds] = useState<string[]>(tagIds)
   const [draftBillable, setDraftBillable] = useState(billable)
   const [error, setError] = useState<string | null>(null)
@@ -60,11 +65,12 @@ export function SavePresetDialog({
       setName('')
       setDraftClientId(clientId)
       setDraftProjectId(projectId)
+      setDraftTaskId(taskId)
       setDraftTagIds(tagIds)
       setDraftBillable(billable)
       setError(null)
     }
-  }, [open, clientId, projectId, tagIds, billable])
+  }, [open, clientId, projectId, taskId, tagIds, billable])
 
   const canSave = name.trim().length > 0 && draftClientId && draftProjectId
 
@@ -78,6 +84,7 @@ export function SavePresetDialog({
       name: name.trim(),
       clientId: draftClientId,
       projectId: draftProjectId,
+      taskId: draftTaskId || null,
       tagIds: draftTagIds.filter(Boolean),
       billable: draftBillable,
     })
@@ -125,13 +132,14 @@ export function SavePresetDialog({
             <ClientProjectPicker
               clients={clients.filter((c) => c.clientStatus === 'ACTIVE')}
               projects={projects}
-              tasks={[]}
-              clientId={clientId}
-              projectId={projectId}
-              taskId={''}
-              onChange={(cid, pid) => {
+              tasks={projectTasks}
+              clientId={draftClientId}
+              projectId={draftProjectId}
+              taskId={draftTaskId}
+              onChange={(cid, pid, tid) => {
                 setDraftClientId(cid)
                 setDraftProjectId(pid)
+                setDraftTaskId(tid ?? '')
               }}
             />
           </div>

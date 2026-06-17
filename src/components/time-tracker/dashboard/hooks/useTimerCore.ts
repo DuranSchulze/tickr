@@ -413,6 +413,7 @@ export function useTimerCore({
   function applyPreset(preset: {
     clientId: string
     projectId: string
+    taskId: string
     tagIds: string[]
     billable: boolean
   }) {
@@ -420,6 +421,7 @@ export function useTimerCore({
     timerInputDirtyRef.current = true
     setTimerClientId(preset.clientId)
     setTimerProjectId(preset.projectId)
+    setTimerTaskId(preset.taskId)
     setTimerTagIds(preset.tagIds)
     setTimerBillable(preset.billable)
     // Allow the sync-back effect to run again after this render cycle.

@@ -74,6 +74,7 @@ export function InputSection({
   onApplyPreset: (preset: {
     clientId: string
     projectId: string
+    taskId: string
     tagIds: string[]
     billable: boolean
   }) => void

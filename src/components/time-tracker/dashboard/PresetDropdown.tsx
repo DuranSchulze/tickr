@@ -16,14 +16,17 @@ type PresetDropdownProps = {
   workspaceId: string
   clientId: string
   projectId: string
+  taskId: string
   tagIds: string[]
   billable: boolean
   clients: Client[]
   projects: Project[]
+  projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: Tag[]
   onApplyPreset: (preset: {
     clientId: string
     projectId: string
+    taskId: string
     tagIds: string[]
     billable: boolean
   }) => void
@@ -35,10 +38,12 @@ export function PresetDropdown({
   workspaceId,
   clientId,
   projectId,
+  taskId,
   tagIds,
   billable,
   clients,
   projects,
+  projectTasks,
   tags,
   onApplyPreset,
   bare = false,
@@ -52,6 +57,7 @@ export function PresetDropdown({
   function handleApplyPreset(preset: {
     clientId: string
     projectId: string
+    taskId: string
     tagIds: string[]
     billable: boolean
   }) {
@@ -113,6 +119,9 @@ export function PresetDropdown({
             presets.map((preset) => {
               const client = clients.find((c) => c.id === preset.clientId)
               const project = projects.find((p) => p.id === preset.projectId)
+              const task = preset.taskId
+                ? projectTasks.find((t) => t.id === preset.taskId)
+                : undefined
               const presetTags = tags.filter((t) =>
                 preset.tagIds.includes(t.id),
               )
@@ -120,7 +129,12 @@ export function PresetDropdown({
               return (
                 <DropdownMenuItem
                   key={preset.id}
-                  onClick={() => handleApplyPreset(preset)}
+                  onClick={() =>
+                    handleApplyPreset({
+                      ...preset,
+                      taskId: preset.taskId ?? '',
+                    })
+                  }
                   className="group flex items-center justify-between gap-2 py-2"
                 >
                   <div className="min-w-0 flex-1">
@@ -140,9 +154,10 @@ export function PresetDropdown({
                     </div>
                     <div
                       className="mt-0.5 truncate pl-3.5 text-xs text-muted-foreground"
-                      title={`${client?.name || 'Unknown client'} › ${project?.name || 'Unknown project'}${presetTags.length > 0 ? ` · ${presetTags.map((t) => t.name).join(', ')}` : ''}`}
+                      title={`${client?.name || 'Unknown client'}${task ? ` / ${task.name} -` : ' ›'} ${project?.name || 'Unknown project'}${presetTags.length > 0 ? ` · ${presetTags.map((t) => t.name).join(', ')}` : ''}`}
                     >
-                      {client?.name || 'Unknown client'} ›{' '}
+                      {client?.name || 'Unknown client'}
+                      {task ? <> / {task.name} - </> : <> › </>}
                       {project?.name || 'Unknown project'}
                       {presetTags.length > 0 &&
                         ` · ${presetTags.map((t) => t.name).join(', ')}`}
@@ -178,10 +193,12 @@ export function PresetDropdown({
         workspaceId={workspaceId}
         clientId={clientId}
         projectId={projectId}
+        taskId={taskId}
         tagIds={tagIds}
         billable={billable}
         clients={clients}
         projects={projects}
+        projectTasks={projectTasks}
         tags={tags}
       />
     </>

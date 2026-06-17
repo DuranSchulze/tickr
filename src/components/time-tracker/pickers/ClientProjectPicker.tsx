@@ -242,7 +242,10 @@ export function ClientProjectPicker({
 
         if (q || !projectCollapsed) {
           for (const task of projectTasks) {
-            if (q && !task.name.toLowerCase().includes(q)) continue
+            // When searching and the project is collapsed (shown by search match),
+            // filter tasks by the query. When manually expanded, show all tasks.
+            if (q && projectCollapsed && !task.name.toLowerCase().includes(q))
+              continue
             result.push({ kind: 'task', task, project })
           }
         }

@@ -83,6 +83,7 @@ export function TimerPanel({
   onApplyPreset: (preset: {
     clientId: string
     projectId: string
+    taskId: string
     tagIds: string[]
     billable: boolean
   }) => void
@@ -210,10 +211,12 @@ export function TimerPanel({
               workspaceId={workspaceId}
               clientId={clientId}
               projectId={projectId}
+              taskId={taskId}
               tagIds={tagIds}
               billable={billable}
               clients={clients}
               projects={projects}
+              projectTasks={projectTasks}
               tags={tags as Tag[]}
               onApplyPreset={onApplyPreset}
               bare
