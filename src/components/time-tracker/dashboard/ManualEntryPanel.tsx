@@ -15,6 +15,7 @@ export function ManualEntryPanel({
   onCreateClient,
   onCreateProject,
   onCreateTask,
+  onArchiveTask,
   onCreateTag,
   canManageCatalog = true,
   pending,
@@ -33,6 +34,7 @@ export function ManualEntryPanel({
     clientId: string,
   ) => Promise<void>
   onCreateTask: (projectId: string, name: string) => Promise<void>
+  onArchiveTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   pending: boolean
@@ -53,6 +55,7 @@ export function ManualEntryPanel({
         onCreateClient={onCreateClient}
         onCreateProject={onCreateProject}
         onCreateTask={onCreateTask}
+        onArchiveTask={onArchiveTask}
         onCreateTag={onCreateTag}
         canManageCatalog={canManageCatalog}
       />

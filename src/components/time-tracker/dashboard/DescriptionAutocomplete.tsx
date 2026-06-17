@@ -9,6 +9,7 @@ export function DescriptionAutocomplete({
   disabled = false,
   placeholder = 'What are you working on?',
   bare = false,
+  dropdownUp = false,
 }: {
   value: string
   onChange: (value: string) => void
@@ -19,6 +20,8 @@ export function DescriptionAutocomplete({
   placeholder?: string
   /** Borderless variant for use inside the unified timer bar. */
   bare?: boolean
+  /** Open the suggestion dropdown above the input instead of below. */
+  dropdownUp?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -59,7 +62,13 @@ export function DescriptionAutocomplete({
         }
       />
       {open && suggestions.length > 0 && !disabled && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg">
+        <div
+          className={
+            dropdownUp
+              ? 'absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg'
+              : 'absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg'
+          }
+        >
           {suggestions.map((desc) => (
             <button
               key={desc}

@@ -39,6 +39,7 @@ export function TimerPanel({
   billable,
   onBillableChange,
   onCreateTask,
+  onArchiveTask,
   onCreateTag,
   canManageCatalog = true,
   activeEntry,
@@ -50,6 +51,7 @@ export function TimerPanel({
   onStop,
   onDiscard,
   onUpdateStartedAt,
+  descriptionDropdownUp = false,
 }: {
   workspaceId: string
   clients: Client[]
@@ -71,6 +73,7 @@ export function TimerPanel({
   billable: boolean
   onBillableChange: (next: boolean) => void
   onCreateTask: (projectId: string, name: string) => Promise<void>
+  onArchiveTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   activeEntry: TimeEntry | undefined
@@ -87,6 +90,7 @@ export function TimerPanel({
   onStop: () => void
   onDiscard: () => void
   onUpdateStartedAt: (iso: string) => void
+  descriptionDropdownUp?: boolean
 }) {
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [editStarted, setEditStarted] = useState(false)
@@ -150,8 +154,8 @@ export function TimerPanel({
       {/* Unified Clockify-style bar: description | client/project | tags | $ |
           presets | start-stop — one continuous control with thin dividers
           instead of separate boxed inputs. */}
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex h-12 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex h-12 max-sm:h-16 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
           <div className="min-w-0 flex-[1.2]">
             <DescriptionAutocomplete
               value={description}
@@ -160,11 +164,12 @@ export function TimerPanel({
               onApplySuggestion={onApplySuggestion}
               onSubmit={activeEntry ? onStop : onStart}
               bare
+              dropdownUp={descriptionDropdownUp}
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-border md:block" />
-          <div className="hidden min-w-0 flex-[1] md:flex">
+          <div className="my-2.5 hidden w-px bg-border sm:block" />
+          <div className="hidden min-w-0 flex-[1] sm:flex">
             <ClientProjectPicker
               clients={activeClients}
               projects={projects}
@@ -178,6 +183,7 @@ export function TimerPanel({
                 onTaskIdChange(tid ?? '')
               }}
               onCreateTask={onCreateTask}
+              onArchiveTask={onArchiveTask}
               bare
             />
           </div>
@@ -215,14 +221,15 @@ export function TimerPanel({
           </div>
         </div>
 
-        {/* Start / Stop — anchored outside the bar so it never shifts */}
-        <div className="flex shrink-0 items-center">
+        {/* Start / Stop — anchored outside the bar so it never shifts.
+            Hidden on mobile — the full-width button below handles it. */}
+        <div className="hidden shrink-0 items-center sm:flex">
           <button
             type="button"
             onClick={activeEntry ? onStop : onStart}
             disabled={activeEntry ? stopPending || stopBlocked : startPending}
             title={stopBlocked ? stopBlockedReason : undefined}
-            className={`inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:min-w-[120px] ${
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground min-w-[120px] ${
               activeEntry
                 ? 'bg-destructive text-destructive-foreground hover:brightness-110'
                 : 'bg-primary text-primary-foreground hover:brightness-110'
@@ -247,39 +254,41 @@ export function TimerPanel({
         </div>
       </div>
 
-      {/* Mobile-only controls below/beside the bar */}
-      <button
-        type="button"
-        onClick={() => setOptionsOpen(true)}
-        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent sm:w-auto md:hidden"
-      >
-        <SlidersHorizontal className="size-4" />
-        Options
-      </button>
-      <button
-        type="button"
-        onClick={activeEntry ? onStop : onStart}
-        disabled={activeEntry ? stopPending || stopBlocked : startPending}
-        title={stopBlocked ? stopBlockedReason : undefined}
-        className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:hidden ${
-          activeEntry
-            ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-            : 'bg-primary text-primary-foreground hover:brightness-110'
-        }`}
-      >
-        {activeEntry ? (
-          stopPending ? (
+      {/* Mobile: Options + Start/Stop in one row */}
+      <div className="flex items-center gap-2 sm:hidden">
+        <button
+          type="button"
+          onClick={() => setOptionsOpen(true)}
+          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent"
+        >
+          <SlidersHorizontal className="size-4" />
+          Options
+        </button>
+        <button
+          type="button"
+          onClick={activeEntry ? onStop : onStart}
+          disabled={activeEntry ? stopPending || stopBlocked : startPending}
+          title={stopBlocked ? stopBlockedReason : undefined}
+          className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground ${
+            activeEntry
+              ? 'bg-destructive text-destructive-foreground hover:brightness-110'
+              : 'bg-primary text-primary-foreground hover:brightness-110'
+          }`}
+        >
+          {activeEntry ? (
+            stopPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Square className="size-4 fill-current" />
+            )
+          ) : startPending ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
-            <Square className="size-4 fill-current" />
-          )
-        ) : startPending ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <Play className="size-4" />
-        )}
-        {activeEntry ? 'Stop timer' : 'Start'}
-      </button>
+            <Play className="size-4" />
+          )}
+          {activeEntry ? 'Stop' : 'Start'}
+        </button>
+      </div>
 
       {stopBlocked && (
         <p className="m-0 text-xs font-bold text-destructive">

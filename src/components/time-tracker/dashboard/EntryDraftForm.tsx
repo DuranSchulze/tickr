@@ -19,6 +19,7 @@ export function EntryDraftForm({
   projectTasks,
   tags,
   onCreateTask,
+  onArchiveTask,
   onCreateTag,
   canManageCatalog = true,
   compact = false,
@@ -37,6 +38,7 @@ export function EntryDraftForm({
     clientId: string,
   ) => Promise<void>
   onCreateTask?: (projectId: string, name: string) => Promise<void>
+  onArchiveTask?: (id: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   compact?: boolean
@@ -78,6 +80,7 @@ export function EntryDraftForm({
             })
           }
           onCreateTask={onCreateTask}
+          onArchiveTask={onArchiveTask}
         />
         <TagPicker
           tags={tags}

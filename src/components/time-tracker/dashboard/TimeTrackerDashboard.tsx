@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
-import { FileText, Loader2, Play, Square } from 'lucide-react'
+import { FileText, Loader2, Play, Square, X } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import {
   formatDuration,
@@ -22,12 +22,6 @@ import type {
   TrackerState,
   ViewMode,
 } from '#/lib/time-tracker/types'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '#/components/ui/drawer'
 import {
   Dialog,
   DialogClose,
@@ -494,6 +488,8 @@ export function TimeTrackerDashboard({
     onCreateProject: mutations.createProject,
     onCreateTask: (projectId: string, name: string) =>
       mutations.createTask(projectId, name).then(() => undefined as void),
+    onArchiveTask: (id: string) =>
+      mutations.archiveTask(id).then(() => undefined as void),
     onCreateTag: mutations.createTag,
     canManageCatalog,
     pending: mutations.pending,
@@ -613,6 +609,7 @@ export function TimeTrackerDashboard({
         onCreateTask={(projectId, name) =>
           mutations.createTask(projectId, name).then(() => undefined)
         }
+        onArchiveTask={(id) => mutations.archiveTask(id).then(() => undefined)}
         onCreateTag={mutations.createTag}
       />
 
@@ -633,7 +630,7 @@ export function TimeTrackerDashboard({
               : 'Stop timer'
             : 'Start timer'
         }
-        className={`fixed bottom-6 right-6 z-50 flex size-14 items-center justify-center rounded-full shadow-xl transition-colors sm:hidden ${
+        className={`fixed bottom-20 right-4 z-50 flex size-14 items-center justify-center rounded-full shadow-xl transition-colors sm:hidden ${
           activeEntry
             ? 'bg-destructive text-destructive-foreground'
             : 'bg-primary text-primary-foreground'
@@ -646,19 +643,33 @@ export function TimeTrackerDashboard({
         )}
       </button>
 
-      {/* Mobile: bottom drawer with timer / manual entry */}
-      <Drawer open={mobileTimerOpen} onOpenChange={setMobileTimerOpen}>
-        <DrawerContent className="sm:hidden">
-          <DrawerHeader className="border-b border-border pb-3">
-            <DrawerTitle>
+      {/* Mobile: full-screen dialog for timer / manual entry */}
+      <Dialog open={mobileTimerOpen} onOpenChange={setMobileTimerOpen}>
+        <DialogContent
+          className="sm:hidden fixed inset-0 z-50 m-0 flex flex-col max-w-none translate-x-0 translate-y-0 gap-0 rounded-none bg-card p-0 duration-200 outline-none data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
+          showCloseButton={false}
+        >
+          {/* Header */}
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+            <h2 className="text-lg font-bold text-foreground">
               {activeEntry ? 'Timer running' : 'Track time'}
-            </DrawerTitle>
-          </DrawerHeader>
-          <div className="overflow-y-auto p-4 pb-8">
-            <InputSection {...inputSectionProps} />
+            </h2>
+            <button
+              type="button"
+              onClick={() => setMobileTimerOpen(false)}
+              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label="Close"
+            >
+              <X className="size-5" />
+            </button>
           </div>
-        </DrawerContent>
-      </Drawer>
+
+          {/* Body — pushed to bottom so inputs are near the keyboard */}
+          <div className="mt-auto w-full overflow-y-auto px-4 pb-8 pt-4">
+            <InputSection {...inputSectionProps} descriptionDropdownUp />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

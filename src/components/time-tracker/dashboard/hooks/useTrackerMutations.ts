@@ -16,6 +16,7 @@ import {
   stopTimerFn,
   updateActiveTimerFn,
   updateEntryFn,
+  archiveTaskFn,
 } from '#/lib/server/tracker'
 
 type StartTimerInput = {
@@ -142,6 +143,8 @@ export function useTrackerMutations() {
       run(() => createProjectFn({ data: { name, color, clientId } })),
     createTask: (projectId: string, name: string) =>
       run(async () => createTaskFn({ data: { projectId, name } })),
+    archiveTask: (id: string) =>
+      run(async () => archiveTaskFn({ data: { id } })),
     createTag: (name: string, color: string) =>
       run(() => createTagFn({ data: { name, color } })),
   }

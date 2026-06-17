@@ -42,12 +42,14 @@ export function InputSection({
   onCreateClient,
   onCreateProject,
   onCreateTask,
+  onArchiveTask,
   onCreateTag,
   canManageCatalog = true,
   pending,
   startPending,
   stopPending,
   formatTime,
+  descriptionDropdownUp = false,
 }: {
   workspaceId: string
   clients: Client[]
@@ -89,12 +91,14 @@ export function InputSection({
     clientId: string,
   ) => Promise<void>
   onCreateTask: (projectId: string, name: string) => Promise<void>
+  onArchiveTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   pending: boolean
   startPending: boolean
   stopPending: boolean
   formatTime: (seconds: number) => string
+  descriptionDropdownUp?: boolean
 }) {
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
 
@@ -174,6 +178,7 @@ export function InputSection({
                   billable={billable}
                   onBillableChange={onBillableChange}
                   onCreateTask={onCreateTask}
+                  onArchiveTask={onArchiveTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   activeEntry={activeEntry}
@@ -185,6 +190,7 @@ export function InputSection({
                   onStop={onStop}
                   onDiscard={onDiscard}
                   onUpdateStartedAt={onUpdateStartedAt}
+                  descriptionDropdownUp={descriptionDropdownUp}
                 />
               </motion.div>
             )}
@@ -207,6 +213,7 @@ export function InputSection({
                   onCreateClient={onCreateClient}
                   onCreateProject={onCreateProject}
                   onCreateTask={onCreateTask}
+                  onArchiveTask={onArchiveTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   pending={pending}
