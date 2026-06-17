@@ -881,7 +881,7 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
   </table>
 
   <div class="footer">
-    Generated on ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })} &middot; Tickr
+    Generated on ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })} &middot; Trackly
   </div>
 
   <script>window.print()</script>

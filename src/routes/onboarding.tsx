@@ -6,6 +6,7 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Building2,
   Hash,
@@ -116,8 +117,11 @@ function OnboardingPage() {
     }
   }
 
+  const queryClient = useQueryClient()
+
   async function handleSignOut() {
     await authClient.signOut()
+    queryClient.clear()
     await navigate({ to: '/auth' })
   }
 

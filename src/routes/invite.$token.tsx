@@ -74,7 +74,7 @@ function InvitePage() {
 
   async function handleSwitchAccount() {
     await authClient.signOut()
-    await refreshWorkspaceState()
+    router.options.context.queryClient.clear()
     await navigate({
       to: '/auth',
       search: { invite: token, email: preview.inviteEmail },

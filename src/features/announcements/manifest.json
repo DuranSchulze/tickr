@@ -2,7 +2,7 @@
   "appVersion": "1.7.0",
   "onboarding": {
     "enabled": true,
-    "title": "Welcome to Tickr!",
+    "title": "Welcome to Trackly!",
     "subtitle": "Let's get you up to speed with the essentials.",
     "steps": [
       {
@@ -11,7 +11,7 @@
         "description": "Click the timer button in the sidebar to start logging hours against any project or client. Every entry is saved in real time.",
         "image": null,
         "action": {
-          "label": "Open Time Tracker",
+          "label": "Open Trackly",
           "to": "/app/time-tracker"
         }
       },
@@ -66,7 +66,7 @@
         },
         {
           "title": "Faster Page Loads with Smart Caching",
-          "description": "The Time Tracker dashboard, Analytics, My Performance, and Department Analytics pages now serve recently loaded data from a 60-second cache instead of hitting the database on every visit. Revisiting a page within the window is instant, while timer and entry actions still refresh the dashboard immediately.",
+          "description": "The Trackly dashboard, Analytics, My Performance, and Department Analytics pages now serve recently loaded data from a 60-second cache instead of hitting the database on every visit. Revisiting a page within the window is instant, while timer and entry actions still refresh the dashboard immediately.",
           "image": null
         },
         {
@@ -82,7 +82,7 @@
       ],
       "actions": [
         {
-          "label": "Open Time Tracker",
+          "label": "Open Trackly",
           "to": "/app/time-tracker"
         },
         {
@@ -130,7 +130,7 @@
       ],
       "actions": [
         {
-          "label": "Open Time Tracker",
+          "label": "Open Trackly",
           "to": "/app/time-tracker"
         },
         {

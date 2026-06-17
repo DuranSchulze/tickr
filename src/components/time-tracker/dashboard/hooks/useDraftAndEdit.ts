@@ -45,26 +45,11 @@ export function useDraftAndEdit({
     upsertTrackerStateEntry(queryClient, updated)
     void router.invalidate()
   }
-  const activeClients = state.clients.filter((c) => c.clientStatus === 'ACTIVE')
-  const initialClientId = activeClients[0]?.id || ''
-  const initialProject =
-    state.projects.find((p) => p.clientId === initialClientId) ?? null
-
-  const [draft, setDraft] = useState<DraftEntry>(() =>
-    emptyDraft(
-      initialClientId,
-      initialProject?.id || '',
-      state.tags[0]?.id || '',
-    ),
-  )
+  const [draft, setDraft] = useState<DraftEntry>(() => emptyDraft())
   const [editingId, setEditingId] = useState<string | null>(null)
   const [mobileTimerOpen, setMobileTimerOpen] = useState(false)
   const [editingDraft, setEditingDraft] = useState<DraftEntry>(() =>
-    emptyDraft(
-      initialClientId,
-      initialProject?.id || '',
-      state.tags[0]?.id || '',
-    ),
+    emptyDraft(),
   )
 
   // Derive editing validity — auto-cancels when entry is no longer in state
@@ -83,13 +68,7 @@ export function useDraftAndEdit({
   )
 
   function resetDraft() {
-    setDraft(
-      emptyDraft(
-        initialClientId,
-        initialProject?.id || '',
-        state.tags[0]?.id || '',
-      ),
-    )
+    setDraft(emptyDraft())
   }
 
   function addManualEntry() {

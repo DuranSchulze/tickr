@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Check,
   CircleHelp,
@@ -85,10 +86,15 @@ export function Navbar({
 
   const [infoOpen, setInfoOpen] = useState(false)
 
+  const queryClient = useQueryClient()
+
   const handleSignOut = () => {
     void authClient.signOut({
       fetchOptions: {
-        onSuccess: () => void navigate({ to: '/auth' }),
+        onSuccess: () => {
+          queryClient.clear()
+          void navigate({ to: '/auth' })
+        },
       },
     })
   }

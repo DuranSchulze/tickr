@@ -50,7 +50,7 @@ export function renderSuspiciousLoginEmail({
   resetUrl,
 }: SuspiciousLoginEmailInput): RenderedEmail {
   const greeting = name ? `Hi ${name},` : 'Hi,'
-  const subject = 'New sign-in to your Tickr account'
+  const subject = 'New sign-in to your Trackly account'
   const safeResetUrl = escapeHtml(resetUrl)
   const locationLabel = location ?? 'Unknown location'
   const deviceLabel = userAgent ?? 'Unknown device'
@@ -70,7 +70,7 @@ export function renderSuspiciousLoginEmail({
   const text = [
     greeting,
     '',
-    'We detected a new sign-in to your Tickr account from an unrecognized location.',
+    'We detected a new sign-in to your Trackly account from an unrecognized location.',
     '',
     'Sign-in details:',
     `  IP address : ${ipAddress}`,
@@ -86,7 +86,7 @@ export function renderSuspiciousLoginEmail({
     '',
     resetUrl,
     '',
-    '— Tickr',
+    '— Trackly',
   ].join('\n')
 
   // ── Known-devices rows ───────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ export function renderSuspiciousLoginEmail({
             <!-- Header -->
             <tr>
               <td style="padding:28px 32px 0 32px;">
-                <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f766e;">Tickr</p>
+                <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f766e;">Trackly</p>
                 <h1 style="margin:12px 0 0 0;font-size:22px;font-weight:800;color:#0f172a;">New sign-in detected</h1>
               </td>
             </tr>
@@ -129,7 +129,7 @@ export function renderSuspiciousLoginEmail({
             <tr>
               <td style="padding:20px 32px 8px 32px;font-size:15px;line-height:1.6;color:#334155;">
                 <p style="margin:0 0 12px 0;">${escapeHtml(greeting)}</p>
-                <p style="margin:0 0 16px 0;">We detected a sign-in to your Tickr account from a <strong>new location</strong>. Here are the details:</p>
+                <p style="margin:0 0 16px 0;">We detected a sign-in to your Trackly account from a <strong>new location</strong>. Here are the details:</p>
               </td>
             </tr>
 
@@ -193,7 +193,7 @@ export function renderSuspiciousLoginEmail({
             <!-- Footer -->
             <tr>
               <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;">
-                Tickr · Internal workspace time tracking
+                Trackly · Internal workspace time tracking
               </td>
             </tr>
 

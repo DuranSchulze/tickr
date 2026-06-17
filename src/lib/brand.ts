@@ -1,11 +1,15 @@
 /**
  * Central brand configuration.
- * Change these values to update the logo and name everywhere in the app.
+ * Change these values to update the name, tagline, and logo everywhere in the app.
  */
 export const BRAND = {
-  name: 'Time Tracker',
-  tagline: 'Internal workspace tracking',
+  /** Product / brand name */
+  name: 'Trackly',
+  /** Short descriptor shown next to the logo in nav bars */
+  tagline: 'Workspace time tracking',
+  /** For email footers and meta descriptions */
+  description: 'Workspace time tracking for teams',
   /** Path relative to /public, or an absolute https:// URL */
   logoSrc: '/2.svg',
-  logoAlt: 'Time Tracker logo',
+  logoAlt: 'Trackly logo',
 } as const

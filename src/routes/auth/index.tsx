@@ -6,6 +6,7 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { BarChart3, Clock, Users } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
 import { gooeyToast } from '#/lib/toast'
@@ -170,35 +171,16 @@ function AuthPage() {
         return
       }
 
+      // Clear all stale data from the previous user session
+      router.options.context.queryClient.clear()
+
       if (search.invite) {
-        await Promise.all([
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['session'],
-          }),
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['workspace-access'],
-          }),
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['user-workspaces'],
-          }),
-        ])
         await router.invalidate()
         await navigate({
           to: '/invite/$token',
           params: { token: search.invite },
         })
       } else {
-        await Promise.all([
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['session'],
-          }),
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['workspace-access'],
-          }),
-          router.options.context.queryClient.invalidateQueries({
-            queryKey: ['user-workspaces'],
-          }),
-        ])
         await router.invalidate()
         await navigate({ to: '/onboarding' })
       }
@@ -211,8 +193,11 @@ function AuthPage() {
     }
   }
 
+  const queryClient = useQueryClient()
+
   async function handleSignOut(): Promise<void> {
     await authClient.signOut()
+    queryClient.clear()
     await router.invalidate()
     await navigate({ to: '/auth' })
   }

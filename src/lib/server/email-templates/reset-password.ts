@@ -25,20 +25,20 @@ export function renderResetPasswordEmail({
   expiresInMinutes,
 }: ResetPasswordEmailInput): RenderedEmail {
   const greeting = name ? `Hi ${name},` : 'Hi,'
-  const subject = 'Reset your Tickr password'
+  const subject = 'Reset your Trackly password'
   const safeUrl = escapeHtml(url)
 
   const text = [
     greeting,
     '',
-    'We received a request to reset the password for your Tickr account.',
+    'We received a request to reset the password for your Trackly account.',
     `The link below expires in ${expiresInMinutes} minutes and can only be used once:`,
     '',
     url,
     '',
     "If you didn't request this, you can safely ignore this email — your password won't change.",
     '',
-    '— Tickr',
+    '— Trackly',
   ].join('\n')
 
   const html = `<!doctype html>
@@ -50,14 +50,14 @@ export function renderResetPasswordEmail({
           <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:520px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
             <tr>
               <td style="padding:28px 32px 0 32px;">
-                <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f766e;">Tickr</p>
+                <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f766e;">Trackly</p>
                 <h1 style="margin:12px 0 0 0;font-size:22px;font-weight:800;color:#0f172a;">Reset your password</h1>
               </td>
             </tr>
             <tr>
               <td style="padding:20px 32px 8px 32px;font-size:15px;line-height:1.6;color:#334155;">
                 <p style="margin:0 0 12px 0;">${escapeHtml(greeting)}</p>
-                <p style="margin:0 0 12px 0;">We received a request to reset the password for your Tickr account.</p>
+                <p style="margin:0 0 12px 0;">We received a request to reset the password for your Trackly account.</p>
                 <p style="margin:0;">The link below expires in <strong>${expiresInMinutes} minutes</strong> and can only be used once.</p>
               </td>
             </tr>
@@ -75,7 +75,7 @@ export function renderResetPasswordEmail({
             </tr>
             <tr>
               <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;">
-                Tickr · Internal workspace time tracking
+                Trackly · Internal workspace time tracking
               </td>
             </tr>
           </table>

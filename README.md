@@ -61,7 +61,7 @@ BETTER_AUTH_SECRET=   # generate with: pnpm dlx @better-auth/cli secret
 
 # Email — Resend (primary) with optional SMTP fallback
 RESEND_API_KEY=        # https://resend.com/api-keys
-RESEND_FROM=           # verified domain from address (e.g. "Tickr <noreply@yourdomain.com>")
+RESEND_FROM=           # verified domain from address (e.g. "Trackly <noreply@yourdomain.com>")
 # SMTP_HOST=           # fallback SMTP server (optional, used if Resend fails)
 
 # Google Sheets sync (Option A — recommended)

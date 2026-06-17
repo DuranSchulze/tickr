@@ -1,3 +1,4 @@
+import { BRAND } from '#/lib/brand'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -95,7 +96,7 @@ export function DashboardHeader({
             {workspaceName}
           </p>
           <h1 className="m-0 mt-1 text-2xl font-bold tracking-tight text-foreground">
-            Time Tracker
+            {BRAND.name}
           </h1>
           <p className="m-0 mt-1 text-sm text-muted-foreground">
             {userName} · {userRoleName}

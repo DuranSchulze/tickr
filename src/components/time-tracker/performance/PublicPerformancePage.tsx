@@ -1,3 +1,4 @@
+import { BRAND } from '#/lib/brand'
 import { lazy, Suspense } from 'react'
 import type { PublicPerformancePayload } from '#/lib/server/tracker/performance.server'
 import { useInView } from '#/hooks/useInView'
@@ -68,7 +69,7 @@ export function PublicPerformancePage({
         </div>
 
         <p className="mt-10 text-center text-xs text-muted-foreground">
-          Powered by DFP Time Tracker
+          Powered by {BRAND.name}
         </p>
       </div>
     </div>

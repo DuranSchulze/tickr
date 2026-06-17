@@ -5,6 +5,7 @@ import {
 import { routeTree } from './routeTree.gen'
 import { Button } from './components/ui/button'
 import { Loader2 } from 'lucide-react'
+import { BRAND } from '#/lib/brand'
 
 import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
 import { getContext } from './integrations/tanstack-query/root-provider'
@@ -23,7 +24,7 @@ function DefaultNotFoundComponent() {
         </p>
       </div>
       <Button asChild>
-        <Link to="/app/time-tracker">Go to Time Tracker</Link>
+        <Link to="/app/time-tracker">Go to {BRAND.name}</Link>
       </Button>
     </div>
   )

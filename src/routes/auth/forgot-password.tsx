@@ -77,8 +77,8 @@ function ForgotPasswordPage() {
             Forgot your password?
           </h1>
           <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Enter the email you use for Tickr and we'll send you a link to reset
-            it.
+            Enter the email you use for Trackly and we'll send you a link to
+            reset it.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 grid gap-4">

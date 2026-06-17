@@ -46,7 +46,7 @@ function NotFoundComponent() {
         </p>
       </div>
       <Button asChild>
-        <Link to="/app/time-tracker">Go to Time Tracker</Link>
+        <Link to="/app/time-tracker">Go to {BRAND.name}</Link>
       </Button>
     </div>
   )

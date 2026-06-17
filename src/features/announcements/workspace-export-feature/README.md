@@ -41,7 +41,7 @@ Both use the same pattern: a button labeled **Export** with a `FileText` icon, o
 
 ### Server Function: `getMemberMonthlyReportFn`
 
-**File:** `Tickr/src/lib/server/tracker.ts`
+**File:** `Trackly/src/lib/server/tracker.ts`
 
 ```ts
 export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
@@ -54,7 +54,7 @@ export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
 
 ### Server Logic: `getMemberMonthlyReport`
 
-**File:** `Tickr/src/lib/server/tracker.server.ts` → `member-report.server.ts`
+**File:** `Trackly/src/lib/server/tracker.server.ts` → `member-report.server.ts`
 
 - Permission-gated:
   - **OWNER/ADMIN**: can target any member in the workspace
@@ -71,7 +71,7 @@ export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
 
 ### Members Page — MemberRow.tsx
 
-**File:** `Tickr/src/components/time-tracker/MemberRow.tsx`
+**File:** `Trackly/src/components/time-tracker/MemberRow.tsx`
 
 The Export button is in the **Actions** column of the table. It's a `<button>` element with:
 
@@ -94,7 +94,7 @@ const handleExportMonthlyReport = useCallback(
 
 ### Activity Page — MemberActivityCard.tsx
 
-**File:** `Tickr/src/components/time-tracker/screens/WorkspaceActivityScreen/MemberActivityCard.tsx`
+**File:** `Trackly/src/components/time-tracker/screens/WorkspaceActivityScreen/MemberActivityCard.tsx`
 
 The Export button is at the **bottom-right** of each member card, below the status/entry info. Uses the same pattern as `MemberRow`:
 
@@ -113,7 +113,7 @@ The generated HTML includes inline CSS optimized for print:
 - **Header**: Blue title bar with member name, email, and month
 - **Summary cards**: Four card metrics in a flex row
 - **Table**: Full-width with styled header, alternating rows, and billable badges
-- **Footer**: "Generated on ... · Tickr"
+- **Footer**: "Generated on ... · Trackly"
 - **Auto-print**: `<script>window.print()</script>` triggers the print dialog on load
 
 ---
