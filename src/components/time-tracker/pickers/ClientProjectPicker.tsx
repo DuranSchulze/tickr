@@ -326,7 +326,6 @@ export function ClientProjectPicker({
     try {
       await onArchiveTask(deleteTarget.id)
       setDeleteTarget(null)
-      setOpen(false)
     } catch {
       // Error handled by toast in parent
     } finally {
@@ -695,7 +694,10 @@ export function ClientProjectPicker({
                         <button
                           type="button"
                           disabled={submittingTask || !newTaskName.trim()}
-                          onClick={() => handleCreateTask(row.project.id)}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                            handleCreateTask(row.project.id)
+                          }}
                           className="grid size-7 place-items-center rounded text-primary hover:bg-primary/10 disabled:opacity-40"
                         >
                           <ChevronRight className="size-3.5" />

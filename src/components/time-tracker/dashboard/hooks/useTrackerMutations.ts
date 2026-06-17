@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { gooeyToast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import type { TimeEntry } from '#/lib/time-tracker/types'
-import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
+import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
+import {
+  invalidateTrackerState,
+  trackerKeys,
+} from '#/lib/time-tracker/query-keys'
 import {
   createClientFn,
   createManualEntryFn,
@@ -142,9 +145,31 @@ export function useTrackerMutations() {
     createProject: (name: string, color: string, clientId: string) =>
       run(() => createProjectFn({ data: { name, color, clientId } })),
     createTask: (projectId: string, name: string) =>
-      run(async () => createTaskFn({ data: { projectId, name } })),
+      run(async () => {
+        const created = await createTaskFn({ data: { projectId, name } })
+        // Immediately splice the new task into cached state so the picker
+        // shows it without waiting for router.invalidate + refetch.
+        queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) =>
+          prev
+            ? { ...prev, projectTasks: [...prev.projectTasks, created] }
+            : prev,
+        )
+        return created
+      }),
     archiveTask: (id: string) =>
-      run(async () => archiveTaskFn({ data: { id } })),
+      run(async () => {
+        await archiveTaskFn({ data: { id } })
+        // Immediately remove the task from cached state so the picker
+        // hides it without waiting for router.invalidate + refetch.
+        queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) =>
+          prev
+            ? {
+                ...prev,
+                projectTasks: prev.projectTasks.filter((t) => t.id !== id),
+              }
+            : prev,
+        )
+      }),
     createTag: (name: string, color: string) =>
       run(() => createTagFn({ data: { name, color } })),
   }

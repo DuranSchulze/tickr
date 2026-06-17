@@ -28,6 +28,7 @@ export async function createTask(data: typeof createTaskSchema) {
       and(
         eq(projectTasks.workspaceId, access.workspace.id),
         eq(projectTasks.projectId, data.projectId),
+        eq(projectTasks.archived, false),
         ilike(projectTasks.name, data.name),
       ),
     )
