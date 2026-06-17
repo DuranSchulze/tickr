@@ -42,7 +42,7 @@ export function InputSection({
   onCreateClient,
   onCreateProject,
   onCreateTask,
-  onArchiveTask,
+  onDeleteTask,
   onCreateTag,
   canManageCatalog = true,
   pending,
@@ -91,7 +91,7 @@ export function InputSection({
     clientId: string,
   ) => Promise<void>
   onCreateTask: (projectId: string, name: string) => Promise<void>
-  onArchiveTask: (id: string) => Promise<void>
+  onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   pending: boolean
@@ -178,7 +178,7 @@ export function InputSection({
                   billable={billable}
                   onBillableChange={onBillableChange}
                   onCreateTask={onCreateTask}
-                  onArchiveTask={onArchiveTask}
+                  onDeleteTask={onDeleteTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   activeEntry={activeEntry}
@@ -213,7 +213,7 @@ export function InputSection({
                   onCreateClient={onCreateClient}
                   onCreateProject={onCreateProject}
                   onCreateTask={onCreateTask}
-                  onArchiveTask={onArchiveTask}
+                  onDeleteTask={onDeleteTask}
                   onCreateTag={onCreateTag}
                   canManageCatalog={canManageCatalog}
                   pending={pending}

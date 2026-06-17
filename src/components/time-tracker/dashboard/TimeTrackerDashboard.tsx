@@ -488,8 +488,8 @@ export function TimeTrackerDashboard({
     onCreateProject: mutations.createProject,
     onCreateTask: (projectId: string, name: string) =>
       mutations.createTask(projectId, name).then(() => undefined as void),
-    onArchiveTask: (id: string) =>
-      mutations.archiveTask(id).then(() => undefined as void),
+    onDeleteTask: (id: string) =>
+      mutations.deleteTask(id).then(() => undefined as void),
     onCreateTag: mutations.createTag,
     canManageCatalog,
     pending: mutations.pending,
@@ -609,7 +609,7 @@ export function TimeTrackerDashboard({
         onCreateTask={(projectId, name) =>
           mutations.createTask(projectId, name).then(() => undefined)
         }
-        onArchiveTask={(id) => mutations.archiveTask(id).then(() => undefined)}
+        onDeleteTask={(id) => mutations.deleteTask(id).then(() => undefined)}
         onCreateTag={mutations.createTag}
       />
 

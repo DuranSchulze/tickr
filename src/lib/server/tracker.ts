@@ -901,3 +901,10 @@ export const activateTaskFn = createServerFn({ method: 'POST' })
     const { activateTask } = await import('./tracker.server')
     return activateTask(data)
   })
+
+export const deleteTaskFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { deleteTask } = await import('./tracker.server')
+    return deleteTask(data)
+  })

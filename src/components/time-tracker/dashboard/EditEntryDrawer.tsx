@@ -34,7 +34,7 @@ type EditEntryDrawerProps = {
     clientId: string,
   ) => Promise<void>
   onCreateTask?: (projectId: string, name: string) => Promise<void>
-  onArchiveTask?: (id: string) => Promise<void>
+  onDeleteTask?: (id: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
 }
 
@@ -55,7 +55,7 @@ export function EditEntryDrawer({
   onCreateClient,
   onCreateProject,
   onCreateTask,
-  onArchiveTask,
+  onDeleteTask,
   onCreateTag,
 }: EditEntryDrawerProps) {
   // If the entry disappears while the drawer is open (race condition between
@@ -100,7 +100,7 @@ export function EditEntryDrawer({
                 onCreateClient={onCreateClient}
                 onCreateProject={onCreateProject}
                 onCreateTask={onCreateTask}
-                onArchiveTask={onArchiveTask}
+                onDeleteTask={onDeleteTask}
                 onCreateTag={onCreateTag}
                 canManageCatalog={canManageCatalog}
                 isRunning={!entry.endedAt}

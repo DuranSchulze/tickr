@@ -121,5 +121,6 @@ export {
   createTask,
   updateTask,
   archiveTask,
+  deleteTask,
   activateTask,
 } from './tracker/catalogs/tasks.server'

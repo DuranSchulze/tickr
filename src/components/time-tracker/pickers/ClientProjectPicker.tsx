@@ -47,7 +47,7 @@ interface Props {
   taskId: string
   onChange: (clientId: string, projectId: string, taskId?: string) => void
   onCreateTask?: (projectId: string, name: string) => Promise<void>
-  onArchiveTask?: (id: string) => Promise<void>
+  onDeleteTask?: (id: string) => Promise<void>
   disabled?: boolean
   placeholder?: string
   bare?: boolean
@@ -72,7 +72,7 @@ export function ClientProjectPicker({
   taskId,
   onChange,
   onCreateTask,
-  onArchiveTask,
+  onDeleteTask,
   disabled = false,
   placeholder = 'Client / Project',
   bare = false,
@@ -321,10 +321,10 @@ export function ClientProjectPicker({
   }
 
   async function handleDeleteTask() {
-    if (!onArchiveTask || !deleteTarget || deletingTask) return
+    if (!onDeleteTask || !deleteTarget || deletingTask) return
     setDeletingTask(true)
     try {
-      await onArchiveTask(deleteTarget.id)
+      await onDeleteTask(deleteTarget.id)
       setDeleteTarget(null)
     } catch {
       // Error handled by toast in parent
@@ -643,7 +643,7 @@ export function ClientProjectPicker({
                       {tActive && (
                         <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                       )}
-                      {onArchiveTask && (
+                      {onDeleteTask && (
                         <button
                           type="button"
                           onClick={(e) => {

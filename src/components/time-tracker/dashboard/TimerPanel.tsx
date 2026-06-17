@@ -39,7 +39,7 @@ export function TimerPanel({
   billable,
   onBillableChange,
   onCreateTask,
-  onArchiveTask,
+  onDeleteTask,
   onCreateTag,
   canManageCatalog = true,
   activeEntry,
@@ -73,7 +73,7 @@ export function TimerPanel({
   billable: boolean
   onBillableChange: (next: boolean) => void
   onCreateTask: (projectId: string, name: string) => Promise<void>
-  onArchiveTask: (id: string) => Promise<void>
+  onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
   activeEntry: TimeEntry | undefined
@@ -183,7 +183,7 @@ export function TimerPanel({
                 onTaskIdChange(tid ?? '')
               }}
               onCreateTask={onCreateTask}
-              onArchiveTask={onArchiveTask}
+              onDeleteTask={onDeleteTask}
               bare
             />
           </div>

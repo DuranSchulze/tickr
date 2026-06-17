@@ -19,7 +19,7 @@ import {
   stopTimerFn,
   updateActiveTimerFn,
   updateEntryFn,
-  archiveTaskFn,
+  deleteTaskFn,
 } from '#/lib/server/tracker'
 
 type StartTimerInput = {
@@ -156,9 +156,9 @@ export function useTrackerMutations() {
         )
         return created
       }),
-    archiveTask: (id: string) =>
+    deleteTask: (id: string) =>
       run(async () => {
-        await archiveTaskFn({ data: { id } })
+        await deleteTaskFn({ data: { id } })
         // Immediately remove the task from cached state so the picker
         // hides it without waiting for router.invalidate + refetch.
         queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) =>

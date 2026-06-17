@@ -1,5 +1,5 @@
 import { db } from '#/db'
-import { projectTasks } from '#/db/schema'
+import { projectTasks, timeEntries } from '#/db/schema'
 import { and, eq, ilike } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { assertOwnerOrAdmin } from '../shared/role-gates.server'
@@ -119,6 +119,37 @@ export async function archiveTask(data: typeof idSchema) {
     targetId: data.id,
     details: task?.name ?? null,
   })
+}
+
+export async function deleteTask(data: typeof idSchema) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  // Block deletion if any time entries reference this task.
+  const [linked] = await db
+    .select({ id: timeEntries.id })
+    .from(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.taskId, data.id),
+        eq(timeEntries.workspaceId, access.workspace.id),
+      ),
+    )
+    .limit(1)
+  if (linked) {
+    throw new Error(
+      "This Task Project has connected records — we don't advise deleting it.",
+    )
+  }
+
+  await db
+    .delete(projectTasks)
+    .where(
+      and(
+        eq(projectTasks.id, data.id),
+        eq(projectTasks.workspaceId, access.workspace.id),
+      ),
+    )
 }
 
 export async function activateTask(data: typeof idSchema) {
