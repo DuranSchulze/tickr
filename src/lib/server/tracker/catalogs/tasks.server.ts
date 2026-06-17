@@ -19,7 +19,6 @@ const idSchema = {
 
 export async function createTask(data: typeof createTaskSchema) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
 
   const [existing] = await db
     .select()
@@ -123,7 +122,6 @@ export async function archiveTask(data: typeof idSchema) {
 
 export async function deleteTask(data: typeof idSchema) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
 
   // Block deletion if any time entries reference this task.
   const [linked] = await db
