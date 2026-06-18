@@ -94,7 +94,7 @@ export function DashboardHeader({
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="m-0 text-sm font-semibold text-primary">
             {workspaceName}
           </p>
@@ -104,7 +104,27 @@ export function DashboardHeader({
           <p className="m-0 mt-1 text-sm text-muted-foreground">
             {userName} · {userRoleName}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+
+          <div
+            className="mt-4 inline-flex overflow-hidden rounded-md border border-border bg-background p-1"
+            role="group"
+            aria-label="Time tracker view"
+          >
+            {VIEW_OPTIONS.map((option) => (
+              <Button
+                key={option.value}
+                type="button"
+                variant={view === option.value ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onChangeView(option.value)}
+                aria-pressed={view === option.value}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
             {view !== 'all' && (
               <>
                 <Button
@@ -169,26 +189,8 @@ export function DashboardHeader({
             )}
           </div>
         </div>
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:justify-end">
-          <div
-            className="inline-flex overflow-hidden rounded-md border border-border bg-background p-1"
-            role="group"
-            aria-label="Time tracker view"
-          >
-            {VIEW_OPTIONS.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                variant={view === option.value ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => onChangeView(option.value)}
-                aria-pressed={view === option.value}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-          <div className="w-full rounded-lg border border-border bg-muted px-4 py-3 text-left sm:w-auto sm:text-right">
+        <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto">
+          <div className="w-full min-w-44 rounded-lg border border-border bg-muted px-4 py-3 text-center font-mono tracking-tight sm:w-auto">
             <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {view === 'all' ? 'loaded total' : `${view} total`}
             </p>

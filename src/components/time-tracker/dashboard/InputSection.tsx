@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Play, Pencil } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
@@ -103,6 +103,15 @@ export function InputSection({
 }) {
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
 
+  // Force-switch to Timer mode when a timer starts running — the Manual
+  // button is disabled while a timer is active so users can't open a manual
+  // entry form alongside a running timer.
+  useEffect(() => {
+    if (activeEntry) {
+      setMode('timer')
+    }
+  }, [activeEntry])
+
   const modeToggle = (
     <div
       className="flex shrink-0 flex-row items-center justify-center gap-1 border-border/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
@@ -128,11 +137,14 @@ export function InputSection({
         onClick={() => setMode('manual')}
         role="tab"
         aria-selected={mode === 'manual'}
-        title="Manual entry"
+        title={activeEntry ? 'Stop the timer first' : 'Manual entry'}
+        disabled={!!activeEntry}
         className={`grid size-8 place-items-center rounded-md transition-colors ${
-          mode === 'manual'
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          activeEntry
+            ? 'cursor-not-allowed text-muted-foreground/40'
+            : mode === 'manual'
+              ? 'bg-primary/10 text-primary'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         }`}
       >
         <Pencil className="size-4" />
