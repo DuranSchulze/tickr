@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import { ChevronDown, ChevronRight, Play } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
+import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry, ViewMode } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import {
@@ -55,7 +56,9 @@ export function LiveGroupTotal({
   runningEntry: TimeEntry | null
   formatTime: (seconds: number) => string
 }) {
-  const tick = useNowTick(runningEntry ? 1000 : null)
+  const tick = useNowTick(
+    runningEntry ? getFormatterLiveTickMs(formatTime) : null,
+  )
   const total =
     completedSeconds + (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)
   return (
@@ -197,15 +200,21 @@ function TaskGroupHeaderCard({
 }) {
   const project = projects.find((p) => p.id === group.projectId)
   const entryTags = tags.filter((t) => group.tagIds.includes(t.id))
+  const tick = useNowTick(
+    group.runningEntry ? getFormatterLiveTickMs(formatTime) : null,
+  )
+  const totalSeconds =
+    group.totalSeconds +
+    (group.runningEntry ? getEntrySeconds(group.runningEntry, tick) : 0)
 
   return (
-    <div className="rounded-lg border border-border bg-muted/30">
+    <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-muted/30">
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
+        className="flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2.5 text-left"
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {isExpanded ? (
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
@@ -221,26 +230,27 @@ function TaskGroupHeaderCard({
           </span>
         </div>
         <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
-          {formatTime(group.totalSeconds)}
+          {formatTime(totalSeconds)}
         </span>
       </button>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 px-3 py-2">
-        <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-border/40 px-3 py-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {project && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+            <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
               <span
-                className="size-2 rounded-full"
+                className="size-2 shrink-0 rounded-full"
                 style={{ backgroundColor: project.color }}
               />
-              {project.name}
+              <span className="min-w-0 truncate">{project.name}</span>
             </span>
           )}
           {entryTags.map((tag) => (
             <span
               key={tag.id}
-              className="rounded-md border px-2 py-0.5 text-xs font-semibold"
+              className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
               style={{ color: tag.color, borderColor: `${tag.color}55` }}
+              title={tag.name}
             >
               {tag.name}
             </span>
@@ -333,7 +343,7 @@ export function DayGroupsList({
   const handleDelete = useStableCallback(onDelete)
 
   return (
-    <div className="divide-y divide-border">
+    <div className="min-w-0 divide-y divide-border">
       {groups.map((group) => {
         const dayCollapsed = isDayCollapsed(group.dateKey)
         const entryCount = group.taskGroups.reduce(
@@ -341,15 +351,15 @@ export function DayGroupsList({
           0,
         )
         return (
-          <div key={group.dateKey}>
+          <div key={group.dateKey} className="min-w-0">
             {/* Day group header — static in day view, collapsible otherwise */}
             {view === 'day' ? (
-              <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-sm font-bold text-foreground">
+              <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="min-w-0 truncate text-sm font-bold text-foreground">
                     {group.label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
                   </span>
                 </div>
@@ -363,18 +373,18 @@ export function DayGroupsList({
               <button
                 type="button"
                 onClick={() => toggleDayGroup(group.dateKey)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   {dayCollapsed ? (
                     <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
                   ) : (
                     <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
                   )}
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="min-w-0 truncate text-sm font-bold text-foreground">
                     {group.label}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
                     {group.taskGroups.length > 1 && (
                       <span className="ml-1 text-muted-foreground/60">
@@ -396,7 +406,7 @@ export function DayGroupsList({
               <>
                 {/* Desktop table */}
                 {isDesktop && (
-                  <div className="hidden border-t border-border/40 sm:block">
+                  <div className="hidden min-w-0 border-t border-border/40 sm:block">
                     <Table className="table-fixed">
                       <TableHeader className="bg-muted/60">
                         <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
@@ -502,7 +512,7 @@ export function DayGroupsList({
 
                 {/* Mobile cards */}
                 {!isDesktop && (
-                  <div className="grid gap-2 border-t border-border/40 p-3 sm:hidden">
+                  <div className="grid min-w-0 gap-2 border-t border-border/40 p-3 sm:hidden">
                     {group.taskGroups.map((taskGroup) => {
                       const isGrouped = taskGroup.entries.length > 1
                       const expanded = isTaskGroupExpanded(
@@ -535,7 +545,7 @@ export function DayGroupsList({
                       return (
                         <div
                           key={`group-${taskGroup.key}`}
-                          className="grid gap-1.5"
+                          className="grid min-w-0 gap-1.5"
                         >
                           <TaskGroupHeaderCard
                             group={taskGroup}

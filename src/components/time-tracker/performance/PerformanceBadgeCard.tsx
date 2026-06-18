@@ -18,7 +18,7 @@ export const PerformanceBadgeCard = memo(function ({
   const gradeColor = GRADE_COLORS[summary.grade]
 
   return (
-    <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
       <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
@@ -26,10 +26,10 @@ export const PerformanceBadgeCard = memo(function ({
         {formatMonth(summary.month)}
       </p>
 
-      <div className="mt-4 flex items-center gap-4">
+      <div className="mt-4 grid min-w-0 gap-3 min-[460px]:grid-cols-[auto_minmax(0,1fr)] min-[460px]:items-center sm:gap-4">
         <div className="flex flex-col items-center">
           <span
-            className={`font-heading text-6xl font-black leading-none tracking-tight ${gradeColor}`}
+            className={`font-heading text-5xl font-black leading-none tracking-tight sm:text-6xl ${gradeColor}`}
           >
             {summary.grade}
           </span>
@@ -38,9 +38,9 @@ export const PerformanceBadgeCard = memo(function ({
           </span>
         </div>
         <div
-          className={`flex-1 rounded-lg border px-4 py-3 ${badgeStyle.bg} ${badgeStyle.border}`}
+          className={`min-w-0 rounded-lg border px-3 py-3 sm:px-4 ${badgeStyle.bg} ${badgeStyle.border}`}
         >
-          <p className={`m-0 text-lg font-black ${badgeStyle.text}`}>
+          <p className={`m-0 truncate text-lg font-black ${badgeStyle.text}`}>
             {summary.badge}
           </p>
           <p className={`m-0 mt-0.5 text-sm font-semibold ${badgeStyle.text}`}>
@@ -54,7 +54,7 @@ export const PerformanceBadgeCard = memo(function ({
       </div>
 
       <div className="mt-4">
-        <div className="flex justify-between text-xs font-semibold text-muted-foreground mb-1">
+        <div className="mb-1 flex justify-between text-xs font-semibold text-muted-foreground">
           <span>Activity rate</span>
           <span>{summary.activePercent}%</span>
         </div>
@@ -67,7 +67,7 @@ export const PerformanceBadgeCard = memo(function ({
             }}
           />
         </div>
-        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+        <div className="mt-1 grid grid-cols-5 gap-1 text-center text-[10px] text-muted-foreground sm:flex sm:justify-between sm:text-xs">
           <span>F &lt;40%</span>
           <span>D 40%</span>
           <span>C 60%</span>

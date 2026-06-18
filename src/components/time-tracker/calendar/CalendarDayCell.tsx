@@ -3,28 +3,31 @@ import type { CalendarEntry } from '#/lib/server/tracker.server'
 import { CalendarEntryChip } from './CalendarEntryChip'
 
 export const CalendarDayCell = memo(function CalendarDayCell({
+  dateKey,
   dayNumber,
   entries,
   isCurrentMonth,
   isToday,
   formatTime,
+  onSelectEntry,
 }: {
+  dateKey: string
   dayNumber: number
   entries: CalendarEntry[]
   isCurrentMonth: boolean
   isToday: boolean
   formatTime: (seconds: number) => string
+  onSelectEntry: (entry: CalendarEntry) => void
 }) {
-  const visibleEntries = entries.slice(0, 3)
-  const overflowCount = Math.max(0, entries.length - visibleEntries.length)
+  const entryLabel = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`
 
   return (
     <div
-      className={`min-h-[128px] border-r border-b border-border bg-card p-2 transition-colors ${
-        isCurrentMonth ? '' : 'bg-muted/30 opacity-50'
+      className={`flex h-[152px] min-w-0 flex-col border-r border-b border-border bg-card transition-colors hover:bg-accent/20 ${
+        isCurrentMonth ? '' : 'bg-muted/30 text-muted-foreground'
       } ${isToday ? 'ring-2 ring-inset ring-primary/50' : ''}`}
     >
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5">
         <span
           className={`flex size-7 items-center justify-center rounded-full text-sm font-black ${
             isToday
@@ -36,21 +39,25 @@ export const CalendarDayCell = memo(function CalendarDayCell({
         >
           {dayNumber}
         </span>
+        {entries.length > 0 && (
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
+            {entryLabel}
+          </span>
+        )}
       </div>
 
-      <div className="grid gap-1.5">
-        {visibleEntries.map((entry) => (
+      <div
+        className="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto px-2 py-2"
+        aria-label={`${dateKey} tasks`}
+      >
+        {entries.map((entry) => (
           <CalendarEntryChip
             key={entry.id}
             entry={entry}
             formatTime={formatTime}
+            onSelect={onSelectEntry}
           />
         ))}
-        {overflowCount > 0 && (
-          <p className="m-0 px-1 text-xs font-bold text-muted-foreground">
-            +{overflowCount} more
-          </p>
-        )}
       </div>
     </div>
   )

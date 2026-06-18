@@ -27,8 +27,8 @@ export function AnalyticsHeatmap({
   const showTaskRankings = selectedScope === 'personal'
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
-      <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
+      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
         <div className="mb-4">
           <h2 className="m-0 text-base font-black text-foreground">
             Activity heatmap
@@ -37,7 +37,7 @@ export function AnalyticsHeatmap({
             Darker cells mean more completed tracked time.
           </p>
         </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(18px,1fr))] gap-1.5">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(14px,1fr))] gap-1 sm:grid-cols-[repeat(auto-fill,minmax(18px,1fr))] sm:gap-1.5">
           {heatmap.map((day) => (
             <div
               key={day.date}
@@ -48,7 +48,7 @@ export function AnalyticsHeatmap({
             />
           ))}
         </div>
-        <div className="mt-4 flex items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
           <span>Less</span>
           {intensityStyles.map((_, index) => (
             <span
@@ -74,7 +74,7 @@ export function AnalyticsHeatmap({
           }))}
         />
       ) : (
-        <section className="grid gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
+        <section className="grid min-w-0 gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
           <RankingList
             title="Most projects"
             emptyLabel="Projects will show here after entries are completed."
@@ -134,7 +134,7 @@ function RankingPanel({
   items: RankingItem[]
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="mb-4">
         <h2 className="m-0 text-base font-black text-foreground">{title}</h2>
         <p className="m-0 mt-1 text-sm text-muted-foreground">{subtitle}</p>
@@ -183,7 +183,7 @@ function RankingRows({
       {items.map((item) => (
         <div
           key={item.id}
-          className={`flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 ${
+          className={`flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 ${
             compact ? 'min-h-12' : 'min-h-14'
           }`}
         >
@@ -206,7 +206,7 @@ function RankingRows({
               </p>
             </div>
           </div>
-          <span className="shrink-0 text-sm font-black text-primary">
+          <span className="shrink-0 text-right text-sm font-black text-primary">
             {formatHours(item.seconds)}
           </span>
         </div>

@@ -3,6 +3,7 @@ import { Copy, Loader2, Pencil, Play, Trash2 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
+import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useNowTick } from './hooks/useNowTick'
@@ -22,7 +23,9 @@ const CardDuration = memo(function CardDuration({
   currency: string
   rateLookup: (memberId: string) => number
 }) {
-  const tick = useNowTick(!entry.endedAt ? 1000 : null)
+  const tick = useNowTick(
+    !entry.endedAt ? getFormatterLiveTickMs(formatTime) : null,
+  )
   const seconds = getEntrySeconds(entry, tick)
   return (
     <>
@@ -96,17 +99,17 @@ export const EntryCard = memo(function EntryCard({
   // Sub-entries (inside a grouped set) show only the time range + actions
   if (isSubEntry) {
     return (
-      <div className="rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
-        <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
+        <div className="flex min-w-0 items-center justify-between gap-2">
           <div
-            className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
             suppressHydrationWarning
           >
-            <span className="text-muted-foreground/40">↳</span>
-            <span>{timeRange}</span>
+            <span className="shrink-0 text-muted-foreground/40">↳</span>
+            <span className="min-w-0 truncate">{timeRange}</span>
             {isPending && <Loader2 className="size-3 animate-spin" />}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <CardDuration
               entry={entry}
               formatTime={formatTime}
@@ -156,13 +159,13 @@ export const EntryCard = memo(function EntryCard({
 
   return (
     <div
-      className={`rounded-lg border bg-background p-3 shadow-sm ${
+      className={`min-w-0 rounded-lg border bg-background p-3 shadow-sm ${
         !entry.endedAt
           ? 'border-primary/40 ring-1 ring-primary/20'
           : 'border-border'
       }`}
     >
-      <div className="flex items-start justify-between gap-2 min-w-0">
+      <div className="flex min-w-0 items-start justify-between gap-2">
         <p
           className="m-0 min-w-0 truncate font-semibold leading-snug text-foreground"
           title={entry.description || undefined}
@@ -179,21 +182,22 @@ export const EntryCard = memo(function EntryCard({
         />
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
         {project && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+          <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
             <span
-              className="size-2 rounded-full"
+              className="size-2 shrink-0 rounded-full"
               style={{ backgroundColor: project.color }}
             />
-            {project.name}
+            <span className="min-w-0 truncate">{project.name}</span>
           </span>
         )}
         {entryTags.map((tag) => (
           <span
             key={tag.id}
-            className="rounded-md border px-2 py-0.5 text-xs font-semibold"
+            className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
             style={{ color: tag.color, borderColor: `${tag.color}55` }}
+            title={tag.name}
           >
             {tag.name}
           </span>
@@ -217,11 +221,13 @@ export const EntryCard = memo(function EntryCard({
         )}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="m-0 text-xs text-muted-foreground">{timeRange}</p>
+      <div className="mt-2.5 flex min-w-0 flex-wrap items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="m-0 truncate text-xs text-muted-foreground">
+            {timeRange}
+          </p>
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex shrink-0 gap-1.5">
           {entry.endedAt && (
             <button
               type="button"

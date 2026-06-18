@@ -19,10 +19,10 @@ function EntryMobileCard({
   currency: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
+    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-sm font-semibold text-foreground truncate">
+          <p className="m-0 truncate text-sm font-semibold text-foreground">
             {entry.description || 'Untitled'}
           </p>
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
@@ -42,9 +42,9 @@ function EntryMobileCard({
       </div>
 
       {(entry.projectName || entry.clientName) && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground">
           {entry.projectName && (
-            <span className="font-medium text-foreground">
+            <span className="min-w-0 max-w-full truncate font-medium text-foreground">
               {entry.projectName}
             </span>
           )}
@@ -91,7 +91,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   const totalPages = Math.max(1, Math.ceil(entriesTotal / PAGE_SIZE))
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
       <div className="border-b border-border px-4 py-3">
         <h2 className="m-0 text-base font-bold text-foreground">
           Time entries
@@ -109,7 +109,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
       ) : (
         <>
           {/* Mobile: stacked cards */}
-          <div className="grid gap-3 p-3 lg:hidden">
+          <div className="grid min-w-0 gap-3 p-3 lg:hidden">
             {entries.map((entry) => (
               <EntryMobileCard
                 key={entry.id}
@@ -232,7 +232,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
       )}
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           <span className="text-xs text-muted-foreground">
             Page {page} of {totalPages}
           </span>

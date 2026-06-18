@@ -38,7 +38,7 @@ function shortDate(dateKey: string) {
 
 function EmptyChart({ label }: { label: string }) {
   return (
-    <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-border text-sm font-semibold text-muted-foreground">
+    <div className="flex h-[180px] items-center justify-center rounded-lg border border-dashed border-border px-4 text-center text-sm font-semibold text-muted-foreground sm:h-[200px]">
       {label}
     </div>
   )
@@ -67,8 +67,8 @@ export const PerformanceCharts = memo(function ({
   const hasPie = projectTotals.length > 0
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <div className="grid min-w-0 gap-4 md:grid-cols-2">
+      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
         <h2 className="m-0 mb-1 font-heading text-base font-black tracking-tight text-foreground">
           Hours per day
         </h2>
@@ -76,40 +76,45 @@ export const PerformanceCharts = memo(function ({
           Total tracked hours for each day in the period.
         </p>
         {hasHours ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart
-              data={hoursData}
-              margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-              />
-              <Tooltip
-                formatter={(value) => [`${value}h`, 'Hours']}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="hours"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="h-[180px] min-w-0 sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={hoursData}
+                margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-border"
+                />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <Tooltip
+                  formatter={(value) => [`${value}h`, 'Hours']}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="hours"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
           <EmptyChart label="No tracked time in this period." />
         )}
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
         <h2 className="m-0 mb-1 font-heading text-base font-black tracking-tight text-foreground">
           Tasks per day
         </h2>
@@ -117,39 +122,44 @@ export const PerformanceCharts = memo(function ({
           Number of entries logged per day.
         </p>
         {hasHours ? (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart
-              data={hoursData}
-              margin={{ top: 4, right: 8, bottom: 0, left: -16 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                allowDecimals={false}
-              />
-              <Tooltip
-                formatter={(value) => [value, 'Entries']}
-                contentStyle={{ fontSize: 12 }}
-              />
-              <Bar
-                dataKey="entries"
-                fill="hsl(var(--primary))"
-                radius={[3, 3, 0, 0]}
-                maxBarSize={32}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="h-[180px] min-w-0 sm:h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={hoursData}
+                margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-border"
+                />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  formatter={(value) => [value, 'Entries']}
+                  contentStyle={{ fontSize: 12 }}
+                />
+                <Bar
+                  dataKey="entries"
+                  fill="hsl(var(--primary))"
+                  radius={[3, 3, 0, 0]}
+                  maxBarSize={32}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         ) : (
           <EmptyChart label="No entries in this period." />
         )}
       </section>
 
-      <section className="rounded-lg border border-border bg-card p-4 shadow-sm md:col-span-2">
+      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm md:col-span-2">
         <h2 className="m-0 mb-1 font-heading text-base font-black tracking-tight text-foreground">
           Top projects
         </h2>
@@ -157,34 +167,36 @@ export const PerformanceCharts = memo(function ({
           Breakdown of time by project for the full year.
         </p>
         {hasPie ? (
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-            <ResponsiveContainer width={200} height={200} className="shrink-0">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={90}
-                  strokeWidth={0}
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => [`${value}h`, 'Hours']}
-                  contentStyle={{ fontSize: 12 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-1 flex-col gap-2">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+            <div className="mx-auto h-[180px] w-full max-w-[220px] lg:h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="52%"
+                    outerRadius="82%"
+                    strokeWidth={0}
+                  >
+                    {pieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => [`${value}h`, 'Hours']}
+                    contentStyle={{ fontSize: 12 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
               {pieData.map((p) => (
                 <div
                   key={p.name}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
+                  className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2"
                 >
                   <div className="flex min-w-0 items-center gap-2">
                     <span

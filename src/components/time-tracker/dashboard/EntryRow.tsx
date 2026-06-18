@@ -9,6 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
+import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { Calendar } from '#/components/ui/calendar'
@@ -45,7 +46,7 @@ const LiveDuration = memo(function LiveDuration({
   formatTime: (seconds: number) => string
 }) {
   const isRunning = !entry.endedAt
-  const tick = useNowTick(isRunning ? 1000 : null)
+  const tick = useNowTick(isRunning ? getFormatterLiveTickMs(formatTime) : null)
   return (
     <span className="font-mono text-sm font-bold tabular-nums text-foreground">
       {formatTime(getEntrySeconds(entry, tick))}

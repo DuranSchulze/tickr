@@ -39,24 +39,24 @@ export function AnalyticsSummaryCards({
   ]
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon
         return (
           <section
             key={card.label}
-            className="rounded-lg border border-border bg-card p-4 shadow-sm"
+            className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                   {card.label}
                 </p>
-                <p className="m-0 mt-2 text-2xl font-black tracking-tight text-foreground">
+                <p className="m-0 mt-2 truncate text-2xl font-black tracking-tight text-foreground">
                   {card.value}
                 </p>
               </div>
-              <span className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Icon className="size-4" />
               </span>
             </div>

@@ -13,7 +13,7 @@ export function CalendarScreen({
   const { formatTime } = useTimeFormat()
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-5">
+    <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-5">
       <CalendarHeader month={calendar.month} onChangeMonth={onChangeMonth} />
       <CalendarGrid
         month={calendar.month}

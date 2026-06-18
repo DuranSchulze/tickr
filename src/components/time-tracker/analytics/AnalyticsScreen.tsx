@@ -89,9 +89,9 @@ export function AnalyticsScreen({
   )
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-5">
+    <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
       {/* Header */}
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
             <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
@@ -104,15 +104,15 @@ export function AnalyticsScreen({
             <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               {copy.description}
             </p>
-            <p className="m-0 mt-3 text-sm font-bold text-foreground">
+            <p className="m-0 mt-3 text-sm font-bold leading-6 text-foreground">
               {analytics.scopeLabel} ·{' '}
               {formatRange(analytics.startDate, analytics.endDate)}
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:items-start xl:items-end">
+          <div className="flex min-w-0 flex-col gap-3 sm:items-start xl:items-end">
             {analytics.availableScopes.length > 1 && (
-              <div className="no-print flex flex-wrap gap-1 rounded-lg border border-border bg-background p-1">
+              <div className="no-print grid w-full grid-cols-1 gap-1 rounded-lg border border-border bg-background p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
                 {analytics.availableScopes.map((scope) => (
                   <button
                     key={scope}
@@ -130,7 +130,7 @@ export function AnalyticsScreen({
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-start xl:justify-end">
               <AnalyticsDateRange
                 range={{
                   startDate: analytics.startDate,
@@ -141,17 +141,21 @@ export function AnalyticsScreen({
                 }
               />
               {singleSelectedMemberId && (
-                <MemberExportButton
-                  memberId={singleSelectedMemberId}
+                <div className="min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
+                  <MemberExportButton
+                    memberId={singleSelectedMemberId}
+                    defaultStartDate={analytics.startDate}
+                    defaultEndDate={analytics.endDate}
+                  />
+                </div>
+              )}
+              <div className="min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
+                <BulkExportButton
+                  state={state}
                   defaultStartDate={analytics.startDate}
                   defaultEndDate={analytics.endDate}
                 />
-              )}
-              <BulkExportButton
-                state={state}
-                defaultStartDate={analytics.startDate}
-                defaultEndDate={analytics.endDate}
-              />
+              </div>
             </div>
           </div>
         </div>

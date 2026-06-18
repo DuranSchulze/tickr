@@ -18,6 +18,8 @@ export const TimeFormatSchema = z.enum(TIME_FORMATS)
 const DEFAULT_FORMAT: TimeFormat = 'precise'
 
 const STORAGE_KEY = 'time-format'
+const PRECISE_LIVE_TICK_MS = 50
+const DEFAULT_LIVE_TICK_MS = 1000
 
 export function getTimeFormat(): TimeFormat {
   if (typeof window === 'undefined') return DEFAULT_FORMAT
@@ -47,6 +49,10 @@ export function getFormatter(format: TimeFormat): (seconds: number) => string {
     default:
       return formatDurationPrecise
   }
+}
+
+export function getLiveTickMs(format: TimeFormat): number {
+  return format === 'precise' ? PRECISE_LIVE_TICK_MS : DEFAULT_LIVE_TICK_MS
 }
 
 export const FORMAT_LABELS: Record<TimeFormat, string> = {

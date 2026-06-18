@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from '#/components/ui/popover'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
+import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { TimeEntry, ViewMode } from '#/lib/time-tracker/types'
 import { useNowTick } from './hooks/useNowTick'
 
@@ -32,7 +33,9 @@ function HeaderTotal({
   runningEntry: TimeEntry | null
   formatTime: (seconds: number) => string
 }) {
-  const tick = useNowTick(runningEntry ? 1000 : null)
+  const tick = useNowTick(
+    runningEntry ? getFormatterLiveTickMs(formatTime) : null,
+  )
   const selectedTotalSeconds =
     completedTotalSeconds +
     (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)

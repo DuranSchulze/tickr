@@ -63,6 +63,16 @@ type GroupedRow =
 
 const MAX_VISIBLE_PROJECTS = 50
 
+function getSearchTokens(search: string): string[] {
+  return search.toLowerCase().trim().split(/\s+/).filter(Boolean)
+}
+
+function matchesTokens(tokens: string[], ...values: Array<string | undefined>) {
+  if (tokens.length === 0) return true
+  const haystack = values.join(' ').toLowerCase()
+  return tokens.every((token) => haystack.includes(token))
+}
+
 export function ClientProjectPicker({
   clients,
   projects,
@@ -184,7 +194,8 @@ export function ClientProjectPicker({
 
   const { rows, truncated } = useMemo(() => {
     if (!open) return { rows: [] as GroupedRow[], truncated: false }
-    const q = search.toLowerCase()
+    const tokens = getSearchTokens(search)
+    const hasQuery = tokens.length > 0
     const result: GroupedRow[] = []
     let projectCount = 0
     let cut = false
@@ -194,40 +205,26 @@ export function ClientProjectPicker({
         cut = true
         break
       }
-      const clientMatches = client.name.toLowerCase().includes(q)
       const clientProjects = projectsByClient.get(client.id) ?? []
-      const matchingProjects = q
-        ? clientMatches
-          ? clientProjects
-          : clientProjects.filter((p) => p.name.toLowerCase().includes(q))
+      const clientMatches = matchesTokens(tokens, client.name)
+      const visibleProjects = hasQuery
+        ? clientProjects.filter((project) => {
+            const projectTasks = tasksByProject.get(project.id) ?? []
+            return (
+              matchesTokens(tokens, client.name, project.name) ||
+              projectTasks.some((task) =>
+                matchesTokens(tokens, client.name, project.name, task.name),
+              )
+            )
+          })
         : clientProjects
 
-      const matchingTaskProjects =
-        q && !clientMatches
-          ? clientProjects.filter((p) => {
-              const ptasks = tasksByProject.get(p.id) ?? []
-              return ptasks.some((t) => t.name.toLowerCase().includes(q))
-            })
-          : []
-
-      if (
-        matchingProjects.length === 0 &&
-        matchingTaskProjects.length === 0 &&
-        !clientMatches
-      )
-        continue
+      if (visibleProjects.length === 0 && !clientMatches) continue
 
       const clientCollapsed = collapsedClients.has(client.id)
       result.push({ kind: 'client', client })
 
-      if (clientCollapsed && !q) continue
-
-      const visibleProjects =
-        matchingProjects.length > 0
-          ? matchingProjects
-          : matchingTaskProjects.length > 0
-            ? matchingTaskProjects
-            : clientProjects
+      if (clientCollapsed && !hasQuery) continue
 
       for (const project of visibleProjects) {
         if (projectCount >= MAX_VISIBLE_PROJECTS) {
@@ -240,17 +237,18 @@ export function ClientProjectPicker({
         const projectTasks = tasksByProject.get(project.id) ?? []
         const projectCollapsed = collapsedProjects.has(project.id)
 
-        if (q || !projectCollapsed) {
+        if (hasQuery || !projectCollapsed) {
           for (const task of projectTasks) {
-            // When searching and the project is collapsed (shown by search match),
-            // filter tasks by the query. When manually expanded, show all tasks.
-            if (q && projectCollapsed && !task.name.toLowerCase().includes(q))
+            if (
+              hasQuery &&
+              !matchesTokens(tokens, client.name, project.name, task.name)
+            )
               continue
             result.push({ kind: 'task', task, project })
           }
         }
 
-        if (onCreateTask && (q || !projectCollapsed)) {
+        if (onCreateTask && (hasQuery || !projectCollapsed)) {
           result.push({ kind: 'add-task', project })
         }
       }
@@ -304,7 +302,7 @@ export function ClientProjectPicker({
     setOpen(false)
   }
 
-  function handleClear(e: React.MouseEvent | React.KeyboardEvent) {
+  function handleClear(e: React.MouseEvent<HTMLButtonElement>) {
     e.stopPropagation()
     onChange('', '', undefined)
   }
@@ -430,23 +428,22 @@ export function ClientProjectPicker({
 
               {!compact && (
                 <div className="flex shrink-0 items-center gap-1">
-                  {hasSelection && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={handleClear}
-                      onKeyDown={(e) => e.key === 'Enter' && handleClear(e)}
-                      aria-label="Clear client and project"
-                      className="grid size-5 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                    >
-                      <X className="size-3" />
-                    </span>
-                  )}
                   <ChevronDown className="size-3.5 text-muted-foreground" />
                 </div>
               )}
             </button>
           </PopoverTrigger>
+
+          {hasSelection && !compact && (
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear client and project"
+              className="absolute right-7 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="size-3" />
+            </button>
+          )}
 
           {/* Tooltip */}
           {hasSelection && !open && (
@@ -483,11 +480,12 @@ export function ClientProjectPicker({
         <PopoverContent
           align="start"
           sideOffset={4}
+          collisionPadding={12}
           onOpenAutoFocus={(e) => {
             e.preventDefault()
             inputRef.current?.focus()
           }}
-          className="w-80 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+          className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-2rem))] w-80 max-w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
         >
           {/* Search */}
           <div className="border-b border-border p-2">
@@ -502,7 +500,10 @@ export function ClientProjectPicker({
           </div>
 
           {/* Results */}
-          <div ref={listRef} className="max-h-64 overflow-y-auto py-1">
+          <div
+            ref={listRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch] sm:max-h-64"
+          >
             {rows.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">
                 No clients, projects or tasks found
@@ -617,35 +618,35 @@ export function ClientProjectPicker({
                   return (
                     <div
                       key={`task-${row.task.id}`}
-                      role="button"
-                      tabIndex={0}
                       data-selected={tActive ? 'true' : undefined}
-                      onClick={() =>
-                        handleSelect(
-                          row.project.clientId,
-                          row.project.id,
-                          row.task.id,
-                        )
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ')
+                      className={cn(
+                        'group/task flex w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent',
+                        tActive
+                          ? 'bg-accent/50 text-foreground'
+                          : 'font-normal text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
                           handleSelect(
                             row.project.clientId,
                             row.project.id,
                             row.task.id,
                           )
-                      }}
-                      className={cn(
-                        'group/task flex w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent cursor-pointer',
-                        tActive
-                          ? 'bg-accent/50 font-medium text-foreground'
-                          : 'font-normal text-muted-foreground hover:text-foreground',
-                      )}
-                    >
-                      <span className="flex-1 truncate">{row.task.name}</span>
-                      {tActive && (
-                        <span className="size-1.5 shrink-0 rounded-full bg-primary" />
-                      )}
+                        }
+                        className={cn(
+                          'flex min-w-0 flex-1 items-center gap-2 text-left',
+                          tActive && 'font-medium',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 truncate">
+                          {row.task.name}
+                        </span>
+                        {tActive && (
+                          <span className="size-1.5 shrink-0 rounded-full bg-primary" />
+                        )}
+                      </button>
                       {onDeleteTask && (
                         <button
                           type="button"
@@ -678,6 +679,7 @@ export function ClientProjectPicker({
                           value={newTaskName}
                           onChange={(e) => setNewTaskName(e.target.value)}
                           placeholder="New task name…"
+                          aria-label="New task name"
                           className="h-7 flex-1 rounded border border-border bg-background px-2 text-xs focus:border-primary focus:outline-none"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter')
@@ -702,6 +704,7 @@ export function ClientProjectPicker({
                             handleCreateTask(row.project.id)
                           }}
                           className="grid size-7 place-items-center rounded text-primary hover:bg-primary/10 disabled:opacity-40"
+                          aria-label="Create task"
                         >
                           <ChevronRight className="size-3.5" />
                         </button>

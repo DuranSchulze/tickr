@@ -30,14 +30,14 @@ const FilterSelect = memo(function FilterSelect({
   options: { value: string; label: string }[]
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="min-w-0 flex flex-col gap-1">
       <label className="text-xs font-semibold text-muted-foreground">
         {label}
       </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 min-w-[140px] rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+        className="h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:min-w-[140px]"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -82,7 +82,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
         : `${label} · ${values.length}`
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="min-w-0 flex flex-col gap-1">
       <label className="text-xs font-semibold text-muted-foreground">
         {label}
       </label>
@@ -91,7 +91,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
           if (!open) setQuery('')
         }}
       >
-        <DropdownMenuTrigger className="inline-flex h-9 min-w-[140px] items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent">
+        <DropdownMenuTrigger className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent sm:min-w-[140px]">
           <span className="truncate">{buttonLabel}</span>
           <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
@@ -269,9 +269,11 @@ export function AnalyticsFilterBar({
 
   const memberOptions = useMemo(
     () =>
-      state.members
-        .filter((m) => m.status === 'ACTIVE')
-        .map((m) => ({ value: m.id, label: m.name || m.email })),
+      state.members.reduce<{ value: string; label: string }[]>((items, m) => {
+        if (m.status !== 'ACTIVE') return items
+        items.push({ value: m.id, label: m.name || m.email })
+        return items
+      }, []),
     [state.members],
   )
 
@@ -318,7 +320,7 @@ export function AnalyticsFilterBar({
   )
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
+    <div className="grid min-w-0 grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 sm:grid-cols-2 sm:p-4 lg:flex lg:flex-wrap lg:items-end">
       <FilterSelect
         label="Billable"
         value={filters.billable ?? ''}
@@ -360,7 +362,7 @@ export function AnalyticsFilterBar({
         <button
           type="button"
           onClick={onClear}
-          className="inline-flex h-9 items-center gap-1.5 self-end rounded-lg border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="inline-flex h-9 w-full items-center justify-center gap-1.5 self-end rounded-lg border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:w-auto"
         >
           <X className="size-3.5" />
           Clear filters

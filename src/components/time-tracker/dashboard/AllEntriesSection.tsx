@@ -22,6 +22,10 @@ type InlinePatch = Partial<
 
 type ClientItem = { id: string; name: string; clientStatus: string }
 
+function taskGroupCollapseKey(dateKey: string, groupKey: string) {
+  return `${dateKey}::${groupKey}`
+}
+
 export function AllEntriesSection({
   entries,
   totalCount,
@@ -109,10 +113,6 @@ export function AllEntriesSection({
     }
   }
 
-  function taskGroupCollapseKey(dateKey: string, groupKey: string) {
-    return `${dateKey}::${groupKey}`
-  }
-
   function toggleTaskGroup(dateKey: string, groupKey: string) {
     const key = taskGroupCollapseKey(dateKey, groupKey)
     setCollapsedTaskGroups((prev) => {
@@ -128,18 +128,18 @@ export function AllEntriesSection({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
       {/* Section header */}
       <div className="border-b border-border p-3 sm:p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm text-muted-foreground">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span className="min-w-0 truncate text-sm text-muted-foreground">
               {totalCount.toLocaleString()} total entr
               {totalCount === 1 ? 'y' : 'ies'}
             </span>
             {activeFilterCount > 0 && (
               <>
-                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
                   {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''}{' '}
                   active
                 </span>

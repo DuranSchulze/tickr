@@ -6,10 +6,7 @@ export function getEntrySeconds(entry: TimeEntry, tick = Date.now()) {
     return entry.durationSeconds
   }
 
-  return Math.max(
-    0,
-    Math.floor((tick - new Date(entry.startedAt).getTime()) / 1000),
-  )
+  return Math.max(0, (tick - new Date(entry.startedAt).getTime()) / 1000)
 }
 
 export function formatDuration(seconds: number) {

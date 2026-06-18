@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.7.0",
+  "appVersion": "1.8.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Trackly!",
@@ -48,6 +48,50 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.8.0",
+      "publishedAt": "2026-06-18",
+      "title": "Performance Boost, Calendar View, Responsive Overhaul & Better Mobile Experience",
+      "body": "Major performance improvements eliminate lag and slowdowns, plus a new calendar view for task accomplishments and responsive layout improvements across the entire app — sidebar navigation collapses into a mobile drawer, tables and cards reflow on narrow viewports, dialogs use full-screen modals on small screens, and touch targets are sized for thumbs.",
+      "features": [
+        {
+          "title": "Performance Boost & Lag Fixes",
+          "description": "Significant under-the-hood optimizations eliminate the sluggishness and UI stutter users experienced. Page navigation is snappier, time entry actions respond instantly, and the dashboard stays buttery smooth even with large datasets. No more waiting for filters, date switches, or search to catch up.",
+          "image": null
+        },
+        {
+          "title": "Calendar View for Task Accomplishment",
+          "description": "A new calendar view lets you see your tracked tasks and accomplishments laid out by day, week, or month. Quickly spot which days you logged time, review past entries, and plan ahead — all from a familiar calendar interface.",
+          "image": null
+        },
+        {
+          "title": "Mobile-Friendly Sidebar Navigation",
+          "description": "The sidebar collapses into a slide-out drawer on narrow screens. Navigation links, workspace switcher, and user menu remain fully accessible without wasting precious screen width. A backdrop overlay prevents accidental taps behind the drawer.",
+          "image": null
+        },
+        {
+          "title": "Responsive Dashboard & Tables",
+          "description": "Time tracker views, member tables, and analytics dashboards now reflow gracefully on tablets and phones. Columns stack, text wraps, and horizontal scrolling is eliminated. Cards resize and grid layouts adapt to the available space.",
+          "image": null
+        },
+        {
+          "title": "Touch-Friendly Controls",
+          "description": "Buttons, dropdowns, date pickers, and form controls have enlarged touch targets on mobile — no more fat-finger taps. Dialogs and modals switch to full-screen on small viewports for easier interaction.",
+          "image": null
+        },
+        {
+          "title": "Consistent Spacing & Typography Scaling",
+          "description": "Padding, margins, and font sizes now scale proportionally across breakpoints. Text remains readable without zooming, and interactive elements maintain comfortable spacing on any device.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Open Trackly",
+          "to": "/app/time-tracker"
+        }
+      ]
+    },
     {
       "version": "1.7.0",
       "publishedAt": "2026-06-09",

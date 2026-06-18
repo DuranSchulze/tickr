@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import {
   Area,
   AreaChart,
@@ -20,18 +20,23 @@ const fallbackColors = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
 
 /** Delays children until after the first browser paint so ResponsiveContainer
  *  can measure real DOM dimensions instead of -1. */
+const subscribeToClientSnapshot = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
+
 function ClientOnly({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(
+    subscribeToClientSnapshot,
+    getClientSnapshot,
+    getServerSnapshot,
+  )
   if (!mounted) return <div aria-hidden="true" />
   return <>{children}</>
 }
 
 function EmptyPanel({ label }: { label: string }) {
   return (
-    <div className="flex h-[260px] items-center justify-center rounded-lg border border-dashed border-border bg-background text-sm font-semibold text-muted-foreground">
+    <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-background px-4 text-center text-sm font-semibold text-muted-foreground sm:h-[260px]">
       {label}
     </div>
   )
@@ -50,7 +55,7 @@ function ChartShell({
 }) {
   return (
     <section
-      className={`rounded-lg border border-border bg-card p-4 shadow-sm ${className ?? ''}`}
+      className={`min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm ${className ?? ''}`}
     >
       <div className="mb-4">
         <h2 className="m-0 text-base font-black text-foreground">{title}</h2>
@@ -78,20 +83,29 @@ export function AnalyticsCharts({
         hours: toChartHours(project.seconds),
         color: project.color,
       })),
-      billableData: analytics.billableSplit
-        .filter((item) => item.seconds > 0)
-        .map((item, index) => ({
+      billableData: analytics.billableSplit.reduce<
+        {
+          name: string
+          seconds: number
+          hours: number
+          color: string
+        }[]
+      >((items, item) => {
+        if (item.seconds <= 0) return items
+        items.push({
           name: item.label,
           seconds: item.seconds,
           hours: toChartHours(item.seconds),
-          color: index === 0 ? '#16a34a' : '#94a3b8',
-        })),
+          color: items.length === 0 ? '#16a34a' : '#94a3b8',
+        })
+        return items
+      }, []),
     }),
     [analytics],
   )
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
+    <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.9fr)]">
       <ChartShell
         title="Daily trend"
         subtitle="Hours tracked per day in the selected range."
@@ -100,7 +114,7 @@ export function AnalyticsCharts({
         {analytics.summary.totalSeconds === 0 ? (
           <EmptyPanel label="No completed time entries in this range." />
         ) : (
-          <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
+          <div className="h-[220px] min-w-0 sm:h-[280px] lg:h-[300px]">
             <ClientOnly>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={trendData}>
@@ -137,7 +151,7 @@ export function AnalyticsCharts({
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
-                    width={32}
+                    width={28}
                   />
                   <Tooltip
                     formatter={(value) => [`${value}h`, 'Hours']}
@@ -164,7 +178,7 @@ export function AnalyticsCharts({
         {billableData.length === 0 ? (
           <EmptyPanel label="No billable data yet." />
         ) : (
-          <div className="h-[240px] sm:h-[280px] lg:h-[300px]">
+          <div className="h-[220px] min-w-0 sm:h-[280px] lg:h-[300px]">
             <ClientOnly>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -172,8 +186,8 @@ export function AnalyticsCharts({
                     data={billableData}
                     dataKey="seconds"
                     nameKey="name"
-                    innerRadius={60}
-                    outerRadius={90}
+                    innerRadius="48%"
+                    outerRadius="72%"
                     paddingAngle={3}
                   >
                     {billableData.map((entry, index) => (
@@ -196,13 +210,13 @@ export function AnalyticsCharts({
         {projectData.length === 0 ? (
           <EmptyPanel label="Projects will appear after entries are completed." />
         ) : (
-          <div className="h-[260px] sm:h-[300px] lg:h-[320px]">
+          <div className="h-[260px] min-w-0 overflow-x-auto sm:h-[300px] lg:h-[320px]">
             <ClientOnly>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" minWidth={360} height="100%">
                 <BarChart
                   data={projectData}
                   layout="vertical"
-                  margin={{ left: 4, right: 16 }}
+                  margin={{ left: 0, right: 12 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis
@@ -217,7 +231,7 @@ export function AnalyticsCharts({
                     tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
-                    width={100}
+                    width={88}
                   />
                   <Tooltip formatter={(value) => [`${value}h`, 'Hours']} />
                   <Bar dataKey="hours" radius={[0, 6, 6, 0]}>

@@ -46,8 +46,8 @@ export function AnalyticsDateRange({
   }
 
   return (
-    <div className="relative flex flex-wrap items-center gap-2">
-      <div className="inline-flex rounded-lg border border-border bg-card p-1">
+    <div className="relative grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+      <div className="grid grid-cols-3 rounded-lg border border-border bg-card p-1 sm:inline-flex">
         {presets.map((preset) => (
           <button
             key={preset.label}
@@ -73,19 +73,21 @@ export function AnalyticsDateRange({
           setDraft(selected)
           setOpen((value) => !value)
         }}
-        className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent"
+        className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent sm:justify-start"
       >
-        <CalendarDays className="size-4 text-primary" />
-        {formatRange(range.startDate, range.endDate)}
+        <CalendarDays className="size-4 shrink-0 text-primary" />
+        <span className="min-w-0 truncate">
+          {formatRange(range.startDate, range.endDate)}
+        </span>
         <ChevronDown
-          className={`size-4 text-muted-foreground transition-transform ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${
             open ? 'rotate-180' : ''
           }`}
         />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-20 w-[min(92vw,640px)] overflow-hidden rounded-lg border border-border bg-card shadow-2xl">
+        <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-[min(80vh,620px)] overflow-y-auto rounded-lg border border-border bg-card shadow-2xl sm:left-auto sm:w-[min(92vw,640px)]">
           <div className="border-b border-border px-4 py-3">
             <p className="m-0 text-sm font-bold text-foreground">
               Custom range
@@ -99,7 +101,7 @@ export function AnalyticsDateRange({
             selected={draft}
             onSelect={setDraft}
             numberOfMonths={2}
-            className="max-w-full"
+            className="max-w-full overflow-x-auto"
           />
           <div className="flex justify-end gap-2 border-t border-border p-3">
             <button

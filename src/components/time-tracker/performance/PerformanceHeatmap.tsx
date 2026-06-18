@@ -26,7 +26,7 @@ export const PerformanceHeatmap = memo(function ({
     : undefined
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="mb-4">
         <h2 className="m-0 font-heading text-base font-black tracking-tight text-foreground">
           {title}
@@ -37,7 +37,7 @@ export const PerformanceHeatmap = memo(function ({
         className={
           gridStyle
             ? 'grid gap-1.5'
-            : 'grid grid-cols-[repeat(auto-fill,minmax(18px,1fr))] gap-1.5'
+            : 'grid grid-cols-[repeat(auto-fill,minmax(10px,1fr))] gap-1 sm:grid-cols-[repeat(auto-fill,minmax(18px,1fr))] sm:gap-1.5'
         }
         style={gridStyle}
       >
@@ -52,7 +52,7 @@ export const PerformanceHeatmap = memo(function ({
           />
         ))}
       </div>
-      <div className="mt-4 flex items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
         <span>Less</span>
         {intensityStyles.map((cls, index) => (
           <span
