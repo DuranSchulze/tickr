@@ -121,8 +121,80 @@ export type DepartmentMemberActivitySummary = {
   entriesToday: DepartmentMemberActivityEntry[]
 }
 
-function formatDateKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+      hour: '2-digit',
+    }).formatToParts(date)
+    const value = parts.find((part) => part.type === 'timeZoneName')?.value
+    if (!value || value === 'GMT') return 0
+    const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
+    if (!match) return 0
+    const sign = match[1] === '+' ? 1 : -1
+    const hours = Number(match[2] ?? 0)
+    const minutes = Number(match[3] ?? 0)
+    return sign * (hours * 60 + minutes) * 60_000
+  } catch {
+    return 0
+  }
+}
+
+function getZonedDateParts(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value)
+  return {
+    year: get('year'),
+    month: get('month'),
+    day: get('day'),
+  }
+}
+
+function zonedTimeToUtc(
+  timeZone: string,
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+) {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, 0, 0, 0))
+  return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, utcGuess))
+}
+
+function getTodayRangeForTimeZone(timeZone: string, now = new Date()) {
+  const today = getZonedDateParts(now, timeZone)
+  const nextDay = new Date(Date.UTC(today.year, today.month - 1, today.day + 1))
+  const tomorrow = {
+    year: nextDay.getUTCFullYear(),
+    month: nextDay.getUTCMonth() + 1,
+    day: nextDay.getUTCDate(),
+  }
+
+  return {
+    date: `${today.year}-${String(today.month).padStart(2, '0')}-${String(today.day).padStart(2, '0')}`,
+    start: zonedTimeToUtc(timeZone, today.year, today.month, today.day),
+    end: zonedTimeToUtc(timeZone, tomorrow.year, tomorrow.month, tomorrow.day),
+  }
+}
+
+function getHourInTimeZone(date: Date, timeZone: string): number {
+  try {
+    const hour = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date)
+    return Number(hour.find((part) => part.type === 'hour')?.value ?? 0)
+  } catch {
+    return date.getHours()
+  }
 }
 
 function mapActivityEntry(row: {
@@ -574,11 +646,8 @@ export async function getDepartmentMemberTodayActivity(data: {
     throw new Error('Managers can only view their own department.')
   }
 
-  const now = new Date()
-  const todayStart = new Date(now)
-  todayStart.setHours(0, 0, 0, 0)
-  const tomorrowStart = new Date(todayStart)
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+  const timeZone = access.workspace.timezone || 'UTC'
+  const todayRange = getTodayRangeForTimeZone(timeZone)
 
   const entryColumns = {
     id: timeEntries.id,
@@ -601,8 +670,11 @@ export async function getDepartmentMemberTodayActivity(data: {
         and(
           eq(timeEntries.workspaceId, workspaceId),
           eq(timeEntries.workspaceMemberId, member.id),
-          gte(timeEntries.startedAt, todayStart),
-          lt(timeEntries.startedAt, tomorrowStart),
+          lt(timeEntries.startedAt, todayRange.end),
+          or(
+            isNull(timeEntries.endedAt),
+            gte(timeEntries.endedAt, todayRange.start),
+          ),
         ),
       )
       .orderBy(desc(timeEntries.startedAt)),
@@ -630,19 +702,32 @@ export async function getDepartmentMemberTodayActivity(data: {
           eq(timeEntries.workspaceId, workspaceId),
           eq(timeEntries.workspaceMemberId, member.id),
           isNotNull(timeEntries.endedAt),
-          gte(timeEntries.endedAt, todayStart),
-          lt(timeEntries.endedAt, tomorrowStart),
+          gte(timeEntries.endedAt, todayRange.start),
+          lt(timeEntries.endedAt, todayRange.end),
         ),
       )
       .orderBy(desc(timeEntries.endedAt))
       .limit(1),
   ])
 
-  const entriesToday = todayRows.map(mapActivityEntry)
   const activeEntry = activeRows[0] ? mapActivityEntry(activeRows[0]) : null
   const latestCompletedEntry = latestCompletedRows[0]
     ? mapActivityEntry(latestCompletedRows[0])
     : null
+  const entriesTodayFromRows = todayRows
+    .map(mapActivityEntry)
+    .sort(
+      (a, b) =>
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+    )
+  const entriesToday = activeEntry
+    ? entriesTodayFromRows.some((entry) => entry.id === activeEntry.id)
+      ? entriesTodayFromRows
+      : [...entriesTodayFromRows, activeEntry].sort(
+          (a, b) =>
+            new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+        )
+    : entriesTodayFromRows
   const hourlyTotals = Array.from({ length: 24 }, (_, hour) => ({
     hour: `${String(hour).padStart(2, '0')}:00`,
     seconds: 0,
@@ -650,7 +735,7 @@ export async function getDepartmentMemberTodayActivity(data: {
 
   for (const entry of entriesToday) {
     const start = new Date(entry.startedAt)
-    const bucket = hourlyTotals[start.getHours()]
+    const bucket = hourlyTotals[getHourInTimeZone(start, timeZone)]
     bucket.seconds += entry.durationSeconds
   }
 
@@ -678,7 +763,7 @@ export async function getDepartmentMemberTodayActivity(data: {
       departmentColor: member.departmentColor,
     },
     today: {
-      date: formatDateKey(todayStart),
+      date: todayRange.date,
       totalSeconds: completedSeconds + activeSeconds,
       completedSeconds,
       activeSeconds,

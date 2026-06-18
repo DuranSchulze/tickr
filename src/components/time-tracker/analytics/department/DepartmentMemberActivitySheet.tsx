@@ -119,6 +119,80 @@ function HourlyChart({
   )
 }
 
+function TimelineEntry({
+  entry,
+  isFirst,
+  isLast,
+}: {
+  entry: DepartmentMemberActivityEntry
+  isFirst: boolean
+  isLast: boolean
+}) {
+  return (
+    <div className="grid min-w-0 grid-cols-[72px_20px_minmax(0,1fr)] gap-3 px-3 py-4 min-[460px]:grid-cols-[96px_24px_minmax(0,1fr)]">
+      <div className="pt-0.5">
+        <div className="rounded-md bg-foreground px-2 py-1 text-center text-[11px] font-black tabular-nums text-background shadow-sm min-[460px]:text-xs">
+          {formatTime(entry.startedAt)}
+        </div>
+        <div className="mt-1 text-center text-[10px] font-mono text-muted-foreground min-[460px]:text-[11px]">
+          to {entry.endedAt ? formatTime(entry.endedAt) : 'Now'}
+        </div>
+      </div>
+
+      <div className="relative flex justify-center pt-1">
+        {!isFirst && (
+          <span className="absolute -top-4 h-5 w-px bg-border" aria-hidden />
+        )}
+        <span
+          className={`relative z-10 size-3.5 rounded-full border-4 border-card ${
+            entry.status === 'active'
+              ? 'bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.16)]'
+              : 'bg-foreground'
+          }`}
+          aria-hidden
+        />
+        {!isLast && (
+          <span
+            className="absolute top-4 bottom-[-18px] w-px bg-border"
+            aria-hidden
+          />
+        )}
+      </div>
+
+      <div className="relative min-w-0 rounded-lg border border-border bg-card p-3 shadow-sm before:absolute before:left-[-7px] before:top-3 before:size-3 before:rotate-45 before:border-b before:border-l before:border-border before:bg-card">
+        <div className="flex min-w-0 flex-col gap-2 min-[460px]:flex-row min-[460px]:items-start min-[460px]:justify-between">
+          <div className="min-w-0">
+            <p className="m-0 text-sm font-black leading-5 text-foreground">
+              {entry.taskName ?? entry.description}
+            </p>
+            {entry.taskName && entry.description && (
+              <p className="m-0 mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                {entry.description}
+              </p>
+            )}
+          </div>
+          <span
+            className={`w-fit shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+              entry.status === 'active'
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {entry.status === 'active' ? 'Working' : 'Ended'}
+          </span>
+        </div>
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <span className="truncate">{entry.projectName ?? 'No project'}</span>
+          <span aria-hidden>·</span>
+          <span className="font-mono">
+            {formatDuration(entry.durationSeconds)}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function DepartmentMemberActivitySheet({
   memberId,
   onClose,
@@ -218,34 +292,28 @@ export function DepartmentMemberActivitySheet({
               />
               <HourlyChart summary={data.today} />
 
-              <section className="min-w-0 rounded-lg border border-border bg-background">
+              <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
                 <div className="border-b border-border px-3 py-2">
                   <h3 className="m-0 text-sm font-bold text-foreground">
                     Today timeline
                   </h3>
+                  <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                    Earliest start at the top, latest start at the bottom
+                  </p>
                 </div>
                 {data.entriesToday.length === 0 ? (
                   <p className="m-0 p-3 text-sm text-muted-foreground">
                     No tasks started today.
                   </p>
                 ) : (
-                  <div className="divide-y divide-border">
-                    {data.entriesToday.slice(0, 8).map((entry) => (
-                      <div key={entry.id} className="px-3 py-2">
-                        <div className="flex flex-col gap-1 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-3">
-                          <p className="m-0 min-w-0 truncate text-sm font-semibold text-foreground">
-                            {entry.taskName ?? entry.description}
-                          </p>
-                          <span className="shrink-0 text-xs font-mono text-muted-foreground min-[420px]:text-right">
-                            {formatDuration(entry.durationSeconds)}
-                          </span>
-                        </div>
-                        <p className="m-0 mt-0.5 break-words text-xs text-muted-foreground">
-                          {formatTime(entry.startedAt)} -{' '}
-                          {formatTime(entry.endedAt)} ·{' '}
-                          {entry.projectName ?? 'No project'}
-                        </p>
-                      </div>
+                  <div className="py-1">
+                    {data.entriesToday.map((entry, index) => (
+                      <TimelineEntry
+                        key={entry.id}
+                        entry={entry}
+                        isFirst={index === 0}
+                        isLast={index === data.entriesToday.length - 1}
+                      />
                     ))}
                   </div>
                 )}
