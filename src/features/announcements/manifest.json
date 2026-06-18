@@ -60,6 +60,11 @@
           "image": null
         },
         {
+          "title": "Calmer Timer — Now HH:MM:SS by Default",
+          "description": "The timer no longer shows centiseconds (the tiny numbers that flash by too fast) by default. New users will see a clean HH:MM:SS display that ticks once per second — easier on the eyes, just as accurate. You can still switch back to the precise format in settings anytime.",
+          "image": null
+        },
+        {
           "title": "Calendar View for Task Accomplishment",
           "description": "A new calendar view lets you see your tracked tasks and accomplishments laid out by day, week, or month. Quickly spot which days you logged time, review past entries, and plan ahead — all from a familiar calendar interface.",
           "image": null
