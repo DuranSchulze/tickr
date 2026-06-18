@@ -1,4 +1,5 @@
 import { Briefcase, Clock } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useNowTick } from '#/components/time-tracker/dashboard/hooks/useNowTick'
 import { formatDuration } from '#/lib/time-tracker/store'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
@@ -49,8 +50,10 @@ function ElapsedTimer({ startedAt }: { startedAt: string }) {
 
 export function MemberActivityCard({
   member,
+  viewDataAction,
 }: {
   member: WorkspaceMemberActivity
+  viewDataAction?: ReactNode
 }) {
   const isOnline = member.activeEntry !== null
 
@@ -82,6 +85,9 @@ export function MemberActivityCard({
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
+        <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">
+          {member.departmentName ?? 'No department'}
+        </p>
 
         {isOnline && member.activeEntry ? (
           <div className="mt-1.5 space-y-1">
@@ -104,7 +110,8 @@ export function MemberActivityCard({
         )}
 
         {/* Export button \u2014 date-range dialog with PDF / CSV */}
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          {viewDataAction}
           <MemberExportButton
             memberId={member.memberId}
             memberName={member.name}

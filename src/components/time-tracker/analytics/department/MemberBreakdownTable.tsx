@@ -1,5 +1,11 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+} from 'lucide-react'
 import type { DepartmentMemberBreakdown } from '#/lib/server/tracker/department-dashboard.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 
@@ -55,9 +61,11 @@ function SortButton({
 export function MemberBreakdownTable({
   members,
   currency,
+  onViewMember,
 }: {
   members: DepartmentMemberBreakdown[]
   currency: string
+  onViewMember: (member: DepartmentMemberBreakdown) => void
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('totalSeconds')
   const [ascending, setAscending] = useState(false)
@@ -110,7 +118,7 @@ export function MemberBreakdownTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[820px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
               <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -149,6 +157,9 @@ export function MemberBreakdownTable({
               </th>
               <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Utilization
+              </th>
+              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Action
               </th>
             </tr>
           </thead>
@@ -204,6 +215,16 @@ export function MemberBreakdownTable({
                     >
                       {utilization}%
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => onViewMember(member)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground transition-colors hover:bg-accent"
+                    >
+                      <Eye className="size-3.5" />
+                      View
+                    </button>
                   </td>
                 </tr>
               )

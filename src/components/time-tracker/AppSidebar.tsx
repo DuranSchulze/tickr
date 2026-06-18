@@ -2,7 +2,6 @@ import { memo } from 'react'
 import type { ComponentType } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
-  Activity,
   BarChart3,
   BriefcaseBusiness,
   CalendarDays,
@@ -11,7 +10,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Timer,
-  TrendingUp,
 } from 'lucide-react'
 
 type NavItem = {
@@ -27,33 +25,33 @@ export const AppSidebar = memo(function ({
   workspaceName,
   userEmail,
   timerActive,
-  analyticsActive,
-  performanceActive,
+  analyticsGroupActive,
+  analyticsOpen,
+  onToggleAnalytics,
+  analyticsChildren,
   calendarActive,
-  activityActive,
   settingsActive,
   settingsOpen,
   onToggleSettings,
   settingsChildren,
-  permissionLevel,
 }: {
   collapsed: boolean
   onToggleCollapsed: () => void
   workspaceName: string
   userEmail: string
   timerActive: boolean
-  analyticsActive: boolean
-  performanceActive: boolean
+  analyticsGroupActive: boolean
+  analyticsOpen: boolean
+  onToggleAnalytics: () => void
+  analyticsChildren: readonly NavItem[]
   calendarActive: boolean
-  activityActive: boolean
   settingsActive: boolean
   settingsOpen: boolean
   onToggleSettings: () => void
   settingsChildren: readonly NavItem[]
-  permissionLevel: string
 }) {
-  const isOwnerOrAdmin =
-    permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
+  const hasAnalyticsChildren = analyticsChildren.length > 0
+  const firstAnalyticsChild = analyticsChildren[0]
   const hasSettingsChildren = settingsChildren.length > 0
   const firstSettingsChild = settingsChildren[0]
 
@@ -119,21 +117,6 @@ export const AppSidebar = memo(function ({
           </Link>
 
           <Link
-            to="/app/analytics"
-            title="Analytics"
-            className={`flex h-10 w-full items-center ${
-              collapsed ? 'justify-center' : 'gap-3 px-3'
-            } text-sm font-semibold transition-colors ${
-              analyticsActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-            }`}
-          >
-            <BarChart3 className="size-4 shrink-0" />
-            {!collapsed && <span>Analytics</span>}
-          </Link>
-
-          <Link
             to="/app/calendar"
             title="Calendar"
             className={`flex h-10 w-full items-center ${
@@ -148,36 +131,64 @@ export const AppSidebar = memo(function ({
             {!collapsed && <span>Calendar</span>}
           </Link>
 
-          <Link
-            to="/app/my-performance"
-            title="My Performance"
-            className={`flex h-10 w-full items-center ${
-              collapsed ? 'justify-center' : 'gap-3 px-3'
-            } text-sm font-semibold transition-colors ${
-              performanceActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-            }`}
-          >
-            <TrendingUp className="size-4 shrink-0" />
-            {!collapsed && <span>My Performance</span>}
-          </Link>
+          {hasAnalyticsChildren && (
+            <>
+              {collapsed ? (
+                <Link
+                  to={firstAnalyticsChild.to}
+                  title="Analytics"
+                  className={`mt-1 flex h-10 w-full items-center justify-center transition-colors ${
+                    analyticsGroupActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  }`}
+                >
+                  <BarChart3 className="size-4" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onToggleAnalytics}
+                  className={`mt-1 flex w-full items-center gap-3 px-3 py-2 text-sm font-semibold transition-colors ${
+                    analyticsGroupActive && !analyticsOpen
+                      ? 'bg-primary text-primary-foreground'
+                      : analyticsGroupActive
+                        ? 'bg-primary/15 text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  }`}
+                >
+                  <BarChart3 className="size-4 shrink-0" />
+                  <span className="flex-1 text-left">Analytics</span>
+                  <ChevronDown
+                    className={`size-3.5 shrink-0 transition-transform duration-200 ${
+                      analyticsOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              )}
 
-          {isOwnerOrAdmin && (
-            <Link
-              to="/app/workspace/activity"
-              title="Team Activity"
-              className={`flex h-10 w-full items-center ${
-                collapsed ? 'justify-center' : 'gap-3 px-3'
-              } text-sm font-semibold transition-colors ${
-                activityActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-              }`}
-            >
-              <Activity className="size-4 shrink-0" />
-              {!collapsed && <span>Team Activity</span>}
-            </Link>
+              {!collapsed && analyticsOpen && (
+                <div className="ml-3 mt-0.5 grid gap-0.5 border-l border-border pl-3">
+                  {analyticsChildren.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to as '/app/analytics'}
+                        className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-muted-foreground no-underline hover:bg-accent hover:text-foreground"
+                        activeProps={{
+                          className:
+                            'flex items-center gap-3 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground no-underline',
+                        }}
+                      >
+                        <Icon className="size-4" />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </>
           )}
 
           {hasSettingsChildren && (

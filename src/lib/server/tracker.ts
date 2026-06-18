@@ -102,6 +102,17 @@ const paginatedEntriesSchema = z.object({
 const departmentDashboardSchema = z.object({
   startDate: z.string().date(),
   endDate: z.string().date(),
+  departmentId: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
+})
+
+const departmentMemberActivitySchema = z.object({
+  memberId: z.string().min(1),
+})
+
+const workspaceActivitySchema = z.object({
+  departmentId: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
 })
 
 const memberMonthlyReportSchema = z.object({
@@ -186,6 +197,16 @@ export const getDepartmentDashboardFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getDepartmentDashboard } = await import('./tracker.server')
     return getDepartmentDashboard(data)
+  })
+
+export const getDepartmentMemberTodayActivityFn = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((input) => departmentMemberActivitySchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getDepartmentMemberTodayActivity } =
+      await import('./tracker.server')
+    return getDepartmentMemberTodayActivity(data)
   })
 
 export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
@@ -740,12 +761,12 @@ export const getPublicPerformanceFn = createServerFn({ method: 'GET' })
 
 // ─── Workspace Activity ───────────────────────────────────────────────────────
 
-export const getWorkspaceActivityFn = createServerFn({ method: 'GET' }).handler(
-  async () => {
+export const getWorkspaceActivityFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => workspaceActivitySchema.parse(input ?? {}))
+  .handler(async ({ data }) => {
     const { getWorkspaceActivity } = await import('./tracker/activity.server')
-    return getWorkspaceActivity()
-  },
-)
+    return getWorkspaceActivity(data)
+  })
 
 // ─── Audit Logs ───────────────────────────────────────────────────────────────
 

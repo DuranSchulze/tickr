@@ -8,8 +8,22 @@ import {
   timeEntryTags,
   tags,
   projects,
+  projectTasks,
+  departments as departmentsTable,
 } from '#/db/schema'
-import { and, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  or,
+} from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertAtLeastManager } from './shared/role-gates.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
@@ -38,6 +52,16 @@ export type DepartmentProjectBreakdown = {
 }
 
 export type DepartmentDashboard = {
+  canFilterDepartments: boolean
+  filters: {
+    departmentId: string
+    q: string
+  }
+  availableDepartments: Array<{
+    id: string
+    name: string
+    color: string
+  }>
   department: {
     id: string
     name: string
@@ -63,15 +87,83 @@ export type DepartmentDashboard = {
   }>
 }
 
+export type DepartmentMemberActivityEntry = {
+  id: string
+  description: string
+  projectName: string | null
+  taskName: string | null
+  startedAt: string
+  endedAt: string | null
+  durationSeconds: number
+  billable: boolean
+  status: 'active' | 'completed'
+}
+
+export type DepartmentMemberActivitySummary = {
+  member: {
+    id: string
+    name: string
+    email: string
+    departmentName: string | null
+    departmentColor: string | null
+  }
+  today: {
+    date: string
+    totalSeconds: number
+    completedSeconds: number
+    activeSeconds: number
+    completedCount: number
+    activeCount: number
+    hourlyTotals: Array<{ hour: string; seconds: number }>
+  }
+  activeEntry: DepartmentMemberActivityEntry | null
+  latestCompletedEntry: DepartmentMemberActivityEntry | null
+  entriesToday: DepartmentMemberActivityEntry[]
+}
+
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function mapActivityEntry(row: {
+  id: string
+  description: string
+  projectName: string | null
+  taskName: string | null
+  startedAt: Date
+  endedAt: Date | null
+  durationSeconds: number
+  billable: boolean
+}): DepartmentMemberActivityEntry {
+  return {
+    id: row.id,
+    description: row.description,
+    projectName: row.projectName,
+    taskName: row.taskName,
+    startedAt: row.startedAt.toISOString(),
+    endedAt: row.endedAt?.toISOString() ?? null,
+    durationSeconds: row.endedAt
+      ? row.durationSeconds
+      : Math.max(0, Math.floor((Date.now() - row.startedAt.getTime()) / 1000)),
+    billable: row.billable,
+    status: row.endedAt ? 'completed' : 'active',
+  }
+}
+
 export async function getDepartmentDashboard(data: {
   startDate: string
   endDate: string
+  departmentId?: string
+  q?: string
 }): Promise<DepartmentDashboard> {
   const access = await requireWorkspaceAccess()
   assertAtLeastManager(access)
 
-  const departmentId = access.member.departmentId
-  if (!departmentId) {
+  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  const canFilterDepartments = level === 'OWNER' || level === 'ADMIN'
+  const managerDepartmentId = access.member.departmentId
+
+  if (!canFilterDepartments && !managerDepartmentId) {
     throw new Error(
       'You are not assigned to a department. Ask your admin to assign you to one.',
     )
@@ -83,6 +175,7 @@ export async function getDepartmentDashboard(data: {
 
   const rangeStart = new Date(`${data.startDate}T00:00:00`)
   const rangeEnd = new Date(`${data.endDate}T23:59:59.999`)
+  const q = data.q?.trim() ?? ''
 
   const now = new Date()
   const weekStart = new Date(now)
@@ -91,49 +184,80 @@ export async function getDepartmentDashboard(data: {
   weekStart.setDate(weekStart.getDate() + (dow === 0 ? -6 : 1 - dow))
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  // Fetch department info, active members, and time entries in parallel
-  const [deptRow, memberRows] = await Promise.all([
-    db
-      .select({
-        id: departments.id,
-        name: departments.name,
-        color: departments.color,
-      })
-      .from(departments)
-      .where(
-        and(
-          eq(departments.id, departmentId),
-          eq(departments.workspaceId, workspaceId),
-        ),
-      )
-      .limit(1)
-      .then((r) => r[0]),
-    db
-      .select({
-        id: workspaceMembers.id,
-        email: workspaceMembers.email,
-        userId: workspaceMembers.userId,
-        billableRate: workspaceMembers.billableRate,
-      })
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, workspaceId),
-          eq(workspaceMembers.departmentId, departmentId),
-          eq(workspaceMembers.status, 'ACTIVE'),
-        ),
-      ),
-  ])
+  const availableDepartments = await db
+    .select({
+      id: departments.id,
+      name: departments.name,
+      color: departments.color,
+    })
+    .from(departments)
+    .where(
+      canFilterDepartments
+        ? eq(departments.workspaceId, workspaceId)
+        : and(
+            eq(departments.workspaceId, workspaceId),
+            eq(departments.id, managerDepartmentId!),
+          ),
+    )
+    .orderBy(asc(departments.name))
+
+  const selectedDepartmentId = canFilterDepartments
+    ? data.departmentId &&
+      availableDepartments.some((dept) => dept.id === data.departmentId)
+      ? data.departmentId
+      : ''
+    : managerDepartmentId!
+
+  const deptRow = selectedDepartmentId
+    ? availableDepartments.find((dept) => dept.id === selectedDepartmentId)
+    : {
+        id: '',
+        name: 'All departments',
+        color: '#6366f1',
+      }
 
   if (!deptRow) throw new Error('Department not found.')
 
+  const memberConditions = [
+    eq(workspaceMembers.workspaceId, workspaceId),
+    eq(workspaceMembers.status, 'ACTIVE' as const),
+  ]
+  if (selectedDepartmentId) {
+    memberConditions.push(
+      eq(workspaceMembers.departmentId, selectedDepartmentId),
+    )
+  }
+
+  const searchConditions = q
+    ? or(ilike(workspaceMembers.email, `%${q}%`), ilike(users.name, `%${q}%`))
+    : undefined
+
+  if (searchConditions) memberConditions.push(searchConditions)
+
+  // Fetch active members first so all analytics queries stay scoped to the
+  // allowed member IDs instead of trusting URL filters.
+  const memberRows = await db
+    .select({
+      id: workspaceMembers.id,
+      email: workspaceMembers.email,
+      userId: workspaceMembers.userId,
+      billableRate: workspaceMembers.billableRate,
+      name: users.name,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(and(...memberConditions))
+
   const memberIds = memberRows.map((m) => m.id)
-  const userIds = memberRows
-    .map((m) => m.userId)
-    .filter((id): id is string => id != null)
 
   if (memberIds.length === 0) {
     return {
+      canFilterDepartments,
+      filters: {
+        departmentId: selectedDepartmentId,
+        q,
+      },
+      availableDepartments,
       department: {
         id: deptRow.id,
         name: deptRow.name,
@@ -155,14 +279,8 @@ export async function getDepartmentDashboard(data: {
     }
   }
 
-  // Fetch user names and time entries in parallel
-  const [userRows, entryRows, tagEntryRows] = await Promise.all([
-    userIds.length > 0
-      ? db
-          .select({ id: users.id, name: users.name })
-          .from(users)
-          .where(inArray(users.id, userIds))
-      : Promise.resolve([]),
+  // Fetch time entries in parallel with entry-tag links.
+  const [entryRows, tagEntryRows] = await Promise.all([
     db
       .select({
         id: timeEntries.id,
@@ -201,12 +319,11 @@ export async function getDepartmentDashboard(data: {
       ),
   ])
 
-  const userMap = new Map(userRows.map((u) => [u.id, u.name]))
   const memberMap = new Map(
     memberRows
       .map((m) => ({
         ...m,
-        name: m.userId ? (userMap.get(m.userId) ?? m.email) : m.email,
+        name: m.name ?? m.email,
         effectiveRate: computeEffectiveRate(
           m.billableRate ? Number(m.billableRate) : null,
           defaultRate,
@@ -386,6 +503,12 @@ export async function getDepartmentDashboard(data: {
   const entryCount = membersBreakdown.reduce((s, m) => s + m.entryCount, 0)
 
   return {
+    canFilterDepartments,
+    filters: {
+      departmentId: selectedDepartmentId,
+      q,
+    },
+    availableDepartments,
     department: {
       id: deptRow.id,
       name: deptRow.name,
@@ -404,5 +527,167 @@ export async function getDepartmentDashboard(data: {
     projectsBreakdown,
     dailyTotals,
     topTags,
+  }
+}
+
+export async function getDepartmentMemberTodayActivity(data: {
+  memberId: string
+}): Promise<DepartmentMemberActivitySummary> {
+  const access = await requireWorkspaceAccess()
+  assertAtLeastManager(access)
+
+  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  const canReadAnyDepartment = level === 'OWNER' || level === 'ADMIN'
+  const workspaceId = access.workspace.id
+
+  const [member] = await db
+    .select({
+      id: workspaceMembers.id,
+      email: workspaceMembers.email,
+      userName: users.name,
+      departmentId: workspaceMembers.departmentId,
+      departmentName: departmentsTable.name,
+      departmentColor: departmentsTable.color,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .leftJoin(
+      departmentsTable,
+      eq(workspaceMembers.departmentId, departmentsTable.id),
+    )
+    .where(
+      and(
+        eq(workspaceMembers.id, data.memberId),
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .limit(1)
+
+  if (!member) throw new Error('Member not found.')
+
+  if (
+    !canReadAnyDepartment &&
+    (!access.member.departmentId ||
+      member.departmentId !== access.member.departmentId)
+  ) {
+    throw new Error('Managers can only view their own department.')
+  }
+
+  const now = new Date()
+  const todayStart = new Date(now)
+  todayStart.setHours(0, 0, 0, 0)
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+  const entryColumns = {
+    id: timeEntries.id,
+    description: timeEntries.description,
+    projectName: projects.name,
+    taskName: projectTasks.name,
+    startedAt: timeEntries.startedAt,
+    endedAt: timeEntries.endedAt,
+    durationSeconds: timeEntries.durationSeconds,
+    billable: timeEntries.billable,
+  }
+
+  const [todayRows, activeRows, latestCompletedRows] = await Promise.all([
+    db
+      .select(entryColumns)
+      .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+      .where(
+        and(
+          eq(timeEntries.workspaceId, workspaceId),
+          eq(timeEntries.workspaceMemberId, member.id),
+          gte(timeEntries.startedAt, todayStart),
+          lt(timeEntries.startedAt, tomorrowStart),
+        ),
+      )
+      .orderBy(desc(timeEntries.startedAt)),
+    db
+      .select(entryColumns)
+      .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+      .where(
+        and(
+          eq(timeEntries.workspaceId, workspaceId),
+          eq(timeEntries.workspaceMemberId, member.id),
+          isNull(timeEntries.endedAt),
+        ),
+      )
+      .orderBy(desc(timeEntries.startedAt))
+      .limit(1),
+    db
+      .select(entryColumns)
+      .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+      .where(
+        and(
+          eq(timeEntries.workspaceId, workspaceId),
+          eq(timeEntries.workspaceMemberId, member.id),
+          isNotNull(timeEntries.endedAt),
+          gte(timeEntries.endedAt, todayStart),
+          lt(timeEntries.endedAt, tomorrowStart),
+        ),
+      )
+      .orderBy(desc(timeEntries.endedAt))
+      .limit(1),
+  ])
+
+  const entriesToday = todayRows.map(mapActivityEntry)
+  const activeEntry = activeRows[0] ? mapActivityEntry(activeRows[0]) : null
+  const latestCompletedEntry = latestCompletedRows[0]
+    ? mapActivityEntry(latestCompletedRows[0])
+    : null
+  const hourlyTotals = Array.from({ length: 24 }, (_, hour) => ({
+    hour: `${String(hour).padStart(2, '0')}:00`,
+    seconds: 0,
+  }))
+
+  for (const entry of entriesToday) {
+    const start = new Date(entry.startedAt)
+    const bucket = hourlyTotals[start.getHours()]
+    bucket.seconds += entry.durationSeconds
+  }
+
+  const completedEntries = entriesToday.filter(
+    (entry) => entry.status === 'completed',
+  )
+  const activeEntries = entriesToday.filter(
+    (entry) => entry.status === 'active',
+  )
+  const completedSeconds = completedEntries.reduce(
+    (sum, entry) => sum + entry.durationSeconds,
+    0,
+  )
+  const activeSeconds = activeEntries.reduce(
+    (sum, entry) => sum + entry.durationSeconds,
+    0,
+  )
+
+  return {
+    member: {
+      id: member.id,
+      name: member.userName ?? member.email,
+      email: member.email,
+      departmentName: member.departmentName,
+      departmentColor: member.departmentColor,
+    },
+    today: {
+      date: formatDateKey(todayStart),
+      totalSeconds: completedSeconds + activeSeconds,
+      completedSeconds,
+      activeSeconds,
+      completedCount: completedEntries.length,
+      activeCount: activeEntries.length,
+      hourlyTotals,
+    },
+    activeEntry,
+    latestCompletedEntry,
+    entriesToday,
   }
 }

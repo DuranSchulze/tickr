@@ -11,22 +11,38 @@ import { DepartmentDashboardScreen } from '#/components/time-tracker/analytics/d
 type DeptSearch = {
   startDate?: string
   endDate?: string
+  departmentId?: string
+  q?: string
 }
 
 function resolveRange(search: DeptSearch): {
   startDate: string
   endDate: string
+  departmentId?: string
+  q?: string
 } {
-  if (isDateKey(search.startDate) && isDateKey(search.endDate)) {
-    return { startDate: search.startDate, endDate: search.endDate }
+  const filters = {
+    departmentId: search.departmentId,
+    q: search.q?.trim() || undefined,
   }
-  return getDefaultAnalyticsRange()
+  if (isDateKey(search.startDate) && isDateKey(search.endDate)) {
+    return { startDate: search.startDate, endDate: search.endDate, ...filters }
+  }
+  return { ...getDefaultAnalyticsRange(), ...filters }
 }
 
 export const Route = createFileRoute('/app/department-analytics')({
   validateSearch: (search: Record<string, unknown>): DeptSearch => ({
     startDate: isDateKey(search.startDate) ? search.startDate : undefined,
     endDate: isDateKey(search.endDate) ? search.endDate : undefined,
+    departmentId:
+      typeof search.departmentId === 'string' && search.departmentId.trim()
+        ? search.departmentId
+        : undefined,
+    q:
+      typeof search.q === 'string' && search.q.trim()
+        ? search.q.trim()
+        : undefined,
   }),
   loaderDeps: ({ search }) => resolveRange(search),
   beforeLoad: async ({ context }) => {
@@ -60,7 +76,18 @@ function DepartmentAnalyticsRoute() {
   function changeRange(startDate: string, endDate: string) {
     void navigate({
       to: '/app/department-analytics',
-      search: { startDate, endDate },
+      search: (prev) => ({ ...prev, startDate, endDate }),
+    })
+  }
+
+  function changeFilters(filters: { departmentId?: string; q?: string }) {
+    void navigate({
+      to: '/app/department-analytics',
+      search: (prev) => ({
+        ...prev,
+        departmentId: filters.departmentId,
+        q: filters.q,
+      }),
     })
   }
 
@@ -70,6 +97,7 @@ function DepartmentAnalyticsRoute() {
       startDate={resolved.startDate}
       endDate={resolved.endDate}
       onChangeRange={changeRange}
+      onChangeFilters={changeFilters}
     />
   )
 }

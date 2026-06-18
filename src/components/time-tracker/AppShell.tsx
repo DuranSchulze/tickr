@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useRouterState } from '@tanstack/react-router'
 import {
+  Activity,
+  BarChart3,
   Building2,
   ClipboardList,
   Cog,
   ExternalLink,
   Tags,
+  TrendingUp,
   Users,
 } from 'lucide-react'
 import { AppSidebar } from './AppSidebar'
@@ -82,14 +85,22 @@ export function AppShell({
   const timerActive = pathname.startsWith('/app/time-tracker')
   const analyticsActive = pathname.startsWith('/app/analytics')
   const performanceActive = pathname.startsWith('/app/my-performance')
-  const calendarActive = pathname.startsWith('/app/calendar')
+  const departmentAnalyticsActive = pathname.startsWith(
+    '/app/department-analytics',
+  )
   const activityActive = pathname.startsWith('/app/workspace/activity')
+  const analyticsGroupActive =
+    analyticsActive ||
+    performanceActive ||
+    departmentAnalyticsActive ||
+    activityActive
+  const calendarActive = pathname.startsWith('/app/calendar')
   const settingsActive =
     (pathname.startsWith('/app/workspace') &&
       !pathname.startsWith('/app/workspace/activity')) ||
-    pathname.startsWith('/app/audit-logs') ||
-    pathname.startsWith('/app/department-analytics')
+    pathname.startsWith('/app/audit-logs')
 
+  const [analyticsOpen, setAnalyticsOpen] = useState(analyticsGroupActive)
   const [settingsOpen, setSettingsOpen] = useState(settingsActive)
   const [collapsed, setCollapsed] = useState(false)
 
@@ -98,15 +109,37 @@ export function AppShell({
   const canAccessSettings = permissionLevel !== 'EMPLOYEE'
   const isManagerOrAbove = permissionLevel === 'MANAGER' || isOwnerOrAdmin
 
-  const settingsChildren = useMemo(() => {
+  const analyticsChildren = useMemo(() => {
     const items = []
+    items.push({
+      to: '/app/analytics' as const,
+      label: 'Analytics',
+      icon: BarChart3,
+    })
+    items.push({
+      to: '/app/my-performance' as const,
+      label: 'My Performance',
+      icon: TrendingUp,
+    })
+    if (isManagerOrAbove) {
+      items.push({
+        to: '/app/workspace/activity' as const,
+        label: 'Team Activity',
+        icon: Activity,
+      })
+    }
     if (isManagerOrAbove) {
       items.push({
         to: '/app/department-analytics' as const,
-        label: 'Department',
+        label: 'Department list',
         icon: Building2,
       })
     }
+    return items
+  }, [isManagerOrAbove])
+
+  const settingsChildren = useMemo(() => {
+    const items = []
     if (canAccessSettings) {
       items.push({
         to: '/app/workspace/members' as const,
@@ -132,7 +165,7 @@ export function AppShell({
       })
     }
     return items
-  }, [canAccessSettings, isOwnerOrAdmin, isManagerOrAbove])
+  }, [canAccessSettings, isOwnerOrAdmin])
 
   return (
     <AnnouncementProvider>
@@ -148,15 +181,15 @@ export function AppShell({
                   workspaceName={workspace.name}
                   userEmail={user.email}
                   timerActive={timerActive}
-                  analyticsActive={analyticsActive}
-                  performanceActive={performanceActive}
+                  analyticsGroupActive={analyticsGroupActive}
+                  analyticsOpen={analyticsOpen}
+                  onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                  analyticsChildren={analyticsChildren}
                   calendarActive={calendarActive}
-                  activityActive={activityActive}
                   settingsActive={settingsActive}
                   settingsOpen={settingsOpen}
                   onToggleSettings={() => setSettingsOpen((open) => !open)}
                   settingsChildren={settingsChildren}
-                  permissionLevel={permissionLevel}
                 />
               }
             />
@@ -172,15 +205,15 @@ export function AppShell({
                 workspaceName={workspace.name}
                 userEmail={user.email}
                 timerActive={timerActive}
-                analyticsActive={analyticsActive}
-                performanceActive={performanceActive}
+                analyticsGroupActive={analyticsGroupActive}
+                analyticsOpen={analyticsOpen}
+                onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                analyticsChildren={analyticsChildren}
                 calendarActive={calendarActive}
-                activityActive={activityActive}
                 settingsActive={settingsActive}
                 settingsOpen={settingsOpen}
                 onToggleSettings={() => setSettingsOpen((open) => !open)}
                 settingsChildren={settingsChildren}
-                permissionLevel={permissionLevel}
               />
             </div>
           )}

@@ -1,0 +1,259 @@
+import { useQuery } from '@tanstack/react-query'
+import { Activity, Clock, Loader2, Timer, X } from 'lucide-react'
+import { getDepartmentMemberTodayActivityFn } from '#/lib/server/tracker'
+import type {
+  DepartmentMemberActivityEntry,
+  DepartmentMemberActivitySummary,
+} from '#/lib/server/tracker/department-dashboard.server'
+
+function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h === 0 && m === 0) return '0m'
+  if (h === 0) return `${m}m`
+  return m === 0 ? `${h}h` : `${h}h ${m}m`
+}
+
+function formatTime(value: string | null): string {
+  if (!value) return 'Now'
+  return new Date(value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function TaskCard({
+  title,
+  entry,
+}: {
+  title: string
+  entry: DepartmentMemberActivityEntry | null
+}) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+      <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </p>
+      {entry ? (
+        <div className="mt-2 space-y-1.5">
+          <div className="flex flex-col gap-2 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <p className="m-0 min-w-0 truncate text-sm font-bold text-foreground">
+              {entry.taskName ?? entry.description}
+            </p>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${
+                entry.status === 'active'
+                  ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {entry.status === 'active' ? 'Working' : 'Ended'}
+            </span>
+          </div>
+          {entry.taskName && entry.description && (
+            <p className="m-0 text-xs text-muted-foreground">
+              {entry.description}
+            </p>
+          )}
+          <p className="m-0 text-xs text-muted-foreground">
+            {entry.projectName ?? 'No project'}
+          </p>
+          <p className="m-0 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="size-3.5" />
+            {formatTime(entry.startedAt)} - {formatTime(entry.endedAt)} ·{' '}
+            {formatDuration(entry.durationSeconds)}
+          </p>
+        </div>
+      ) : (
+        <p className="m-0 mt-2 text-sm text-muted-foreground">Nothing yet.</p>
+      )}
+    </div>
+  )
+}
+
+function HourlyChart({
+  summary,
+}: {
+  summary: DepartmentMemberActivitySummary['today']
+}) {
+  const activeHours = summary.hourlyTotals.filter((row) => row.seconds > 0)
+  const rows = activeHours.length > 0 ? activeHours : summary.hourlyTotals
+  const max = Math.max(1, ...rows.map((row) => row.seconds))
+
+  return (
+    <section className="min-w-0 rounded-lg border border-border bg-background p-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h3 className="m-0 text-sm font-bold text-foreground">
+            Today by hour
+          </h3>
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            Started tasks grouped by hour
+          </p>
+        </div>
+        <Activity className="size-4 text-muted-foreground" />
+      </div>
+
+      <div className="grid gap-2">
+        {rows.slice(-8).map((row) => (
+          <div
+            key={row.hour}
+            className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)_minmax(40px,auto)] items-center gap-2"
+          >
+            <span className="text-xs font-mono text-muted-foreground">
+              {row.hour}
+            </span>
+            <div className="h-3 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary"
+                style={{ width: `${Math.max(4, (row.seconds / max) * 100)}%` }}
+              />
+            </div>
+            <span className="text-right text-xs font-mono text-muted-foreground">
+              {row.seconds > 0 ? formatDuration(row.seconds) : '-'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export function DepartmentMemberActivitySheet({
+  memberId,
+  onClose,
+}: {
+  memberId: string | null
+  onClose: () => void
+}) {
+  const open = Boolean(memberId)
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['department-member-today-activity', memberId],
+    queryFn: () =>
+      getDepartmentMemberTodayActivityFn({ data: { memberId: memberId! } }),
+    enabled: open,
+    staleTime: 15_000,
+  })
+
+  if (!open) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45"
+        onClick={onClose}
+        aria-label="Close member activity"
+      />
+      <aside className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-r-0">
+        <header className="flex min-w-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-5">
+          <div className="min-w-0">
+            <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
+              Today activity
+            </p>
+            <h2 className="m-0 mt-1 truncate text-lg font-black text-foreground sm:text-xl">
+              {data?.member.name ?? 'Loading member'}
+            </h2>
+            <p className="m-0 mt-0.5 truncate text-sm text-muted-foreground">
+              {data?.member.email ?? 'Fetching current activity'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close member activity"
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+        </header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5">
+          {isLoading ? (
+            <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Loading activity
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+              {error instanceof Error
+                ? error.message
+                : 'Could not load member activity.'}
+            </div>
+          ) : data ? (
+            <div className="grid gap-4">
+              <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
+                <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+                  <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Total today
+                  </p>
+                  <p className="m-0 mt-1 text-xl font-black text-foreground sm:text-2xl">
+                    {formatDuration(data.today.totalSeconds)}
+                  </p>
+                  <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                    {data.today.completedCount} ended · {data.today.activeCount}{' '}
+                    active
+                  </p>
+                </div>
+                <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+                  <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Current status
+                  </p>
+                  <p className="m-0 mt-1 flex min-w-0 items-center gap-2 text-base font-black text-foreground sm:text-lg">
+                    <Timer className="size-4 text-primary" />
+                    <span className="truncate">
+                      {data.activeEntry ? 'Working now' : 'Not working'}
+                    </span>
+                  </p>
+                  <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                    {data.member.departmentName ?? 'No department'}
+                  </p>
+                </div>
+              </div>
+
+              <TaskCard title="Current task" entry={data.activeEntry} />
+              <TaskCard
+                title="Latest ended task"
+                entry={data.latestCompletedEntry}
+              />
+              <HourlyChart summary={data.today} />
+
+              <section className="min-w-0 rounded-lg border border-border bg-background">
+                <div className="border-b border-border px-3 py-2">
+                  <h3 className="m-0 text-sm font-bold text-foreground">
+                    Today timeline
+                  </h3>
+                </div>
+                {data.entriesToday.length === 0 ? (
+                  <p className="m-0 p-3 text-sm text-muted-foreground">
+                    No tasks started today.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {data.entriesToday.slice(0, 8).map((entry) => (
+                      <div key={entry.id} className="px-3 py-2">
+                        <div className="flex flex-col gap-1 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between min-[420px]:gap-3">
+                          <p className="m-0 min-w-0 truncate text-sm font-semibold text-foreground">
+                            {entry.taskName ?? entry.description}
+                          </p>
+                          <span className="shrink-0 text-xs font-mono text-muted-foreground min-[420px]:text-right">
+                            {formatDuration(entry.durationSeconds)}
+                          </span>
+                        </div>
+                        <p className="m-0 mt-0.5 break-words text-xs text-muted-foreground">
+                          {formatTime(entry.startedAt)} -{' '}
+                          {formatTime(entry.endedAt)} ·{' '}
+                          {entry.projectName ?? 'No project'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+    </div>
+  )
+}
