@@ -15,7 +15,7 @@ export type TimeFormat = (typeof TIME_FORMATS)[number]
 
 export const TimeFormatSchema = z.enum(TIME_FORMATS)
 
-const DEFAULT_FORMAT: TimeFormat = 'precise'
+const DEFAULT_FORMAT: TimeFormat = 'clock'
 
 const STORAGE_KEY = 'time-format'
 const PRECISE_LIVE_TICK_MS = 50

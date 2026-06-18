@@ -224,7 +224,7 @@ export function ClientProjectPicker({
       const clientCollapsed = collapsedClients.has(client.id)
       result.push({ kind: 'client', client })
 
-      if (clientCollapsed && !hasQuery) continue
+      if (clientCollapsed) continue
 
       for (const project of visibleProjects) {
         if (projectCount >= MAX_VISIBLE_PROJECTS) {
@@ -237,7 +237,7 @@ export function ClientProjectPicker({
         const projectTasks = tasksByProject.get(project.id) ?? []
         const projectCollapsed = collapsedProjects.has(project.id)
 
-        if (hasQuery || !projectCollapsed) {
+        if (!projectCollapsed) {
           for (const task of projectTasks) {
             if (
               hasQuery &&
@@ -248,7 +248,7 @@ export function ClientProjectPicker({
           }
         }
 
-        if (onCreateTask && (hasQuery || !projectCollapsed)) {
+        if (onCreateTask && !projectCollapsed) {
           result.push({ kind: 'add-task', project })
         }
       }
