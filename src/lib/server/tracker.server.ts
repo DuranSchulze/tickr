@@ -101,8 +101,10 @@ export {
 } from './tracker/entries-list.server'
 export {
   getDepartmentDashboard,
+  getDepartmentMemberDetail,
   getDepartmentMemberTodayActivity,
   type DepartmentDashboard,
+  type DepartmentMemberDetail,
   type DepartmentMemberActivitySummary,
   type DepartmentMemberBreakdown,
   type DepartmentProjectBreakdown,

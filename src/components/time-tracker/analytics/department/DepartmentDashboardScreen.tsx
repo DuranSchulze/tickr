@@ -4,10 +4,8 @@ import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { MemberBreakdownTable } from './MemberBreakdownTable'
 import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentDailyChart } from './DepartmentDailyChart'
-import { DepartmentMemberActivitySheet } from './DepartmentMemberActivitySheet'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { useState } from 'react'
 
 function formatHours(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -42,12 +40,14 @@ export function DepartmentDashboardScreen({
   endDate,
   onChangeRange,
   onChangeFilters,
+  onViewMember,
 }: {
   dashboard: DepartmentDashboard
   startDate: string
   endDate: string
   onChangeRange: (startDate: string, endDate: string) => void
   onChangeFilters: (filters: { departmentId?: string; q?: string }) => void
+  onViewMember: (memberId: string) => void
 }) {
   const {
     availableDepartments,
@@ -68,7 +68,6 @@ export function DepartmentDashboardScreen({
   const activeMembers = membersBreakdown.filter(
     (m) => m.totalSeconds > 0,
   ).length
-  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null)
 
   function applySearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -223,7 +222,7 @@ export function DepartmentDashboardScreen({
       <MemberBreakdownTable
         members={membersBreakdown}
         currency={summary.currency}
-        onViewMember={(member) => setSelectedMemberId(member.memberId)}
+        onViewMember={(member) => onViewMember(member.memberId)}
       />
 
       {/* Project breakdown */}
@@ -261,11 +260,6 @@ export function DepartmentDashboardScreen({
           </div>
         </section>
       )}
-
-      <DepartmentMemberActivitySheet
-        memberId={selectedMemberId}
-        onClose={() => setSelectedMemberId(null)}
-      />
     </div>
   )
 }

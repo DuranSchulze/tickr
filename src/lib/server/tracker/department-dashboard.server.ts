@@ -7,6 +7,7 @@ import {
   timeEntries,
   timeEntryTags,
   tags,
+  clients,
   projects,
   projectTasks,
   departments as departmentsTable,
@@ -23,10 +24,12 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertAtLeastManager } from './shared/role-gates.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import type { AnalyticsTimeEntryRow } from './analytics.server'
+import { getAnalyticsDateRange, toDateKey } from './shared/dates'
 
 export type DepartmentMemberBreakdown = {
   memberId: string
@@ -119,6 +122,16 @@ export type DepartmentMemberActivitySummary = {
   activeEntry: DepartmentMemberActivityEntry | null
   latestCompletedEntry: DepartmentMemberActivityEntry | null
   entriesToday: DepartmentMemberActivityEntry[]
+}
+
+export type DepartmentMemberDetail = {
+  activity: DepartmentMemberActivitySummary
+  startDate: string
+  endDate: string
+  page: number
+  entries: AnalyticsTimeEntryRow[]
+  entriesTotal: number
+  currency: string
 }
 
 function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
@@ -229,17 +242,7 @@ export async function getDepartmentDashboard(data: {
   q?: string
 }): Promise<DepartmentDashboard> {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
-
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const canFilterDepartments = level === 'OWNER' || level === 'ADMIN'
-  const managerDepartmentId = access.member.departmentId
-
-  if (!canFilterDepartments && !managerDepartmentId) {
-    throw new Error(
-      'You are not assigned to a department. Ask your admin to assign you to one.',
-    )
-  }
+  const canFilterDepartments = true
 
   const workspaceId = access.workspace.id
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
@@ -263,22 +266,14 @@ export async function getDepartmentDashboard(data: {
       color: departments.color,
     })
     .from(departments)
-    .where(
-      canFilterDepartments
-        ? eq(departments.workspaceId, workspaceId)
-        : and(
-            eq(departments.workspaceId, workspaceId),
-            eq(departments.id, managerDepartmentId!),
-          ),
-    )
+    .where(eq(departments.workspaceId, workspaceId))
     .orderBy(asc(departments.name))
 
-  const selectedDepartmentId = canFilterDepartments
-    ? data.departmentId &&
-      availableDepartments.some((dept) => dept.id === data.departmentId)
+  const selectedDepartmentId =
+    data.departmentId &&
+    availableDepartments.some((dept) => dept.id === data.departmentId)
       ? data.departmentId
       : ''
-    : managerDepartmentId!
 
   const deptRow = selectedDepartmentId
     ? availableDepartments.find((dept) => dept.id === selectedDepartmentId)
@@ -606,10 +601,6 @@ export async function getDepartmentMemberTodayActivity(data: {
   memberId: string
 }): Promise<DepartmentMemberActivitySummary> {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
-
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const canReadAnyDepartment = level === 'OWNER' || level === 'ADMIN'
   const workspaceId = access.workspace.id
 
   const [member] = await db
@@ -637,14 +628,6 @@ export async function getDepartmentMemberTodayActivity(data: {
     .limit(1)
 
   if (!member) throw new Error('Member not found.')
-
-  if (
-    !canReadAnyDepartment &&
-    (!access.member.departmentId ||
-      member.departmentId !== access.member.departmentId)
-  ) {
-    throw new Error('Managers can only view their own department.')
-  }
 
   const timeZone = access.workspace.timezone || 'UTC'
   const todayRange = getTodayRangeForTimeZone(timeZone)
@@ -774,5 +757,120 @@ export async function getDepartmentMemberTodayActivity(data: {
     activeEntry,
     latestCompletedEntry,
     entriesToday,
+  }
+}
+
+export async function getDepartmentMemberDetail(data: {
+  memberId: string
+  startDate: string
+  endDate: string
+  page?: number
+}): Promise<DepartmentMemberDetail> {
+  const access = await requireWorkspaceAccess()
+  const workspaceId = access.workspace.id
+
+  const [member] = await db
+    .select({
+      id: workspaceMembers.id,
+      email: workspaceMembers.email,
+      userName: users.name,
+      departmentId: workspaceMembers.departmentId,
+      billableRate: workspaceMembers.billableRate,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(
+      and(
+        eq(workspaceMembers.id, data.memberId),
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .limit(1)
+
+  if (!member) throw new Error('Member not found.')
+
+  const range = getAnalyticsDateRange(data)
+  const PAGE_SIZE = 50
+  const page = Math.max(1, data.page ?? 1)
+  const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
+  const currency = access.workspace.billableCurrency ?? 'PHP'
+  const memberRate = member.billableRate ? Number(member.billableRate) : null
+  const effectiveRate = computeEffectiveRate(memberRate, defaultRate)
+  const whereClause = and(
+    eq(timeEntries.workspaceId, workspaceId),
+    eq(timeEntries.workspaceMemberId, member.id),
+    isNotNull(timeEntries.endedAt),
+    gte(timeEntries.startedAt, range.start),
+    lt(timeEntries.startedAt, range.endExclusive),
+  )
+
+  const [activity, rawRows, countResult] = await Promise.all([
+    getDepartmentMemberTodayActivity({ memberId: member.id }),
+    db
+      .select({
+        id: timeEntries.id,
+        description: timeEntries.description,
+        startedAt: timeEntries.startedAt,
+        durationSeconds: timeEntries.durationSeconds,
+        billable: timeEntries.billable,
+        projectName: projects.name,
+        clientName: clients.name,
+      })
+      .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .where(whereClause)
+      .orderBy(desc(timeEntries.startedAt))
+      .limit(PAGE_SIZE)
+      .offset((page - 1) * PAGE_SIZE),
+    db
+      .select({ c: sql<number>`count(*)::int` })
+      .from(timeEntries)
+      .where(whereClause),
+  ])
+
+  const rawEntryIds = rawRows.map((entry) => entry.id)
+  const rawTagRows =
+    rawEntryIds.length > 0
+      ? await db
+          .select({
+            timeEntryId: timeEntryTags.timeEntryId,
+            tagName: tags.name,
+          })
+          .from(timeEntryTags)
+          .innerJoin(tags, eq(timeEntryTags.tagId, tags.id))
+          .where(inArray(timeEntryTags.timeEntryId, rawEntryIds))
+      : []
+
+  const tagNamesByEntry = new Map<string, string[]>()
+  for (const row of rawTagRows) {
+    const list = tagNamesByEntry.get(row.timeEntryId) ?? []
+    list.push(row.tagName)
+    tagNamesByEntry.set(row.timeEntryId, list)
+  }
+
+  return {
+    activity,
+    startDate: range.startDate,
+    endDate: range.endDate,
+    page,
+    entriesTotal: countResult[0]?.c ?? 0,
+    currency,
+    entries: rawRows.map((entry) => ({
+      id: entry.id,
+      date: toDateKey(entry.startedAt),
+      memberName: member.userName ?? member.email,
+      projectName: entry.projectName ?? null,
+      clientName: entry.clientName ?? null,
+      tagNames: tagNamesByEntry.get(entry.id) ?? [],
+      description: entry.description,
+      durationSeconds: entry.durationSeconds,
+      billable: entry.billable,
+      billableAmount: entry.billable
+        ? (entry.durationSeconds / 3600) * effectiveRate
+        : null,
+      effectiveRate: entry.billable ? effectiveRate : null,
+    })),
   }
 }

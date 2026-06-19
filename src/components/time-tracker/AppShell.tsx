@@ -85,9 +85,9 @@ export function AppShell({
   const timerActive = pathname.startsWith('/app/time-tracker')
   const analyticsActive = pathname.startsWith('/app/analytics')
   const performanceActive = pathname.startsWith('/app/my-performance')
-  const departmentAnalyticsActive = pathname.startsWith(
-    '/app/department-analytics',
-  )
+  const departmentAnalyticsActive =
+    pathname.startsWith('/app/department-analytics') ||
+    pathname.startsWith('/app/department-member-analytics')
   const activityActive = pathname.startsWith('/app/workspace/activity')
   const analyticsGroupActive =
     analyticsActive ||
@@ -128,13 +128,11 @@ export function AppShell({
         icon: Activity,
       })
     }
-    if (isManagerOrAbove) {
-      items.push({
-        to: '/app/department-analytics' as const,
-        label: 'Department list',
-        icon: Building2,
-      })
-    }
+    items.push({
+      to: '/app/department-analytics' as const,
+      label: 'Department list',
+      icon: Building2,
+    })
     return items
   }, [isManagerOrAbove])
 

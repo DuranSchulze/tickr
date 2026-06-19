@@ -110,6 +110,13 @@ const departmentMemberActivitySchema = z.object({
   memberId: z.string().min(1),
 })
 
+const departmentMemberDetailSchema = z.object({
+  memberId: z.string().min(1),
+  startDate: z.string().date(),
+  endDate: z.string().date(),
+  page: z.coerce.number().int().min(1).optional(),
+})
+
 const workspaceActivitySchema = z.object({
   departmentId: z.string().optional(),
   q: z.string().trim().max(120).optional(),
@@ -224,6 +231,13 @@ export const getDepartmentMemberTodayActivityFn = createServerFn({
     const { getDepartmentMemberTodayActivity } =
       await import('./tracker.server')
     return getDepartmentMemberTodayActivity(data)
+  })
+
+export const getDepartmentMemberDetailFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => departmentMemberDetailSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getDepartmentMemberDetail } = await import('./tracker.server')
+    return getDepartmentMemberDetail(data)
   })
 
 export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   getDefaultAnalyticsRange,
   isDateKey,
@@ -46,15 +46,11 @@ export const Route = createFileRoute('/app/department-analytics')({
   }),
   loaderDeps: ({ search }) => resolveRange(search),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
+    await context.queryClient.ensureQueryData({
       queryKey: ['workspace-access'],
       queryFn: () => getWorkspaceAccessFn(),
       staleTime: 5 * 60 * 1000,
     })
-    const level = access.member.permissionLevel
-    if (level === 'EMPLOYEE') {
-      throw redirect({ to: '/app/time-tracker' })
-    }
   },
   loader: ({ context, deps }) =>
     context.queryClient.ensureQueryData({
@@ -91,6 +87,17 @@ function DepartmentAnalyticsRoute() {
     })
   }
 
+  function viewMember(memberId: string) {
+    void navigate({
+      to: '/app/department-member-analytics/$memberId',
+      params: { memberId },
+      search: {
+        startDate: resolved.startDate,
+        endDate: resolved.endDate,
+      },
+    })
+  }
+
   return (
     <DepartmentDashboardScreen
       dashboard={dashboard}
@@ -98,6 +105,7 @@ function DepartmentAnalyticsRoute() {
       endDate={resolved.endDate}
       onChangeRange={changeRange}
       onChangeFilters={changeFilters}
+      onViewMember={viewMember}
     />
   )
 }
