@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +9,16 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Button } from '#/components/ui/button'
-import { getPresets, deletePreset } from '#/lib/time-tracker/presets'
+import { clearLocalPresets, getLocalPresets } from '#/lib/time-tracker/presets'
+import type { TimerPreset } from '#/lib/time-tracker/presets'
+import {
+  deleteTimerPresetFn,
+  importTimerPresetsFn,
+  listTimerPresetsFn,
+} from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import type { Client, Project, Tag } from '#/lib/time-tracker/types'
+import { gooeyToast } from '#/lib/toast'
 import { SavePresetDialog } from './SavePresetDialog'
 
 type PresetDropdownProps = {
@@ -50,9 +59,59 @@ export function PresetDropdown({
 }: PresetDropdownProps) {
   const [open, setOpen] = useState(false)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
-  const [, forceUpdate] = useState({})
+  const queryClient = useQueryClient()
+  const presetsQueryKey = useMemo(
+    () => trackerKeys.timerPresets(workspaceId),
+    [workspaceId],
+  )
 
-  const presets = useMemo(() => getPresets(workspaceId), [workspaceId, open])
+  const { data: presets = [], isLoading } = useQuery({
+    queryKey: presetsQueryKey,
+    queryFn: () => listTimerPresetsFn(),
+    staleTime: 60_000,
+  })
+
+  useEffect(() => {
+    if (presets.length > 0) return
+
+    const localPresets = getLocalPresets(workspaceId)
+    if (localPresets.length === 0) return
+
+    let cancelled = false
+    void importTimerPresetsFn({
+      data: {
+        presets: localPresets.map(
+          ({
+            name: presetName,
+            clientId: presetClientId,
+            projectId: presetProjectId,
+            taskId: presetTaskId,
+            tagIds: presetTagIds,
+            billable: presetBillable,
+          }) => ({
+            name: presetName,
+            clientId: presetClientId,
+            projectId: presetProjectId,
+            taskId: presetTaskId,
+            tagIds: presetTagIds,
+            billable: presetBillable,
+          }),
+        ),
+      },
+    })
+      .then((imported) => {
+        if (cancelled || imported.length === 0) return
+        clearLocalPresets(workspaceId)
+        queryClient.setQueryData<TimerPreset[]>(presetsQueryKey, imported)
+      })
+      .catch(() => {
+        // Keep local presets intact so a later visit can retry migration.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [presets.length, presetsQueryKey, queryClient, workspaceId])
 
   function handleApplyPreset(preset: {
     clientId: string
@@ -65,10 +124,23 @@ export function PresetDropdown({
     setOpen(false)
   }
 
-  function handleDeletePreset(e: React.MouseEvent, presetId: string) {
+  async function handleDeletePreset(e: React.MouseEvent, presetId: string) {
     e.stopPropagation()
-    deletePreset(workspaceId, presetId)
-    forceUpdate({})
+    const previous = queryClient.getQueryData<TimerPreset[]>(presetsQueryKey)
+
+    queryClient.setQueryData<TimerPreset[]>(presetsQueryKey, (old) =>
+      old ? old.filter((preset) => preset.id !== presetId) : old,
+    )
+
+    try {
+      await deleteTimerPresetFn({ data: { id: presetId } })
+    } catch (err) {
+      queryClient.setQueryData(presetsQueryKey, previous)
+      gooeyToast.error('Could not delete preset', {
+        description:
+          err instanceof Error ? err.message : 'Something went wrong.',
+      })
+    }
   }
 
   function handleOpenSaveDialog() {
@@ -78,9 +150,6 @@ export function PresetDropdown({
 
   function handleSaveDialogClose(isOpen: boolean) {
     setSaveDialogOpen(isOpen)
-    if (!isOpen) {
-      forceUpdate({})
-    }
   }
 
   return (
@@ -111,7 +180,11 @@ export function PresetDropdown({
           <p className="m-0 px-2 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             Presets
           </p>
-          {presets.length === 0 ? (
+          {isLoading ? (
+            <p className="m-0 px-2 pb-2 pt-1 text-sm text-muted-foreground">
+              Loading presets…
+            </p>
+          ) : presets.length === 0 ? (
             <p className="m-0 px-2 pb-2 pt-1 text-sm text-muted-foreground">
               No presets yet — create one below.
             </p>
@@ -187,20 +260,22 @@ export function PresetDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <SavePresetDialog
-        open={saveDialogOpen}
-        onOpenChange={handleSaveDialogClose}
-        workspaceId={workspaceId}
-        clientId={clientId}
-        projectId={projectId}
-        taskId={taskId}
-        tagIds={tagIds}
-        billable={billable}
-        clients={clients}
-        projects={projects}
-        projectTasks={projectTasks}
-        tags={tags}
-      />
+      {saveDialogOpen && (
+        <SavePresetDialog
+          open={saveDialogOpen}
+          onOpenChange={handleSaveDialogClose}
+          workspaceId={workspaceId}
+          clientId={clientId}
+          projectId={projectId}
+          taskId={taskId}
+          tagIds={tagIds}
+          billable={billable}
+          clients={clients}
+          projects={projects}
+          projectTasks={projectTasks}
+          tags={tags}
+        />
+      )}
     </>
   )
 }

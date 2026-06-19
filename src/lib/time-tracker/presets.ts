@@ -15,7 +15,7 @@ export type TimerPreset = z.infer<typeof TimerPresetSchema>
 const MAX_PRESETS = 10
 const STORAGE_KEY = (workspaceId: string) => `timer-presets:${workspaceId}`
 
-export function getPresets(workspaceId: string): TimerPreset[] {
+export function getLocalPresets(workspaceId: string): TimerPreset[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = localStorage.getItem(STORAGE_KEY(workspaceId))
@@ -28,7 +28,12 @@ export function getPresets(workspaceId: string): TimerPreset[] {
   }
 }
 
-export function savePreset(
+export function clearLocalPresets(workspaceId: string): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(STORAGE_KEY(workspaceId))
+}
+
+export function saveLocalPreset(
   workspaceId: string,
   preset: Omit<TimerPreset, 'id'>,
 ): { success: boolean; error?: string } {
@@ -36,7 +41,7 @@ export function savePreset(
     return { success: false, error: 'Cannot save preset on server' }
   }
 
-  const presets = getPresets(workspaceId)
+  const presets = getLocalPresets(workspaceId)
 
   if (presets.length >= MAX_PRESETS) {
     return { success: false, error: `Maximum ${MAX_PRESETS} presets reached` }
@@ -59,9 +64,9 @@ export function savePreset(
   return { success: true }
 }
 
-export function deletePreset(workspaceId: string, presetId: string): void {
+export function deleteLocalPreset(workspaceId: string, presetId: string): void {
   if (typeof window === 'undefined') return
-  const presets = getPresets(workspaceId)
+  const presets = getLocalPresets(workspaceId)
   const updated = presets.filter((p) => p.id !== presetId)
   localStorage.setItem(STORAGE_KEY(workspaceId), JSON.stringify(updated))
 }

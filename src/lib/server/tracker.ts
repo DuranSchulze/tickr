@@ -128,6 +128,23 @@ const bulkReportSchema = z.object({
   scopeId: z.string().optional(),
 })
 
+export const timerPresetInputSchema = z.object({
+  name: z.string().trim().min(1).max(50),
+  clientId: z.string().min(1),
+  projectId: z.string().min(1),
+  taskId: z.string().nullable().default(null),
+  tagIds: z.array(z.string().min(1)).default([]),
+  billable: z.boolean().default(false),
+})
+
+export const timerPresetIdSchema = z.object({
+  id: z.string().min(1),
+})
+
+export const importTimerPresetsSchema = z.object({
+  presets: z.array(timerPresetInputSchema).max(10),
+})
+
 const paginatedMembersSchema = z.object({
   page: z.number().int().min(0),
   pageSize: z.number().int().min(1).max(100),
@@ -277,6 +294,34 @@ export const duplicateEntryFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { duplicateEntry } = await import('./tracker.server')
     return duplicateEntry(data)
+  })
+
+export const listTimerPresetsFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { listTimerPresets } = await import('./tracker/presets.server')
+    return listTimerPresets()
+  },
+)
+
+export const saveTimerPresetFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => timerPresetInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { saveTimerPreset } = await import('./tracker/presets.server')
+    return saveTimerPreset(data)
+  })
+
+export const deleteTimerPresetFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => timerPresetIdSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { deleteTimerPreset } = await import('./tracker/presets.server')
+    return deleteTimerPreset(data)
+  })
+
+export const importTimerPresetsFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => importTimerPresetsSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { importTimerPresets } = await import('./tracker/presets.server')
+    return importTimerPresets(data)
   })
 
 export const createWorkspaceMemberFn = createServerFn({ method: 'POST' })

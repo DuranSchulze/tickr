@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useReducer } from 'react'
 import { DollarSign } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,9 @@ import {
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
-import { savePreset } from '#/lib/time-tracker/presets'
+import { saveTimerPresetFn } from '#/lib/server/tracker'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
+import type { TimerPreset } from '#/lib/time-tracker/presets'
 import type { Client, Project } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
@@ -29,6 +32,71 @@ type SavePresetDialogProps = {
   projects: Project[]
   projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
+}
+
+type DraftState = {
+  name: string
+  clientId: string
+  projectId: string
+  taskId: string
+  tagIds: string[]
+  billable: boolean
+  error: string | null
+  isSaving: boolean
+}
+
+type DraftAction =
+  | { type: 'nameChanged'; name: string }
+  | {
+      type: 'selectionChanged'
+      clientId: string
+      projectId: string
+      taskId: string
+    }
+  | { type: 'tagsChanged'; tagIds: string[] }
+  | { type: 'billableToggled' }
+  | { type: 'saveStarted' }
+  | { type: 'saveFailed'; error: string }
+
+function createInitialState(props: {
+  clientId: string
+  projectId: string
+  taskId: string
+  tagIds: string[]
+  billable: boolean
+}): DraftState {
+  return {
+    name: '',
+    clientId: props.clientId,
+    projectId: props.projectId,
+    taskId: props.taskId,
+    tagIds: props.tagIds,
+    billable: props.billable,
+    error: null,
+    isSaving: false,
+  }
+}
+
+function draftReducer(state: DraftState, action: DraftAction): DraftState {
+  switch (action.type) {
+    case 'nameChanged':
+      return { ...state, name: action.name }
+    case 'selectionChanged':
+      return {
+        ...state,
+        clientId: action.clientId,
+        projectId: action.projectId,
+        taskId: action.taskId,
+      }
+    case 'tagsChanged':
+      return { ...state, tagIds: action.tagIds }
+    case 'billableToggled':
+      return { ...state, billable: !state.billable }
+    case 'saveStarted':
+      return { ...state, error: null, isSaving: true }
+    case 'saveFailed':
+      return { ...state, error: action.error, isSaving: false }
+  }
 }
 
 /**
@@ -50,52 +118,43 @@ export function SavePresetDialog({
   projectTasks,
   tags,
 }: SavePresetDialogProps) {
-  const [name, setName] = useState('')
-  const [draftClientId, setDraftClientId] = useState(clientId)
-  const [draftProjectId, setDraftProjectId] = useState(projectId)
-  const [draftTaskId, setDraftTaskId] = useState(taskId)
-  const [draftTagIds, setDraftTagIds] = useState<string[]>(tagIds)
-  const [draftBillable, setDraftBillable] = useState(billable)
-  const [error, setError] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
+  const [draft, dispatch] = useReducer(
+    draftReducer,
+    { clientId, projectId, taskId, tagIds, billable },
+    createInitialState,
+  )
+  const queryClient = useQueryClient()
 
-  // Re-seed the form from the timer's current selection each time it opens.
-  useEffect(() => {
-    if (open) {
-      setName('')
-      setDraftClientId(clientId)
-      setDraftProjectId(projectId)
-      setDraftTaskId(taskId)
-      setDraftTagIds(tagIds)
-      setDraftBillable(billable)
-      setError(null)
-    }
-  }, [open, clientId, projectId, taskId, tagIds, billable])
+  const canSave =
+    draft.name.trim().length > 0 && draft.clientId && draft.projectId
 
-  const canSave = name.trim().length > 0 && draftClientId && draftProjectId
-
-  function handleSave() {
+  async function handleSave() {
     if (!canSave) return
 
-    setIsSaving(true)
-    setError(null)
+    dispatch({ type: 'saveStarted' })
 
-    const result = savePreset(workspaceId, {
-      name: name.trim(),
-      clientId: draftClientId,
-      projectId: draftProjectId,
-      taskId: draftTaskId || null,
-      tagIds: draftTagIds.filter(Boolean),
-      billable: draftBillable,
-    })
-
-    if (result.success) {
+    try {
+      const created = await saveTimerPresetFn({
+        data: {
+          name: draft.name.trim(),
+          clientId: draft.clientId,
+          projectId: draft.projectId,
+          taskId: draft.taskId || null,
+          tagIds: draft.tagIds.filter(Boolean),
+          billable: draft.billable,
+        },
+      })
+      queryClient.setQueryData<TimerPreset[]>(
+        trackerKeys.timerPresets(workspaceId),
+        (old) => [...(old ?? []), created],
+      )
       onOpenChange(false)
-    } else {
-      setError(result.error || 'Failed to save preset')
+    } catch (err) {
+      dispatch({
+        type: 'saveFailed',
+        error: err instanceof Error ? err.message : 'Failed to save preset',
+      })
     }
-
-    setIsSaving(false)
   }
 
   function handleClose() {
@@ -118,8 +177,10 @@ export function SavePresetDialog({
             <Label htmlFor="preset-name">Preset name</Label>
             <Input
               id="preset-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={draft.name}
+              onChange={(e) =>
+                dispatch({ type: 'nameChanged', name: e.target.value })
+              }
               placeholder="e.g., Morning Standup"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleSave()
@@ -133,13 +194,16 @@ export function SavePresetDialog({
               clients={clients.filter((c) => c.clientStatus === 'ACTIVE')}
               projects={projects}
               tasks={projectTasks}
-              clientId={draftClientId}
-              projectId={draftProjectId}
-              taskId={draftTaskId}
+              clientId={draft.clientId}
+              projectId={draft.projectId}
+              taskId={draft.taskId}
               onChange={(cid, pid, tid) => {
-                setDraftClientId(cid)
-                setDraftProjectId(pid)
-                setDraftTaskId(tid ?? '')
+                dispatch({
+                  type: 'selectionChanged',
+                  clientId: cid,
+                  projectId: pid,
+                  taskId: tid ?? '',
+                })
               }}
             />
           </div>
@@ -149,19 +213,21 @@ export function SavePresetDialog({
               <Label>Tags</Label>
               <TagPicker
                 tags={tags}
-                value={draftTagIds}
-                onChange={setDraftTagIds}
+                value={draft.tagIds}
+                onChange={(nextTagIds) =>
+                  dispatch({ type: 'tagsChanged', tagIds: nextTagIds })
+                }
                 onCreate={async () => {}}
                 canCreate={false}
               />
             </div>
             <button
               type="button"
-              onClick={() => setDraftBillable(!draftBillable)}
-              aria-pressed={draftBillable}
-              title={draftBillable ? 'Billable' : 'Non-billable'}
+              onClick={() => dispatch({ type: 'billableToggled' })}
+              aria-pressed={draft.billable}
+              title={draft.billable ? 'Billable' : 'Non-billable'}
               className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
-                draftBillable
+                draft.billable
                   ? 'border-primary/40 bg-primary/10 text-primary'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground'
               }`}
@@ -171,9 +237,9 @@ export function SavePresetDialog({
             </button>
           </div>
 
-          {error && (
+          {draft.error && (
             <p className="m-0 text-sm font-semibold text-destructive">
-              {error}
+              {draft.error}
             </p>
           )}
         </div>
@@ -182,7 +248,7 @@ export function SavePresetDialog({
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={!canSave || isSaving}>
+          <Button onClick={handleSave} disabled={!canSave || draft.isSaving}>
             Save Preset
           </Button>
         </div>

@@ -16,6 +16,9 @@ export const trackerKeys = {
     ['department-dashboard', deps] as const,
   /** Current member's performance page (getMyPerformanceFn). */
   myPerformance: ['my-performance'] as const,
+  /** Current member's saved timer presets in a workspace. */
+  timerPresets: (workspaceId: string) =>
+    ['timer-presets', workspaceId] as const,
 }
 
 // Marks the dashboard's tracker state stale so the next loader run refetches.

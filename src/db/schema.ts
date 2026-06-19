@@ -570,6 +570,66 @@ export const tags = pgTable(
   ],
 )
 
+export const timerPresets = pgTable(
+  'timer_presets',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    workspaceMemberId: varchar('workspace_member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 50 }).notNull(),
+    clientId: varchar('client_id', { length: 30 })
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    projectId: varchar('project_id', { length: 30 })
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    taskId: varchar('task_id', { length: 30 }).references(
+      () => projectTasks.id,
+      { onDelete: 'set null' },
+    ),
+    billable: boolean('billable').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('timer_presets_member_name_unique').on(
+      table.workspaceMemberId,
+      table.name,
+    ),
+    index('timer_presets_workspace_member_idx').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+    ),
+  ],
+)
+
+export const timerPresetTags = pgTable(
+  'timer_preset_tags',
+  {
+    timerPresetId: varchar('timer_preset_id', { length: 30 })
+      .notNull()
+      .references(() => timerPresets.id, { onDelete: 'cascade' }),
+    tagId: varchar('tag_id', { length: 30 })
+      .notNull()
+      .references(() => tags.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.timerPresetId, table.tagId] }),
+    index('timer_preset_tags_tag_id_idx').on(table.tagId),
+  ],
+)
+
 // ── Time tracking ─────────────────────────────────────────────────────────────
 
 export const timeEntries = pgTable(
