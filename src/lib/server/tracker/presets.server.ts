@@ -15,7 +15,7 @@ import type {
   timerPresetInputSchema,
 } from '../tracker'
 import { requireWorkspaceMembership } from '../workspace-access.server'
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
 
 const MAX_PRESETS = 10
 
@@ -149,14 +149,20 @@ export async function saveTimerPreset(data: TimerPresetInput) {
 
   const [countRows, duplicateRows] = await Promise.all([
     db
-      .select({ id: timerPresets.id })
+      .select({ total: count() })
       .from(timerPresets)
-      .where(eq(timerPresets.workspaceMemberId, access.member.id)),
+      .where(
+        and(
+          eq(timerPresets.workspaceId, access.workspace.id),
+          eq(timerPresets.workspaceMemberId, access.member.id),
+        ),
+      ),
     db
       .select({ id: timerPresets.id })
       .from(timerPresets)
       .where(
         and(
+          eq(timerPresets.workspaceId, access.workspace.id),
           eq(timerPresets.workspaceMemberId, access.member.id),
           sql`lower(${timerPresets.name}) = ${data.name.toLowerCase()}`,
         ),
@@ -164,7 +170,7 @@ export async function saveTimerPreset(data: TimerPresetInput) {
       .limit(1),
   ])
 
-  if (countRows.length >= MAX_PRESETS) {
+  if ((countRows[0]?.total ?? 0) >= MAX_PRESETS) {
     throw new Error(`Maximum ${MAX_PRESETS} presets reached.`)
   }
 
@@ -229,7 +235,12 @@ export async function importTimerPresets(
   const existing = await db
     .select({ name: timerPresets.name })
     .from(timerPresets)
-    .where(eq(timerPresets.workspaceMemberId, access.member.id))
+    .where(
+      and(
+        eq(timerPresets.workspaceId, access.workspace.id),
+        eq(timerPresets.workspaceMemberId, access.member.id),
+      ),
+    )
 
   let remaining = Math.max(0, MAX_PRESETS - existing.length)
   const existingNames = new Set(existing.map((row) => row.name.toLowerCase()))
