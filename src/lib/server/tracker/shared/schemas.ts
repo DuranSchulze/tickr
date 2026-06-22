@@ -3,7 +3,7 @@ import { z } from 'zod'
 // ─── Entries ──────────────────────────────────────────────────────────────────
 
 /** Max length for a time-entry / task description (kept in sync with client inputs). */
-export const MAX_DESCRIPTION_LENGTH = 200
+export const MAX_DESCRIPTION_LENGTH = 2000
 
 const descriptionRequired = z.string().trim().min(1).max(MAX_DESCRIPTION_LENGTH)
 const descriptionOptional = z.string().trim().max(MAX_DESCRIPTION_LENGTH)
