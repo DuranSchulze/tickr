@@ -15,6 +15,8 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
   DrawerTrigger,
 } from '#/components/ui/drawer'
 
@@ -75,6 +77,10 @@ export const MobileNav = memo(function ({
       </DrawerTrigger>
 
       <DrawerContent className="flex flex-col bg-card p-0">
+        <DrawerTitle className="sr-only">Mobile navigation</DrawerTitle>
+        <DrawerDescription className="sr-only">
+          Primary workspace navigation links.
+        </DrawerDescription>
         <div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
           <div className="mb-3 border border-primary/30 bg-primary/10 px-3 py-2.5">
             <div className="flex items-center justify-between gap-2">

@@ -701,6 +701,80 @@ export const timeEntryTags = pgTable(
   ],
 )
 
+export const analyticsDailyMemberMetrics = pgTable(
+  'analytics_daily_member_metrics',
+  {
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    workspaceMemberId: varchar('workspace_member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    departmentId: varchar('department_id', { length: 30 }).references(
+      () => departments.id,
+      { onDelete: 'set null' },
+    ),
+    entryCount: integer('entry_count').notNull().default(0),
+    totalSeconds: integer('total_seconds').notNull().default(0),
+    billableSeconds: integer('billable_seconds').notNull().default(0),
+    nonBillableSeconds: integer('non_billable_seconds').notNull().default(0),
+    billableAmount: numeric('billable_amount', {
+      precision: 12,
+      scale: 2,
+    })
+      .notNull()
+      .default('0'),
+    firstEntryAt: timestamp('first_entry_at', { withTimezone: true }),
+    lastEntryAt: timestamp('last_entry_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.workspaceId, table.workspaceMemberId, table.date],
+    }),
+    index('analytics_daily_workspace_date_idx').on(
+      table.workspaceId,
+      table.date,
+    ),
+    index('analytics_daily_workspace_member_date_idx').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+      table.date,
+    ),
+    index('analytics_daily_workspace_department_date_idx').on(
+      table.workspaceId,
+      table.departmentId,
+      table.date,
+    ),
+  ],
+)
+
+export const pendingAnalyticsRollups = pgTable(
+  'pending_analytics_rollups',
+  {
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    workspaceMemberId: varchar('workspace_member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.workspaceId, table.workspaceMemberId, table.date],
+    }),
+    index('pending_analytics_rollups_created_idx').on(table.createdAt),
+  ],
+)
+
 // ── Employee HR tables ────────────────────────────────────────────────────────
 
 export const employeeProfiles = pgTable(

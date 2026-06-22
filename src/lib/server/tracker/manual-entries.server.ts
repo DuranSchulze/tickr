@@ -7,6 +7,10 @@ import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import { createAuditLog } from './audit/audit-logger.server'
+import {
+  entryRollupTarget,
+  safeRefreshAnalyticsRollups,
+} from './analytics-rollups.server'
 import type {
   entryIdSchema,
   entryInputSchema,
@@ -52,6 +56,9 @@ export async function createManualEntry(
       ? enqueueTimeEntry(access.workspace.id, entry.id)
       : Promise.resolve(),
   ])
+  if (endedAt) {
+    await safeRefreshAnalyticsRollups([entryRollupTarget(entry)])
+  }
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -135,6 +142,14 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
   // Any edit can change what the synced sheet shows (times, description,
   // project, billable), so always flag the workspace for re-sync.
   await enqueueTimeEntry(access.workspace.id, existingEntry.id)
+  await safeRefreshAnalyticsRollups([
+    entryRollupTarget(existingEntry),
+    {
+      workspaceId: access.workspace.id,
+      workspaceMemberId: existingEntry.workspaceMemberId,
+      date: startedAt.toISOString().slice(0, 10),
+    },
+  ])
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -159,10 +174,18 @@ export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
         eq(timeEntries.workspaceMemberId, access.member.id),
       ),
     )
-    .returning({ id: timeEntries.id })
+    .returning({
+      id: timeEntries.id,
+      workspaceId: timeEntries.workspaceId,
+      workspaceMemberId: timeEntries.workspaceMemberId,
+      startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
+    })
 
   if (deleted.length > 0) {
     await enqueueTimeEntry(access.workspace.id, data.id)
+    const completedDeleted = deleted.filter((entry) => entry.endedAt)
+    await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
   }
 
   void createAuditLog({

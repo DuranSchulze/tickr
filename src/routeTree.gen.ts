@@ -36,6 +36,7 @@ import { Route as AppTimeTrackerWeekRouteImport } from './routes/app/time-tracke
 import { Route as AppTimeTrackerMonthRouteImport } from './routes/app/time-tracker/month'
 import { Route as AppTimeTrackerDayRouteImport } from './routes/app/time-tracker/day'
 import { Route as AppDepartmentMemberAnalyticsMemberIdRouteImport } from './routes/app/department-member-analytics.$memberId'
+import { Route as AppAnalyticsOverviewRouteImport } from './routes/app/analytics_.overview'
 import { Route as ApiImportStreamRouteImport } from './routes/api/import/stream'
 import { Route as ApiCronSyncGsheetsRouteImport } from './routes/api/cron/sync-gsheets'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -183,6 +184,11 @@ const AppDepartmentMemberAnalyticsMemberIdRoute =
     path: '/department-member-analytics/$memberId',
     getParentRoute: () => AppRoute,
   } as any)
+const AppAnalyticsOverviewRoute = AppAnalyticsOverviewRouteImport.update({
+  id: '/analytics_/overview',
+  path: '/analytics/overview',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiImportStreamRoute = ApiImportStreamRouteImport.update({
   id: '/api/import/stream',
   path: '/api/import/stream',
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/app/analytics_/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
     | '/api/import/stream'
+    | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
     | '/app/time-tracker/month'
@@ -422,6 +432,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
     | '/api/import/stream'
+    | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
     | '/app/time-tracker/month'
@@ -461,6 +472,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
     | '/api/import/stream'
+    | '/app/analytics_/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
     | '/app/time-tracker/month'
@@ -686,6 +698,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDepartmentMemberAnalyticsMemberIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/analytics_/overview': {
+      id: '/app/analytics_/overview'
+      path: '/analytics/overview'
+      fullPath: '/app/analytics/overview'
+      preLoaderRoute: typeof AppAnalyticsOverviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/import/stream': {
       id: '/api/import/stream'
       path: '/api/import/stream'
@@ -800,6 +819,7 @@ interface AppRouteChildren {
   AppMyPerformanceRoute: typeof AppMyPerformanceRoute
   AppMyWorkspacesRoute: typeof AppMyWorkspacesRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppAnalyticsOverviewRoute: typeof AppAnalyticsOverviewRoute
   AppDepartmentMemberAnalyticsMemberIdRoute: typeof AppDepartmentMemberAnalyticsMemberIdRoute
   AppTimeTrackerDayRoute: typeof AppTimeTrackerDayRoute
   AppTimeTrackerMonthRoute: typeof AppTimeTrackerMonthRoute
@@ -820,6 +840,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyPerformanceRoute: AppMyPerformanceRoute,
   AppMyWorkspacesRoute: AppMyWorkspacesRoute,
   AppProfileRoute: AppProfileRoute,
+  AppAnalyticsOverviewRoute: AppAnalyticsOverviewRoute,
   AppDepartmentMemberAnalyticsMemberIdRoute:
     AppDepartmentMemberAnalyticsMemberIdRoute,
   AppTimeTrackerDayRoute: AppTimeTrackerDayRoute,

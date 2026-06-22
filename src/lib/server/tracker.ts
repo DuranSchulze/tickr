@@ -34,6 +34,11 @@ const analyticsRangeSchema = z.object({
   pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
+const analyticsOverviewSchema = z.object({
+  scope: z.enum(['personal', 'organization', 'department']).optional(),
+  asOfDate: z.string().date().optional(),
+})
+
 const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
@@ -145,6 +150,13 @@ export const getAnalyticsFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getAnalytics } = await import('./tracker.server')
     return getAnalytics(data)
+  })
+
+export const getAnalyticsOverviewFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => analyticsOverviewSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getAnalyticsOverview } = await import('./tracker.server')
+    return getAnalyticsOverview(data)
   })
 
 export const getCalendarEntriesFn = createServerFn({ method: 'GET' })

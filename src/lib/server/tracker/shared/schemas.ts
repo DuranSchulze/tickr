@@ -92,6 +92,11 @@ export const analyticsRangeSchema = z.object({
   pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
+export const analyticsOverviewSchema = z.object({
+  scope: z.enum(['personal', 'organization', 'department']).optional(),
+  asOfDate: z.string().date().optional(),
+})
+
 export const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })

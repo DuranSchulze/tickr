@@ -53,6 +53,10 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const descriptionProps = hasDialogDescription(children)
+    ? {}
+    : ({ 'aria-describedby': undefined } as const)
+
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -63,6 +67,7 @@ function DialogContent({
           className,
         )}
         {...props}
+        {...descriptionProps}
       >
         {children}
         {showCloseButton && (
@@ -80,6 +85,16 @@ function DialogContent({
       </DialogPrimitive.Content>
     </DialogPortal>
   )
+}
+
+function hasDialogDescription(children: React.ReactNode): boolean {
+  return React.Children.toArray(children).some((child) => {
+    if (!React.isValidElement(child)) return false
+    if (child.type === DialogDescription) return true
+    return hasDialogDescription(
+      (child.props as { children?: React.ReactNode }).children,
+    )
+  })
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {

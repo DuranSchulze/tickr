@@ -7,6 +7,10 @@ import { requireWorkspaceMembership } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
+import {
+  entryRollupTarget,
+  safeRefreshAnalyticsRollups,
+} from './analytics-rollups.server'
 import type {
   entryIdSchema,
   startTimerSchema,
@@ -336,6 +340,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
   }
 
   await enqueueTimeEntry(access.workspace.id, updatedEntry.id)
+  await safeRefreshAnalyticsRollups([entryRollupTarget(updatedEntry)])
 
   return serializeTimeEntry(updatedEntry, finalTags)
 }
@@ -387,6 +392,7 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
   }
 
   await enqueueTimeEntry(access.workspace.id, newEntry.id)
+  await safeRefreshAnalyticsRollups([entryRollupTarget(newEntry)])
 
   const newTags = entryTags.length
     ? entryTags.map((t) => ({ tagId: t.tagId }))

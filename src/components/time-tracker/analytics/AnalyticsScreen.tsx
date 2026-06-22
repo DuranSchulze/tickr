@@ -1,9 +1,11 @@
+import { Link } from '@tanstack/react-router'
 import { AlertTriangle, BarChart3 } from 'lucide-react'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
+import { Button } from '#/components/ui/button'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
 import type { AnalyticsFilters } from './AnalyticsFilterBar'
@@ -148,6 +150,14 @@ export function AnalyticsScreen({
                   })
                 }
               />
+              <Button asChild variant="outline">
+                <Link
+                  to="/app/analytics/overview"
+                  search={{ scope: analytics.selectedScope }}
+                >
+                  Overview
+                </Link>
+              </Button>
               {singleSelectedMemberId && (
                 <div className="min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
                   <MemberExportButton

@@ -57,6 +57,13 @@
       "when": 1781829646198,
       "tag": "0007_calm_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782120000000,
+      "tag": "0008_analytics_daily_rollups",
+      "breakpoints": true
     }
   ]
 }

@@ -48,6 +48,10 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  const descriptionProps = hasDrawerDescription(children)
+    ? {}
+    : ({ 'aria-describedby': undefined } as const)
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />
@@ -58,12 +62,23 @@ function DrawerContent({
           className,
         )}
         {...props}
+        {...descriptionProps}
       >
         <div className="mx-auto mt-4 hidden h-1.5 w-[100px] shrink-0 rounded-full bg-muted group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>
     </DrawerPortal>
   )
+}
+
+function hasDrawerDescription(children: React.ReactNode): boolean {
+  return React.Children.toArray(children).some((child) => {
+    if (!React.isValidElement(child)) return false
+    if (child.type === DrawerDescription) return true
+    return hasDrawerDescription(
+      (child.props as { children?: React.ReactNode }).children,
+    )
+  })
 }
 
 function DrawerHeader({ className, ...props }: React.ComponentProps<'div'>) {
