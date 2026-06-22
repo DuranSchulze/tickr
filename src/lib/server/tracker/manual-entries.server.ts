@@ -19,10 +19,11 @@ export async function createManualEntry(
   const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
+  const taskId = data.taskId ?? null
   const startedAt = new Date(data.startedAt)
   const endedAt = data.endedAt ? new Date(data.endedAt) : null
 
-  await assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+  await assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds)
 
   const [entry] = await db
     .insert(timeEntries)
@@ -31,6 +32,7 @@ export async function createManualEntry(
       workspaceMemberId: access.member.id,
       description: data.description,
       projectId,
+      taskId,
       billable: data.billable,
       startedAt,
       endedAt,
@@ -66,12 +68,13 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
   const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
+  const taskId = data.taskId ?? null
   const startedAt = new Date(data.startedAt)
   const endedAt = data.endedAt ? new Date(data.endedAt) : null
 
   // Catalog validation and the entry lookup are independent reads — one wave.
   const [, existingRows] = await Promise.all([
-    assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds),
+    assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds),
     db
       .select()
       .from(timeEntries)
@@ -99,6 +102,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
       .set({
         description: data.description,
         projectId,
+        taskId,
         billable: data.billable,
         startedAt,
         endedAt,

@@ -29,9 +29,9 @@ chrome.runtime.onMessage.addListener((msg) => {
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     console.log(
-      '[Time Tracker] Extension installed. Click the toolbar icon to open the side panel.',
+      '[Trackly] Extension installed. Click the toolbar icon to open the side panel.',
     )
   } else if (details.reason === 'update') {
-    console.log('[Time Tracker] Extension updated.')
+    console.log('[Trackly] Extension updated.')
   }
 })

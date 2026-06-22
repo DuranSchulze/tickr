@@ -1,40 +1,59 @@
 import type { TimeEntry } from './types'
 
-const storageKey = (workspaceId: string) =>
-  `pending-stopped-entries:${workspaceId}`
+const storageKey = (workspaceId: string, memberId: string) =>
+  `pending-stopped-entries:${workspaceId}:${memberId}`
 
-export function savePendingEntry(workspaceId: string, entry: TimeEntry): void {
+export function savePendingEntry(
+  workspaceId: string,
+  memberId: string,
+  entry: TimeEntry,
+): void {
   if (typeof window === 'undefined') return
   try {
-    const existing = loadPendingEntries(workspaceId)
+    const existing = loadPendingEntries(workspaceId, memberId)
     const next = [...existing.filter((e) => e.id !== entry.id), entry]
-    localStorage.setItem(storageKey(workspaceId), JSON.stringify(next))
+    localStorage.setItem(
+      storageKey(workspaceId, memberId),
+      JSON.stringify(next),
+    )
   } catch {
     // ignore storage errors
   }
 }
 
-export function removePendingEntry(workspaceId: string, entryId: string): void {
+export function removePendingEntry(
+  workspaceId: string,
+  memberId: string,
+  entryId: string,
+): void {
   if (typeof window === 'undefined') return
   try {
-    const existing = loadPendingEntries(workspaceId)
+    const existing = loadPendingEntries(workspaceId, memberId)
     const next = existing.filter((e) => e.id !== entryId)
     if (next.length === 0) {
-      localStorage.removeItem(storageKey(workspaceId))
+      localStorage.removeItem(storageKey(workspaceId, memberId))
     } else {
-      localStorage.setItem(storageKey(workspaceId), JSON.stringify(next))
+      localStorage.setItem(
+        storageKey(workspaceId, memberId),
+        JSON.stringify(next),
+      )
     }
   } catch {
     // ignore storage errors
   }
 }
 
-export function loadPendingEntries(workspaceId: string): TimeEntry[] {
+export function loadPendingEntries(
+  workspaceId: string,
+  memberId: string,
+): TimeEntry[] {
   if (typeof window === 'undefined') return []
   try {
-    const raw = localStorage.getItem(storageKey(workspaceId))
+    const raw = localStorage.getItem(storageKey(workspaceId, memberId))
     if (!raw) return []
-    return JSON.parse(raw) as TimeEntry[]
+    return (JSON.parse(raw) as TimeEntry[]).filter(
+      (entry) => entry.workspaceMemberId === memberId,
+    )
   } catch {
     return []
   }

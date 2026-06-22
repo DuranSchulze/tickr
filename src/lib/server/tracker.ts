@@ -1,5 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
 import { z } from 'zod'
+import {
+  entryIdSchema,
+  entryInputSchema,
+  startTimerSchema,
+  stopTimerSchema,
+  updateActiveTimerSchema,
+  updateEntrySchema,
+} from './tracker/shared/schemas'
 
 const inviteMemberSchema = z.object({
   email: z.string().trim().email(),
@@ -12,71 +20,6 @@ const createRoleSchema = z.object({
   permissionLevel: z.enum(['OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE']),
   color: z.string().default('#6366f1'),
 })
-
-const entryTimesAreOrdered = {
-  check: (data: { startedAt: string; endedAt: string | null }) =>
-    !data.endedAt ||
-    new Date(data.endedAt).getTime() > new Date(data.startedAt).getTime(),
-  params: {
-    message: 'End time must be after start time.',
-    path: ['endedAt'],
-  },
-}
-
-const entryInputShape = z.object({
-  description: z.string().trim().min(1),
-  projectId: z.string().trim().min(1),
-  tagIds: z.array(z.string().min(1)).default([]),
-  billable: z.boolean().default(false),
-  startedAt: z.string().datetime(),
-  endedAt: z.string().datetime().nullable(),
-  durationSeconds: z.number().int().min(0),
-  notes: z.string().trim().default(''),
-})
-
-const entryInputSchema = entryInputShape.refine(
-  entryTimesAreOrdered.check,
-  entryTimesAreOrdered.params,
-)
-
-const startTimerSchema = z.object({
-  description: z.string().trim().default(''),
-  projectId: z.string().default(''),
-  tagIds: z.array(z.string().min(1)).default([]),
-  billable: z.boolean().default(false),
-  // Offline replay: the real client-side start time. Server clamps to now.
-  startedAt: z.string().datetime().optional(),
-})
-
-const updateActiveTimerSchema = z.object({
-  id: z.string().min(1),
-  description: z.string().trim().default(''),
-  projectId: z.string().default(''),
-  tagIds: z.array(z.string().min(1)).default([]),
-  billable: z.boolean().default(false),
-  startedAt: z.string().datetime().optional(),
-})
-
-const entryIdSchema = z.object({
-  id: z.string().min(1),
-})
-
-const stopTimerSchema = z.object({
-  id: z.string().min(1),
-  description: z.string().trim().optional(),
-  projectId: z.string().optional(),
-  tagIds: z.array(z.string().min(1)).optional(),
-  billable: z.boolean().optional(),
-  // Offline replay: the real client-side stop time. Server clamps to
-  // [startedAt, now] and falls back to now when the value is implausible.
-  endedAt: z.string().datetime().optional(),
-})
-
-const updateEntrySchema = entryInputShape
-  .extend({
-    id: z.string().min(1),
-  })
-  .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
 const analyticsRangeSchema = z.object({
   startDate: z.string().date(),
@@ -265,7 +208,7 @@ export const startTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => startTimerSchema.parse(input))
   .handler(async ({ data }) => {
     const { startTimer } = await import('./tracker.server')
-    return startTimer({ ...data, taskId: (data as any).taskId ?? null })
+    return startTimer(data)
   })
 
 export const stopTimerFn = createServerFn({ method: 'POST' })
@@ -279,7 +222,7 @@ export const updateActiveTimerFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateActiveTimerSchema.parse(input))
   .handler(async ({ data }) => {
     const { updateActiveTimer } = await import('./tracker.server')
-    return updateActiveTimer({ ...data, taskId: (data as any).taskId ?? null })
+    return updateActiveTimer(data)
   })
 
 export const createManualEntryFn = createServerFn({ method: 'POST' })

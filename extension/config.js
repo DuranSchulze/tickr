@@ -1,7 +1,7 @@
 /**
- * Time Tracker — Extension Configuration
+ * Trackly — Extension Configuration
  * ==========================================
- * Edit APP_URL to point to your deployed Time Tracker instance.
+ * Edit APP_URL to point to your deployed Trackly instance.
  *
  * Development: 'http://localhost:3000'
  * Production:  'https://your-app.vercel.app'

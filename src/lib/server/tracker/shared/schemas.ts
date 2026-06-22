@@ -21,6 +21,7 @@ const entryTimesAreOrdered = {
 const entryInputShape = z.object({
   description: descriptionRequired,
   projectId: z.string().default(''),
+  taskId: z.string().nullable().default(null),
   tagIds: z.array(z.string().min(1)).default([]),
   billable: z.boolean().default(false),
   startedAt: z.string().datetime(),

@@ -1,13 +1,14 @@
 import { db } from '#/db'
-import { projects, tags } from '#/db/schema'
+import { projects, projectTasks, tags } from '#/db/schema'
 import { and, eq, inArray } from 'drizzle-orm'
 
 export async function assertWorkspaceCatalogs(
   workspaceId: string,
   projectId: string | null,
+  taskId: string | null,
   tagIds: string[],
 ) {
-  const [projectRow, tagRows] = await Promise.all([
+  const [projectRow, taskRows, tagRows] = await Promise.all([
     projectId
       ? db
           .select()
@@ -21,6 +22,20 @@ export async function assertWorkspaceCatalogs(
           )
           .limit(1)
       : Promise.resolve([null]),
+    taskId
+      ? db
+          .select()
+          .from(projectTasks)
+          .where(
+            and(
+              eq(projectTasks.id, taskId),
+              eq(projectTasks.workspaceId, workspaceId),
+              eq(projectTasks.projectId, projectId ?? ''),
+              eq(projectTasks.archived, false),
+            ),
+          )
+          .limit(1)
+      : Promise.resolve([]),
     tagIds.length
       ? db
           .select()
@@ -37,6 +52,10 @@ export async function assertWorkspaceCatalogs(
 
   if (projectId && !projectRow[0]) {
     throw new Error('Selected project is not available in this workspace.')
+  }
+
+  if (taskId && !taskRows[0]) {
+    throw new Error('Selected task is not available for this project.')
   }
 
   if (tagRows.length !== new Set(tagIds).size) {

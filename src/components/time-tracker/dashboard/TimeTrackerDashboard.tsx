@@ -218,7 +218,7 @@ export function TimeTrackerDashboard({
     } else {
       allEntriesInitialized.current = false
     }
-  }, [view])
+  }, [loadAllEntries, view])
 
   const baseFiltered = useFilteredEntries(
     state.entries,
@@ -241,7 +241,7 @@ export function TimeTrackerDashboard({
   const drainingRef = useRef(false)
   useEffect(() => {
     if (!isOnline || drainingRef.current) return
-    const queue = loadOfflineQueue(state.workspace.id)
+    const queue = loadOfflineQueue(state.workspace.id, state.currentMemberId)
     if (queue.length === 0) return
     drainingRef.current = true
 
@@ -265,7 +265,11 @@ export function TimeTrackerDashboard({
             ? item.payload.id
             : null
         if (dependsOn && failedIds.has(dependsOn)) {
-          removeOfflineQueueItem(state.workspace.id, item.id)
+          removeOfflineQueueItem(
+            state.workspace.id,
+            state.currentMemberId,
+            item.id,
+          )
           removeOptimisticStoppedEntry(dependsOn)
           continue
         }
@@ -288,7 +292,11 @@ export function TimeTrackerDashboard({
             const realId = idMap.get(item.payload.id) ?? item.payload.id
             await deleteEntryFn({ data: { id: realId } })
           }
-          removeOfflineQueueItem(state.workspace.id, item.id)
+          removeOfflineQueueItem(
+            state.workspace.id,
+            state.currentMemberId,
+            item.id,
+          )
           replayedAny = true
         } catch (err) {
           if (isNetworkError(err)) {
@@ -298,7 +306,11 @@ export function TimeTrackerDashboard({
           }
           // Server rejected the action — drop it so one poisoned item can't
           // stall the queue forever, and clean up its optimistic entry.
-          removeOfflineQueueItem(state.workspace.id, item.id)
+          removeOfflineQueueItem(
+            state.workspace.id,
+            state.currentMemberId,
+            item.id,
+          )
           if (item.type === 'startTimer' || item.type === 'createManualEntry') {
             failedIds.add(item.optimisticId)
             removeOptimisticStoppedEntry(item.optimisticId)
@@ -318,7 +330,7 @@ export function TimeTrackerDashboard({
     }
 
     void drain()
-  }, [isOnline, state.workspace.id])
+  }, [isOnline, state.currentMemberId, state.workspace.id])
 
   // Update the browser tab title and emit state to the Chrome extension side panel.
   // Owns its own interval so the dashboard doesn't re-render every second.
@@ -350,7 +362,7 @@ export function TimeTrackerDashboard({
       if (typeof window !== 'undefined' && window.parent !== window) {
         window.parent.postMessage(
           {
-            type: 'CLOCKIFY_TIMER_STATE',
+            type: 'TRACKLY_TIMER_STATE',
             running: !!entry,
             elapsedSeconds,
           },
@@ -551,14 +563,13 @@ export function TimeTrackerDashboard({
   return (
     <div className="grid min-w-0 gap-6">
       {!isOnline && (
-        <div
-          role="status"
+        <output
           aria-live="polite"
           className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-300"
         >
           You&apos;re offline. Actions are queued and will sync when you
           reconnect.
-        </div>
+        </output>
       )}
       <DashboardHeader
         workspaceName={state.workspace.name}
@@ -930,10 +941,14 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="self-export-start-date"
+                className="text-xs font-semibold text-foreground"
+              >
                 Start date
               </label>
               <input
+                id="self-export-start-date"
                 type="date"
                 value={startDate}
                 max={endDate || todayStr}
@@ -943,10 +958,14 @@ function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
               />
             </div>
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold text-foreground">
+              <label
+                htmlFor="self-export-end-date"
+                className="text-xs font-semibold text-foreground"
+              >
                 End date
               </label>
               <input
+                id="self-export-end-date"
                 type="date"
                 value={endDate}
                 min={startDate || undefined}

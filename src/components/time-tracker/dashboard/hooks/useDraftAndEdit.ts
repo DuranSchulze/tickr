@@ -84,7 +84,7 @@ export function useDraftAndEdit({
 
     if (!isOnline) {
       const optimisticId = `optimistic-manual-${crypto.randomUUID()}`
-      enqueueOfflineMutation(state.workspace.id, {
+      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'createManualEntry',
         optimisticId,
         payload,
@@ -94,7 +94,7 @@ export function useDraftAndEdit({
         workspaceMemberId: state.currentMemberId,
         description: payload.description,
         projectId: payload.projectId,
-        taskId: null,
+        taskId: payload.taskId,
         tagIds: payload.tagIds,
         billable: payload.billable,
         startedAt: payload.startedAt,
@@ -146,6 +146,7 @@ export function useDraftAndEdit({
         ...prev,
         description: editingDraft.description.trim(),
         projectId: editingDraft.projectId,
+        taskId: editingDraft.taskId || null,
         tagIds,
         billable: editingDraft.billable,
         startedAt: startedAt.toISOString(),
@@ -156,6 +157,7 @@ export function useDraftAndEdit({
           id: editingId,
           description: editingDraft.description.trim(),
           projectId: editingDraft.projectId,
+          taskId: editingDraft.taskId || null,
           tagIds,
           billable: editingDraft.billable,
           startedAt: startedAt.toISOString(),
@@ -195,6 +197,7 @@ export function useDraftAndEdit({
         | 'description'
         | 'billable'
         | 'projectId'
+        | 'taskId'
         | 'tagIds'
         | 'startedAt'
         | 'endedAt'
@@ -208,6 +211,7 @@ export function useDraftAndEdit({
     if (!entry.endedAt) {
       const description = (patch.description ?? entry.description).trim()
       const projectId = patch.projectId ?? entry.projectId
+      const taskId = patch.taskId ?? entry.taskId
       const tagIds = patch.tagIds ?? entry.tagIds
       const billable = patch.billable ?? entry.billable
       const startedAt = patch.startedAt ?? entry.startedAt
@@ -215,6 +219,7 @@ export function useDraftAndEdit({
         ...entry,
         description,
         projectId,
+        taskId,
         tagIds,
         billable,
         startedAt,
@@ -224,6 +229,7 @@ export function useDraftAndEdit({
           id: entryId,
           description,
           projectId,
+          taskId,
           tagIds,
           billable,
           ...(patch.startedAt ? { startedAt: patch.startedAt } : {}),
@@ -240,6 +246,7 @@ export function useDraftAndEdit({
     const description = (patch.description ?? entry.description).trim()
     if (!description) return
     const projectId = patch.projectId ?? entry.projectId
+    const taskId = patch.taskId ?? entry.taskId
     const tagIds = patch.tagIds ?? entry.tagIds
     const billable = patch.billable ?? entry.billable
     const startedAt = patch.startedAt ?? entry.startedAt
@@ -254,6 +261,7 @@ export function useDraftAndEdit({
       ...entry,
       description,
       projectId,
+      taskId,
       tagIds,
       billable,
       startedAt,
@@ -265,6 +273,7 @@ export function useDraftAndEdit({
       {
         description,
         projectId,
+        taskId,
         tagIds,
         billable,
         startedAt,

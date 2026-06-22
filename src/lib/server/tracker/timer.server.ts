@@ -55,6 +55,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
   const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
+  const taskId = data.taskId ?? null
 
   // Both pre-checks are reads — run them in one round trip wave.
   const [activeRows] = await Promise.all([
@@ -69,8 +70,8 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
         ),
       )
       .limit(1),
-    projectId || tagIds.length
-      ? assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+    projectId || taskId || tagIds.length
+      ? assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds)
       : Promise.resolve(),
   ])
 
@@ -97,7 +98,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       workspaceMemberId: access.member.id,
       description: data.description,
       projectId,
-      taskId: data.taskId ?? null,
+      taskId,
       billable: data.billable,
       startedAt,
       endedAt: null,
@@ -125,6 +126,7 @@ export async function updateActiveTimer(
   const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
+  const taskId = data.taskId ?? null
 
   // Both pre-checks are reads — run them in one round trip wave.
   const [entryRows] = await Promise.all([
@@ -140,8 +142,8 @@ export async function updateActiveTimer(
         ),
       )
       .limit(1),
-    projectId || tagIds.length
-      ? assertWorkspaceCatalogs(access.workspace.id, projectId, tagIds)
+    projectId || taskId || tagIds.length
+      ? assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds)
       : Promise.resolve(),
   ])
 
@@ -160,7 +162,7 @@ export async function updateActiveTimer(
       .set({
         description: data.description,
         projectId,
-        taskId: data.taskId ?? null,
+        taskId,
         billable: data.billable,
         ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
       })
@@ -237,6 +239,12 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
   if (effectiveTagIds.length === 0) {
     throw new Error('Add at least one tag before stopping the timer.')
   }
+  await assertWorkspaceCatalogs(
+    access.workspace.id,
+    effectiveProjectId,
+    effectiveTaskId,
+    effectiveTagIds,
+  )
 
   // Offline replay sends the real stop time; accept it only when it falls in
   // (startedAt, now] — anything else (future, before start, unparsable) means

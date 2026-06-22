@@ -3,7 +3,6 @@ import {
   CalendarDays,
   Clock,
   Copy,
-  Loader2,
   MoreHorizontal,
   Play,
   Trash2,
@@ -360,9 +359,6 @@ export const EntryRow = memo(function EntryRow({
               </span>
             )}
           </button>
-        )}
-        {isPending && (
-          <Loader2 className="mt-1 size-3 animate-spin text-muted-foreground" />
         )}
       </TableCell>
 

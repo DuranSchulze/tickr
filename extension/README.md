@@ -1,6 +1,6 @@
-# Time Tracker — Browser Extension
+# Trackly — Browser Extension
 
-A Chrome extension side panel that embeds the **Time Tracker** app, giving you
+A Chrome extension side panel that embeds the **Trackly** app, giving you
 instant access to start, stop, and track time entries without leaving your
 current tab — and live timer updates on the toolbar badge.
 
@@ -9,7 +9,7 @@ current tab — and live timer updates on the toolbar badge.
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Chrome Toolbar                          │
-│  [🔘 Time Tracker icon] → Opens side panel                │
+│  [Trackly icon] → Opens side panel                       │
 │  [Badge: 1h23m]         → Live timer display              │
 └─────────────────────────────────────────────────────────┘
          │                          ▲
@@ -18,12 +18,12 @@ current tab — and live timer updates on the toolbar badge.
 ┌─────────────────────────────────────────────────────────┐
 │              Side Panel (sidepanel.html)                  │
 │  ┌───────────────────────────────────────────────────┐   │
-│  │  <iframe> Time Tracker App (?embed=1)              │   │
+│  │  <iframe> Trackly App (?embed=1)                    │   │
 │  │  - Start/stop timers                               │   │
 │  │  - View running entry                              │   │
 │  │  - Closes → app open link                          │   │
 │  │                                                    │   │
-│  │  postMessage({ type: 'CLOCKIFY_TIMER_STATE', ... }) │   │
+│  │  postMessage({ type: 'TRACKLY_TIMER_STATE', ... })  │   │
 │  └───────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -36,7 +36,6 @@ current tab — and live timer updates on the toolbar badge.
 | **Service Worker**   | `background.js`  | Opens side panel on icon click; updates toolbar badge           |
 | **Side Panel**       | `sidepanel.html` | Hosts the app in an iframe, wraps it in a loading overlay       |
 | **Side Panel Logic** | `sidepanel.js`   | Relays timer state from iframe → background; captures page info |
-| **Content Script**   | `content.js`     | Responds to page-info requests from the side panel              |
 | **Styles**           | `sidepanel.css`  | Dark background, spinner, full-viewport iframe                  |
 | **Configuration**    | `config.js`      | Single source of truth for the app URL                          |
 
@@ -51,7 +50,7 @@ Edit `extension/config.js` and set `APP_URL` to your running instance:
 const APP_URL = 'http://localhost:3000'
 
 // Production (deployed on Vercel / DigitalOcean)
-const APP_URL = 'https://time-tracker.your-domain.com'
+const APP_URL = 'https://trackly.your-domain.com'
 ```
 
 ### 2. Load the Extension in Chrome
@@ -103,7 +102,7 @@ removed this, add it back.
 
 ### Start Tracking
 
-1. Click the Time Tracker icon in the Chrome toolbar → the side panel opens
+1. Click the Trackly icon in the Chrome toolbar → the side panel opens
 2. The app loads inside the panel (in **embed mode** — no nav, no sidebar)
 3. Start a timer as usual via the dashboard
 4. The toolbar badge updates every second with the running time
@@ -116,13 +115,14 @@ removed this, add it back.
 ### Open in Full App
 
 While in the side panel, click **"Open in full app"** at the bottom of the
-panel — it opens a new tab with the full Time Tracker interface.
+panel — it opens a new tab with the full Trackly interface.
 
 ### Page Context
 
-When the side panel opens, it captures the active tab's title and URL and stores
-it in `chrome.storage.session`. This is available for future features like
-auto-filling the timer description with the page title.
+When the side panel opens, it captures the active tab's title and URL on demand
+with `chrome.scripting` and stores it in `chrome.storage.session`. This is
+available for future features like auto-filling the timer description with the
+page title.
 
 ## Build for Distribution
 
@@ -139,7 +139,7 @@ echo "APP_URL=https://your-app.vercel.app" > extension/.env
 ./extension/build.sh --production
 ```
 
-Output: `extension/dist/time-tracker-extension-<timestamp>.zip`
+Output: `extension/dist/trackly-extension-<timestamp>.zip`
 
 ## Development Workflow
 
@@ -147,7 +147,7 @@ Output: `extension/dist/time-tracker-extension-<timestamp>.zip`
 
 1. Make changes to files in `extension/`
 2. Go to **chrome://extensions**
-3. Click the **↻ (Reload)** button on the Time Tracker card
+3. Click the **Reload** button on the Trackly card
 4. The side panel reflects changes immediately
 
 ### Updating the iframe URL
@@ -177,7 +177,7 @@ When you're ready to publish:
 
 1. Bump the `version` in `manifest.json`
 2. Run the production build: `APP_URL=https://your-app.vercel.app ./extension/build.sh`
-3. Upload `extension/dist/time-tracker-extension-<timestamp>.zip` to the
+3. Upload `extension/dist/trackly-extension-<timestamp>.zip` to the
    [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole)
 4. Fill in store listing details (description, screenshots, promotional images)
 5. Submit for review
@@ -197,7 +197,6 @@ extension/
 ├── config.js          # App URL configuration (edit this for your instance)
 ├── manifest.json      # Chrome Extension Manifest V3
 ├── background.js      # Service worker — badge updates, side panel behavior
-├── content.js         # Content script — page info capture
 ├── sidepanel.html     # Side panel — iframe host with loading overlay
 ├── sidepanel.js       # Side panel logic — message relay, page info
 ├── sidepanel.css      # Side panel styles — dark theme, spinner

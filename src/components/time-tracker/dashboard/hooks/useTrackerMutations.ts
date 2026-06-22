@@ -25,6 +25,7 @@ import {
 type StartTimerInput = {
   description: string
   projectId: string
+  taskId: string | null
   tagIds: string[]
   billable: boolean
 }
@@ -37,6 +38,7 @@ type UpdateActiveTimerInput = StartTimerInput & {
 type EntryPayload = {
   description: string
   projectId: string
+  taskId: string | null
   tagIds: string[]
   billable: boolean
   startedAt: string

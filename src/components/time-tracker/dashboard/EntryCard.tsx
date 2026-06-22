@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import { Copy, Loader2, Pencil, Play, Trash2 } from 'lucide-react'
+import { Copy, Pencil, Play, Trash2 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
@@ -107,7 +107,6 @@ export const EntryCard = memo(function EntryCard({
           >
             <span className="shrink-0 text-muted-foreground/40">↳</span>
             <span className="min-w-0 truncate">{timeRange}</span>
-            {isPending && <Loader2 className="size-3 animate-spin" />}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <CardDuration
@@ -211,12 +210,6 @@ export const EntryCard = memo(function EntryCard({
           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
             <span className="size-1.5 rounded-full bg-destructive animate-pulse" />
             Running
-          </span>
-        )}
-        {isPending && (
-          <span className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">
-            <Loader2 className="size-3 animate-spin" />
-            Syncing
           </span>
         )}
       </div>

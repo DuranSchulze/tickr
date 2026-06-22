@@ -82,19 +82,19 @@ export function useTimerCore({
     useState<TimeEntry | null>(null)
   const [optimisticStoppedEntries, setOptimisticStoppedEntries] = useState<
     TimeEntry[]
-  >(() => loadPendingEntries(state.workspace.id))
+  >(() => loadPendingEntries(state.workspace.id, state.currentMemberId))
 
   function upsertOptimisticStoppedEntry(entry: TimeEntry) {
     setOptimisticStoppedEntries((prev) => [
       ...prev.filter((e) => e.id !== entry.id),
       entry,
     ])
-    savePendingEntry(state.workspace.id, entry)
+    savePendingEntry(state.workspace.id, state.currentMemberId, entry)
   }
 
   function removeOptimisticStoppedEntry(entryId: string) {
     setOptimisticStoppedEntries((prev) => prev.filter((e) => e.id !== entryId))
-    removePendingEntry(state.workspace.id, entryId)
+    removePendingEntry(state.workspace.id, state.currentMemberId, entryId)
   }
 
   function buildStoppedEntry(entryToStop: TimeEntry): TimeEntry {
@@ -138,6 +138,7 @@ export function useTimerCore({
           ...activeEntryBase,
           description: timerDescription,
           projectId: timerProjectId,
+          taskId: timerTaskId || null,
           tagIds: timerTagIds.filter(Boolean),
           billable: timerBillable,
           ...(timerStartedAt ? { startedAt: timerStartedAt } : {}),
@@ -202,7 +203,7 @@ export function useTimerCore({
       prev.filter((e) => !confirmedIds.has(e.id)),
     )
     for (const entry of toRemove) {
-      removePendingEntry(state.workspace.id, entry.id)
+      removePendingEntry(state.workspace.id, state.currentMemberId, entry.id)
     }
   }, [state.entries, state.workspace.id, optimisticStoppedEntries.length])
 
@@ -222,6 +223,7 @@ export function useTimerCore({
       setTimerDescription(activeEntryBase.description)
       setTimerClientId(entryProject?.clientId ?? '')
       setTimerProjectId(activeEntryBase.projectId)
+      setTimerTaskId(activeEntryBase.taskId ?? '')
       setTimerTagIds(activeEntryBase.tagIds)
       setTimerBillable(activeEntryBase.billable)
       setTimerStartedAt(null)
@@ -248,6 +250,7 @@ export function useTimerCore({
     next: {
       description: string
       projectId: string
+      taskId: string | null
       tagIds: string[]
       billable: boolean
     },
@@ -281,6 +284,7 @@ export function useTimerCore({
         id: activeEntryBase.id,
         description: timerDescription.trim(),
         projectId: timerProjectId,
+        taskId: timerTaskId || null,
         tagIds: timerTagIds,
         billable: timerBillable,
       },
@@ -309,6 +313,7 @@ export function useTimerCore({
         {
           description: value.trim(),
           projectId: timerProjectId,
+          taskId: timerTaskId || null,
           tagIds: timerTagIds,
           billable: timerBillable,
         },
@@ -322,6 +327,7 @@ export function useTimerCore({
     timerInputDirtyRef.current = true
     setTimerDescription(description)
     let nextProjectId = timerProjectId
+    let nextTaskId = timerTaskId
     let nextTagIds = timerTagIds
     let nextBillable = timerBillable
     if (matchingEntry) {
@@ -333,6 +339,8 @@ export function useTimerCore({
         setTimerClientId(matchingProject.clientId)
         setTimerProjectId(matchingProject.id)
       }
+      nextTaskId = matchingEntry.taskId ?? ''
+      setTimerTaskId(nextTaskId)
       nextTagIds = matchingEntry.tagIds
       nextBillable = matchingEntry.billable
       setTimerTagIds(matchingEntry.tagIds)
@@ -342,6 +350,7 @@ export function useTimerCore({
       persistActiveTimer({
         description: description.trim(),
         projectId: nextProjectId,
+        taskId: nextTaskId || null,
         tagIds: nextTagIds,
         billable: nextBillable,
       })
@@ -356,10 +365,12 @@ export function useTimerCore({
     )
     const nextProjectId = stillValid ? timerProjectId : ''
     if (!stillValid) setTimerProjectId('')
+    if (!stillValid) setTimerTaskId('')
     if (activeEntry) {
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: nextProjectId,
+        taskId: stillValid ? timerTaskId || null : null,
         tagIds: timerTagIds,
         billable: timerBillable,
       })
@@ -369,10 +380,16 @@ export function useTimerCore({
   function changeTimerProject(nextProjectId: string) {
     timerInputDirtyRef.current = true
     setTimerProjectId(nextProjectId)
+    const taskStillValid = state.projectTasks.some(
+      (task) => task.id === timerTaskId && task.projectId === nextProjectId,
+    )
+    const nextTaskId = taskStillValid ? timerTaskId : ''
+    if (!taskStillValid) setTimerTaskId('')
     if (activeEntry) {
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: nextProjectId,
+        taskId: nextTaskId || null,
         tagIds: timerTagIds,
         billable: timerBillable,
       })
@@ -382,6 +399,15 @@ export function useTimerCore({
   function changeTimerTask(nextTaskId: string) {
     timerInputDirtyRef.current = true
     setTimerTaskId(nextTaskId)
+    if (activeEntry) {
+      persistActiveTimer({
+        description: timerDescription.trim(),
+        projectId: timerProjectId,
+        taskId: nextTaskId || null,
+        tagIds: timerTagIds,
+        billable: timerBillable,
+      })
+    }
   }
 
   function changeTimerTagIds(nextTagIds: string[]) {
@@ -391,6 +417,7 @@ export function useTimerCore({
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: timerProjectId,
+        taskId: timerTaskId || null,
         tagIds: nextTagIds,
         billable: timerBillable,
       })
@@ -404,6 +431,7 @@ export function useTimerCore({
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: timerProjectId,
+        taskId: timerTaskId || null,
         tagIds: timerTagIds,
         billable: nextBillable,
       })
@@ -432,6 +460,7 @@ export function useTimerCore({
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: preset.projectId,
+        taskId: preset.taskId || null,
         tagIds: preset.tagIds.filter(Boolean),
         billable: preset.billable,
       })
@@ -445,6 +474,7 @@ export function useTimerCore({
     fields?: {
       description: string
       projectId: string
+      taskId: string | null
       tagIds: string[]
       billable: boolean
     },
@@ -463,7 +493,7 @@ export function useTimerCore({
     gooeyToast.success('Timer stopped')
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, {
+      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'stopTimer',
         payload: {
           id: entryToStop.id,
@@ -541,7 +571,7 @@ export function useTimerCore({
       workspaceMemberId: state.currentMemberId,
       description,
       projectId,
-      taskId: null,
+      taskId: entry.taskId ?? null,
       tagIds,
       billable,
       startedAt,
@@ -558,12 +588,13 @@ export function useTimerCore({
     gooeyToast.success('Timer started')
 
     const resumeInput = { description, projectId, tagIds, billable }
+    const resumePayload = { ...resumeInput, taskId: entry.taskId ?? null }
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, {
+      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'startTimer',
         optimisticId: optimisticEntry.id,
-        payload: { ...resumeInput, startedAt },
+        payload: { ...resumePayload, startedAt },
       })
       setTimerOperation({
         kind: 'runningOptimistic',
@@ -573,7 +604,7 @@ export function useTimerCore({
       return
     }
 
-    void mutations.startTimer(resumeInput, {
+    void mutations.startTimer(resumePayload, {
       invalidate: false,
       onSuccess: (newEntry) => {
         const op = timerOperationRef.current
@@ -640,7 +671,11 @@ export function useTimerCore({
       // If the start (and any stop) is still waiting in the offline queue,
       // drop those items — otherwise the drain would replay the start and
       // leave a ghost running timer on the server.
-      removeQueuedItemsForEntry(state.workspace.id, entryToDiscard.id)
+      removeQueuedItemsForEntry(
+        state.workspace.id,
+        state.currentMemberId,
+        entryToDiscard.id,
+      )
       gooeyToast.success('Timer discarded')
       return
     }
@@ -656,7 +691,7 @@ export function useTimerCore({
     gooeyToast.success('Timer discarded')
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, {
+      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'discardTimer',
         payload: { id: entryToDiscard.id },
       })
@@ -698,6 +733,7 @@ export function useTimerCore({
     const nextInput = {
       description,
       projectId: timerProjectId,
+      taskId: timerTaskId || null,
       tagIds: timerTagIds.filter(Boolean),
       billable: timerBillable,
     }
@@ -709,7 +745,7 @@ export function useTimerCore({
       workspaceMemberId: state.currentMemberId,
       description,
       projectId: timerProjectId,
-      taskId: null,
+      taskId: timerTaskId || null,
       tagIds: nextInput.tagIds,
       billable: timerBillable,
       startedAt,
@@ -728,7 +764,7 @@ export function useTimerCore({
     gooeyToast.success('Timer started')
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, {
+      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'startTimer',
         optimisticId: optimisticEntry.id,
         payload: { ...nextInput, startedAt },
@@ -815,14 +851,21 @@ export function useTimerCore({
       // stop before reconnect). Queue the stop behind it — the drain remaps
       // the optimistic id once the start has been replayed. Without this the
       // replayed timer would keep running on the server forever.
-      if (hasQueuedStart(state.workspace.id, entryToStop.id)) {
-        enqueueOfflineMutation(state.workspace.id, {
+      if (
+        hasQueuedStart(
+          state.workspace.id,
+          state.currentMemberId,
+          entryToStop.id,
+        )
+      ) {
+        enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
           type: 'stopTimer',
           payload: {
             id: entryToStop.id,
             endedAt: stoppedEntry.endedAt!,
             description: timerDescription.trim(),
             projectId: timerProjectId,
+            taskId: timerTaskId || null,
             tagIds: timerTagIds.filter(Boolean),
             billable: timerBillable,
           },
@@ -835,6 +878,7 @@ export function useTimerCore({
     performOptimisticStop(entryToStop, undefined, {
       description: timerDescription.trim(),
       projectId: timerProjectId,
+      taskId: timerTaskId || null,
       tagIds: timerTagIds.filter(Boolean),
       billable: timerBillable,
     })
@@ -890,6 +934,7 @@ export function useTimerCore({
           id: activeEntryBase.id,
           description: timerDescription.trim(),
           projectId: timerProjectId,
+          taskId: timerTaskId || null,
           tagIds: timerTagIds,
           billable: timerBillable,
           startedAt: iso,

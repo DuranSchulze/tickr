@@ -1,6 +1,7 @@
 type StartTimerPayload = {
   description: string
   projectId: string
+  taskId: string | null
   tagIds: string[]
   billable: boolean
   // Real client-side start time, so a replay after reconnect doesn't record
@@ -17,6 +18,7 @@ type StopTimerPayload = {
   // stop path's overrides.
   description?: string
   projectId?: string
+  taskId?: string | null
   tagIds?: string[]
   billable?: boolean
 }
@@ -24,6 +26,7 @@ type StopTimerPayload = {
 type ManualEntryPayload = {
   description: string
   projectId: string
+  taskId: string | null
   tagIds: string[]
   billable: boolean
   startedAt: string
@@ -58,12 +61,13 @@ export type EnqueueInput =
       payload: ManualEntryPayload
     }
 
-const storageKey = (workspaceId: string) => `offline-queue:${workspaceId}`
+const storageKey = (workspaceId: string, memberId: string) =>
+  `offline-queue:${workspaceId}:${memberId}`
 
-function load(workspaceId: string): OfflineQueueItem[] {
+function load(workspaceId: string, memberId: string): OfflineQueueItem[] {
   if (typeof window === 'undefined') return []
   try {
-    const raw = localStorage.getItem(storageKey(workspaceId))
+    const raw = localStorage.getItem(storageKey(workspaceId, memberId))
     if (!raw) return []
     return JSON.parse(raw) as OfflineQueueItem[]
   } catch {
@@ -71,13 +75,20 @@ function load(workspaceId: string): OfflineQueueItem[] {
   }
 }
 
-function save(workspaceId: string, items: OfflineQueueItem[]): void {
+function save(
+  workspaceId: string,
+  memberId: string,
+  items: OfflineQueueItem[],
+): void {
   if (typeof window === 'undefined') return
   try {
     if (items.length === 0) {
-      localStorage.removeItem(storageKey(workspaceId))
+      localStorage.removeItem(storageKey(workspaceId, memberId))
     } else {
-      localStorage.setItem(storageKey(workspaceId), JSON.stringify(items))
+      localStorage.setItem(
+        storageKey(workspaceId, memberId),
+        JSON.stringify(items),
+      )
     }
   } catch {
     // ignore storage errors
@@ -86,25 +97,31 @@ function save(workspaceId: string, items: OfflineQueueItem[]): void {
 
 export function enqueueOfflineMutation(
   workspaceId: string,
+  memberId: string,
   item: EnqueueInput,
 ): OfflineQueueItem {
   const queued = { ...item, id: crypto.randomUUID() } as OfflineQueueItem
-  const existing = load(workspaceId)
-  save(workspaceId, [...existing, queued])
+  const existing = load(workspaceId, memberId)
+  save(workspaceId, memberId, [...existing, queued])
   return queued
 }
 
-export function loadOfflineQueue(workspaceId: string): OfflineQueueItem[] {
-  return load(workspaceId)
+export function loadOfflineQueue(
+  workspaceId: string,
+  memberId: string,
+): OfflineQueueItem[] {
+  return load(workspaceId, memberId)
 }
 
 export function removeOfflineQueueItem(
   workspaceId: string,
+  memberId: string,
   itemId: string,
 ): void {
-  const existing = load(workspaceId)
+  const existing = load(workspaceId, memberId)
   save(
     workspaceId,
+    memberId,
     existing.filter((i) => i.id !== itemId),
   )
 }
@@ -112,9 +129,10 @@ export function removeOfflineQueueItem(
 /** True when a startTimer for this optimistic entry is still waiting to sync. */
 export function hasQueuedStart(
   workspaceId: string,
+  memberId: string,
   optimisticId: string,
 ): boolean {
-  return load(workspaceId).some(
+  return load(workspaceId, memberId).some(
     (i) => i.type === 'startTimer' && i.optimisticId === optimisticId,
   )
 }
@@ -126,11 +144,13 @@ export function hasQueuedStart(
  */
 export function removeQueuedItemsForEntry(
   workspaceId: string,
+  memberId: string,
   entryId: string,
 ): void {
-  const existing = load(workspaceId)
+  const existing = load(workspaceId, memberId)
   save(
     workspaceId,
+    memberId,
     existing.filter((i) => {
       if (
         (i.type === 'startTimer' || i.type === 'createManualEntry') &&
@@ -149,10 +169,10 @@ export function removeQueuedItemsForEntry(
   )
 }
 
-export function clearOfflineQueue(workspaceId: string): void {
+export function clearOfflineQueue(workspaceId: string, memberId: string): void {
   if (typeof window === 'undefined') return
   try {
-    localStorage.removeItem(storageKey(workspaceId))
+    localStorage.removeItem(storageKey(workspaceId, memberId))
   } catch {
     // ignore storage errors
   }

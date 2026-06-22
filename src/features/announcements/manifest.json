@@ -49,6 +49,49 @@
   },
   "updates": [
     {
+      "version": "1.9.0",
+      "publishedAt": "2026-06-22",
+      "title": "Chrome Extension, Timer Reliability, Time Presets & Cleaner UI",
+      "body": "The Trackly Chrome extension has been rebuilt to be faster, more secure, and only activates when you open it. Time tracking is more reliable — tasks stay linked correctly across start, stop, and edit flows, and everything still works even when you're offline. Plus, a new Time Presets feature lets you start tracked entries in one click.",
+      "features": [
+        {
+          "title": "New Time Presets",
+          "description": "Save your frequently-used task descriptions as presets so you can start tracking with one click. Set up common project + description + tag combinations and avoid typing the same thing every day.",
+          "image": null
+        },
+        {
+          "title": "Rebuilt Chrome Extension — Lighter & More Secure",
+          "description": "The Trackly extension has been rewritten from the ground up. It no longer runs in the background on every website — it only activates when you open the side panel. Permissions have been reduced to the minimum needed, and message validation has been added to keep your data safe.",
+          "image": null
+        },
+        {
+          "title": "More Reliable Time Tracking",
+          "description": "Starting, stopping, and editing entries now correctly preserves the task you selected across every path — manual entry, inline edits, duplicate, resume, and offline mode. The UI is also cleaner with no more distracting per-row loading spinners.",
+          "image": null
+        },
+        {
+          "title": "Smarter Offline Mode",
+          "description": "If you switch between workspaces or accounts while offline, your pending entries and queued actions now stay correctly scoped — no more mixing up data between different workspaces or team members.",
+          "image": null
+        },
+        {
+          "title": "Server Validation for Tasks",
+          "description": "When saving a time entry, the system now double-checks that the selected task belongs to the right project and hasn't been archived. This prevents orphaned entries and keeps your reports accurate.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Track Time",
+          "to": "/app/time-tracker"
+        },
+        {
+          "label": "Try Time Presets",
+          "to": "/app/time-tracker"
+        }
+      ]
+    },
+    {
       "version": "1.8.0",
       "publishedAt": "2026-06-18",
       "title": "Performance Boost, Calendar View, Responsive Overhaul & Better Mobile Experience",
