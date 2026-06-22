@@ -16,6 +16,7 @@ export type AnalyticsFilters = {
   memberIds?: string // comma-separated
   billable?: 'true' | 'false'
   page?: number
+  pageSize?: number
 }
 
 const FilterSelect = memo(function FilterSelect({

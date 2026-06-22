@@ -31,6 +31,7 @@ const analyticsRangeSchema = z.object({
   memberIds: z.string().optional(),
   billable: z.enum(['true', 'false']).optional(),
   page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
 const calendarMonthSchema = z.object({
@@ -47,6 +48,7 @@ const departmentDashboardSchema = z.object({
   endDate: z.string().date(),
   departmentId: z.string().optional(),
   q: z.string().trim().max(120).optional(),
+  projectPage: z.coerce.number().int().min(1).optional(),
 })
 
 const departmentMemberActivitySchema = z.object({

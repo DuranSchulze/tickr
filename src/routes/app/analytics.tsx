@@ -25,6 +25,19 @@ type AnalyticsSearch = {
   memberIds?: string
   billable?: 'true' | 'false'
   page?: number
+  pageSize?: number
+}
+
+function parsePositiveNumber(value: unknown): number | undefined {
+  const numberValue =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : NaN
+  return Number.isInteger(numberValue) && numberValue >= 1
+    ? numberValue
+    : undefined
 }
 
 function resolveQuery(search: AnalyticsSearch): AnalyticsSearch & {
@@ -64,10 +77,8 @@ export const Route = createFileRoute('/app/analytics')({
       search.billable === 'true' || search.billable === 'false'
         ? search.billable
         : undefined,
-    page:
-      typeof search.page === 'number' && search.page >= 1
-        ? search.page
-        : undefined,
+    page: parsePositiveNumber(search.page),
+    pageSize: parsePositiveNumber(search.pageSize),
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
@@ -120,6 +131,7 @@ function AnalyticsRoute() {
       memberIds: search.memberIds,
       billable: search.billable,
       page: search.page,
+      pageSize: search.pageSize,
     }),
     [
       search.projectId,
@@ -128,6 +140,7 @@ function AnalyticsRoute() {
       search.memberIds,
       search.billable,
       search.page,
+      search.pageSize,
     ],
   )
 

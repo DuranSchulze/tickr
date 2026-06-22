@@ -61,6 +61,7 @@ export function AnalyticsScreen({
   }
 
   const page = currentFilters.page ?? 1
+  const pageSize = currentFilters.pageSize ?? 50
 
   // When exactly one member is selected, offer a per-member PDF report scoped
   // to the current analytics date range.
@@ -71,7 +72,8 @@ export function AnalyticsScreen({
     selectedMemberIds.length === 1 ? selectedMemberIds[0] : null
 
   const handleFilterChange = useCallback(
-    (updates: Partial<AnalyticsFilters>) => onChangeQuery(updates),
+    (updates: Partial<AnalyticsFilters>) =>
+      onChangeQuery({ ...updates, page: undefined }),
     [onChangeQuery],
   )
 
@@ -117,7 +119,9 @@ export function AnalyticsScreen({
                   <button
                     key={scope}
                     type="button"
-                    onClick={() => onChangeQuery({ ...currentQuery, scope })}
+                    onClick={() =>
+                      onChangeQuery({ ...currentQuery, scope, page: undefined })
+                    }
                     className={`h-9 rounded-md px-2.5 text-sm font-bold transition-colors sm:px-3 ${
                       analytics.selectedScope === scope
                         ? 'bg-primary text-primary-foreground'
@@ -137,7 +141,11 @@ export function AnalyticsScreen({
                   endDate: analytics.endDate,
                 }}
                 onChangeRange={(range) =>
-                  onChangeQuery({ ...range, scope: analytics.selectedScope })
+                  onChangeQuery({
+                    ...range,
+                    scope: analytics.selectedScope,
+                    page: undefined,
+                  })
                 }
               />
               {singleSelectedMemberId && (
@@ -200,7 +208,11 @@ export function AnalyticsScreen({
         entries={analytics.entries}
         entriesTotal={analytics.entriesTotal}
         page={page}
+        pageSize={pageSize}
         onPageChange={(p) => onChangeQuery({ page: p })}
+        onPageSizeChange={(nextPageSize) =>
+          onChangeQuery({ pageSize: nextPageSize, page: undefined })
+        }
         currency={analytics.currency}
       />
 

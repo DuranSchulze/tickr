@@ -710,6 +710,14 @@ export function TimeTrackerDashboard({
           className="sm:hidden fixed inset-0 z-50 m-0 flex flex-col max-w-none translate-x-0 translate-y-0 gap-0 rounded-none bg-card p-0 duration-200 outline-none data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
           showCloseButton={false}
         >
+          <DialogTitle className="sr-only">
+            {activeEntry ? 'Timer running' : 'Track time'}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            {activeEntry
+              ? 'Review and stop the current timer.'
+              : 'Start a timer or create a manual time entry.'}
+          </DialogDescription>
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
             <h2 className="text-lg font-bold text-foreground">

@@ -201,8 +201,8 @@ export async function getAnalytics(
   if (data.billable === 'false')
     entryConditions.push(eq(timeEntries.billable, false))
 
-  const PAGE_SIZE = 50
   const page = Math.max(1, data.page ?? 1)
+  const pageSize = Math.min(100, Math.max(10, data.pageSize ?? 50))
   const whereClause = and(...entryConditions)
 
   // ── Run all queries in parallel ───────────────────────────────────────────────
@@ -355,8 +355,8 @@ export async function getAnalytics(
       .leftJoin(users, eq(workspaceMembers.userId, users.id))
       .where(whereClause)
       .orderBy(desc(timeEntries.startedAt))
-      .limit(PAGE_SIZE)
-      .offset((page - 1) * PAGE_SIZE),
+      .limit(pageSize)
+      .offset((page - 1) * pageSize),
 
     // 8. Total entry count for pagination
     db

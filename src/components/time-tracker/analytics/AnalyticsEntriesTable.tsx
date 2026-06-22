@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 
-const PAGE_SIZE = 50
+const pageSizeOptions = [25, 50, 100] as const
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -79,27 +79,55 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   entries,
   entriesTotal,
   page,
+  pageSize = 50,
   onPageChange,
+  onPageSizeChange,
   currency,
 }: {
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
   page: number
+  pageSize?: number
   onPageChange: (page: number) => void
+  onPageSizeChange?: (pageSize: number) => void
   currency: string
 }) {
-  const totalPages = Math.max(1, Math.ceil(entriesTotal / PAGE_SIZE))
+  const totalPages = Math.max(1, Math.ceil(entriesTotal / pageSize))
+  const firstEntry = entriesTotal === 0 ? 0 : (page - 1) * pageSize + 1
+  const lastEntry = Math.min(
+    entriesTotal,
+    (page - 1) * pageSize + entries.length,
+  )
 
   return (
     <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="m-0 text-base font-bold text-foreground">
-          Time entries
-        </h2>
-        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-          {entriesTotal.toLocaleString()} entr
-          {entriesTotal === 1 ? 'y' : 'ies'} match your current filters
-        </p>
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="m-0 text-base font-bold text-foreground">
+            Time entries
+          </h2>
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            {entriesTotal.toLocaleString()} entr
+            {entriesTotal === 1 ? 'y' : 'ies'} match your current filters
+          </p>
+        </div>
+
+        {onPageSizeChange && (
+          <label className="flex w-fit items-center gap-2 text-xs font-semibold text-muted-foreground">
+            Rows
+            <select
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              className="h-8 rounded-md border border-border bg-background px-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              {pageSizeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {entries.length === 0 ? (
@@ -231,10 +259,11 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
         </>
       )}
 
-      {totalPages > 1 && (
+      {entriesTotal > 0 && (
         <div className="flex flex-col gap-3 border-t border-border px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
+            Showing {firstEntry.toLocaleString()}-{lastEntry.toLocaleString()}{' '}
+            of {entriesTotal.toLocaleString()} · Page {page} of {totalPages}
           </span>
           <div className="flex items-center gap-1">
             <button

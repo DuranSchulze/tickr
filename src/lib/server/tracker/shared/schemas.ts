@@ -89,6 +89,7 @@ export const analyticsRangeSchema = z.object({
   memberIds: z.string().optional(), // comma-separated member IDs
   billable: z.enum(['true', 'false']).optional(),
   page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
 export const calendarMonthSchema = z.object({

@@ -4,6 +4,7 @@ import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { MemberBreakdownTable } from './MemberBreakdownTable'
 import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentDailyChart } from './DepartmentDailyChart'
+import { DepartmentTopTagsChart } from './DepartmentTopTagsChart'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 
@@ -40,6 +41,7 @@ export function DepartmentDashboardScreen({
   endDate,
   onChangeRange,
   onChangeFilters,
+  onChangeProjectPage,
   onViewMember,
 }: {
   dashboard: DepartmentDashboard
@@ -47,6 +49,7 @@ export function DepartmentDashboardScreen({
   endDate: string
   onChangeRange: (startDate: string, endDate: string) => void
   onChangeFilters: (filters: { departmentId?: string; q?: string }) => void
+  onChangeProjectPage: (page: number) => void
   onViewMember: (memberId: string) => void
 }) {
   const {
@@ -56,7 +59,9 @@ export function DepartmentDashboardScreen({
     filters,
     summary,
     membersBreakdown,
+    topProjectsBreakdown,
     projectsBreakdown,
+    projectsPagination,
     dailyTotals,
     topTags,
   } = dashboard
@@ -226,40 +231,16 @@ export function DepartmentDashboardScreen({
       />
 
       {/* Project breakdown */}
-      {projectsBreakdown.length > 0 && (
-        <DepartmentProjectBreakdown
-          projects={projectsBreakdown}
-          currency={summary.currency}
-        />
-      )}
+      <DepartmentProjectBreakdown
+        projects={projectsBreakdown}
+        topProjects={topProjectsBreakdown}
+        pagination={projectsPagination}
+        currency={summary.currency}
+        onPageChange={onChangeProjectPage}
+      />
 
       {/* Top tags */}
-      {topTags.length > 0 && (
-        <section className="rounded-lg border border-border bg-card shadow-sm">
-          <div className="border-b border-border px-4 py-3">
-            <h2 className="m-0 text-base font-bold text-foreground">
-              Top Tags
-            </h2>
-          </div>
-          <div className="flex flex-wrap gap-2 p-4">
-            {topTags.map((tag) => (
-              <span
-                key={tag.tagId}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground"
-              >
-                <span
-                  className="size-2 rounded-full"
-                  style={{ backgroundColor: tag.color }}
-                />
-                {tag.name}
-                <span className="text-muted-foreground">
-                  {formatHours(tag.seconds)}
-                </span>
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+      <DepartmentTopTagsChart tags={topTags} />
     </div>
   )
 }

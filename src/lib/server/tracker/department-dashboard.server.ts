@@ -46,6 +46,8 @@ export type DepartmentMemberBreakdown = {
 
 export type DepartmentProjectBreakdown = {
   projectId: string
+  clientId: string
+  clientName: string
   name: string
   color: string
   seconds: number
@@ -80,8 +82,20 @@ export type DepartmentDashboard = {
     currency: string
   }
   membersBreakdown: DepartmentMemberBreakdown[]
+  topProjectsBreakdown: DepartmentProjectBreakdown[]
   projectsBreakdown: DepartmentProjectBreakdown[]
-  dailyTotals: Array<{ date: string; seconds: number }>
+  projectsPagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+  dailyTotals: Array<{
+    date: string
+    seconds: number
+    billableSeconds: number
+    nonBillableSeconds: number
+  }>
   topTags: Array<{
     tagId: string
     name: string
@@ -240,6 +254,7 @@ export async function getDepartmentDashboard(data: {
   endDate: string
   departmentId?: string
   q?: string
+  projectPage?: number
 }): Promise<DepartmentDashboard> {
   const access = await requireWorkspaceAccess()
   const canFilterDepartments = true
@@ -251,6 +266,8 @@ export async function getDepartmentDashboard(data: {
   const rangeStart = new Date(`${data.startDate}T00:00:00`)
   const rangeEnd = new Date(`${data.endDate}T23:59:59.999`)
   const q = data.q?.trim() ?? ''
+  const projectPageSize = 10
+  const requestedProjectPage = Math.max(1, data.projectPage ?? 1)
 
   const now = new Date()
   const weekStart = new Date(now)
@@ -340,7 +357,14 @@ export async function getDepartmentDashboard(data: {
         currency,
       },
       membersBreakdown: [],
+      topProjectsBreakdown: [],
       projectsBreakdown: [],
+      projectsPagination: {
+        page: 1,
+        pageSize: projectPageSize,
+        total: 0,
+        totalPages: 1,
+      },
       dailyTotals: [],
       topTags: [],
     }
@@ -430,7 +454,10 @@ export async function getDepartmentDashboard(data: {
   const projectStats = new Map<string, ProjectStats>()
 
   // Build daily totals
-  const dailyMap = new Map<string, number>()
+  const dailyMap = new Map<
+    string,
+    { seconds: number; billableSeconds: number; nonBillableSeconds: number }
+  >()
 
   // Build tag seconds
   const tagSeconds = new Map<string, number>()
@@ -454,7 +481,15 @@ export async function getDepartmentDashboard(data: {
     // Daily totals
     const d = entry.startedAt
     const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + secs)
+    const daily = dailyMap.get(dateKey) ?? {
+      seconds: 0,
+      billableSeconds: 0,
+      nonBillableSeconds: 0,
+    }
+    daily.seconds += secs
+    if (entry.billable) daily.billableSeconds += secs
+    else daily.nonBillableSeconds += secs
+    dailyMap.set(dateKey, daily)
 
     // Project stats
     if (entry.projectId) {
@@ -474,9 +509,11 @@ export async function getDepartmentDashboard(data: {
     }
   }
 
+  const entryById = new Map(entryRows.map((entry) => [entry.id, entry]))
+
   // Tag seconds from tag rows
   for (const tr of tagEntryRows) {
-    const entry = entryRows.find((e) => e.id === tr.timeEntryId)
+    const entry = entryById.get(tr.timeEntryId)
     if (!entry) continue
     tagSeconds.set(
       tr.tagId,
@@ -484,20 +521,40 @@ export async function getDepartmentDashboard(data: {
     )
   }
 
-  // Fetch project and tag info
-  const projectIds = [...projectStats.keys()]
+  // Fetch project and tag info. Project detail rows are paginated server-side
+  // so large workspaces do not ship every project row to the browser.
+  const sortedProjectIds = [...projectStats.keys()].sort((a, b) => {
+    const secondsDiff =
+      (projectStats.get(b)?.seconds ?? 0) - (projectStats.get(a)?.seconds ?? 0)
+    return secondsDiff || a.localeCompare(b)
+  })
+  const projectsTotal = sortedProjectIds.length
+  const projectTotalPages = Math.max(
+    1,
+    Math.ceil(projectsTotal / projectPageSize),
+  )
+  const projectPage = Math.min(requestedProjectPage, projectTotalPages)
+  const paginatedProjectIds = sortedProjectIds.slice(
+    (projectPage - 1) * projectPageSize,
+    projectPage * projectPageSize,
+  )
+  const topProjectIds = sortedProjectIds.slice(0, 10)
+  const projectIdsToLoad = [...new Set([...topProjectIds, ...paginatedProjectIds])]
   const tagIds = [...tagSeconds.keys()]
 
   const [projectRows, tagRows] = await Promise.all([
-    projectIds.length > 0
+    projectIdsToLoad.length > 0
       ? db
           .select({
             id: projects.id,
+            clientId: projects.clientId,
+            clientName: clients.name,
             name: projects.name,
             color: projects.color,
           })
           .from(projects)
-          .where(inArray(projects.id, projectIds))
+          .leftJoin(clients, eq(projects.clientId, clients.id))
+          .where(inArray(projects.id, projectIdsToLoad))
       : Promise.resolve([]),
     tagIds.length > 0
       ? db
@@ -525,12 +582,16 @@ export async function getDepartmentDashboard(data: {
     })
     .sort((a, b) => b.totalSeconds - a.totalSeconds)
 
-  const projectsBreakdown: DepartmentProjectBreakdown[] = projectIds
-    .map((id) => {
+  const buildProjectBreakdown = (
+    projectIds: string[],
+  ): DepartmentProjectBreakdown[] =>
+    projectIds.map((id) => {
       const ps = projectStats.get(id)!
       const info = projectInfoMap.get(id)
       return {
         projectId: id,
+        clientId: info?.clientId ?? '',
+        clientName: info?.clientName ?? 'Unknown client',
         name: info?.name ?? 'Unknown',
         color: info?.color ?? '#6366f1',
         seconds: ps.seconds,
@@ -539,11 +600,13 @@ export async function getDepartmentDashboard(data: {
         memberCount: ps.members.size,
       }
     })
-    .sort((a, b) => b.seconds - a.seconds)
+
+  const topProjectsBreakdown = buildProjectBreakdown(topProjectIds)
+  const projectsBreakdown = buildProjectBreakdown(paginatedProjectIds)
 
   const dailyTotals = Array.from(dailyMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, seconds]) => ({ date, seconds }))
+    .map(([date, totals]) => ({ date, ...totals }))
 
   const topTags = tagIds
     .map((id) => {
@@ -591,7 +654,14 @@ export async function getDepartmentDashboard(data: {
       currency,
     },
     membersBreakdown,
+    topProjectsBreakdown,
     projectsBreakdown,
+    projectsPagination: {
+      page: projectPage,
+      pageSize: projectPageSize,
+      total: projectsTotal,
+      totalPages: projectTotalPages,
+    },
     dailyTotals,
     topTags,
   }
