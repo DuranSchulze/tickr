@@ -31,6 +31,11 @@ export function validateMiddleName(value: string): FieldError {
   return ''
 }
 
+export function validatePositionTitle(value: string): FieldError {
+  if (value.length > 100) return 'Position must be 100 characters or fewer.'
+  return ''
+}
+
 export function validateContactNumber(value: string): FieldError {
   if (!value) return ''
   if (value.length < 7 || value.length > 20)
@@ -90,6 +95,7 @@ export interface ProfileErrors {
   firstName: FieldError
   middleName: FieldError
   lastName: FieldError
+  positionTitle: FieldError
   contactNumber: FieldError
   birthDate: FieldError
   buildingNo: FieldError
@@ -106,6 +112,7 @@ export const EMPTY_PROFILE_ERRORS: ProfileErrors = {
   firstName: '',
   middleName: '',
   lastName: '',
+  positionTitle: '',
   contactNumber: '',
   birthDate: '',
   buildingNo: '',
@@ -122,6 +129,7 @@ export function validateAllProfileFields(fields: {
   firstName: string
   middleName: string
   lastName: string
+  positionTitle: string
   contactNumber: string
   birthDate: string
   buildingNo: string
@@ -137,6 +145,7 @@ export function validateAllProfileFields(fields: {
     firstName: validateFirstName(fields.firstName),
     middleName: validateMiddleName(fields.middleName),
     lastName: validateLastName(fields.lastName),
+    positionTitle: validatePositionTitle(fields.positionTitle),
     contactNumber: validateContactNumber(fields.contactNumber),
     birthDate: validateBirthDate(fields.birthDate),
     buildingNo: validateMaxLength(fields.buildingNo, 50, 'Building number'),

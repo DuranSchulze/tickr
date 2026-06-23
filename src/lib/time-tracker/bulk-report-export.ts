@@ -2,23 +2,36 @@ import type { BulkReport } from '#/lib/server/tracker/bulk-report.server'
 import {
   buildCsv,
   downloadTextFile,
-  formatHm,
+  formatHms,
   formatMoney,
 } from './export-utils'
 
-function bulkFilename(report: BulkReport, ext: string): string {
+type GroupedReportExportOptions = {
+  title?: string
+  filenamePrefix?: string
+  orientation?: 'portrait' | 'landscape'
+}
+
+function reportFilename(
+  report: BulkReport,
+  ext: string,
+  filenamePrefix = 'bulk-report',
+): string {
   const safeScope = report.scopeLabel
     .replace(/[^a-z0-9]+/gi, '-')
     .toLowerCase()
     .replace(/^-+|-+$/g, '')
-  return `bulk-report-${safeScope}-${report.startDate}-${report.endDate}.${ext}`
+  return `${filenamePrefix}-${safeScope}-${report.startDate}-${report.endDate}.${ext}`
 }
 
 /**
- * Generates and downloads a grouped bulk report PDF. Entries are sectioned by
- * member, each with its own subtotal, under a grand-total summary.
+ * Generates and downloads a grouped report PDF. Bulk exports use landscape;
+ * single-member exports reuse this same renderer in portrait.
  */
-export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
+export async function downloadGroupedTimeReportPdf(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+): Promise<void> {
   // jsPDF + autotable are heavy; load them only when a PDF export is actually
   // requested instead of shipping them with every screen that can open the
   // export dialog.
@@ -26,14 +39,15 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
     import('jspdf'),
     import('jspdf-autotable'),
   ])
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+  const orientation = options.orientation ?? 'landscape'
+  const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
   const margin = 40
   const pageHeight = doc.internal.pageSize.getHeight()
   let y = margin
 
   doc.setFontSize(16)
   doc.setFont('helvetica', 'bold')
-  doc.text('Bulk Time Report', margin, y)
+  doc.text(options.title ?? 'Bulk Time Report', margin, y)
   y += 20
 
   doc.setFontSize(11)
@@ -54,22 +68,26 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
   y += 16
   doc.setFont('helvetica', 'normal')
   const totalsLine = [
-    `Total: ${formatHm(s.totalSeconds)}`,
-    `Billable: ${formatHm(s.billableSeconds)}`,
-    `Non-billable: ${formatHm(s.nonBillableSeconds)}`,
+    `Total: ${formatHms(s.totalSeconds)}`,
+    `Billable: ${formatHms(s.billableSeconds)}`,
+    `Non-billable: ${formatHms(s.nonBillableSeconds)}`,
     `Entries: ${s.entryCount}`,
     `Billable amount: ${formatMoney(s.billableAmount, report.currency)}`,
   ]
-  const colWidth = 150
+  const summaryColumnCount = orientation === 'portrait' ? 2 : 5
+  const colWidth =
+    (doc.internal.pageSize.getWidth() - margin * 2) / summaryColumnCount
   totalsLine.forEach((line, i) => {
-    doc.text(line, margin + i * colWidth, y)
+    const row = Math.floor(i / summaryColumnCount)
+    const col = i % summaryColumnCount
+    doc.text(line, margin + col * colWidth, y + row * 14)
   })
-  y += 22
+  y += orientation === 'portrait' ? 36 : 22
 
   if (report.groups.length === 0) {
     doc.setFont('helvetica', 'italic')
     doc.text('No time entries match this selection.', margin, y)
-    doc.save(bulkFilename(report, 'pdf'))
+    doc.save(reportFilename(report, 'pdf', options.filenamePrefix))
     return
   }
 
@@ -86,7 +104,7 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.text(
-      `${formatHm(group.subtotal.totalSeconds)} · ${group.subtotal.entryCount} entries · ${formatMoney(group.subtotal.billableAmount, report.currency)} billable`,
+      `${formatHms(group.subtotal.totalSeconds)} - ${group.subtotal.entryCount} entries - ${formatMoney(group.subtotal.billableAmount, report.currency)} billable`,
       margin,
       y + 13,
     )
@@ -113,7 +131,7 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
         e.clientName ?? '',
         e.tagNames.join('; '),
         e.description,
-        formatHm(e.durationSeconds),
+        formatHms(e.durationSeconds),
         e.billable ? 'Yes' : 'No',
         e.billableAmount === null
           ? ''
@@ -126,14 +144,14 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
         fontStyle: 'bold',
       },
       columnStyles: {
-        0: { cellWidth: 56 },
-        1: { cellWidth: 90 },
-        2: { cellWidth: 120 },
-        3: { cellWidth: 75 },
+        0: { cellWidth: orientation === 'portrait' ? 54 : 56 },
+        1: { cellWidth: orientation === 'portrait' ? 66 : 90 },
+        2: { cellWidth: orientation === 'portrait' ? 72 : 120 },
+        3: { cellWidth: orientation === 'portrait' ? 58 : 75 },
         4: { cellWidth: 'auto' },
-        5: { cellWidth: 50, halign: 'right' },
-        6: { cellWidth: 50, halign: 'center' },
-        7: { cellWidth: 90, halign: 'right' },
+        5: { cellWidth: orientation === 'portrait' ? 56 : 62, halign: 'right' },
+        6: { cellWidth: orientation === 'portrait' ? 42 : 50, halign: 'center' },
+        7: { cellWidth: orientation === 'portrait' ? 72 : 90, halign: 'right' },
       },
     })
 
@@ -143,19 +161,21 @@ export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
     y = finalY + 24
   }
 
-  doc.save(bulkFilename(report, 'pdf'))
+  doc.save(reportFilename(report, 'pdf', options.filenamePrefix))
 }
 
 /**
- * Generates and downloads the bulk report as a flat CSV (one row per entry with
- * a Member column), plus metadata and a grand-total row. Kept flat so the data
- * stays easy to pivot/sum in a spreadsheet.
+ * Generates and downloads the grouped report as a flat CSV, plus metadata and a
+ * grand-total row. Durations are emitted as exact HH:MM:SS strings.
  */
-export function downloadBulkReportCsv(report: BulkReport): void {
+export function downloadGroupedTimeReportCsv(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+): void {
   const currency = (report.currency || 'PHP').toUpperCase()
 
   const rows: (string | number | null | undefined)[][] = [
-    ['Bulk Time Report'],
+    [options.title ?? 'Bulk Time Report'],
     ['Scope', report.scopeLabel],
     ['Period', `${report.startDate} to ${report.endDate}`],
     ['Currency', currency],
@@ -169,7 +189,7 @@ export function downloadBulkReportCsv(report: BulkReport): void {
       'Client',
       'Tags',
       'Description',
-      'Hours',
+      'Duration',
       'Billable',
       'Rate/hr',
       'Amount',
@@ -186,7 +206,7 @@ export function downloadBulkReportCsv(report: BulkReport): void {
         e.clientName ?? '',
         e.tagNames.join('; '),
         e.description,
-        (e.durationSeconds / 3600).toFixed(2),
+        formatHms(e.durationSeconds),
         e.billable ? 'Yes' : 'No',
         e.billable ? e.effectiveRate.toFixed(2) : '',
         e.billableAmount === null ? '' : e.billableAmount.toFixed(2),
@@ -205,7 +225,7 @@ export function downloadBulkReportCsv(report: BulkReport): void {
       '',
       '',
       `${s.entryCount} entries`,
-      (s.totalSeconds / 3600).toFixed(2),
+      formatHms(s.totalSeconds),
       '',
       '',
       s.billableAmount.toFixed(2),
@@ -214,7 +234,22 @@ export function downloadBulkReportCsv(report: BulkReport): void {
 
   downloadTextFile(
     buildCsv(rows),
-    bulkFilename(report, 'csv'),
+    reportFilename(report, 'csv', options.filenamePrefix),
     'text/csv;charset=utf-8;',
   )
+}
+
+export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
+  await downloadGroupedTimeReportPdf(report, {
+    title: 'Bulk Time Report',
+    filenamePrefix: 'bulk-report',
+    orientation: 'landscape',
+  })
+}
+
+export function downloadBulkReportCsv(report: BulkReport): void {
+  downloadGroupedTimeReportCsv(report, {
+    title: 'Bulk Time Report',
+    filenamePrefix: 'bulk-report',
+  })
 }

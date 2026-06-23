@@ -5,6 +5,7 @@ import { MemberBreakdownTable } from './MemberBreakdownTable'
 import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentDailyChart } from './DepartmentDailyChart'
 import { DepartmentTopTagsChart } from './DepartmentTopTagsChart'
+import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 
@@ -117,7 +118,10 @@ export function DepartmentDashboardScreen({
       </div>
 
       {canFilterDepartments && (
-        <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+        <DepartmentSectionFrame
+          title="Filters"
+          subtitle="Department, member search, and date range"
+        >
           <div className="grid gap-3 md:grid-cols-[minmax(180px,260px)_minmax(240px,1fr)] md:items-end">
             <div className="min-w-0 flex flex-col gap-1">
               <label
@@ -189,34 +193,42 @@ export function DepartmentDashboardScreen({
               </div>
             </form>
           </div>
-        </section>
+        </DepartmentSectionFrame>
       )}
 
       {/* KPI cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiCard
-          label="Total hours"
-          value={formatHours(summary.totalSeconds)}
-        />
-        <KpiCard
-          label="Billable hours"
-          value={formatHours(summary.billableSeconds)}
-        />
-        <KpiCard
-          label="Billable amount"
-          value={formatCurrency(summary.totalBillableAmount, summary.currency)}
-        />
-        <KpiCard
-          label="Active members"
-          value={String(activeMembers)}
-          sub={`of ${department.memberCount} total`}
-        />
-        <KpiCard
-          label="Utilization"
-          value={`${utilization}%`}
-          sub="billable / total"
-        />
-      </div>
+      <DepartmentSectionFrame
+        title="Summary"
+        subtitle={`${formatHours(summary.totalSeconds)} total · ${activeMembers} active members`}
+      >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <KpiCard
+            label="Total hours"
+            value={formatHours(summary.totalSeconds)}
+          />
+          <KpiCard
+            label="Billable hours"
+            value={formatHours(summary.billableSeconds)}
+          />
+          <KpiCard
+            label="Billable amount"
+            value={formatCurrency(
+              summary.totalBillableAmount,
+              summary.currency,
+            )}
+          />
+          <KpiCard
+            label="Active members"
+            value={String(activeMembers)}
+            sub={`of ${department.memberCount} total`}
+          />
+          <KpiCard
+            label="Utilization"
+            value={`${utilization}%`}
+            sub="billable / total"
+          />
+        </div>
+      </DepartmentSectionFrame>
 
       {/* Daily chart */}
       {dailyTotals.length > 0 && (

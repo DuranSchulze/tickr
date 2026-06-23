@@ -22,6 +22,9 @@ export type SelfProfileData = {
     postalCode: string
     country: string
   } | null
+  employeeProfile: {
+    positionTitle: string
+  } | null
 }
 
 export type AddressDraft = {

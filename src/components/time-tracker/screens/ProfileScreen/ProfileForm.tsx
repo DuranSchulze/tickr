@@ -18,6 +18,7 @@ import {
   validateLastName,
   validateMaxLength,
   validateMiddleName,
+  validatePositionTitle,
   validatePostalCode,
 } from '#/lib/profile-validation'
 import type { ProfileErrors } from '#/lib/profile-validation'
@@ -59,6 +60,7 @@ export function ProfileForm({
   selfProfile,
   fallbackName,
   fallbackEmail,
+  departmentName,
   imagekitConfigured,
   onAvatarChange,
   onNameChange,
@@ -66,6 +68,7 @@ export function ProfileForm({
   selfProfile: SelfProfileData
   fallbackName: string
   fallbackEmail: string
+  departmentName: string
   imagekitConfigured: boolean
   onAvatarChange: (url: string) => void
   onNameChange: (name: string) => void
@@ -86,6 +89,9 @@ export function ProfileForm({
     selfProfile.profile?.lastName ||
       fallbackName.split(' ').slice(1).join(' ') ||
       fallbackName,
+  )
+  const [positionTitle, setPositionTitle] = useState(
+    selfProfile.employeeProfile?.positionTitle ?? '',
   )
   const [contactNumber, setContactNumber] = useState(
     selfProfile.profile?.contactNumber ?? '',
@@ -158,6 +164,7 @@ export function ProfileForm({
       firstName,
       middleName,
       lastName,
+      positionTitle,
       // Only validate extended fields when they are visible
       contactNumber: SHOW_EXTENDED_PROFILE_FIELDS ? contactNumber : '',
       birthDate: SHOW_EXTENDED_PROFILE_FIELDS ? birthDate : '',
@@ -180,6 +187,7 @@ export function ProfileForm({
           firstName,
           middleName,
           lastName,
+          positionTitle,
           avatarUrl,
           // Extended fields are omitted entirely when hidden so existing DB values are preserved
           ...(SHOW_EXTENDED_PROFILE_FIELDS
@@ -420,6 +428,43 @@ export function ProfileForm({
               />
             </>
           )}
+        </div>
+      </SectionCard>
+
+      {/* ── Work ───────────────────────────────────────────────────────────── */}
+      <SectionCard title="Work">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="pf-position">Position</Label>
+            <Input
+              id="pf-position"
+              value={positionTitle}
+              onChange={(e) => {
+                setPositionTitle(e.target.value)
+                if (errors.positionTitle) {
+                  setError(
+                    'positionTitle',
+                    validatePositionTitle(e.target.value),
+                  )
+                }
+              }}
+              onBlur={() =>
+                setError('positionTitle', validatePositionTitle(positionTitle))
+              }
+              placeholder="e.g. Software Engineer"
+              aria-describedby={
+                errors.positionTitle ? 'pf-position-err' : undefined
+              }
+              aria-invalid={!!errors.positionTitle}
+              className={errorInputClass(errors.positionTitle)}
+            />
+            <FieldError id="pf-position-err" message={errors.positionTitle} />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="pf-department">Department</Label>
+            <Input id="pf-department" value={departmentName} readOnly />
+          </div>
         </div>
       </SectionCard>
 

@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
 import {
-  getDefaultAnalyticsRange,
   isDateKey,
+  toDateKey,
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { getDepartmentDashboardFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
@@ -15,6 +15,16 @@ type DeptSearch = {
   departmentId?: string
   q?: string
   projectPage?: number
+}
+
+function getDefaultDepartmentRange() {
+  const end = new Date()
+  const start = new Date(end)
+  start.setDate(end.getDate() - 6)
+  return {
+    startDate: toDateKey(start),
+    endDate: toDateKey(end),
+  }
 }
 
 function resolveRange(search: DeptSearch): {
@@ -32,7 +42,7 @@ function resolveRange(search: DeptSearch): {
   if (isDateKey(search.startDate) && isDateKey(search.endDate)) {
     return { startDate: search.startDate, endDate: search.endDate, ...filters }
   }
-  return { ...getDefaultAnalyticsRange(), ...filters }
+  return { ...getDefaultDepartmentRange(), ...filters }
 }
 
 function parsePositiveNumber(value: unknown): number | undefined {
@@ -88,57 +98,57 @@ function DepartmentAnalyticsRoute() {
 
   const changeRange = useCallback(
     (startDate: string, endDate: string) => {
-    void navigate({
-      to: '/app/department-analytics',
-      search: (prev) => ({
-        ...prev,
-        startDate,
-        endDate,
-        projectPage: undefined,
-      }),
-    })
+      void navigate({
+        to: '/app/department-analytics',
+        search: (prev) => ({
+          ...prev,
+          startDate,
+          endDate,
+          projectPage: undefined,
+        }),
+      })
     },
     [navigate],
   )
 
   const changeFilters = useCallback(
     (filters: { departmentId?: string; q?: string }) => {
-    void navigate({
-      to: '/app/department-analytics',
-      search: (prev) => ({
-        ...prev,
-        departmentId: filters.departmentId,
-        q: filters.q,
-        projectPage: undefined,
-      }),
-    })
+      void navigate({
+        to: '/app/department-analytics',
+        search: (prev) => ({
+          ...prev,
+          departmentId: filters.departmentId,
+          q: filters.q,
+          projectPage: undefined,
+        }),
+      })
     },
     [navigate],
   )
 
   const changeProjectPage = useCallback(
     (projectPage: number) => {
-    void navigate({
-      to: '/app/department-analytics',
-      search: (prev) => ({
-        ...prev,
-        projectPage: projectPage > 1 ? projectPage : undefined,
-      }),
-    })
+      void navigate({
+        to: '/app/department-analytics',
+        search: (prev) => ({
+          ...prev,
+          projectPage: projectPage > 1 ? projectPage : undefined,
+        }),
+      })
     },
     [navigate],
   )
 
   const viewMember = useCallback(
     (memberId: string) => {
-    void navigate({
-      to: '/app/department-member-analytics/$memberId',
-      params: { memberId },
-      search: {
-        startDate: resolved.startDate,
-        endDate: resolved.endDate,
-      },
-    })
+      void navigate({
+        to: '/app/department-member-analytics/$memberId',
+        params: { memberId },
+        search: {
+          startDate: resolved.startDate,
+          endDate: resolved.endDate,
+        },
+      })
     },
     [navigate, resolved.endDate, resolved.startDate],
   )

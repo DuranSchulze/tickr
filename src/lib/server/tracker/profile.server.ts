@@ -1,6 +1,11 @@
 import type { z } from 'zod'
 import { db } from '#/db'
-import { users, userProfiles, userAddresses } from '#/db/schema'
+import {
+  users,
+  userProfiles,
+  userAddresses,
+  employeeProfiles,
+} from '#/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import type { updateProfileSchema } from './shared/schemas'
@@ -22,6 +27,7 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
   const birthDate = data.birthDate ? new Date(data.birthDate) : null
   const gender = data.gender || null
   const maritalStatus = data.maritalStatus ? data.maritalStatus : null
+  const positionTitle = emptyToNull(data.positionTitle)
 
   await db
     .update(users)
@@ -79,6 +85,19 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
         },
       })
   }
+
+  await db
+    .insert(employeeProfiles)
+    .values({
+      workspaceMemberId: access.member.id,
+      positionTitle,
+    })
+    .onConflictDoUpdate({
+      target: employeeProfiles.workspaceMemberId,
+      set: {
+        positionTitle,
+      },
+    })
 }
 
 export async function getSelfProfile() {
@@ -92,14 +111,23 @@ export async function getSelfProfile() {
 
   let profileRow: typeof userProfiles.$inferSelect | null = null
   let addressRow: typeof userAddresses.$inferSelect | null = null
+  let employeeProfileRow: typeof employeeProfiles.$inferSelect | null = null
 
   if (userRow) {
-    const profileRows = await db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, userRow.id))
-      .limit(1)
+    const [profileRows, employeeProfileRows] = await Promise.all([
+      db
+        .select()
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, userRow.id))
+        .limit(1),
+      db
+        .select()
+        .from(employeeProfiles)
+        .where(eq(employeeProfiles.workspaceMemberId, access.member.id))
+        .limit(1),
+    ])
     profileRow = profileRows[0] ?? null
+    employeeProfileRow = employeeProfileRows[0] ?? null
 
     if (profileRow) {
       const addressRows = await db
@@ -137,6 +165,11 @@ export async function getSelfProfile() {
           province: addressRow.province ?? '',
           postalCode: addressRow.postalCode ?? '',
           country: addressRow.country,
+        }
+      : null,
+    employeeProfile: employeeProfileRow
+      ? {
+          positionTitle: employeeProfileRow.positionTitle ?? '',
         }
       : null,
   }

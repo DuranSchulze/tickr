@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import type { DepartmentMemberBreakdown } from '#/lib/server/tracker/department-dashboard.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
+import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 
 const PAGE_SIZE = 10
 
@@ -91,173 +92,165 @@ export function MemberBreakdownTable({
 
   if (members.length === 0) {
     return (
-      <section className="rounded-lg border border-border bg-card shadow-sm">
-        <div className="border-b border-border px-4 py-3">
-          <h2 className="m-0 text-base font-bold text-foreground">
-            Member Breakdown
-          </h2>
-        </div>
+      <DepartmentSectionFrame title="Member Breakdown" subtitle="0 members">
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
           No entries from department members in this period.
         </p>
-      </section>
+      </DepartmentSectionFrame>
     )
   }
 
   const sortProps = { currentKey: sortKey, ascending, onSort: handleSort }
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="m-0 text-base font-bold text-foreground">
-          Member Breakdown
-        </h2>
-        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-          {members.length} member{members.length !== 1 ? 's' : ''}
-        </p>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Member
-              </th>
-              <th className="px-4 py-2.5 text-right">
-                <SortButton
-                  label="Total Hrs"
-                  sortKey="totalSeconds"
-                  {...sortProps}
-                />
-              </th>
-              <th className="px-4 py-2.5 text-right">
-                <SortButton
-                  label="Billable Hrs"
-                  sortKey="billableSeconds"
-                  {...sortProps}
-                />
-              </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Rate/hr
-              </th>
-              <th className="px-4 py-2.5 text-right">
-                <SortButton
-                  label="Amount"
-                  sortKey="billableAmount"
-                  {...sortProps}
-                />
-              </th>
-              <th className="px-4 py-2.5 text-right">
-                <SortButton
-                  label="Entries"
-                  sortKey="entryCount"
-                  {...sortProps}
-                />
-              </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Utilization
-              </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {paginated.map((member) => {
-              const utilization =
-                member.totalSeconds === 0
-                  ? 0
-                  : Math.round(
-                      (member.billableSeconds / member.totalSeconds) * 100,
-                    )
-              return (
-                <tr
-                  key={member.memberId}
-                  className="transition-colors hover:bg-muted/20"
-                >
-                  <td className="px-4 py-3">
-                    <p className="m-0 text-sm font-semibold text-foreground">
-                      {member.name}
-                    </p>
-                    <p className="m-0 text-xs text-muted-foreground">
-                      {member.email}
-                    </p>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
-                    {formatHours(member.totalSeconds)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-foreground">
-                    {formatHours(member.billableSeconds)}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-muted-foreground">
-                    {member.effectiveRate > 0
-                      ? formatCurrency(member.effectiveRate, currency)
-                      : '—'}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
-                    {member.billableAmount > 0
-                      ? formatCurrency(member.billableAmount, currency)
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                    {member.entryCount}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
-                        utilization >= 80
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : utilization >= 50
-                            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                            : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {utilization}%
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => onViewMember(member)}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground transition-colors hover:bg-accent"
-                    >
-                      <Eye className="size-3.5" />
-                      View
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
+    <DepartmentSectionFrame
+      title="Member Breakdown"
+      subtitle={`${members.length} member${members.length !== 1 ? 's' : ''}`}
+      bodyClassName="p-0"
+    >
+      <>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Member
+                </th>
+                <th className="px-4 py-2.5 text-right">
+                  <SortButton
+                    label="Total Hrs"
+                    sortKey="totalSeconds"
+                    {...sortProps}
+                  />
+                </th>
+                <th className="px-4 py-2.5 text-right">
+                  <SortButton
+                    label="Billable Hrs"
+                    sortKey="billableSeconds"
+                    {...sortProps}
+                  />
+                </th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Rate/hr
+                </th>
+                <th className="px-4 py-2.5 text-right">
+                  <SortButton
+                    label="Amount"
+                    sortKey="billableAmount"
+                    {...sortProps}
+                  />
+                </th>
+                <th className="px-4 py-2.5 text-right">
+                  <SortButton
+                    label="Entries"
+                    sortKey="entryCount"
+                    {...sortProps}
+                  />
+                </th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Utilization
+                </th>
+                <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {paginated.map((member) => {
+                const utilization =
+                  member.totalSeconds === 0
+                    ? 0
+                    : Math.round(
+                        (member.billableSeconds / member.totalSeconds) * 100,
+                      )
+                return (
+                  <tr
+                    key={member.memberId}
+                    className="transition-colors hover:bg-muted/20"
+                  >
+                    <td className="px-4 py-3">
+                      <p className="m-0 text-sm font-semibold text-foreground">
+                        {member.name}
+                      </p>
+                      <p className="m-0 text-xs text-muted-foreground">
+                        {member.email}
+                      </p>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
+                      {formatHours(member.totalSeconds)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-foreground">
+                      {formatHours(member.billableSeconds)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-muted-foreground">
+                      {member.effectiveRate > 0
+                        ? formatCurrency(member.effectiveRate, currency)
+                        : '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
+                      {member.billableAmount > 0
+                        ? formatCurrency(member.billableAmount, currency)
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                      {member.entryCount}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          utilization >= 80
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                            : utilization >= 50
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                              : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {utilization}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => onViewMember(member)}
+                        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground transition-colors hover:bg-accent"
+                      >
+                        <Eye className="size-3.5" />
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
-    </section>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <span className="text-xs text-muted-foreground">
+              Page {page} of {totalPages}
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    </DepartmentSectionFrame>
   )
 }

@@ -25,11 +25,20 @@ export function formatMoney(
   return `${code} ${value}`
 }
 
-/** Human-readable duration, e.g. "5h 22m" — easier to read than "5.38". */
+/** Human-readable duration, e.g. "5h 22m" - easier to read than "5.38". */
 export function formatHm(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return `${h}h ${String(m).padStart(2, '0')}m`
+}
+
+/** Exact duration format for reports, with no rounding. */
+export function formatHms(seconds: number): string {
+  const total = Math.max(0, Math.trunc(seconds))
+  const h = Math.floor(total / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 function escapeCsv(value: string | number | null | undefined): string {

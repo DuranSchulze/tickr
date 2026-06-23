@@ -677,6 +677,7 @@ const updateProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(50),
   middleName: z.string().trim().max(50).optional().or(z.literal('')),
   lastName: z.string().trim().min(1).max(50),
+  positionTitle: z.string().trim().max(100).optional().or(z.literal('')),
   contactNumber: z.string().trim().max(50).optional(),
   birthDate: z.string().date().optional().or(z.literal('')),
   gender: z
