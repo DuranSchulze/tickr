@@ -38,7 +38,11 @@ export async function getTrackerState(): Promise<TrackerState> {
   const entriesWhere = and(
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, memberId),
-    or(gte(timeEntries.startedAt, windowStart), isNull(timeEntries.endedAt)),
+    or(
+      gte(timeEntries.startedAt, windowStart),
+      gte(timeEntries.endedAt, windowStart),
+      isNull(timeEntries.endedAt),
+    ),
   )
 
   const [

@@ -100,8 +100,8 @@ export function EntriesSection({
   const [visibleGroupCount, setVisibleGroupCount] = useState(GROUPS_PER_PAGE)
 
   const groups = useMemo(
-    () => groupEntriesByDay(filteredEntries),
-    [filteredEntries],
+    () => groupEntriesByDay(filteredEntries, range),
+    [filteredEntries, range],
   )
   const visibleGroups = groups.slice(0, visibleGroupCount)
   const hiddenGroupCount = groups.length - visibleGroupCount

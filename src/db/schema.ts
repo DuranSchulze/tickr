@@ -701,6 +701,40 @@ export const timeEntryTags = pgTable(
   ],
 )
 
+export const timerReminderEmails = pgTable(
+  'timer_reminder_emails',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    timeEntryId: varchar('time_entry_id', { length: 30 })
+      .notNull()
+      .references(() => timeEntries.id, { onDelete: 'cascade' }),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    workspaceMemberId: varchar('workspace_member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    reminderDate: date('reminder_date').notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('timer_reminder_entry_date_unique').on(
+      table.timeEntryId,
+      table.reminderDate,
+    ),
+    index('timer_reminder_workspace_sent_idx').on(
+      table.workspaceId,
+      table.sentAt,
+    ),
+    index('timer_reminder_member_sent_idx').on(
+      table.workspaceMemberId,
+      table.sentAt,
+    ),
+  ],
+)
+
 export const analyticsDailyMemberMetrics = pgTable(
   'analytics_daily_member_metrics',
   {

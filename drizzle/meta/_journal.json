@@ -64,6 +64,13 @@
       "when": 1782120000000,
       "tag": "0008_analytics_daily_rollups",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782200000000,
+      "tag": "0009_timer_reminder_emails",
+      "breakpoints": true
     }
   ]
 }

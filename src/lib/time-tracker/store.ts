@@ -129,6 +129,17 @@ export function formatViewRangeLabel(view: ViewMode, dateKey: string): string {
   })}`
 }
 
+export function entryOverlapsRange(
+  entry: Pick<TimeEntry, 'startedAt' | 'endedAt'>,
+  start: Date,
+  end: Date,
+  now = new Date(),
+) {
+  const entryStart = new Date(entry.startedAt)
+  const entryEnd = entry.endedAt ? new Date(entry.endedAt) : now
+  return entryStart < end && entryEnd >= start
+}
+
 export function useFilteredEntries(
   entries: TimeEntry[],
   view: ViewMode,
@@ -139,10 +150,7 @@ export function useFilteredEntries(
     const { start, end } = getViewRange(view, parseLocalDateKey(dateKey))
     return entries
       .filter((entry) => entry.workspaceMemberId === workspaceMemberId)
-      .filter((entry) => {
-        const entryStart = new Date(entry.startedAt)
-        return entryStart >= start && entryStart < end
-      })
+      .filter((entry) => entryOverlapsRange(entry, start, end))
       .sort(
         (a, b) =>
           new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),

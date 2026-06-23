@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { FocusEvent } from 'react'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
 import { DateTimePicker } from './DateTimePicker'
@@ -10,6 +11,13 @@ type ClientItem = {
   clientStatus: 'ACTIVE' | 'INACTIVE'
 }
 type ProjectItem = { id: string; name: string; color: string; clientId: string }
+
+function keepFocusedFieldVisible(event: FocusEvent<HTMLElement>) {
+  const target = event.currentTarget
+  window.setTimeout(() => {
+    target.scrollIntoView({ block: 'center', inline: 'nearest' })
+  }, 120)
+}
 
 export function EntryDraftForm({
   draft,
@@ -58,7 +66,8 @@ export function EntryDraftForm({
           onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           placeholder="Task description"
           aria-label="Task description"
-          className="h-10 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+          onFocus={keepFocusedFieldVisible}
+          className="h-10 w-full scroll-mt-28 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
         />
       </div>
 
@@ -125,7 +134,8 @@ export function EntryDraftForm({
           onChange={(e) => setDraft({ ...draft, notes: e.target.value })}
           placeholder="Notes (optional)"
           aria-label="Notes"
-          className="h-10 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+          onFocus={keepFocusedFieldVisible}
+          className="h-10 scroll-mt-28 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
         />
       )}
     </div>

@@ -52,6 +52,26 @@ function serializeManualTimeEntry(
   }
 }
 
+function parseEntryDate(value: string, label: string): Date {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`${label} is invalid.`)
+  }
+  return date
+}
+
+function parseEntryTimes(data: {
+  startedAt: string
+  endedAt: string | null
+}) {
+  const startedAt = parseEntryDate(data.startedAt, 'Start time')
+  const endedAt = data.endedAt ? parseEntryDate(data.endedAt, 'End time') : null
+  if (endedAt && endedAt <= startedAt) {
+    throw new Error('End time must be after start time.')
+  }
+  return { startedAt, endedAt }
+}
+
 export async function createManualEntry(
   data: z.infer<typeof entryInputSchema>,
 ): Promise<TimeEntry> {
@@ -59,8 +79,7 @@ export async function createManualEntry(
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
-  const startedAt = new Date(data.startedAt)
-  const endedAt = data.endedAt ? new Date(data.endedAt) : null
+  const { startedAt, endedAt } = parseEntryTimes(data)
 
   await assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds)
 
@@ -113,8 +132,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
-  const startedAt = new Date(data.startedAt)
-  const endedAt = data.endedAt ? new Date(data.endedAt) : null
+  const { startedAt, endedAt } = parseEntryTimes(data)
 
   // Catalog validation and the entry lookup are independent reads — one wave.
   const [, existingRows] = await Promise.all([
@@ -208,8 +226,7 @@ export async function updateWorkspaceMemberEntry(
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
-  const startedAt = new Date(data.startedAt)
-  const endedAt = data.endedAt ? new Date(data.endedAt) : null
+  const { startedAt, endedAt } = parseEntryTimes(data)
 
   const [, existingRows] = await Promise.all([
     assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds),

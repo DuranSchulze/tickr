@@ -1,6 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
-import { getWorkspaceActivityFn } from '#/lib/server/tracker'
+import {
+  fetchWorkspaceActivity,
+  getWorkspaceActivityQueryKey,
+} from '#/lib/time-tracker/workspace-activity-query'
 import { WorkspaceActivityScreen } from '#/components/time-tracker/screens/WorkspaceActivityScreen/WorkspaceActivityScreen'
 
 type ActivitySearch = {
@@ -36,8 +39,8 @@ export const Route = createFileRoute('/app/workspace/activity')({
   },
   loader: async ({ context, deps }) => {
     return context.queryClient.ensureQueryData({
-      queryKey: ['workspace-activity', deps],
-      queryFn: () => getWorkspaceActivityFn({ data: deps }),
+      queryKey: getWorkspaceActivityQueryKey(deps),
+      queryFn: () => fetchWorkspaceActivity(deps),
       staleTime: 30_000,
     })
   },

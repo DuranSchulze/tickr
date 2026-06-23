@@ -38,6 +38,7 @@ import { Route as AppTimeTrackerDayRouteImport } from './routes/app/time-tracker
 import { Route as AppDepartmentMemberAnalyticsMemberIdRouteImport } from './routes/app/department-member-analytics.$memberId'
 import { Route as AppAnalyticsOverviewRouteImport } from './routes/app/analytics_.overview'
 import { Route as ApiImportStreamRouteImport } from './routes/api/import/stream'
+import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
 import { Route as ApiCronSyncGsheetsRouteImport } from './routes/api/cron/sync-gsheets'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppWorkspaceMembersMemberIdRouteImport } from './routes/app/workspace/members.$memberId'
@@ -194,6 +195,11 @@ const ApiImportStreamRoute = ApiImportStreamRouteImport.update({
   path: '/api/import/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronTimerRemindersRoute = ApiCronTimerRemindersRouteImport.update({
+  id: '/api/cron/timer-reminders',
+  path: '/api/cron/timer-reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronSyncGsheetsRoute = ApiCronSyncGsheetsRouteImport.update({
   id: '/api/cron/sync-gsheets',
   path: '/api/cron/sync-gsheets',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
+  '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
+  '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
@@ -349,6 +357,7 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
+  '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
   '/app/analytics_/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
+    | '/api/cron/timer-reminders'
     | '/api/import/stream'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
@@ -431,6 +441,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
+    | '/api/cron/timer-reminders'
     | '/api/import/stream'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
@@ -471,6 +482,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/sync-gsheets'
+    | '/api/cron/timer-reminders'
     | '/api/import/stream'
     | '/app/analytics_/overview'
     | '/app/department-member-analytics/$memberId'
@@ -504,6 +516,7 @@ export interface RootRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronSyncGsheetsRoute: typeof ApiCronSyncGsheetsRoute
+  ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
   ApiImportStreamRoute: typeof ApiImportStreamRoute
 }
 
@@ -712,6 +725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiImportStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/timer-reminders': {
+      id: '/api/cron/timer-reminders'
+      path: '/api/cron/timer-reminders'
+      fullPath: '/api/cron/timer-reminders'
+      preLoaderRoute: typeof ApiCronTimerRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/sync-gsheets': {
       id: '/api/cron/sync-gsheets'
       path: '/api/cron/sync-gsheets'
@@ -868,6 +888,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronSyncGsheetsRoute: ApiCronSyncGsheetsRoute,
+  ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
   ApiImportStreamRoute: ApiImportStreamRoute,
 }
 export const routeTree = rootRouteImport

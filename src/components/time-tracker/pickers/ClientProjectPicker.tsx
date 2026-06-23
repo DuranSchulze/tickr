@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   Building2,
   ChevronDown,
@@ -108,54 +108,31 @@ export function ClientProjectPicker({
   const newTaskInputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
 
-  // Keep a ref so we only seed collapsed projects once per open cycle.
-  // If seedCollapsed re-fires because the projects array reference changed
-  // (e.g. after a task creation invalidates tracker state), it would
-  // re-collapse every project — including the one the user just expanded.
-  const didSeedRef = useRef(false)
-
-  // Seed collapsed projects when popover opens so every project starts closed.
-  const seedCollapsed = useCallback(() => {
+  function seedCollapsedProjects() {
     setCollapsedProjects(new Set(projects.map((p) => p.id)))
-  }, [projects])
+  }
 
-  useEffect(() => {
-    if (open) {
-      if (!didSeedRef.current) {
-        seedCollapsed()
-        didSeedRef.current = true
-      }
-    } else {
-      didSeedRef.current = false
-    }
-  }, [open, seedCollapsed])
-
-  // Reset search when popover closes.
-  useEffect(() => {
-    if (!open) {
-      setSearch('')
-      setAddingTaskFor(null)
-      setNewTaskName('')
-    }
-  }, [open])
-
-  // Focus new-task input when it appears.
-  useEffect(() => {
-    if (addingTaskFor) {
-      requestAnimationFrame(() => newTaskInputRef.current?.focus())
-    }
-  }, [addingTaskFor])
-
-  // Scroll selected into view when popover opens.
-  useEffect(() => {
-    if (!open) return
+  function scrollSelectedIntoView() {
     requestAnimationFrame(() => {
       const el = listRef.current?.querySelector<HTMLElement>(
         '[data-selected="true"]',
       )
       el?.scrollIntoView({ block: 'nearest' })
     })
-  }, [open])
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      seedCollapsedProjects()
+      setOpen(true)
+      scrollSelectedIntoView()
+    } else {
+      setOpen(false)
+      setSearch('')
+      setAddingTaskFor(null)
+      setNewTaskName('')
+    }
+  }
 
   const selectedClient = useMemo(
     () => clients.find((c) => c.id === clientId),
@@ -291,6 +268,7 @@ export function ClientProjectPicker({
     })
     setAddingTaskFor(pid)
     setNewTaskName('')
+    requestAnimationFrame(() => newTaskInputRef.current?.focus())
   }
 
   function handleSelect(
@@ -336,7 +314,7 @@ export function ClientProjectPicker({
 
   return (
     <>
-      <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+      <Popover open={open} onOpenChange={disabled ? undefined : handleOpenChange}>
         {/* Trigger */}
         <div
           className={
@@ -485,7 +463,7 @@ export function ClientProjectPicker({
             e.preventDefault()
             inputRef.current?.focus()
           }}
-          className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-2rem))] w-80 max-w-[calc(100vw-1rem)] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+          className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(24rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
         >
           {/* Search */}
           <div className="border-b border-border p-2">
@@ -495,14 +473,14 @@ export function ClientProjectPicker({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search clients, projects or tasks…"
               aria-label="Search clients, projects or tasks"
-              className="h-8 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+              className="h-10 w-full scroll-mt-24 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary sm:h-8"
             />
           </div>
 
           {/* Results */}
           <div
             ref={listRef}
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch] sm:max-h-64"
+            className="max-h-[min(22rem,calc(100dvh-10rem))] min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
           >
             {rows.length === 0 ? (
               <p className="px-3 py-2 text-xs text-muted-foreground">
@@ -521,6 +499,7 @@ export function ClientProjectPicker({
                       className={cn(
                         'flex w-full items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-accent/50',
                         i > 0 && 'mt-1 border-t border-border/50 pt-2',
+                        'min-h-10 sm:min-h-0',
                       )}
                     >
                       {cCollapsed ? (
@@ -544,7 +523,7 @@ export function ClientProjectPicker({
                     <div
                       key={`project-${row.project.id}`}
                       className={cn(
-                        'flex w-full items-center gap-0.5 py-1.5 pl-7 pr-2 text-left text-xs transition-colors hover:bg-accent/30',
+                        'flex min-h-10 w-full items-center gap-0.5 py-1.5 pl-7 pr-2 text-left text-xs transition-colors hover:bg-accent/30 sm:min-h-0',
                         pActive && 'bg-accent/50',
                       )}
                     >
@@ -620,7 +599,7 @@ export function ClientProjectPicker({
                       key={`task-${row.task.id}`}
                       data-selected={tActive ? 'true' : undefined}
                       className={cn(
-                        'group/task flex w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent',
+                        'group/task flex min-h-10 w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent sm:min-h-0',
                         tActive
                           ? 'bg-accent/50 text-foreground'
                           : 'font-normal text-muted-foreground hover:text-foreground',
@@ -680,7 +659,7 @@ export function ClientProjectPicker({
                           onChange={(e) => setNewTaskName(e.target.value)}
                           placeholder="New task name…"
                           aria-label="New task name"
-                          className="h-7 flex-1 rounded border border-border bg-background px-2 text-xs focus:border-primary focus:outline-none"
+                          className="h-10 flex-1 scroll-mt-24 rounded border border-border bg-background px-2 text-sm focus:border-primary focus:outline-none sm:h-7 sm:text-xs"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter')
                               handleCreateTask(row.project.id)

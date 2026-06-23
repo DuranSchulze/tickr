@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { RefreshCw, Search, X } from 'lucide-react'
 import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
+import { getTrackerStateLiteFn } from '#/lib/server/tracker'
 import {
-  getTrackerStateLiteFn,
-  getWorkspaceActivityFn,
-} from '#/lib/server/tracker'
+  fetchWorkspaceActivity,
+  getWorkspaceActivityQueryKey,
+} from '#/lib/time-tracker/workspace-activity-query'
 import { Page } from '../shared/Page'
 import { MemberActivityCard } from './MemberActivityCard'
 import type {
@@ -47,8 +48,8 @@ export function WorkspaceActivityScreen({
     dataUpdatedAt,
     isFetching,
   } = useQuery({
-    queryKey: ['workspace-activity', currentFilters],
-    queryFn: () => getWorkspaceActivityFn({ data: currentFilters }),
+    queryKey: getWorkspaceActivityQueryKey(currentFilters),
+    queryFn: () => fetchWorkspaceActivity(currentFilters),
     initialData: initialActivity,
     staleTime: 0,
     refetchInterval: POLL_INTERVAL,

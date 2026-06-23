@@ -8,6 +8,7 @@ import {
   getLocalDateKey,
   getEntrySeconds,
   getViewRange,
+  entryOverlapsRange,
   moveViewDate,
   useFilteredEntries,
 } from '#/lib/time-tracker/store'
@@ -384,12 +385,9 @@ export function TimeTrackerDashboard({
   )
 
   const pendingInRange = useMemo(() => {
-    return optimisticStoppedEntries.filter((e) => {
-      const t = new Date(e.startedAt).getTime()
-      return (
-        t >= selectedRange.start.getTime() && t < selectedRange.end.getTime()
-      )
-    })
+    return optimisticStoppedEntries.filter((e) =>
+      entryOverlapsRange(e, selectedRange.start, selectedRange.end),
+    )
   }, [optimisticStoppedEntries, selectedRange])
 
   // Merge pending stopped entries into the visible list so they appear instantly.

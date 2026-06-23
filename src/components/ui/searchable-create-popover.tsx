@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown, Plus } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
@@ -60,13 +60,13 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   const [createPending, setCreatePending] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Reset transient state whenever the popover closes.
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen)
+    if (!nextOpen) {
       setSearch('')
       setCreating(false)
     }
-  }, [open])
+  }
 
   const isSelected = (id: string) =>
     props.multi ? props.value.includes(id) : props.value === id
@@ -120,7 +120,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   }
 
   return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+    <Popover open={open} onOpenChange={disabled ? undefined : handleOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -143,11 +143,12 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
       <PopoverContent
         align="start"
         sideOffset={4}
+        collisionPadding={8}
         onOpenAutoFocus={(e) => {
           e.preventDefault()
           inputRef.current?.focus()
         }}
-        className="w-64 gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+        className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(22rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
       >
         <div className="border-b border-border p-2">
           <input
@@ -156,10 +157,10 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className="h-8 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+            className="h-10 w-full scroll-mt-24 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary sm:h-8"
           />
         </div>
-        <div className="max-h-48 overflow-y-auto py-1">
+        <div className="max-h-[min(18rem,calc(100dvh-12rem))] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
           {filtered.length === 0 ? (
             <p className="px-3 py-2 text-xs text-muted-foreground">
               {emptyText}
@@ -172,7 +173,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                   key={item.id}
                   type="button"
                   onClick={() => handleSelect(item.id)}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent ${
+                  className={`flex min-h-10 w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-accent sm:min-h-0 ${
                     checked
                       ? 'font-semibold text-foreground'
                       : 'text-foreground'
@@ -204,7 +205,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder={newNamePlaceholder}
                     aria-label={newNamePlaceholder}
-                    className="h-8 flex-1 rounded-lg border border-border bg-card text-foreground px-2 text-sm outline-none focus:border-primary"
+                    className="h-10 flex-1 scroll-mt-24 rounded-lg border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary sm:h-8"
                   />
                   <input
                     type="color"

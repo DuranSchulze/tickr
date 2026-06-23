@@ -71,7 +71,8 @@ export function DateTimePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto min-w-[280px] max-w-[calc(100vw-2rem)] p-0"
+        collisionPadding={8}
+        className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(22rem,calc(100vw-1rem))] overflow-y-auto overscroll-contain p-0 [-webkit-overflow-scrolling:touch]"
         align="start"
       >
         <div className="p-2 sm:p-3">
@@ -87,7 +88,16 @@ export function DateTimePicker({
               type="time"
               value={timePart || '00:00'}
               onChange={(e) => handleTimeChange(e.target.value)}
-              className="mt-1"
+              onFocus={(event) => {
+                const target = event.currentTarget
+                window.setTimeout(() => {
+                  target.scrollIntoView({
+                    block: 'center',
+                    inline: 'nearest',
+                  })
+                }, 120)
+              }}
+              className="mt-1 h-10 scroll-mt-24 sm:h-9"
             />
           </div>
         </div>

@@ -1,17 +1,28 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import type { DateRange } from 'react-day-picker'
 import {
   CalendarDays,
   Clock,
   Copy,
-  MoreHorizontal,
+  MoreVertical,
   Play,
   Trash2,
+  X,
 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { Calendar } from '#/components/ui/calendar'
+import { Button } from '#/components/ui/button'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +30,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
 import { TableCell, TableRow } from '#/components/ui/table'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
@@ -73,98 +79,45 @@ function toTimeInput(isoStr: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function patchTime(isoStr: string, timeInput: string): string {
-  const [h, m] = timeInput.split(':').map(Number)
-  const d = new Date(isoStr)
-  d.setHours(h, m, 0, 0)
-  return d.toISOString()
+function patchDateAndTime(isoStr: string, date: Date, timeInput: string): string {
+  const next = new Date(isoStr)
+  const [hours, minutes] = timeInput.split(':').map(Number)
+  next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
+  next.setHours(hours, minutes, 0, 0)
+  return next.toISOString()
 }
 
-function patchDate(isoStr: string, date: Date): string {
-  const d = new Date(isoStr)
-  d.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
-  return d.toISOString()
-}
-
-// Inline-editable time text — mirrors the description field's click-to-edit UX.
-function InlineTimeField({
-  isoStr,
-  bold,
-  ariaLabel,
-  onCommit,
-}: {
-  isoStr: string
-  bold?: boolean
-  ariaLabel: string
-  onCommit: (timeInput: string) => void
-}) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(() => toTimeInput(isoStr))
-  const inputRef = useRef<HTMLInputElement>(null)
-  const skipCommit = useRef(false)
-
-  // Callback ref: focus the input the moment it mounts (i.e. when the user
-  // clicks to edit). Memoised so it only runs on mount/unmount, never on
-  // re-render — so typing doesn't re-steal focus.
-  const attachInput = useCallback((el: HTMLInputElement | null) => {
-    inputRef.current = el
-    el?.focus()
-  }, [])
-
-  // Single commit path (via blur) — Enter/Escape blur instead of committing
-  // directly, so one edit never fires two updates.
-  function commit() {
-    if (skipCommit.current) {
-      skipCommit.current = false
-      setEditing(false)
-      return
-    }
-    if (draft && draft !== toTimeInput(isoStr)) onCommit(draft)
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <input
-        ref={attachInput}
-        type="time"
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault()
-            e.stopPropagation()
-            inputRef.current?.blur()
-          } else if (e.key === 'Escape') {
-            e.preventDefault()
-            e.stopPropagation()
-            skipCommit.current = true
-            setDraft(toTimeInput(isoStr))
-            inputRef.current?.blur()
-          }
-        }}
-        aria-label={ariaLabel}
-        className="box-border h-6 w-[5.25rem] rounded border border-border bg-background px-1 text-xs tabular-nums text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-      />
-    )
-  }
-
+function isSameLocalDate(a: Date, b: Date): boolean {
   return (
-    <button
-      type="button"
-      onClick={() => {
-        setDraft(toTimeInput(isoStr))
-        setEditing(true)
-      }}
-      title="Edit time"
-      className={`cursor-text rounded px-0.5 hover:underline focus:outline-none focus:ring-1 focus:ring-primary ${
-        bold ? 'font-semibold text-foreground' : 'text-muted-foreground'
-      }`}
-    >
-      {formatTimeDisplay(isoStr)}
-    </button>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   )
+}
+
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+type TimeEditorState = {
+  open: boolean
+  dateRange: DateRange
+  startTime: string
+  endTime: string
+}
+
+function getTimeEditorState(entry: TimeEntry, open: boolean): TimeEditorState {
+  const start = new Date(entry.startedAt)
+  const end = new Date(entry.endedAt ?? entry.startedAt)
+  return {
+    open,
+    dateRange: { from: start, to: entry.endedAt ? end : undefined },
+    startTime: toTimeInput(entry.startedAt),
+    endTime: entry.endedAt ? toTimeInput(entry.endedAt) : '',
+  }
 }
 
 function EntryTimeCell({
@@ -174,63 +127,214 @@ function EntryTimeCell({
   entry: TimeEntry
   onUpdate: (patch: InlinePatch) => void
 }) {
-  const [open, setOpen] = useState(false)
+  const [timeEditor, setTimeEditor] = useState(() =>
+    getTimeEditorState(entry, false),
+  )
   const isRunning = !entry.endedAt
+  const { open, dateRange, startTime, endTime } = timeEditor
+  const actualStartDate = new Date(entry.startedAt)
+  const actualEndDate = entry.endedAt ? new Date(entry.endedAt) : null
+  const spansDates = !!actualEndDate && !isSameLocalDate(actualStartDate, actualEndDate)
+  const draftStartDate = dateRange.from ?? new Date(entry.startedAt)
+  const draftEndDate = dateRange.to ?? draftStartDate
+  const draftStartIso = patchDateAndTime(
+    entry.startedAt,
+    draftStartDate,
+    startTime,
+  )
+  const draftEndIso =
+    entry.endedAt && endTime
+      ? patchDateAndTime(entry.endedAt, draftEndDate, endTime)
+      : null
+  const hasTimeError =
+    !!draftEndIso && new Date(draftEndIso) <= new Date(draftStartIso)
 
-  // Date change — patch both start & end in a single mutation.
-  function handleDateSelect(date: Date | undefined) {
-    if (!date) return
-    const patch: InlinePatch = { startedAt: patchDate(entry.startedAt, date) }
-    if (entry.endedAt) patch.endedAt = patchDate(entry.endedAt, date)
+  function openEditor() {
+    setTimeEditor(getTimeEditorState(entry, true))
+  }
+
+  function updateTimeEditor(patch: Partial<TimeEditorState>) {
+    setTimeEditor((current) => ({ ...current, ...patch }))
+  }
+
+  function selectRangeDay(day: Date) {
+    if (!dateRange.from || dateRange.to) {
+      updateTimeEditor({ dateRange: { from: day, to: undefined } })
+      return
+    }
+
+    updateTimeEditor({
+      dateRange:
+        day < dateRange.from
+          ? { from: day, to: dateRange.from }
+          : { from: dateRange.from, to: day },
+    })
+  }
+
+  function saveTimeChange() {
+    if (!startTime || hasTimeError) return
+    const patch: InlinePatch = { startedAt: draftStartIso }
+    if (entry.endedAt && draftEndIso) patch.endedAt = draftEndIso
     onUpdate(patch)
-    setOpen(false)
+    updateTimeEditor({ open: false })
   }
 
   return (
-    <div className="flex items-center justify-center gap-2">
-      <div className="grid justify-items-end gap-0.5 text-xs leading-tight tabular-nums">
-        <InlineTimeField
-          isoStr={entry.startedAt}
-          bold
-          ariaLabel="Start time"
-          onCommit={(t) =>
-            onUpdate({ startedAt: patchTime(entry.startedAt, t) })
-          }
-        />
-        {isRunning ? (
-          <span className="px-0.5 italic text-muted-foreground">now</span>
-        ) : (
-          <InlineTimeField
-            isoStr={entry.endedAt!}
-            ariaLabel="End time"
-            onCommit={(t) =>
-              onUpdate({ endedAt: patchTime(entry.endedAt!, t) })
-            }
-          />
-        )}
-      </div>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            title="Change date"
-            aria-label="Change task date"
-          >
-            <CalendarDays className="size-4" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="center">
-          <Calendar
-            mode="single"
-            selected={new Date(entry.startedAt)}
-            defaultMonth={new Date(entry.startedAt)}
-            onSelect={handleDateSelect}
-            autoFocus
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <>
+      <button
+        type="button"
+        onClick={openEditor}
+        className="inline-flex min-h-10 w-full min-w-[7.5rem] items-center justify-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-left transition-colors hover:border-border hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-primary/40"
+        title="Edit date and time"
+        aria-label="Edit date and time"
+      >
+        <span className="grid min-w-0 justify-items-end gap-0.5 text-xs leading-tight tabular-nums">
+          <span className="font-semibold text-foreground">
+            {spansDates
+              ? `${formatShortDate(actualStartDate)} ${formatTimeDisplay(entry.startedAt)}`
+              : formatTimeDisplay(entry.startedAt)}
+          </span>
+          <span className="text-muted-foreground">
+            {isRunning
+              ? 'now'
+              : spansDates
+                ? `${formatShortDate(actualEndDate)} ${formatTimeDisplay(entry.endedAt!)}`
+                : formatTimeDisplay(entry.endedAt!)}
+          </span>
+        </span>
+        <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
+      </button>
+
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => updateTimeEditor({ open: nextOpen })}
+      >
+        <DialogContent
+          className="top-3 flex max-h-[min(90dvh,42rem)] translate-y-0 flex-col gap-0 overflow-hidden p-0 sm:top-1/2 sm:max-w-xl sm:-translate-y-1/2 md:max-w-2xl"
+          showCloseButton={false}
+        >
+          <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <DialogTitle>Edit Date & Time</DialogTitle>
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Close time editor"
+                title="Close"
+              >
+                <X className="size-4" />
+              </Button>
+            </DialogClose>
+          </DialogHeader>
+
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 [-webkit-overflow-scrolling:touch] sm:p-4">
+            <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)]">
+              <div className="rounded-md border border-border p-2">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  defaultMonth={dateRange.from}
+                  onSelect={() => undefined}
+                  onDayClick={selectRangeDay}
+                  autoFocus
+                  className="w-full bg-card p-2 [--cell-size:--spacing(8)] sm:[--cell-size:--spacing(9)]"
+                  classNames={{
+                    root: 'w-full',
+                    month: 'flex w-full min-w-0 flex-col gap-4',
+                    day: 'group/day relative aspect-square size-full rounded-(--cell-radius) p-0 text-center select-none',
+                  }}
+                />
+              </div>
+
+              <div className="grid content-start gap-3">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground">
+                    <span className="block text-xs font-semibold uppercase tracking-wide">
+                      Start date
+                    </span>
+                    <span className="font-semibold">
+                      {draftStartDate.toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground">
+                    <span className="block text-xs font-semibold uppercase tracking-wide">
+                      End date
+                    </span>
+                    <span className="font-semibold">
+                      {isRunning
+                        ? 'Running'
+                        : draftEndDate.toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                    </span>
+                  </div>
+                </div>
+                <p className="m-0 text-xs text-muted-foreground">
+                  Select one date for a same-day entry, or select a start and
+                  end date for overnight or multi-day work.
+                </p>
+
+                <label className="grid gap-1.5 text-sm font-semibold text-foreground">
+                  Start time
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(event) =>
+                      updateTimeEditor({ startTime: event.target.value })
+                    }
+                    className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                  />
+                </label>
+
+                <label className="grid gap-1.5 text-sm font-semibold text-foreground">
+                  End time
+                  <input
+                    type="time"
+                    value={isRunning ? '' : endTime}
+                    onChange={(event) =>
+                      updateTimeEditor({ endTime: event.target.value })
+                    }
+                    disabled={isRunning}
+                    placeholder={isRunning ? 'Running timer' : undefined}
+                    className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
+                  />
+                </label>
+
+                {hasTimeError && (
+                  <p className="m-0 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive">
+                    End date and time must be after the start date and time.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="shrink-0 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4 [&_button]:w-full sm:[&_button]:w-auto">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              onClick={saveTimeChange}
+              disabled={
+                hasTimeError || !startTime || (!!entry.endedAt && !endTime)
+              }
+            >
+              Save Time
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
@@ -438,15 +542,16 @@ export const EntryRow = memo(function EntryRow({
           <DropdownMenu>
             <DropdownMenuTrigger
               disabled={actionsDisabled}
-              className="rounded-lg border border-border p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="More actions"
+              title="More actions"
             >
-              <MoreHorizontal className="size-3.5" />
+              <MoreVertical className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onStartEdit(entry)}>
                 <Clock className="mr-2 size-4" />
-                Edit date / time
+                Edit
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
                 <Copy className="mr-2 size-4" />

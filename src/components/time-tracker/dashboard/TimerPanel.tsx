@@ -1,12 +1,5 @@
 import { useMemo, useState } from 'react'
-import {
-  Loader2,
-  Pencil,
-  Play,
-  SlidersHorizontal,
-  Square,
-  Trash2,
-} from 'lucide-react'
+import { Loader2, Pencil, Play, Square, Trash2 } from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { Client, Project, TimeEntry, Tag } from '#/lib/time-tracker/types'
@@ -15,8 +8,8 @@ import { TagPicker } from '../pickers/TagPicker'
 import { BillableToggleButton } from './BillableToggleButton'
 import { DescriptionAutocomplete } from './DescriptionAutocomplete'
 import { RunningTimer } from './RunningTimer'
-import { TimerOptionsSheet } from './TimerOptionsSheet'
 import { PresetDropdown } from './PresetDropdown'
+import { TimerMobileControls } from './TimerMobileControls'
 
 export function TimerPanel({
   workspaceId,
@@ -93,7 +86,6 @@ export function TimerPanel({
   onUpdateStartedAt: (iso: string) => void
   descriptionDropdownUp?: boolean
 }) {
-  const [optionsOpen, setOptionsOpen] = useState(false)
   const [editStarted, setEditStarted] = useState(false)
   const [draftStarted, setDraftStarted] = useState('')
 
@@ -156,7 +148,7 @@ export function TimerPanel({
           presets | start-stop — one continuous control with thin dividers
           instead of separate boxed inputs. */}
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex h-12 max-sm:h-16 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
+        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:h-12">
           <div className="min-w-0 flex-[1.2]">
             <DescriptionAutocomplete
               value={description}
@@ -257,41 +249,35 @@ export function TimerPanel({
         </div>
       </div>
 
-      {/* Mobile: Options + Start/Stop in one row */}
-      <div className="flex items-center gap-2 sm:hidden">
-        <button
-          type="button"
-          onClick={() => setOptionsOpen(true)}
-          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-bold text-foreground shadow-sm transition-colors hover:bg-accent"
-        >
-          <SlidersHorizontal className="size-4" />
-          Options
-        </button>
-        <button
-          type="button"
-          onClick={activeEntry ? onStop : onStart}
-          disabled={activeEntry ? stopPending || stopBlocked : startPending}
-          title={stopBlocked ? stopBlockedReason : undefined}
-          className={`inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground ${
-            activeEntry
-              ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-              : 'bg-primary text-primary-foreground hover:brightness-110'
-          }`}
-        >
-          {activeEntry ? (
-            stopPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Square className="size-4 fill-current" />
-            )
-          ) : startPending ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Play className="size-4" />
-          )}
-          {activeEntry ? 'Stop' : 'Start'}
-        </button>
-      </div>
+      <TimerMobileControls
+        workspaceId={workspaceId}
+        clients={clients}
+        projects={projects}
+        projectTasks={projectTasks}
+        tags={tags}
+        clientId={clientId}
+        projectId={projectId}
+        taskId={taskId}
+        tagIds={tagIds}
+        billable={billable}
+        canManageCatalog={canManageCatalog}
+        activeEntry={activeEntry}
+        startPending={startPending}
+        stopPending={stopPending}
+        stopBlocked={stopBlocked}
+        stopBlockedReason={stopBlockedReason}
+        onClientIdChange={onClientIdChange}
+        onProjectIdChange={onProjectIdChange}
+        onTaskIdChange={onTaskIdChange}
+        onTagIdsChange={onTagIdsChange}
+        onBillableChange={onBillableChange}
+        onCreateTask={onCreateTask}
+        onDeleteTask={onDeleteTask}
+        onCreateTag={onCreateTag}
+        onApplyPreset={onApplyPreset}
+        onStart={onStart}
+        onStop={onStop}
+      />
 
       {stopBlocked && (
         <p className="m-0 text-xs font-bold text-destructive">
@@ -412,29 +398,6 @@ export function TimerPanel({
         </div>
       )}
 
-      {optionsOpen && !activeEntry && (
-        <TimerOptionsSheet
-          clients={clients}
-          projects={projects}
-          projectTasks={projectTasks}
-          tags={tags}
-          clientId={clientId}
-          projectId={projectId}
-          taskId={taskId}
-          onClientProjectChange={(cid, pid, tid) => {
-            onClientIdChange(cid)
-            onProjectIdChange(pid)
-            onTaskIdChange(tid ?? '')
-          }}
-          tagIds={tagIds}
-          onTagIdsChange={onTagIdsChange}
-          billable={billable}
-          onBillableChange={onBillableChange}
-          onCreateTag={onCreateTag}
-          canManageCatalog={canManageCatalog}
-          onClose={() => setOptionsOpen(false)}
-        />
-      )}
     </div>
   )
 }

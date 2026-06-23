@@ -15,6 +15,12 @@ export type RollupTarget = {
   date: string
 }
 
+function coerceTimestamp(value: Date | string | null): Date | null {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 export function entryRollupTarget(entry: {
   workspaceId: string
   workspaceMemberId: string
@@ -94,6 +100,8 @@ export async function recomputeAnalyticsDailyMemberMetric({
       )
     return
   }
+  const firstEntryAt = coerceTimestamp(metric.firstEntryAt)
+  const lastEntryAt = coerceTimestamp(metric.lastEntryAt)
 
   await db
     .insert(analyticsDailyMemberMetrics)
@@ -107,8 +115,8 @@ export async function recomputeAnalyticsDailyMemberMetric({
       billableSeconds: metric.billableSeconds,
       nonBillableSeconds: metric.nonBillableSeconds,
       billableAmount: metric.billableAmount,
-      firstEntryAt: metric.firstEntryAt,
-      lastEntryAt: metric.lastEntryAt,
+      firstEntryAt,
+      lastEntryAt,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -124,8 +132,8 @@ export async function recomputeAnalyticsDailyMemberMetric({
         billableSeconds: metric.billableSeconds,
         nonBillableSeconds: metric.nonBillableSeconds,
         billableAmount: metric.billableAmount,
-        firstEntryAt: metric.firstEntryAt,
-        lastEntryAt: metric.lastEntryAt,
+        firstEntryAt,
+        lastEntryAt,
         updatedAt: new Date(),
       },
     })

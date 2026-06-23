@@ -1,12 +1,12 @@
-import { useEffect } from 'react'
 import { Save, X } from 'lucide-react'
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerClose,
-} from '#/components/ui/drawer'
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import { Button } from '#/components/ui/button'
 import { EntryDraftForm } from './EntryDraftForm'
 import type { DraftEntry } from './utils'
@@ -58,23 +58,33 @@ export function EditEntryDrawer({
   onDeleteTask,
   onCreateTag,
 }: EditEntryDrawerProps) {
-  // If the entry disappears while the drawer is open (race condition between
-  // setEditingId and a data refetch), close gracefully instead of crashing.
-  useEffect(() => {
-    if (open && !entry) onOpenChange(false)
-  }, [open, entry, onOpenChange])
+  const dialogOpen = open && !!entry
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh]">
+    <Dialog open={dialogOpen} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="top-4 max-h-[calc(100dvh-2rem)] translate-y-0 overflow-hidden p-0 sm:top-1/2 sm:max-h-[92vh] sm:max-w-3xl sm:-translate-y-1/2"
+        showCloseButton={false}
+      >
         {entry && (
           <>
-            <DrawerHeader className="border-b border-border pb-4">
-              <DrawerTitle>Edit Entry</DrawerTitle>
-            </DrawerHeader>
+            <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-5 py-4">
+              <DialogTitle>Edit</DialogTitle>
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Close edit dialog"
+                  title="Close"
+                >
+                  <X className="size-4" />
+                </Button>
+              </DialogClose>
+            </DialogHeader>
 
-            <div className="overflow-y-auto p-3 sm:p-4">
-              <div className="mb-3 sm:mb-4 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+            <div className="max-h-[calc(100dvh-11rem)] overflow-y-auto overscroll-contain p-4 [-webkit-overflow-scrolling:touch] sm:max-h-[calc(92vh-9rem)] sm:p-5">
+              <div className="mb-4 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
                 {!entry.endedAt ? (
                   <p className="m-0">
                     Timer is currently running. Changes will be saved without
@@ -107,8 +117,8 @@ export function EditEntryDrawer({
               />
             </div>
 
-            <div className="border-t border-border p-3 sm:p-4 flex flex-col-reverse sm:flex-row justify-end gap-2">
-              <DrawerClose asChild>
+            <DialogFooter className="border-t border-border p-4 sm:px-5">
+              <DialogClose asChild>
                 <Button
                   variant="outline"
                   onClick={onCancel}
@@ -118,7 +128,7 @@ export function EditEntryDrawer({
                   <X className="mr-2 size-4" />
                   Cancel
                 </Button>
-              </DrawerClose>
+              </DialogClose>
               <Button
                 onClick={onSave}
                 disabled={pending}
@@ -127,10 +137,10 @@ export function EditEntryDrawer({
                 <Save className="mr-2 size-4" />
                 Save Changes
               </Button>
-            </div>
+            </DialogFooter>
           </>
         )}
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   )
 }

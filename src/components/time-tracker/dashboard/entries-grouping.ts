@@ -75,13 +75,54 @@ function formatDayLabel(dateKey: string): string {
   return date.toLocaleDateString(undefined, opts)
 }
 
-export function groupEntriesByDay(entries: TimeEntry[]): DayGroup[] {
+function toDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function startOfDay(date: Date): Date {
+  const next = new Date(date)
+  next.setHours(0, 0, 0, 0)
+  return next
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function getEntryDisplayDateKeys(
+  entry: TimeEntry,
+  range?: { start: Date; end: Date },
+): string[] {
+  if (!range) return [toDateKey(new Date(entry.startedAt))]
+
+  const entryStart = new Date(entry.startedAt)
+  const entryEnd = entry.endedAt ? new Date(entry.endedAt) : new Date()
+  const start = startOfDay(
+    entryStart > range.start ? entryStart : range.start,
+  )
+  const endExclusive = entryEnd < range.end ? entryEnd : range.end
+  const end = startOfDay(new Date(endExclusive.getTime() - 1))
+  const keys: string[] = []
+
+  for (let cursor = start; cursor <= end; cursor = addDays(cursor, 1)) {
+    keys.push(toDateKey(cursor))
+  }
+
+  return keys.length > 0 ? keys : [toDateKey(entryStart)]
+}
+
+export function groupEntriesByDay(
+  entries: TimeEntry[],
+  range?: { start: Date; end: Date },
+): DayGroup[] {
   const map = new Map<string, TimeEntry[]>()
   for (const entry of entries) {
-    const d = new Date(entry.startedAt)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(entry)
+    for (const key of getEntryDisplayDateKeys(entry, range)) {
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(entry)
+    }
   }
   return Array.from(map.entries())
     .sort(([a], [b]) => b.localeCompare(a))
