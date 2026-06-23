@@ -22,14 +22,21 @@ export type AnalyticsSelectedScope = 'personal' | 'organization' | 'department'
 
 export type AnalyticsTimeEntryRow = {
   id: string
+  workspaceMemberId: string
   date: string
   memberName: string
+  projectId: string
+  taskId: string | null
   projectName: string | null
   clientName: string | null
+  tagIds: string[]
   tagNames: string[]
   description: string
+  startedAt: string
+  endedAt: string | null
   durationSeconds: number
   billable: boolean
+  notes: string
   billableAmount: number | null
   effectiveRate: number | null
 }
@@ -335,10 +342,15 @@ export async function getAnalytics(
     db
       .select({
         id: timeEntries.id,
+        workspaceMemberId: timeEntries.workspaceMemberId,
         description: timeEntries.description,
+        projectId: timeEntries.projectId,
+        taskId: timeEntries.taskId,
         startedAt: timeEntries.startedAt,
+        endedAt: timeEntries.endedAt,
         durationSeconds: timeEntries.durationSeconds,
         billable: timeEntries.billable,
+        notes: timeEntries.notes,
         projectName: projects.name,
         clientName: clients.name,
         memberEmail: workspaceMembers.email,
@@ -380,6 +392,7 @@ export async function getAnalytics(
       ? await db
           .select({
             timeEntryId: timeEntryTags.timeEntryId,
+            tagId: tags.id,
             tagName: tags.name,
           })
           .from(timeEntryTags)
@@ -409,10 +422,14 @@ export async function getAnalytics(
 
   // Tags for paginated entries
   const tagNamesByRawEntry = new Map<string, string[]>()
+  const tagIdsByRawEntry = new Map<string, string[]>()
   for (const row of rawTagRows) {
-    const list = tagNamesByRawEntry.get(row.timeEntryId) ?? []
-    list.push(row.tagName)
-    tagNamesByRawEntry.set(row.timeEntryId, list)
+    const names = tagNamesByRawEntry.get(row.timeEntryId) ?? []
+    names.push(row.tagName)
+    tagNamesByRawEntry.set(row.timeEntryId, names)
+    const ids = tagIdsByRawEntry.get(row.timeEntryId) ?? []
+    ids.push(row.tagId)
+    tagIdsByRawEntry.set(row.timeEntryId, ids)
   }
 
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
@@ -428,14 +445,21 @@ export async function getAnalytics(
       : null
     return {
       id: e.id,
+      workspaceMemberId: e.workspaceMemberId,
       date: toDateKey(e.startedAt),
       memberName: e.memberUserName ?? e.memberEmail ?? '',
+      projectId: e.projectId ?? '',
+      taskId: e.taskId ?? null,
       projectName: e.projectName ?? null,
       clientName: e.clientName ?? null,
+      tagIds: tagIdsByRawEntry.get(e.id) ?? [],
       tagNames: tagNamesByRawEntry.get(e.id) ?? [],
       description: e.description,
+      startedAt: e.startedAt.toISOString(),
+      endedAt: e.endedAt?.toISOString() ?? null,
       durationSeconds: e.durationSeconds,
       billable: e.billable,
+      notes: e.notes ?? '',
       billableAmount,
       effectiveRate: e.billable ? effectiveRate : null,
     }

@@ -253,6 +253,13 @@ export const updateEntryFn = createServerFn({ method: 'POST' })
     return updateEntry(data)
   })
 
+export const updateWorkspaceMemberEntryFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => updateEntrySchema.parse(input))
+  .handler(async ({ data }) => {
+    const { updateWorkspaceMemberEntry } = await import('./tracker.server')
+    return updateWorkspaceMemberEntry(data)
+  })
+
 export const deleteEntryFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => entryIdSchema.parse(input))
   .handler(async ({ data }) => {

@@ -1,12 +1,17 @@
 import type { z } from 'zod'
+import type { TimeEntry } from '#/lib/time-tracker/types'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
 import { and, eq, notInArray } from 'drizzle-orm'
-import { requireWorkspaceMembership } from '../workspace-access.server'
+import {
+  requireWorkspaceAccess,
+  requireWorkspaceMembership,
+} from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
-import { calculateDuration } from './shared/dates'
+import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import { createAuditLog } from './audit/audit-logger.server'
+import { assertOwnerOrAdmin } from './shared/role-gates.server'
 import {
   entryRollupTarget,
   safeRefreshAnalyticsRollups,
@@ -17,9 +22,39 @@ import type {
   updateEntrySchema,
 } from './shared/schemas'
 
+function serializeManualTimeEntry(
+  entry: {
+    id: string
+    workspaceMemberId: string
+    description: string
+    projectId: string | null
+    taskId: string | null
+    billable: boolean
+    startedAt: Date
+    endedAt: Date | null
+    durationSeconds: number
+    notes: string | null
+  },
+  tagIds: string[],
+): TimeEntry {
+  return {
+    id: entry.id,
+    workspaceMemberId: entry.workspaceMemberId,
+    description: entry.description,
+    projectId: entry.projectId ?? '',
+    taskId: entry.taskId ?? null,
+    tagIds,
+    billable: entry.billable,
+    startedAt: entry.startedAt.toISOString(),
+    endedAt: toIso(entry.endedAt),
+    durationSeconds: entry.durationSeconds,
+    notes: entry.notes ?? '',
+  }
+}
+
 export async function createManualEntry(
   data: z.infer<typeof entryInputSchema>,
-) {
+): Promise<TimeEntry> {
   const access = await requireWorkspaceMembership()
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
@@ -69,6 +104,8 @@ export async function createManualEntry(
     targetId: entry.id,
     details: data.description || null,
   })
+
+  return serializeManualTimeEntry(entry, tagIds)
 }
 
 export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
@@ -141,6 +178,92 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
 
   // Any edit can change what the synced sheet shows (times, description,
   // project, billable), so always flag the workspace for re-sync.
+  await enqueueTimeEntry(access.workspace.id, existingEntry.id)
+  await safeRefreshAnalyticsRollups([
+    entryRollupTarget(existingEntry),
+    {
+      workspaceId: access.workspace.id,
+      workspaceMemberId: existingEntry.workspaceMemberId,
+      date: startedAt.toISOString().slice(0, 10),
+    },
+  ])
+
+  void createAuditLog({
+    workspaceId: access.workspace.id,
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: 'ENTRY_EDIT',
+    targetType: 'time_entry',
+    targetId: data.id,
+    details: data.description || null,
+  })
+}
+
+export async function updateWorkspaceMemberEntry(
+  data: z.infer<typeof updateEntrySchema>,
+) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const tagIds = [...new Set(data.tagIds.filter(Boolean))]
+  const projectId = data.projectId.trim() || null
+  const taskId = data.taskId ?? null
+  const startedAt = new Date(data.startedAt)
+  const endedAt = data.endedAt ? new Date(data.endedAt) : null
+
+  const [, existingRows] = await Promise.all([
+    assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds),
+    db
+      .select()
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.id, data.id),
+          eq(timeEntries.workspaceId, access.workspace.id),
+        ),
+      )
+      .limit(1),
+  ])
+
+  const [existingEntry] = existingRows
+  if (!existingEntry) throw new Error('Time entry not found.')
+
+  await Promise.all([
+    db
+      .update(timeEntries)
+      .set({
+        description: data.description,
+        projectId,
+        taskId,
+        billable: data.billable,
+        startedAt,
+        endedAt,
+        durationSeconds: calculateDuration(startedAt, endedAt),
+        notes: data.notes,
+      })
+      .where(eq(timeEntries.id, existingEntry.id)),
+    tagIds.length
+      ? db
+          .delete(timeEntryTags)
+          .where(
+            and(
+              eq(timeEntryTags.timeEntryId, existingEntry.id),
+              notInArray(timeEntryTags.tagId, tagIds),
+            ),
+          )
+      : db
+          .delete(timeEntryTags)
+          .where(eq(timeEntryTags.timeEntryId, existingEntry.id)),
+    tagIds.length
+      ? db
+          .insert(timeEntryTags)
+          .values(
+            tagIds.map((tagId) => ({ timeEntryId: existingEntry.id, tagId })),
+          )
+          .onConflictDoNothing()
+      : Promise.resolve(),
+  ])
+
   await enqueueTimeEntry(access.workspace.id, existingEntry.id)
   await safeRefreshAnalyticsRollups([
     entryRollupTarget(existingEntry),

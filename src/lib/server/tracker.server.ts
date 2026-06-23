@@ -14,6 +14,7 @@ export {
 export {
   createManualEntry,
   updateEntry,
+  updateWorkspaceMemberEntry,
   deleteEntry,
 } from './tracker/manual-entries.server'
 

@@ -5,7 +5,10 @@ import {
   parseDateKey,
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { DepartmentMemberDetailScreen } from '#/components/time-tracker/analytics/department/DepartmentMemberDetailScreen'
-import { getDepartmentMemberDetailFn } from '#/lib/server/tracker'
+import {
+  getDepartmentMemberDetailFn,
+  getTrackerStateLiteFn,
+} from '#/lib/server/tracker'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 
@@ -57,25 +60,39 @@ export const Route = createFileRoute(
       staleTime: 5 * 60 * 1000,
     })
   },
-  loader: ({ context, deps, params }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: trackerKeys.departmentMemberDetail({
-        memberId: params.memberId,
-        ...deps,
-      }),
-      queryFn: () =>
-        getDepartmentMemberDetailFn({
-          data: { memberId: params.memberId, ...deps },
+  loader: async ({ context, deps, params }) => {
+    const [detail, state, access] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: trackerKeys.departmentMemberDetail({
+          memberId: params.memberId,
+          ...deps,
         }),
-      staleTime: 30_000,
-    }),
+        queryFn: () =>
+          getDepartmentMemberDetailFn({
+            data: { memberId: params.memberId, ...deps },
+          }),
+        staleTime: 30_000,
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: trackerKeys.stateLite,
+        queryFn: () => getTrackerStateLiteFn(),
+        staleTime: 60_000,
+      }),
+      context.queryClient.ensureQueryData({
+        queryKey: ['workspace-access'],
+        queryFn: () => getWorkspaceAccessFn(),
+        staleTime: 5 * 60 * 1000,
+      }),
+    ])
+    return { detail, state, access }
+  },
   staleTime: 30_000,
   component: DepartmentMemberDetailRoute,
 })
 
 // oxlint-disable-next-line react/only-export-components
 function DepartmentMemberDetailRoute() {
-  const detail = Route.useLoaderData()
+  const { detail, state, access } = Route.useLoaderData()
   const params = Route.useParams()
   const navigate = useNavigate()
 
@@ -108,6 +125,11 @@ function DepartmentMemberDetailRoute() {
   return (
     <DepartmentMemberDetailScreen
       detail={detail}
+      state={state}
+      canEditEntries={
+        access.member.permissionLevel === 'OWNER' ||
+        access.member.permissionLevel === 'ADMIN'
+      }
       onBack={backToDepartment}
       onChangeRange={changeRange}
       onChangePage={changePage}

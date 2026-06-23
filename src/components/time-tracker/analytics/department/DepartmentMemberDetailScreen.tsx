@@ -1,22 +1,109 @@
 import { useState } from 'react'
 import { ArrowLeft, PanelRightOpen, Timer } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import type { DepartmentMemberDetail } from '#/lib/server/tracker/department-dashboard.server'
+import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
+import { updateWorkspaceMemberEntryFn } from '#/lib/server/tracker'
+import { gooeyToast } from '#/lib/toast'
+import { dateTimeLocalValue } from '#/lib/time-tracker/store'
+import { trackerKeys } from '#/lib/time-tracker/query-keys'
+import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
+import { EditEntryDrawer } from '../../dashboard/EditEntryDrawer'
+import type { DraftEntry } from '../../dashboard/utils'
+import { emptyDraft, toEntryPayload } from '../../dashboard/utils'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { AnalyticsEntriesTable } from '../AnalyticsEntriesTable'
 import { DepartmentMemberActivitySheet } from './DepartmentMemberActivitySheet'
 
 export function DepartmentMemberDetailScreen({
   detail,
+  state,
+  canEditEntries,
   onBack,
   onChangeRange,
   onChangePage,
 }: {
   detail: DepartmentMemberDetail
+  state: TrackerState
+  canEditEntries: boolean
   onBack: () => void
   onChangeRange: (startDate: string, endDate: string) => void
   onChangePage: (page: number) => void
 }) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const [activitySheetOpen, setActivitySheetOpen] = useState(false)
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
+  const [editingDraft, setEditingDraft] = useState<DraftEntry>(() =>
+    emptyDraft(),
+  )
+  const [savePending, setSavePending] = useState(false)
+
+  function openEdit(entry: AnalyticsTimeEntryRow) {
+    const project = state.projects.find((p) => p.id === entry.projectId)
+    setEditingEntry({
+      id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
+      description: entry.description,
+      projectId: entry.projectId,
+      taskId: entry.taskId,
+      tagIds: entry.tagIds,
+      billable: entry.billable,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+      durationSeconds: entry.durationSeconds,
+      notes: entry.notes,
+    })
+    setEditingDraft({
+      description: entry.description,
+      clientId: project?.clientId ?? '',
+      projectId: entry.projectId,
+      taskId: entry.taskId ?? '',
+      tagIds: entry.tagIds,
+      billable: entry.billable,
+      startedAt: dateTimeLocalValue(new Date(entry.startedAt)),
+      endedAt: dateTimeLocalValue(new Date(entry.endedAt ?? Date.now())),
+      notes: entry.notes,
+    })
+  }
+
+  async function saveEdit() {
+    if (!editingEntry || !editingDraft.description.trim()) return
+
+    setSavePending(true)
+    try {
+      await updateWorkspaceMemberEntryFn({
+        data: {
+          id: editingEntry.id,
+          ...toEntryPayload(editingDraft),
+        },
+      })
+      setEditingEntry(null)
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: trackerKeys.departmentMemberDetail({
+            memberId: detail.activity.member.id,
+            startDate: detail.startDate,
+            endDate: detail.endDate,
+            page: detail.page,
+          }),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['department-dashboard'],
+        }),
+      ])
+      void router.invalidate()
+      gooeyToast.success('Entry updated')
+    } catch (err) {
+      gooeyToast.error('Action failed', {
+        description:
+          err instanceof Error ? err.message : 'Something went wrong.',
+      })
+    } finally {
+      setSavePending(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -88,12 +175,31 @@ export function DepartmentMemberDetailScreen({
           page={detail.page}
           onPageChange={onChangePage}
           currency={detail.currency}
+          onEditEntry={canEditEntries ? openEdit : undefined}
         />
       </div>
 
       <DepartmentMemberActivitySheet
         memberId={activitySheetOpen ? detail.activity.member.id : null}
         onClose={() => setActivitySheetOpen(false)}
+      />
+
+      <EditEntryDrawer
+        open={!!editingEntry}
+        onOpenChange={(open) => {
+          if (!open) setEditingEntry(null)
+        }}
+        entry={editingEntry}
+        editingDraft={editingDraft}
+        setEditingDraft={setEditingDraft}
+        clients={state.clients}
+        projects={state.projects}
+        projectTasks={state.projectTasks}
+        tags={state.tags}
+        canManageCatalog={false}
+        pending={savePending}
+        onSave={saveEdit}
+        onCancel={() => setEditingEntry(null)}
       />
     </div>
   )

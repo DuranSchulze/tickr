@@ -6,6 +6,7 @@ import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import {
   invalidateTrackerState,
   trackerKeys,
+  upsertTrackerStateEntry,
 } from '#/lib/time-tracker/query-keys'
 import {
   createClientFn,
@@ -115,12 +116,19 @@ export function useTrackerMutations() {
       }),
     addManualEntry: (
       payload: EntryPayload,
-      options?: MutationOptions<unknown>,
+      options?: MutationOptions<TimeEntry>,
     ) =>
-      run(async () => createManualEntryFn({ data: payload }), {
-        successMessage: 'Entry added',
-        ...options,
-      }),
+      run(
+        async () => {
+          const created = await createManualEntryFn({ data: payload })
+          upsertTrackerStateEntry(queryClient, created)
+          return created
+        },
+        {
+          successMessage: 'Entry added',
+          ...options,
+        },
+      ),
     updateEntry: (
       id: string,
       payload: EntryPayload,

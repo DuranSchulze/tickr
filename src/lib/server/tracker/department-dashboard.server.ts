@@ -880,10 +880,15 @@ export async function getDepartmentMemberDetail(data: {
     db
       .select({
         id: timeEntries.id,
+        workspaceMemberId: timeEntries.workspaceMemberId,
         description: timeEntries.description,
+        projectId: timeEntries.projectId,
+        taskId: timeEntries.taskId,
         startedAt: timeEntries.startedAt,
+        endedAt: timeEntries.endedAt,
         durationSeconds: timeEntries.durationSeconds,
         billable: timeEntries.billable,
+        notes: timeEntries.notes,
         projectName: projects.name,
         clientName: clients.name,
       })
@@ -906,6 +911,7 @@ export async function getDepartmentMemberDetail(data: {
       ? await db
           .select({
             timeEntryId: timeEntryTags.timeEntryId,
+            tagId: tags.id,
             tagName: tags.name,
           })
           .from(timeEntryTags)
@@ -914,10 +920,14 @@ export async function getDepartmentMemberDetail(data: {
       : []
 
   const tagNamesByEntry = new Map<string, string[]>()
+  const tagIdsByEntry = new Map<string, string[]>()
   for (const row of rawTagRows) {
-    const list = tagNamesByEntry.get(row.timeEntryId) ?? []
-    list.push(row.tagName)
-    tagNamesByEntry.set(row.timeEntryId, list)
+    const names = tagNamesByEntry.get(row.timeEntryId) ?? []
+    names.push(row.tagName)
+    tagNamesByEntry.set(row.timeEntryId, names)
+    const ids = tagIdsByEntry.get(row.timeEntryId) ?? []
+    ids.push(row.tagId)
+    tagIdsByEntry.set(row.timeEntryId, ids)
   }
 
   return {
@@ -929,14 +939,21 @@ export async function getDepartmentMemberDetail(data: {
     currency,
     entries: rawRows.map((entry) => ({
       id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
       date: toDateKey(entry.startedAt),
       memberName: member.userName ?? member.email,
+      projectId: entry.projectId ?? '',
+      taskId: entry.taskId ?? null,
       projectName: entry.projectName ?? null,
       clientName: entry.clientName ?? null,
+      tagIds: tagIdsByEntry.get(entry.id) ?? [],
       tagNames: tagNamesByEntry.get(entry.id) ?? [],
       description: entry.description,
+      startedAt: entry.startedAt.toISOString(),
+      endedAt: entry.endedAt?.toISOString() ?? null,
       durationSeconds: entry.durationSeconds,
       billable: entry.billable,
+      notes: entry.notes ?? '',
       billableAmount: entry.billable
         ? (entry.durationSeconds / 3600) * effectiveRate
         : null,
