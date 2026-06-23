@@ -114,10 +114,14 @@ export function MemberExportDialog({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
-            <label className="text-xs font-semibold text-foreground">
+            <label
+              htmlFor="member-export-start-date"
+              className="text-xs font-semibold text-foreground"
+            >
               Start date
             </label>
             <input
+              id="member-export-start-date"
               type="date"
               value={startDate}
               max={endDate || today}
@@ -127,10 +131,14 @@ export function MemberExportDialog({
             />
           </div>
           <div className="grid gap-1.5">
-            <label className="text-xs font-semibold text-foreground">
+            <label
+              htmlFor="member-export-end-date"
+              className="text-xs font-semibold text-foreground"
+            >
               End date
             </label>
             <input
+              id="member-export-end-date"
               type="date"
               value={endDate}
               min={startDate || undefined}
@@ -188,6 +196,7 @@ export function MemberExportButton({
   memberName,
   defaultStartDate,
   defaultEndDate,
+  label = 'Export',
   size = 'md',
   className = '',
 }: {
@@ -195,6 +204,7 @@ export function MemberExportButton({
   memberName?: string
   defaultStartDate?: string
   defaultEndDate?: string
+  label?: string
   size?: 'sm' | 'md'
   className?: string
 }) {
@@ -210,7 +220,7 @@ export function MemberExportButton({
         className={`no-print inline-flex items-center gap-1.5 rounded-lg border border-border bg-background font-semibold text-foreground transition-colors hover:bg-accent ${sizeClasses} ${className}`}
       >
         <FileDown className={iconClasses} />
-        Export
+        {label}
       </button>
       <MemberExportDialog
         memberId={memberId}

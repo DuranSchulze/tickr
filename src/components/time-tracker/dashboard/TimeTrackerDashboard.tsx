@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
-import { FileText, Loader2, Play, Square, X } from 'lucide-react'
+import { Play, Square, X } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import {
   formatDuration,
@@ -14,7 +14,6 @@ import {
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import {
   computeEffectiveRate,
-  formatCurrency,
   normalizeCurrency,
 } from '#/lib/time-tracker/billing'
 import type {
@@ -24,14 +23,10 @@ import type {
 } from '#/lib/time-tracker/types'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { Button } from '#/components/ui/button'
 import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
 import { EntriesSection } from './EntriesSection'
@@ -49,7 +44,6 @@ import {
   stopTimerFn,
   deleteEntryFn,
   getPaginatedEntriesFn,
-  getMemberMonthlyReportFn,
 } from '#/lib/server/tracker'
 import {
   loadOfflineQueue,
@@ -58,6 +52,7 @@ import {
 import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
 import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
+import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 
 export function TimeTrackerDashboard({
   state,
@@ -560,6 +555,16 @@ export function TimeTrackerDashboard({
     ],
   )
 
+  const exportButton = useMemo(
+    () => (
+      <MemberExportButton
+        memberId={state.currentMemberId}
+        label="Export my time"
+      />
+    ),
+    [state.currentMemberId],
+  )
+
   return (
     <div className="grid min-w-0 gap-6">
       {!isOnline && (
@@ -586,9 +591,7 @@ export function TimeTrackerDashboard({
         completedTotalSeconds={completedTotals}
         runningEntry={runningEntry}
         formatTime={formatTime}
-        trailing={
-          <SelfExportDropdown currentMemberId={state.currentMemberId} />
-        }
+        trailing={exportButton}
       />
 
       {/* Desktop: inline input section */}
@@ -740,265 +743,5 @@ export function TimeTrackerDashboard({
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
-
-function SelfExportDropdown({ currentMemberId }: { currentMemberId: string }) {
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [exporting, setExporting] = useState(false)
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-
-  const todayStr = (() => {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    return `${y}-${m}-${d}`
-  })()
-
-  function openDialog() {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = String(now.getMonth() + 1).padStart(2, '0')
-    const d = String(now.getDate()).padStart(2, '0')
-    setStartDate(`${y}-${m}-01`)
-    setEndDate(`${y}-${m}-${d}`)
-    setDialogOpen(true)
-  }
-
-  const handleExport = useCallback(
-    async (sd: string, ed: string) => {
-      setDialogOpen(false)
-      setExporting(true)
-
-      // Open synchronously before any await to avoid popup blockers.
-      const win = window.open('', '_blank')
-      if (!win) {
-        gooeyToast.error('Pop-ups blocked', {
-          description: 'Allow pop-ups for this site to open the report.',
-        })
-        setExporting(false)
-        return
-      }
-
-      try {
-        const report = await getMemberMonthlyReportFn({
-          data: { memberId: currentMemberId, startDate: sd, endDate: ed },
-        })
-
-        const pad = (n: number) => String(n).padStart(2, '0')
-        const fmtDate = (d: string) => {
-          const date = new Date(d + 'T00:00:00')
-          return date.toLocaleDateString('en-PH', {
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })
-        }
-        const fmtHrs = (s: number) => {
-          const h = Math.floor(s / 3600)
-          const m = Math.floor((s % 3600) / 60)
-          return `${h}h ${pad(m)}m`
-        }
-        const fmtShort = (iso: string) =>
-          new Date(iso + 'T00:00:00').toLocaleDateString('en-PH', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })
-        const dateRangeLabel = `${fmtShort(sd)} – ${fmtShort(ed)}`
-
-        const totalHrs = fmtHrs(report.summary.totalSeconds)
-        const billableHrs = fmtHrs(report.summary.billableSeconds)
-
-        const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>My Time Report - ${dateRangeLabel}</title>
-  <style>
-    @page { margin: 1.5cm; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; color: #1a1a1a; }
-    .header { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #2563eb; }
-    .header h1 { margin: 0; font-size: 20px; color: #2563eb; }
-    .header p { margin: 4px 0 0; color: #666; font-size: 13px; }
-    .summary-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
-    .summary-card { flex: 1; min-width: 120px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; text-align: center; }
-    .summary-card .label { font-size: 10px; text-transform: uppercase; color: #666; font-weight: 600; letter-spacing: 0.5px; }
-    .summary-card .value { font-size: 18px; font-weight: 800; margin-top: 4px; }
-    .summary-card .value.primary { color: #2563eb; }
-    .summary-card .value.green { color: #16a34a; }
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f3f4f6; text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e5e7eb; }
-    td { padding: 7px 10px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
-    td.num { text-align: right; font-variant-numeric: tabular-nums; }
-    td.center { text-align: center; }
-    .billable-badge { background: #dcfce7; color: #16a34a; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
-    .nonbillable-badge { background: #f3f4f6; color: #9ca3af; padding: 1px 6px; border-radius: 4px; font-size: 9px; font-weight: 600; }
-    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>My Time Report</h1>
-    <p>${report.memberName} &middot; ${report.memberEmail}</p>
-    <p>${dateRangeLabel}</p>
-  </div>
-
-  <div class="summary-row">
-    <div class="summary-card">
-      <div class="label">Total Hours</div>
-      <div class="value primary">${totalHrs}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">Billable Hours</div>
-      <div class="value green">${billableHrs}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">Total Entries</div>
-      <div class="value">${report.summary.entryCount}</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">Billable Amount</div>
-      <div class="value green">${report.summary.totalBillableAmount > 0 ? formatCurrency(report.summary.totalBillableAmount, report.currency) : '—'}</div>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Project / Client</th>
-        <th>Tags</th>
-        <th>Description</th>
-        <th>Hours</th>
-        <th>Rate</th>
-        <th class="num">Amount</th>
-        <th class="center">Type</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${report.entries
-        .map(
-          (e) => `
-        <tr>
-          <td>${fmtDate(e.date)}</td>
-          <td>${[e.projectName, e.clientName].filter(Boolean).join(' · ') || '—'}</td>
-          <td>${e.tagNames.join(', ') || '—'}</td>
-          <td>${e.description || 'Untitled'}</td>
-          <td class="num">${fmtHrs(e.durationSeconds)}</td>
-          <td class="num">${e.billable ? formatCurrency(e.effectiveRate, report.currency) : '—'}</td>
-          <td class="num">${e.billableAmount != null ? formatCurrency(e.billableAmount, report.currency) : '—'}</td>
-          <td class="center">${e.billable ? '<span class="billable-badge">Billable</span>' : '<span class="nonbillable-badge">Non-billable</span>'}</td>
-        </tr>
-      `,
-        )
-        .join('')}
-    </tbody>
-  </table>
-
-  <div class="footer">
-    Generated on ${new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })} &middot; Trackly
-  </div>
-
-  <script>window.print()</script>
-</body>
-</html>`
-
-        win.document.write(html)
-        win.document.close()
-      } catch (err) {
-        win.close()
-        gooeyToast.error('Export failed', {
-          description:
-            err instanceof Error ? err.message : 'Could not generate report.',
-        })
-      } finally {
-        setExporting(false)
-      }
-    },
-    [currentMemberId],
-  )
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={openDialog}
-        disabled={exporting}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-      >
-        {exporting ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <FileText className="size-4" />
-        )}
-        Export my time
-      </button>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Export My Time Report</DialogTitle>
-            <DialogDescription>
-              Choose a date range to include in your personal time report.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <label
-                htmlFor="self-export-start-date"
-                className="text-xs font-semibold text-foreground"
-              >
-                Start date
-              </label>
-              <input
-                id="self-export-start-date"
-                type="date"
-                value={startDate}
-                max={endDate || todayStr}
-                onChange={(e) => setStartDate(e.target.value)}
-                aria-label="Start date"
-                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <label
-                htmlFor="self-export-end-date"
-                className="text-xs font-semibold text-foreground"
-              >
-                End date
-              </label>
-              <input
-                id="self-export-end-date"
-                type="date"
-                value={endDate}
-                min={startDate || undefined}
-                max={todayStr}
-                onChange={(e) => setEndDate(e.target.value)}
-                aria-label="End date"
-                className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button
-              onClick={() => handleExport(startDate, endDate)}
-              disabled={!startDate || !endDate || startDate > endDate}
-            >
-              <FileText className="mr-2 size-4" />
-              Generate PDF
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
   )
 }
