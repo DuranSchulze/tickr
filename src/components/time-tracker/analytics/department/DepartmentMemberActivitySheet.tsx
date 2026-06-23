@@ -1,6 +1,22 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'motion/react'
-import { Activity, Clock, Loader2, Timer, X } from 'lucide-react'
+import {
+  Activity,
+  BriefcaseBusiness,
+  Clock,
+  Loader2,
+  Timer,
+  X,
+} from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import { getDepartmentMemberTodayActivityFn } from '#/lib/server/tracker'
 import type {
   DepartmentMemberActivityEntry,
@@ -124,10 +140,12 @@ function TimelineEntry({
   entry,
   isFirst,
   isLast,
+  onSelect,
 }: {
   entry: DepartmentMemberActivityEntry
   isFirst: boolean
   isLast: boolean
+  onSelect: (entry: DepartmentMemberActivityEntry) => void
 }) {
   return (
     <div className="grid min-w-0 grid-cols-[72px_20px_minmax(0,1fr)] gap-3 px-3 py-4 min-[460px]:grid-cols-[96px_24px_minmax(0,1fr)]">
@@ -160,7 +178,11 @@ function TimelineEntry({
         )}
       </div>
 
-      <div className="relative min-w-0 rounded-lg border border-border bg-card p-3 shadow-sm before:absolute before:left-[-7px] before:top-3 before:size-3 before:rotate-45 before:border-b before:border-l before:border-border before:bg-card">
+      <button
+        type="button"
+        onClick={() => onSelect(entry)}
+        className="relative min-w-0 rounded-lg border border-border bg-card p-3 text-left shadow-sm transition-colors before:absolute before:left-[-7px] before:top-3 before:size-3 before:rotate-45 before:border-b before:border-l before:border-border before:bg-card hover:border-primary/40 hover:bg-accent/30 focus:outline-none focus:ring-2 focus:ring-primary/30"
+      >
         <div className="flex min-w-0 flex-col gap-2 min-[460px]:flex-row min-[460px]:items-start min-[460px]:justify-between">
           <div className="min-w-0">
             <p className="m-0 text-sm font-black leading-5 text-foreground">
@@ -189,7 +211,105 @@ function TimelineEntry({
             {formatDuration(entry.durationSeconds)}
           </span>
         </div>
+      </button>
+    </div>
+  )
+}
+
+function ActivityEntryDetailsDialog({
+  entry,
+  onOpenChange,
+}: {
+  entry: DepartmentMemberActivityEntry | null
+  onOpenChange: (open: boolean) => void
+}) {
+  const title = entry?.taskName ?? entry?.description.trim() ?? 'Task details'
+
+  return (
+    <Dialog open={entry !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        {entry && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="pr-8 text-xl font-black leading-7">
+                {title}
+              </DialogTitle>
+              <DialogDescription>
+                Full details for this tracked task entry.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-3">
+              {entry.taskName && entry.description && (
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Description
+                  </p>
+                  <p className="m-0 mt-1 text-sm font-semibold text-foreground">
+                    {entry.description}
+                  </p>
+                </div>
+              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <DetailItem
+                  icon={<BriefcaseBusiness className="size-4" />}
+                  label="Project"
+                  value={entry.projectName ?? 'No project'}
+                />
+                <DetailItem
+                  icon={<Timer className="size-4" />}
+                  label="Status"
+                  value={entry.status === 'active' ? 'Working' : 'Ended'}
+                />
+                <DetailItem
+                  icon={<Clock className="size-4" />}
+                  label="Started"
+                  value={formatTime(entry.startedAt)}
+                />
+                <DetailItem
+                  icon={<Clock className="size-4" />}
+                  label={entry.endedAt ? 'Ended' : 'Current'}
+                  value={entry.endedAt ? formatTime(entry.endedAt) : 'Running'}
+                />
+                <DetailItem
+                  icon={<Clock className="size-4" />}
+                  label="Duration"
+                  value={formatDuration(entry.durationSeconds)}
+                />
+                <DetailItem
+                  icon={<BriefcaseBusiness className="size-4" />}
+                  label="Billing"
+                  value={entry.billable ? 'Billable' : 'Non-billable'}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function DetailItem({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        {icon}
+        <span className="text-xs font-bold uppercase tracking-wide">
+          {label}
+        </span>
       </div>
+      <p className="m-0 mt-2 break-words text-sm font-bold text-foreground">
+        {value}
+      </p>
     </div>
   )
 }
@@ -197,18 +317,23 @@ function TimelineEntry({
 export function DepartmentMemberActivitySheet({
   memberId,
   onClose,
+  activity,
+  dateLabel = 'Today activity',
 }: {
   memberId: string | null
   onClose: () => void
+  activity?: DepartmentMemberActivitySummary
+  dateLabel?: string
 }) {
-  const open = Boolean(memberId)
+  const open = Boolean(memberId) || Boolean(activity)
   const { data, isLoading, error } = useQuery({
     queryKey: ['department-member-today-activity', memberId],
     queryFn: () =>
       getDepartmentMemberTodayActivityFn({ data: { memberId: memberId! } }),
-    enabled: open,
+    enabled: open && !activity && Boolean(memberId),
     staleTime: 15_000,
   })
+  const displayData = activity ?? data
 
   return (
     <AnimatePresence>
@@ -239,13 +364,13 @@ export function DepartmentMemberActivitySheet({
             <header className="flex min-w-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-5">
               <div className="min-w-0">
                 <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
-                  Today activity
+                  {dateLabel}
                 </p>
                 <h2 className="m-0 mt-1 truncate text-lg font-black text-foreground sm:text-xl">
-                  {data?.member.name ?? 'Loading member'}
+                  {displayData?.member.name ?? 'Loading member'}
                 </h2>
                 <p className="m-0 mt-0.5 truncate text-sm text-muted-foreground">
-                  {data?.member.email ?? 'Fetching current activity'}
+                  {displayData?.member.email ?? 'Fetching current activity'}
                 </p>
               </div>
               <button
@@ -260,8 +385,8 @@ export function DepartmentMemberActivitySheet({
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5">
               <DepartmentMemberActivityPanel
-                data={data}
-                isLoading={isLoading}
+                data={displayData}
+                isLoading={!activity && isLoading}
                 error={error}
               />
             </div>
@@ -281,6 +406,9 @@ export function DepartmentMemberActivityPanel({
   isLoading?: boolean
   error?: unknown
 }) {
+  const [selectedEntry, setSelectedEntry] =
+    useState<DepartmentMemberActivityEntry | null>(null)
+
   if (isLoading) {
     return (
       <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -307,7 +435,7 @@ export function DepartmentMemberActivityPanel({
       <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
         <div className="min-w-0 rounded-lg border border-border bg-background p-3">
           <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Total today
+            Total time
           </p>
           <p className="m-0 mt-1 text-xl font-black text-foreground sm:text-2xl">
             {formatDuration(data.today.totalSeconds)}
@@ -339,7 +467,7 @@ export function DepartmentMemberActivityPanel({
       <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
         <div className="border-b border-border px-3 py-2">
           <h3 className="m-0 text-sm font-bold text-foreground">
-            Today timeline
+            Task timeline
           </h3>
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
             Earliest start at the top, latest start at the bottom
@@ -347,7 +475,7 @@ export function DepartmentMemberActivityPanel({
         </div>
         {data.entriesToday.length === 0 ? (
           <p className="m-0 p-3 text-sm text-muted-foreground">
-            No tasks started today.
+            No tasks started for this day.
           </p>
         ) : (
           <div className="py-1">
@@ -357,11 +485,18 @@ export function DepartmentMemberActivityPanel({
                 entry={entry}
                 isFirst={index === 0}
                 isLast={index === data.entriesToday.length - 1}
+                onSelect={setSelectedEntry}
               />
             ))}
           </div>
         )}
       </section>
+      <ActivityEntryDetailsDialog
+        entry={selectedEntry}
+        onOpenChange={(open) => {
+          if (!open) setSelectedEntry(null)
+        }}
+      />
     </div>
   )
 }

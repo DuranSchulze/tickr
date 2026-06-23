@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { FileDown, FileSpreadsheet, FileText, Loader2 } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import {
@@ -16,6 +16,7 @@ import {
   downloadMemberReportCsv,
   downloadMemberReportPdf,
 } from '#/lib/time-tracker/member-report-export'
+import { ExportDateRangePicker } from './ExportDateRangePicker'
 
 type ExportFormat = 'pdf' | 'csv'
 
@@ -53,21 +54,19 @@ export function MemberExportDialog({
   defaultStartDate?: string
   defaultEndDate?: string
 }) {
-  const [startDate, setStartDate] = useState(
-    defaultStartDate ?? monthStartStr(),
-  )
-  const [endDate, setEndDate] = useState(defaultEndDate ?? todayStr())
+  const [formState, setFormState] = useState({
+    open: false,
+    startDate: defaultStartDate ?? monthStartStr(),
+    endDate: defaultEndDate ?? todayStr(),
+  })
+  const startDate =
+    formState.open === open
+      ? formState.startDate
+      : (defaultStartDate ?? monthStartStr())
+  const endDate =
+    formState.open === open ? formState.endDate : (defaultEndDate ?? todayStr())
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
 
-  // Reset the range to the provided defaults each time the dialog opens.
-  useEffect(() => {
-    if (open) {
-      setStartDate(defaultStartDate ?? monthStartStr())
-      setEndDate(defaultEndDate ?? todayStr())
-    }
-  }, [open, defaultStartDate, defaultEndDate])
-
-  const today = todayStr()
   const invalid = !startDate || !endDate || startDate > endDate
 
   async function handleExport(format: ExportFormat) {
@@ -81,6 +80,7 @@ export function MemberExportDialog({
       } else {
         downloadMemberReportCsv(report)
       }
+      setFormState((prev) => ({ ...prev, open: false }))
       onOpenChange(false)
     } catch (err) {
       gooeyToast.error('Export failed', {
@@ -93,8 +93,14 @@ export function MemberExportDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) setFormState((prev) => ({ ...prev, open: false }))
+        onOpenChange(nextOpen)
+      }}
+    >
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Export Time Report</DialogTitle>
           <DialogDescription>
@@ -112,43 +118,17 @@ export function MemberExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="grid gap-1.5">
-            <label
-              htmlFor="member-export-start-date"
-              className="text-xs font-semibold text-foreground"
-            >
-              Start date
-            </label>
-            <input
-              id="member-export-start-date"
-              type="date"
-              value={startDate}
-              max={endDate || today}
-              onChange={(e) => setStartDate(e.target.value)}
-              aria-label="Start date"
-              className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <label
-              htmlFor="member-export-end-date"
-              className="text-xs font-semibold text-foreground"
-            >
-              End date
-            </label>
-            <input
-              id="member-export-end-date"
-              type="date"
-              value={endDate}
-              min={startDate || undefined}
-              max={today}
-              onChange={(e) => setEndDate(e.target.value)}
-              aria-label="End date"
-              className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-            />
-          </div>
-        </div>
+        <ExportDateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          onChangeRange={(range) =>
+            setFormState({
+              open,
+              startDate: range.startDate,
+              endDate: range.endDate,
+            })
+          }
+        />
 
         <DialogFooter>
           <DialogClose asChild>
@@ -216,7 +196,9 @@ export function MemberExportButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setOpen(true)
+        }}
         className={`no-print inline-flex items-center gap-1.5 rounded-lg border border-border bg-background font-semibold text-foreground transition-colors hover:bg-accent ${sizeClasses} ${className}`}
       >
         <FileDown className={iconClasses} />

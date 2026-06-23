@@ -18,6 +18,7 @@ import {
   downloadBulkReportPdf,
 } from '#/lib/time-tracker/bulk-report-export'
 import type { TrackerState } from '#/lib/time-tracker/types'
+import { ExportDateRangePicker } from './ExportDateRangePicker'
 
 type ExportFormat = 'pdf' | 'csv'
 
@@ -80,7 +81,6 @@ export function BulkExportButton({
 
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
 
-  const today = todayStr()
   const scopeEntities =
     scopeType === 'client'
       ? state.clients
@@ -141,7 +141,7 @@ export function BulkExportButton({
           setOpen(o)
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Bulk Export</DialogTitle>
             <DialogDescription>
@@ -211,46 +211,17 @@ export function BulkExportButton({
               </div>
             )}
 
-            {/* Date range */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  Start date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  max={endDate || today}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      startDate: e.target.value,
-                    }))
-                  }
-                  aria-label="Start date"
-                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-xs font-semibold text-foreground">
-                  End date
-                </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate || undefined}
-                  max={today}
-                  onChange={(e) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      endDate: e.target.value,
-                    }))
-                  }
-                  aria-label="End date"
-                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-            </div>
+            <ExportDateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChangeRange={(range) =>
+                setFormState((prev) => ({
+                  ...prev,
+                  startDate: range.startDate,
+                  endDate: range.endDate,
+                }))
+              }
+            />
           </div>
 
           <DialogFooter>

@@ -1,6 +1,13 @@
 import type { z } from 'zod'
 import { db } from '#/db'
-import { timeEntries, projects } from '#/db/schema'
+import {
+  departments,
+  projectTasks,
+  timeEntries,
+  projects,
+  users,
+  workspaceMembers,
+} from '#/db/schema'
 import { and, eq, gte, isNull, lt, or } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { toDateKey } from './shared/dates'
@@ -12,6 +19,8 @@ export type CalendarEntry = {
   startedAt: string
   endedAt: string | null
   durationSeconds: number
+  taskName: string | null
+  billable: boolean
   project: {
     name: string
     color: string
@@ -21,6 +30,13 @@ export type CalendarEntry = {
 export type CalendarEntriesPayload = {
   month: string
   workspaceId: string
+  member: {
+    id: string
+    name: string
+    email: string
+    departmentName: string | null
+    departmentColor: string | null
+  }
   entriesByDate: Record<string, CalendarEntry[]>
 }
 
@@ -30,6 +46,8 @@ type RawEntry = {
   startedAt: Date
   endedAt: Date | null
   durationSeconds: number
+  taskName: string | null
+  billable: boolean
   project: { name: string; color: string } | null
 }
 
@@ -59,6 +77,8 @@ function splitEntryByDay(
         durationSeconds: isActive
           ? Math.floor((now.getTime() - start.getTime()) / 1000)
           : entry.durationSeconds,
+        taskName: entry.taskName,
+        billable: entry.billable,
         project: entry.project,
       },
     ]
@@ -105,6 +125,8 @@ function splitEntryByDay(
         startedAt: cursor.toISOString(),
         endedAt: sliceIsActive ? null : sliceEnd.toISOString(),
         durationSeconds: sliceDuration,
+        taskName: entry.taskName,
+        billable: entry.billable,
         project: entry.project,
       })
     }
@@ -121,10 +143,27 @@ export async function getCalendarEntries(
   const access = await requireWorkspaceAccess()
   const [year, month] = data.month.split('-').map(Number)
   const monthStart = new Date(Date.UTC(year, month - 1, 1))
-  const monthEnd = new Date(Date.UTC(year, month, 1))
+  const mondayFirstOffset = (monthStart.getUTCDay() + 6) % 7
+  const displayStart = new Date(monthStart)
+  displayStart.setUTCDate(displayStart.getUTCDate() - mondayFirstOffset)
+  const displayEnd = new Date(displayStart)
+  displayEnd.setUTCDate(displayEnd.getUTCDate() + 42)
   // Go back up to 7 days before month start to catch midnight-crossing entries
-  const queryStart = new Date(monthStart.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const queryStart = new Date(displayStart.getTime() - 7 * 24 * 60 * 60 * 1000)
   const now = new Date()
+
+  const [memberRow] = await db
+    .select({
+      name: users.name,
+      email: workspaceMembers.email,
+      departmentName: departments.name,
+      departmentColor: departments.color,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .leftJoin(departments, eq(workspaceMembers.departmentId, departments.id))
+    .where(eq(workspaceMembers.id, access.member.id))
+    .limit(1)
 
   const rows = await db
     .select({
@@ -133,18 +172,21 @@ export async function getCalendarEntries(
       startedAt: timeEntries.startedAt,
       endedAt: timeEntries.endedAt,
       durationSeconds: timeEntries.durationSeconds,
+      taskName: projectTasks.name,
+      billable: timeEntries.billable,
       projectName: projects.name,
       projectColor: projects.color,
     })
     .from(timeEntries)
     .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+    .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
     .where(
       and(
         eq(timeEntries.workspaceId, access.workspace.id),
         eq(timeEntries.workspaceMemberId, access.member.id),
         gte(timeEntries.startedAt, queryStart),
-        lt(timeEntries.startedAt, monthEnd),
-        or(gte(timeEntries.endedAt, monthStart), isNull(timeEntries.endedAt)),
+        lt(timeEntries.startedAt, displayEnd),
+        or(gte(timeEntries.endedAt, displayStart), isNull(timeEntries.endedAt)),
       ),
     )
     .orderBy(timeEntries.startedAt)
@@ -155,6 +197,8 @@ export async function getCalendarEntries(
     startedAt: row.startedAt,
     endedAt: row.endedAt,
     durationSeconds: row.durationSeconds,
+    taskName: row.taskName,
+    billable: row.billable,
     project:
       row.projectName && row.projectColor
         ? { name: row.projectName, color: row.projectColor }
@@ -164,7 +208,7 @@ export async function getCalendarEntries(
   const entriesByDate: Record<string, CalendarEntry[]> = {}
 
   for (const entry of entries) {
-    const slices = splitEntryByDay(entry, monthStart, monthEnd, now)
+    const slices = splitEntryByDay(entry, displayStart, displayEnd, now)
     for (const slice of slices) {
       const dateKey = slice.startedAt.slice(0, 10)
       entriesByDate[dateKey] ??= []
@@ -175,6 +219,13 @@ export async function getCalendarEntries(
   return {
     month: data.month,
     workspaceId: access.workspace.id,
+    member: {
+      id: access.member.id,
+      name: memberRow?.name ?? access.member.email,
+      email: access.member.email,
+      departmentName: memberRow?.departmentName ?? null,
+      departmentColor: memberRow?.departmentColor ?? null,
+    },
     entriesByDate,
   }
 }

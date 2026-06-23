@@ -1,4 +1,4 @@
-import { Maximize2, Minimize2 } from 'lucide-react'
+import { Maximize2 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import {
@@ -20,13 +20,7 @@ export function DepartmentSectionFrame({
   children: ReactNode
   bodyClassName?: string
 }) {
-  const [collapsed, setCollapsed] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
-
-  function openDialog() {
-    setCollapsed(true)
-    setDialogOpen(true)
-  }
 
   return (
     <>
@@ -45,29 +39,16 @@ export function DepartmentSectionFrame({
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              onClick={openDialog}
+              onClick={() => setDialogOpen(true)}
               title={`Maximize ${title}`}
               aria-label={`Maximize ${title}`}
               className="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
             >
               <Maximize2 className="size-3.5" />
             </button>
-            <button
-              type="button"
-              onClick={() => setCollapsed((value) => !value)}
-              title={collapsed ? `Restore ${title}` : `Minimize ${title}`}
-              aria-label={collapsed ? `Restore ${title}` : `Minimize ${title}`}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            >
-              {collapsed ? (
-                <Maximize2 className="size-3.5" />
-              ) : (
-                <Minimize2 className="size-3.5" />
-              )}
-            </button>
           </div>
         </div>
-        {!collapsed && <div className={bodyClassName}>{children}</div>}
+        <div className={bodyClassName}>{children}</div>
       </section>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

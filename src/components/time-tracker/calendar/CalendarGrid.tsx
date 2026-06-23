@@ -1,35 +1,46 @@
 import { useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import { Clock3, FolderKanban } from 'lucide-react'
-import type { CalendarEntry } from '#/lib/server/tracker.server'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
+import type {
+  CalendarEntriesPayload,
+  CalendarEntry,
+} from '#/lib/server/tracker.server'
+import type { DepartmentMemberActivitySummary } from '#/lib/server/tracker/department-dashboard.server'
+import { DepartmentMemberActivitySheet } from '#/components/time-tracker/analytics/department/DepartmentMemberActivitySheet'
 import { CalendarDayCell } from './CalendarDayCell'
-import { buildCalendarDays } from './calendar.utils'
+import {
+  buildCalendarDays,
+  buildWeekDays,
+  formatWeekTitle,
+} from './calendar.utils'
+import type { CalendarView } from './calendar.utils'
 
 const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
 
-const dateTimeFormatter = new Intl.DateTimeFormat('en', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
+const dateTitleFormatter = new Intl.DateTimeFormat('en', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
 })
 
 export function CalendarGrid({
   month,
+  view,
+  selectedDate,
+  member,
   entriesByDate,
   formatTime,
 }: {
   month: string
+  view: CalendarView
+  selectedDate: string
+  member: CalendarEntriesPayload['member']
   entriesByDate: Record<string, CalendarEntry[]>
   formatTime: (seconds: number) => string
 }) {
-  const days = buildCalendarDays(month)
-  const [selectedEntry, setSelectedEntry] = useState<CalendarEntry | null>(null)
+  const days =
+    view === 'week' ? buildWeekDays(selectedDate) : buildCalendarDays(month)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const totalEntries = useMemo(
     () =>
       Object.values(entriesByDate).reduce(
@@ -45,21 +56,24 @@ export function CalendarGrid({
         <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3">
           <div className="min-w-0">
             <h2 className="m-0 text-base font-black text-foreground">
-              Month schedule
+              {view === 'week' ? 'Week schedule' : 'Month schedule'}
             </h2>
             <p className="m-0 mt-0.5 text-xs font-medium text-muted-foreground">
-              {totalEntries.toLocaleString()} task entr
-              {totalEntries === 1 ? 'y' : 'ies'} in this month
+              {view === 'week'
+                ? formatWeekTitle(selectedDate)
+                : `${totalEntries.toLocaleString()} task entr${
+                    totalEntries === 1 ? 'y' : 'ies'
+                  } loaded`}
             </p>
           </div>
           <div className="hidden items-center gap-2 text-xs font-bold text-muted-foreground sm:flex">
             <span className="size-2 rounded-full bg-primary" />
-            Click a task for details
+            Click a day for task activity
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[960px]">
+          <div className={view === 'week' ? 'min-w-[820px]' : 'min-w-[960px]'}>
             <div className="grid grid-cols-7 border-b border-border bg-muted/40">
               {weekdays.map((weekday) => (
                 <div
@@ -86,7 +100,8 @@ export function CalendarGrid({
                     isCurrentMonth={day.isCurrentMonth}
                     isToday={day.isToday}
                     formatTime={formatTime}
-                    onSelectEntry={setSelectedEntry}
+                    onSelectEntry={() => setSelectedDay(day.dateKey)}
+                    onSelectDay={setSelectedDay}
                   />
                 </div>
               ))}
@@ -95,124 +110,99 @@ export function CalendarGrid({
         </div>
       </section>
 
-      <CalendarEntryDialog
-        entry={selectedEntry}
-        formatTime={formatTime}
-        onOpenChange={(open) => {
-          if (!open) setSelectedEntry(null)
-        }}
+      <DepartmentMemberActivitySheet
+        memberId={selectedDay ? member.id : null}
+        activity={
+          selectedDay
+            ? buildActivitySummary({
+                member,
+                dateKey: selectedDay,
+                entries: entriesByDate[selectedDay] ?? [],
+              })
+            : undefined
+        }
+        dateLabel={
+          selectedDay
+            ? dateTitleFormatter.format(
+                new Date(`${selectedDay}T00:00:00.000Z`),
+              )
+            : undefined
+        }
+        onClose={() => setSelectedDay(null)}
       />
     </>
   )
 }
 
-function CalendarEntryDialog({
-  entry,
-  formatTime,
-  onOpenChange,
+function buildActivitySummary({
+  member,
+  dateKey,
+  entries,
 }: {
-  entry: CalendarEntry | null
-  formatTime: (seconds: number) => string
-  onOpenChange: (open: boolean) => void
-}) {
-  const description = entry?.description.trim() || 'No description'
-  const startedAt = entry ? formatDateTime(entry.startedAt) : ''
-  const endedAt = entry?.endedAt ? formatDateTime(entry.endedAt) : 'Running'
+  member: CalendarEntriesPayload['member']
+  dateKey: string
+  entries: CalendarEntry[]
+}): DepartmentMemberActivitySummary {
+  const activityEntries = entries
+    .map((entry) => ({
+      id: entry.id,
+      description: entry.description,
+      projectName: entry.project?.name ?? null,
+      taskName: entry.taskName,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+      durationSeconds: entry.durationSeconds,
+      billable: entry.billable,
+      status: entry.endedAt ? ('completed' as const) : ('active' as const),
+    }))
+    .sort(
+      (a, b) =>
+        new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime(),
+    )
+  const hourlyTotals = Array.from({ length: 24 }, (_, hour) => ({
+    hour: `${String(hour).padStart(2, '0')}:00`,
+    seconds: 0,
+  }))
+  let totalSeconds = 0
+  let completedSeconds = 0
+  let activeSeconds = 0
+  let completedCount = 0
+  let activeCount = 0
 
-  return (
-    <Dialog open={entry !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-        {entry && (
-          <>
-            <DialogHeader>
-              <DialogTitle className="pr-8 text-xl font-black leading-7">
-                {description}
-              </DialogTitle>
-              <DialogDescription>
-                Full details for this tracked task entry.
-              </DialogDescription>
-            </DialogHeader>
+  for (const entry of activityEntries) {
+    const hour = new Date(entry.startedAt).getHours()
+    hourlyTotals[hour].seconds += entry.durationSeconds
+    totalSeconds += entry.durationSeconds
+    if (entry.status === 'active') {
+      activeSeconds += entry.durationSeconds
+      activeCount++
+    } else {
+      completedSeconds += entry.durationSeconds
+      completedCount++
+    }
+  }
 
-            <div className="grid gap-4">
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <div className="flex items-start gap-3">
-                  <span
-                    className="mt-1 size-3 shrink-0 rounded-full bg-primary"
-                    style={
-                      entry.project?.color
-                        ? { backgroundColor: entry.project.color }
-                        : undefined
-                    }
-                  />
-                  <div className="min-w-0">
-                    <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      Project
-                    </p>
-                    <p className="m-0 mt-1 text-sm font-black text-foreground">
-                      {entry.project?.name ?? 'No project'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <DetailItem
-                  icon={<Clock3 className="size-4" />}
-                  label="Started"
-                  value={startedAt}
-                />
-                <DetailItem
-                  icon={<Clock3 className="size-4" />}
-                  label={entry.endedAt ? 'Ended' : 'Status'}
-                  value={endedAt}
-                />
-                <DetailItem
-                  icon={<FolderKanban className="size-4" />}
-                  label="Duration"
-                  value={
-                    entry.endedAt === null
-                      ? `${formatTime(entry.durationSeconds)} so far`
-                      : formatTime(entry.durationSeconds)
-                  }
-                />
-                <DetailItem
-                  icon={<FolderKanban className="size-4" />}
-                  label="Entry ID"
-                  value={entry.id}
-                />
-              </div>
-            </div>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+  const completedEntries = activityEntries.filter(
+    (entry) => entry.status === 'completed',
   )
-}
 
-function DetailItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-}) {
-  return (
-    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        {icon}
-        <span className="text-xs font-bold uppercase tracking-wide">
-          {label}
-        </span>
-      </div>
-      <p className="m-0 mt-2 break-words text-sm font-bold text-foreground">
-        {value}
-      </p>
-    </div>
-  )
-}
-
-function formatDateTime(value: string): string {
-  return dateTimeFormatter.format(new Date(value))
+  return {
+    member,
+    today: {
+      date: dateKey,
+      totalSeconds,
+      completedSeconds,
+      activeSeconds,
+      completedCount,
+      activeCount,
+      hourlyTotals,
+    },
+    activeEntry:
+      activityEntries.find((entry) => entry.status === 'active') ?? null,
+    latestCompletedEntry:
+      completedEntries.length > 0
+        ? completedEntries[completedEntries.length - 1]
+        : null,
+    entriesToday: activityEntries,
+  }
 }

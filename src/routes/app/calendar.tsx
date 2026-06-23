@@ -3,13 +3,20 @@ import { CalendarScreen } from '#/components/time-tracker/calendar/CalendarScree
 import { getCalendarEntriesFn } from '#/lib/server/tracker'
 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
+const datePattern = /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/
 
 type CalendarSearch = {
   month?: string
+  view?: 'month' | 'week'
+  date?: string
 }
 
 function getCurrentMonth(): string {
   return new Date().toISOString().slice(0, 7)
+}
+
+function getCurrentDate(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function resolveMonth(search: CalendarSearch): string {
@@ -24,6 +31,11 @@ export const Route = createFileRoute('/app/calendar')({
       typeof search.month === 'string' && monthPattern.test(search.month)
         ? search.month
         : undefined,
+    view: search.view === 'week' ? 'week' : 'month',
+    date:
+      typeof search.date === 'string' && datePattern.test(search.date)
+        ? search.date
+        : undefined,
   }),
   loaderDeps: ({ search }) => ({ month: resolveMonth(search) }),
   loader: ({ deps }) => getCalendarEntriesFn({ data: deps }),
@@ -35,13 +47,29 @@ export const Route = createFileRoute('/app/calendar')({
 function CalendarRoute() {
   const calendar = Route.useLoaderData()
   const navigate = useNavigate()
+  const search = Route.useSearch()
 
-  function changeMonth(month: string): void {
+  function changeCalendar(next: {
+    month: string
+    view?: 'month' | 'week'
+    date?: string
+  }): void {
     void navigate({
       to: '/app/calendar',
-      search: { month },
+      search: {
+        month: next.month,
+        view: next.view ?? search.view ?? 'month',
+        date: next.date ?? search.date ?? getCurrentDate(),
+      },
     })
   }
 
-  return <CalendarScreen calendar={calendar} onChangeMonth={changeMonth} />
+  return (
+    <CalendarScreen
+      calendar={calendar}
+      view={search.view ?? 'month'}
+      selectedDate={search.date ?? getCurrentDate()}
+      onChangeCalendar={changeCalendar}
+    />
+  )
 }

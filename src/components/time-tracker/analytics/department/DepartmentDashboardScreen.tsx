@@ -118,10 +118,7 @@ export function DepartmentDashboardScreen({
       </div>
 
       {canFilterDepartments && (
-        <DepartmentSectionFrame
-          title="Filters"
-          subtitle="Department, member search, and date range"
-        >
+        <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="grid gap-3 md:grid-cols-[minmax(180px,260px)_minmax(240px,1fr)] md:items-end">
             <div className="min-w-0 flex flex-col gap-1">
               <label
@@ -193,7 +190,7 @@ export function DepartmentDashboardScreen({
               </div>
             </form>
           </div>
-        </DepartmentSectionFrame>
+        </section>
       )}
 
       {/* KPI cards */}

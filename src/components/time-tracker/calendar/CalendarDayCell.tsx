@@ -10,6 +10,7 @@ export const CalendarDayCell = memo(function CalendarDayCell({
   isToday,
   formatTime,
   onSelectEntry,
+  onSelectDay,
 }: {
   dateKey: string
   dayNumber: number
@@ -18,6 +19,7 @@ export const CalendarDayCell = memo(function CalendarDayCell({
   isToday: boolean
   formatTime: (seconds: number) => string
   onSelectEntry: (entry: CalendarEntry) => void
+  onSelectDay: (dateKey: string) => void
 }) {
   const entryLabel = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`
 
@@ -27,7 +29,12 @@ export const CalendarDayCell = memo(function CalendarDayCell({
         isCurrentMonth ? '' : 'bg-muted/30 text-muted-foreground'
       } ${isToday ? 'ring-2 ring-inset ring-primary/50' : ''}`}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5">
+      <button
+        type="button"
+        onClick={() => onSelectDay(dateKey)}
+        className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-accent/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+        aria-label={`Open ${dateKey} activity`}
+      >
         <span
           className={`flex size-7 items-center justify-center rounded-full text-sm font-black ${
             isToday
@@ -44,7 +51,7 @@ export const CalendarDayCell = memo(function CalendarDayCell({
             {entryLabel}
           </span>
         )}
-      </div>
+      </button>
 
       <div
         className="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto px-2 py-2"
