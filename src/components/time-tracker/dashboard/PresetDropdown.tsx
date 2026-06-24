@@ -201,7 +201,7 @@ export function PresetDropdown({
                     onClick={(e) => handleDeletePreset(e, preset.id)}
                     aria-label={`Delete preset ${preset.name}`}
                     title="Delete preset"
-                    className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100"
+                    className="shrink-0 rounded-md border border-destructive/40 p-1.5 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
                     tabIndex={-1}
                   >
                     <Trash2 className="size-3.5" />
