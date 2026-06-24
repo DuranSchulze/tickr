@@ -140,6 +140,23 @@ export function entryOverlapsRange(
   return entryStart < end && entryEnd >= start
 }
 
+export function getEntrySecondsInRange(
+  entry: Pick<TimeEntry, 'startedAt' | 'endedAt'>,
+  start: Date,
+  end: Date,
+  now = new Date(),
+) {
+  const entryStart = Math.max(
+    new Date(entry.startedAt).getTime(),
+    start.getTime(),
+  )
+  const entryEnd = Math.min(
+    entry.endedAt ? new Date(entry.endedAt).getTime() : now.getTime(),
+    end.getTime(),
+  )
+  return Math.max(0, (entryEnd - entryStart) / 1000)
+}
+
 export function useFilteredEntries(
   entries: TimeEntry[],
   view: ViewMode,

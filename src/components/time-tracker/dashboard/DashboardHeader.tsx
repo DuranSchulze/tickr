@@ -1,44 +1,35 @@
 import { BRAND } from '#/lib/brand'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '#/components/ui/button'
-import { Calendar } from '#/components/ui/calendar'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '#/components/ui/popover'
-import { getEntrySeconds } from '#/lib/time-tracker/store'
+import { getEntrySecondsInRange, getViewRange } from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
-import type { TimeEntry, ViewMode } from '#/lib/time-tracker/types'
+import type { TimeEntry } from '#/lib/time-tracker/types'
 import { useNowTick } from './hooks/useNowTick'
 
-const VIEW_OPTIONS = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'all', label: 'All' },
-] as const satisfies readonly { value: ViewMode; label: string }[]
+type SummaryMode = 'today' | 'week'
 
-// Owns the per-second tick in isolation so the rest of DashboardHeader (view
-// switcher, calendar popover, date nav, export dropdown) does NOT re-render
-// every second while a timer is running.
 function HeaderTotal({
-  completedTotalSeconds,
-  runningEntry,
+  entries,
+  mode,
   formatTime,
 }: {
-  completedTotalSeconds: number
-  runningEntry: TimeEntry | null
+  entries: TimeEntry[]
+  mode: SummaryMode
   formatTime: (seconds: number) => string
 }) {
+  const hasRunningEntry = entries.some((entry) => !entry.endedAt)
   const tick = useNowTick(
-    runningEntry ? getFormatterLiveTickMs(formatTime) : null,
+    hasRunningEntry ? getFormatterLiveTickMs(formatTime) : null,
   )
-  const selectedTotalSeconds =
-    completedTotalSeconds +
-    (runningEntry ? getEntrySeconds(runningEntry, tick) : 0)
+  const now = new Date(tick)
+  const range = getViewRange(mode === 'today' ? 'day' : 'week', now)
+  const selectedTotalSeconds = entries.reduce(
+    (total, entry) =>
+      total + getEntrySecondsInRange(entry, range.start, range.end, now),
+    0,
+  )
+
   return (
     <p className="m-0 mt-1 text-2xl font-bold text-foreground">
       {formatTime(selectedTotalSeconds)}
@@ -50,46 +41,18 @@ export function DashboardHeader({
   workspaceName,
   userName,
   userRoleName,
-  view,
-  onChangeView,
-  selectedDate,
-  selectedRangeLabel,
-  onPreviousPeriod,
-  onNextPeriod,
-  onCurrentPeriod,
-  onSelectDate,
-  completedTotalSeconds,
-  runningEntry,
+  entries,
   formatTime,
   trailing,
 }: {
   workspaceName: string
   userName: string
   userRoleName: string
-  view: ViewMode
-  onChangeView: (view: ViewMode) => void
-  selectedDate: string
-  selectedRangeLabel: string
-  onPreviousPeriod: () => void
-  onNextPeriod: () => void
-  onCurrentPeriod: () => void
-  onSelectDate: (dateKey: string) => void
-  completedTotalSeconds: number
-  runningEntry: TimeEntry | null
+  entries: TimeEntry[]
   formatTime: (seconds: number) => string
   trailing?: ReactNode
 }) {
-  const [calendarOpen, setCalendarOpen] = useState(false)
-
-  const [y, m, d] = selectedDate.split('-').map(Number)
-  const selectedDateObj = new Date(y, m - 1, d)
-
-  function handleCalendarSelect(day: Date | undefined) {
-    if (!day) return
-    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
-    onSelectDate(key)
-    setCalendarOpen(false)
-  }
+  const [summaryMode, setSummaryMode] = useState<SummaryMode>('today')
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -104,107 +67,48 @@ export function DashboardHeader({
           <p className="m-0 mt-1 text-sm text-muted-foreground">
             {userName} · {userRoleName}
           </p>
-
-          <div
-            className="mt-4 inline-flex overflow-hidden rounded-md border border-border bg-background p-1"
-            role="group"
-            aria-label="Time tracker view"
-          >
-            {VIEW_OPTIONS.map((option) => (
+        </div>
+        <div className="grid w-full shrink-0 gap-2 sm:w-auto">
+          <div className="w-full min-w-56 rounded-lg border border-border bg-muted px-3 py-3 sm:w-auto">
+            <fieldset className="grid grid-cols-2 rounded-md border border-border bg-background p-1">
+              <legend className="sr-only">Time total period</legend>
               <Button
-                key={option.value}
                 type="button"
-                variant={view === option.value ? 'default' : 'ghost'}
+                variant={summaryMode === 'today' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => onChangeView(option.value)}
-                aria-pressed={view === option.value}
+                onClick={() => setSummaryMode('today')}
+                aria-pressed={summaryMode === 'today'}
               >
-                {option.label}
+                Today
               </Button>
-            ))}
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            {view !== 'all' && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onPreviousPeriod}
-                  aria-label={`Previous ${view}`}
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="min-w-0 rounded-lg border border-border bg-background px-2 py-1.5 text-left transition-colors hover:bg-accent sm:px-3 sm:py-2"
-                      aria-label="Open calendar to pick a date"
-                    >
-                      <div className="flex items-center gap-2">
-                        <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
-                        <div className="min-w-0">
-                          <p className="m-0 max-w-40 truncate text-sm font-semibold text-foreground sm:max-w-none">
-                            {selectedRangeLabel}
-                          </p>
-                          <p className="m-0 max-w-40 truncate text-xs text-muted-foreground sm:max-w-none">
-                            {selectedDate}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDateObj}
-                      defaultMonth={selectedDateObj}
-                      onSelect={handleCalendarSelect}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={onNextPeriod}
-                  aria-label={`Next ${view}`}
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={onCurrentPeriod}
-                >
-                  Today
-                </Button>
-              </>
+              <Button
+                type="button"
+                variant={summaryMode === 'week' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSummaryMode('week')}
+                aria-pressed={summaryMode === 'week'}
+              >
+                Week
+              </Button>
+            </fieldset>
+            <div className="pt-2 text-center font-mono tracking-tight">
+              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {summaryMode === 'today' ? 'Today total' : 'This week total'}
+              </p>
+              <HeaderTotal
+                entries={entries}
+                mode={summaryMode}
+                formatTime={formatTime}
+              />
+            </div>
+            {trailing && (
+              <div className="mt-3 flex justify-center border-t border-border pt-3">
+                {trailing}
+              </div>
             )}
           </div>
         </div>
-        <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto">
-          <div className="w-full min-w-44 rounded-lg border border-border bg-muted px-4 py-3 text-center font-mono tracking-tight sm:w-auto">
-            <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {view === 'all' ? 'loaded total' : `${view} total`}
-            </p>
-            <HeaderTotal
-              completedTotalSeconds={completedTotalSeconds}
-              runningEntry={runningEntry}
-              formatTime={formatTime}
-            />
-          </div>
-        </div>
       </div>
-      {trailing && (
-        <div className="mt-4 min-w-0 overflow-x-hidden">{trailing}</div>
-      )}
     </section>
   )
 }

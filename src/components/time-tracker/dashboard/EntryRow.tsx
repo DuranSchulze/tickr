@@ -4,6 +4,7 @@ import {
   CalendarDays,
   Clock,
   Copy,
+  Loader2,
   MoreVertical,
   Play,
   Trash2,
@@ -79,7 +80,11 @@ function toTimeInput(isoStr: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-function patchDateAndTime(isoStr: string, date: Date, timeInput: string): string {
+function patchDateAndTime(
+  isoStr: string,
+  date: Date,
+  timeInput: string,
+): string {
   const next = new Date(isoStr)
   const [hours, minutes] = timeInput.split(':').map(Number)
   next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
@@ -134,7 +139,8 @@ function EntryTimeCell({
   const { open, dateRange, startTime, endTime } = timeEditor
   const actualStartDate = new Date(entry.startedAt)
   const actualEndDate = entry.endedAt ? new Date(entry.endedAt) : null
-  const spansDates = !!actualEndDate && !isSameLocalDate(actualStartDate, actualEndDate)
+  const spansDates =
+    !!actualEndDate && !isSameLocalDate(actualStartDate, actualEndDate)
   const draftStartDate = dateRange.from ?? new Date(entry.startedAt)
   const draftEndDate = dateRange.to ?? draftStartDate
   const draftStartIso = patchDateAndTime(
@@ -353,6 +359,7 @@ export const EntryRow = memo(function EntryRow({
   tags,
   pending,
   isPending,
+  isDeleting,
   formatTime,
   hasActiveTimer,
   isSubEntry,
@@ -369,6 +376,7 @@ export const EntryRow = memo(function EntryRow({
   tags: SearchableItem[]
   pending: boolean
   isPending?: boolean
+  isDeleting?: boolean
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isSubEntry?: boolean
@@ -422,7 +430,15 @@ export const EntryRow = memo(function EntryRow({
   }
 
   return (
-    <TableRow className={isSubEntry ? 'bg-muted/20' : ''}>
+    <TableRow
+      className={
+        isDeleting
+          ? 'opacity-50 pointer-events-none'
+          : isSubEntry
+            ? 'bg-muted/20'
+            : ''
+      }
+    >
       {/* Description — inline editable */}
       <TableCell className="py-3 px-4 w-[26%]">
         {editDesc ? (
@@ -521,53 +537,60 @@ export const EntryRow = memo(function EntryRow({
 
       {/* Actions */}
       <TableCell className="py-3 px-4 w-[12%]">
-        <div className="flex items-center justify-end gap-1">
-          {entry.endedAt && (
-            <button
-              type="button"
-              onClick={() => onResume(entry)}
-              disabled={actionsDisabled || hasActiveTimer}
-              title={
-                hasActiveTimer
-                  ? 'Stop the running timer first'
-                  : 'Resume this task'
-              }
-              className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Resume entry"
-            >
-              <Play className="size-3.5" />
-            </button>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              disabled={actionsDisabled}
-              className="inline-flex h-8 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="More actions"
-              title="More actions"
-            >
-              <MoreVertical className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onStartEdit(entry)}>
-                <Clock className="mr-2 size-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
-                <Copy className="mr-2 size-4" />
-                Duplicate
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setShowDeleteDialog(true)}
-                className="text-destructive focus:text-destructive"
+        {isDeleting ? (
+          <div className="flex items-center justify-end gap-1.5">
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Deleting…</span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-1">
+            {entry.endedAt && (
+              <button
+                type="button"
+                onClick={() => onResume(entry)}
+                disabled={actionsDisabled || hasActiveTimer}
+                title={
+                  hasActiveTimer
+                    ? 'Stop the running timer first'
+                    : 'Resume this task'
+                }
+                className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Resume entry"
               >
-                <Trash2 className="mr-2 size-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                <Play className="size-3.5" />
+              </button>
+            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                disabled={actionsDisabled}
+                className="inline-flex h-8 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="More actions"
+                title="More actions"
+              >
+                <MoreVertical className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onStartEdit(entry)}>
+                  <Clock className="mr-2 size-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
+                  <Copy className="mr-2 size-4" />
+                  Duplicate
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 size-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </TableCell>
 
       <ConfirmDialog

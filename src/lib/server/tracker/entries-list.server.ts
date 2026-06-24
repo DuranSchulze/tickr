@@ -1,10 +1,10 @@
 import '@tanstack/react-start/server-only'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
-import { and, count, desc, eq, inArray, lt } from 'drizzle-orm'
+import { and, count, desc, eq, gte, inArray, isNull, lt, or } from 'drizzle-orm'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { toIso } from './shared/dates'
+import { addUtcDays, parseDateOnly, toIso } from './shared/dates'
 
 export type PaginatedEntriesResult = {
   entries: TimeEntry[]
@@ -15,37 +15,44 @@ export type PaginatedEntriesResult = {
 export async function getPaginatedEntries(data: {
   cursor?: string
   limit: number
+  startDate?: string
+  endDate?: string
 }): Promise<PaginatedEntriesResult> {
   const access = await requireWorkspaceAccess()
   const memberId = access.member.id
   const workspaceId = access.workspace.id
   const limit = Math.min(Math.max(1, data.limit), 100)
 
-  const baseConditions = [
+  const rangeConditions = [
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, memberId),
   ]
 
+  if (data.startDate && data.endDate) {
+    const rangeStart = parseDateOnly(data.startDate)
+    const rangeEnd = addUtcDays(parseDateOnly(data.endDate), 1)
+    rangeConditions.push(
+      lt(timeEntries.startedAt, rangeEnd),
+      or(gte(timeEntries.endedAt, rangeStart), isNull(timeEntries.endedAt))!,
+    )
+  }
+
+  const pageConditions = [...rangeConditions]
   if (data.cursor) {
-    baseConditions.push(lt(timeEntries.startedAt, new Date(data.cursor)))
+    pageConditions.push(lt(timeEntries.startedAt, new Date(data.cursor)))
   }
 
   const [rawRows, countResult] = await Promise.all([
     db
       .select()
       .from(timeEntries)
-      .where(and(...baseConditions))
+      .where(and(...pageConditions))
       .orderBy(desc(timeEntries.startedAt))
       .limit(limit + 1),
     db
       .select({ c: count() })
       .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.workspaceId, workspaceId),
-          eq(timeEntries.workspaceMemberId, memberId),
-        ),
-      ),
+      .where(and(...rangeConditions)),
   ])
 
   const hasMore = rawRows.length > limit

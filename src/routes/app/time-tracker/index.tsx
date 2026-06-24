@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { TimeTrackerDashboard } from '#/components/time-tracker/dashboard/TimeTrackerDashboard'
 import { getTrackerStateFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
-import { getLocalDateKey } from '#/lib/time-tracker/store'
 import type { ViewMode } from '#/lib/time-tracker/types'
 import { BRAND } from '#/lib/brand'
 
@@ -42,10 +41,5 @@ export const Route = createFileRoute('/app/time-tracker/')({
 
 function TimeTrackerRoute() {
   const state = Route.useLoaderData()
-  // Default to the day view: it renders straight from the loader's payload.
-  // The 'all' view ignores that payload and fires a second, paginated request
-  // after mount — a slower first paint for no benefit as a landing view.
-  const { view = 'day', date = getLocalDateKey() } = Route.useSearch()
-
-  return <TimeTrackerDashboard state={state} view={view} date={date} />
+  return <TimeTrackerDashboard state={state} />
 }

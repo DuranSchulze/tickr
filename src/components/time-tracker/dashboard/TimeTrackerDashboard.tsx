@@ -1,27 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useRouter } from '@tanstack/react-router'
 import { Play, Square, X } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import {
   formatDuration,
-  formatViewRangeLabel,
-  getLocalDateKey,
   getEntrySeconds,
-  getViewRange,
   entryOverlapsRange,
-  moveViewDate,
-  useFilteredEntries,
+  parseLocalDateKey,
 } from '#/lib/time-tracker/store'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import {
   computeEffectiveRate,
   normalizeCurrency,
 } from '#/lib/time-tracker/billing'
-import type {
-  TimeEntry,
-  TrackerState,
-  ViewMode,
-} from '#/lib/time-tracker/types'
+import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import {
   Dialog,
   DialogContent,
@@ -30,8 +22,8 @@ import {
 } from '#/components/ui/dialog'
 import { DashboardHeader } from './DashboardHeader'
 import { InputSection } from './InputSection'
-import { EntriesSection } from './EntriesSection'
 import { AllEntriesSection } from './AllEntriesSection'
+import type { EntriesDateRange } from './EntriesDateRangeFilter'
 import { EditEntryDrawer } from './EditEntryDrawer'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
@@ -55,16 +47,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 
-export function TimeTrackerDashboard({
-  state,
-  view = 'day',
-  date,
-}: {
-  state: TrackerState
-  view?: ViewMode
-  date: string
-}) {
-  const navigate = useNavigate()
+export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const mutations = useTrackerMutations()
@@ -80,17 +63,30 @@ export function TimeTrackerDashboard({
   const [allEntriesLoading, setAllEntriesLoading] = useState(false)
   const [allEntriesHasMore, setAllEntriesHasMore] = useState(false)
   const [allEntriesTotalCount, setAllEntriesTotalCount] = useState(0)
+  const [entriesDateRange, setEntriesDateRange] =
+    useState<EntriesDateRange | null>(null)
   const allEntriesInitialized = useRef(false)
+  const allEntriesRequestId = useRef(0)
 
   const loadAllEntries = useCallback(
-    async (reset = false) => {
-      if (allEntriesLoading) return
+    async (
+      reset = false,
+      range: EntriesDateRange | null = entriesDateRange,
+    ) => {
+      if (allEntriesLoading && !reset) return
+      const requestId = ++allEntriesRequestId.current
       setAllEntriesLoading(true)
       try {
         const cursor = reset ? undefined : (allEntriesCursor ?? undefined)
         const result = await getPaginatedEntriesFn({
-          data: { cursor, limit: 50 },
+          data: {
+            cursor,
+            limit: 50,
+            startDate: range?.startDate,
+            endDate: range?.endDate,
+          },
         })
+        if (requestId !== allEntriesRequestId.current) return
         if (reset) {
           setAllEntries(result.entries)
         } else {
@@ -102,19 +98,21 @@ export function TimeTrackerDashboard({
       } catch {
         // silently fail — user can retry via "Load more"
       } finally {
-        setAllEntriesLoading(false)
+        if (requestId === allEntriesRequestId.current) {
+          setAllEntriesLoading(false)
+        }
       }
     },
-    [allEntriesLoading, allEntriesCursor],
+    [allEntriesLoading, allEntriesCursor, entriesDateRange],
   )
 
   // After a mutation, refresh the "all" view's locally-paginated list (it isn't
   // backed by the route loader, so router.invalidate alone leaves it stale).
   const refreshAllEntries = useCallback(() => {
-    if (view === 'all' && allEntriesInitialized.current) {
+    if (allEntriesInitialized.current) {
       void loadAllEntries(true)
     }
-  }, [view, loadAllEntries])
+  }, [loadAllEntries])
 
   // Delete/duplicate go straight through mutations (they don't read entry
   // state), so they just need to refresh the "all" list on success.
@@ -206,30 +204,11 @@ export function TimeTrackerDashboard({
     currentUser.permissionLevel === 'ADMIN'
 
   useEffect(() => {
-    if (view === 'all') {
-      if (!allEntriesInitialized.current) {
-        allEntriesInitialized.current = true
-        void loadAllEntries(true)
-      }
-    } else {
-      allEntriesInitialized.current = false
+    if (!allEntriesInitialized.current) {
+      allEntriesInitialized.current = true
+      void loadAllEntries(true)
     }
-  }, [loadAllEntries, view])
-
-  const baseFiltered = useFilteredEntries(
-    state.entries,
-    view,
-    state.currentMemberId,
-    date,
-  )
-  const selectedRange = useMemo(
-    () => getViewRange(view, new Date(`${date}T00:00:00`)),
-    [date, view],
-  )
-  const selectedRangeLabel = useMemo(
-    () => formatViewRangeLabel(view, date),
-    [date, view],
-  )
+  }, [loadAllEntries])
 
   // When back online, drain any mutations that were queued while offline.
   // Each replay carries its original client timestamps, so synced entries keep
@@ -377,7 +356,7 @@ export function TimeTrackerDashboard({
     activeFilterCount,
     clearFilters,
     controls: filterControls,
-  } = useEntriesFilterSort(view === 'all' ? allEntries : baseFiltered)
+  } = useEntriesFilterSort(allEntries)
 
   const pendingEntryIds = useMemo(
     () => new Set(optimisticStoppedEntries.map((e) => e.id)),
@@ -385,10 +364,14 @@ export function TimeTrackerDashboard({
   )
 
   const pendingInRange = useMemo(() => {
+    if (!entriesDateRange) return optimisticStoppedEntries
+    const start = parseLocalDateKey(entriesDateRange.startDate)
+    const end = parseLocalDateKey(entriesDateRange.endDate)
+    end.setDate(end.getDate() + 1)
     return optimisticStoppedEntries.filter((e) =>
-      entryOverlapsRange(e, selectedRange.start, selectedRange.end),
+      entryOverlapsRange(e, start, end),
     )
-  }, [optimisticStoppedEntries, selectedRange])
+  }, [entriesDateRange, optimisticStoppedEntries])
 
   // Merge pending stopped entries into the visible list so they appear instantly.
   // When a pending entry shares an id with a server row (e.g. a just-stopped timer
@@ -403,15 +386,6 @@ export function TimeTrackerDashboard({
     return newPending.length > 0 ? [...merged, ...newPending] : merged
   }, [serverFilteredEntries, pendingInRange])
 
-  const mergedBaseFiltered = useMemo(() => {
-    if (pendingInRange.length === 0) return baseFiltered
-    const pendingById = new Map(pendingInRange.map((e) => [e.id, e]))
-    const merged = baseFiltered.map((e) => pendingById.get(e.id) ?? e)
-    const realIds = new Set(baseFiltered.map((e) => e.id))
-    const newPending = pendingInRange.filter((e) => !realIds.has(e.id))
-    return newPending.length > 0 ? [...merged, ...newPending] : merged
-  }, [baseFiltered, pendingInRange])
-
   const currency = normalizeCurrency(state.workspace.billableCurrency)
   const defaultRate = state.workspace.defaultBillableRate
   const rateLookup = useMemo(() => {
@@ -424,40 +398,26 @@ export function TimeTrackerDashboard({
     return (memberId: string) => byMember.get(memberId) ?? defaultRate
   }, [state.members, defaultRate])
 
-  // Pre-sum completed entries — stable between ticks, only recalculates when
-  // the entry list itself changes.
-  const completedTotals = useMemo(() => {
-    return mergedBaseFiltered
-      .filter((e) => !!e.endedAt)
-      .reduce((sum, e) => sum + e.durationSeconds, 0)
-  }, [mergedBaseFiltered])
+  const summaryEntries = useMemo(() => {
+    const byId = new Map(state.entries.map((entry) => [entry.id, entry]))
+    for (const entry of optimisticStoppedEntries) byId.set(entry.id, entry)
+    return Array.from(byId.values())
+  }, [optimisticStoppedEntries, state.entries])
 
-  // Passed to DashboardHeader which owns the live tick for the running total.
-  const runningEntry = useMemo(
-    () => mergedBaseFiltered.find((e) => !e.endedAt) ?? null,
-    [mergedBaseFiltered],
-  )
+  const combinedActiveFilterCount =
+    activeFilterCount + (entriesDateRange ? 1 : 0)
 
-  function changeView(nextView: ViewMode) {
-    void navigate({
-      to: '/app/time-tracker',
-      search: { view: nextView, date },
-    })
+  function handleClearFilters() {
+    clearFilters()
+    if (entriesDateRange) {
+      setEntriesDateRange(null)
+      void loadAllEntries(true, null)
+    }
   }
 
-  function changeDate(nextDate: string) {
-    void navigate({
-      to: '/app/time-tracker',
-      search: { view, date: nextDate },
-    })
-  }
-
-  function moveSelectedDate(direction: -1 | 1) {
-    changeDate(moveViewDate(view, date, direction))
-  }
-
-  function resetSelectedDate() {
-    changeDate(getLocalDateKey())
+  function handleDateRangeChange(range: EntriesDateRange | null) {
+    setEntriesDateRange(range)
+    void loadAllEntries(true, range)
   }
 
   const handleCreateTask = useCallback(
@@ -578,16 +538,7 @@ export function TimeTrackerDashboard({
         workspaceName={state.workspace.name}
         userName={currentUser.name}
         userRoleName={currentUser.roleName}
-        view={view}
-        onChangeView={changeView}
-        selectedDate={date}
-        selectedRangeLabel={selectedRangeLabel}
-        onPreviousPeriod={() => moveSelectedDate(-1)}
-        onNextPeriod={() => moveSelectedDate(1)}
-        onCurrentPeriod={resetSelectedDate}
-        onSelectDate={changeDate}
-        completedTotalSeconds={completedTotals}
-        runningEntry={runningEntry}
+        entries={summaryEntries}
         formatTime={formatTime}
         trailing={exportButton}
       />
@@ -597,58 +548,34 @@ export function TimeTrackerDashboard({
         <InputSection {...inputSectionProps} />
       </div>
 
-      {view === 'all' ? (
-        <AllEntriesSection
-          entries={filteredEntries}
-          totalCount={allEntriesTotalCount}
-          hasMore={allEntriesHasMore}
-          loadingMore={allEntriesLoading}
-          onLoadMore={() => void loadAllEntries(false)}
-          activeFilterCount={activeFilterCount}
-          clearFilters={clearFilters}
-          filterControls={filterControls}
-          clients={state.clients}
-          projects={state.projects}
-          projectTasks={state.projectTasks}
-          tags={state.tags}
-          currency={currency}
-          rateLookup={rateLookup}
-          pending={mutations.pending}
-          pendingEntryIds={pendingEntryIds}
-          formatTime={formatTime}
-          hasActiveTimer={!!activeEntry}
-          onStartEdit={startEdit}
-          onUpdate={handleInlineUpdate}
-          onResume={resumeEntry}
-          onDuplicate={handleDuplicateEntry}
-          onDelete={handleDeleteEntry}
-        />
-      ) : (
-        <EntriesSection
-          view={view}
-          range={selectedRange}
-          baseFiltered={mergedBaseFiltered}
-          filteredEntries={filteredEntries}
-          activeFilterCount={activeFilterCount}
-          clearFilters={clearFilters}
-          filterControls={filterControls}
-          clients={state.clients}
-          projects={state.projects}
-          projectTasks={state.projectTasks}
-          tags={state.tags}
-          currency={currency}
-          rateLookup={rateLookup}
-          pending={mutations.pending}
-          pendingEntryIds={pendingEntryIds}
-          formatTime={formatTime}
-          hasActiveTimer={!!activeEntry}
-          onStartEdit={startEdit}
-          onUpdate={handleInlineUpdate}
-          onResume={resumeEntry}
-          onDuplicate={handleDuplicateEntry}
-          onDelete={handleDeleteEntry}
-        />
-      )}
+      <AllEntriesSection
+        entries={filteredEntries}
+        totalCount={allEntriesTotalCount}
+        hasMore={allEntriesHasMore}
+        loadingMore={allEntriesLoading}
+        onLoadMore={() => void loadAllEntries(false)}
+        dateRange={entriesDateRange}
+        onDateRangeChange={handleDateRangeChange}
+        activeFilterCount={combinedActiveFilterCount}
+        clearFilters={handleClearFilters}
+        filterControls={filterControls}
+        clients={state.clients}
+        projects={state.projects}
+        projectTasks={state.projectTasks}
+        tags={state.tags}
+        currency={currency}
+        rateLookup={rateLookup}
+        pending={mutations.pending}
+        pendingEntryIds={pendingEntryIds}
+        deletingEntryId={mutations.deletingEntryId}
+        formatTime={formatTime}
+        hasActiveTimer={!!activeEntry}
+        onStartEdit={startEdit}
+        onUpdate={handleInlineUpdate}
+        onResume={resumeEntry}
+        onDuplicate={handleDuplicateEntry}
+        onDelete={handleDeleteEntry}
+      />
 
       <EditEntryDrawer
         open={!!editingId}

@@ -1,5 +1,5 @@
 {
-  "appVersion": "1.8.0",
+  "appVersion": "1.10.0",
   "onboarding": {
     "enabled": true,
     "title": "Welcome to Trackly!",
@@ -48,6 +48,88 @@
     ]
   },
   "updates": [
+    {
+      "version": "1.10.0",
+      "publishedAt": "2026-06-24",
+      "title": "Admin Time Editing, Responsive Timer UX, Accurate Reports & Overnight Entries",
+      "body": "This update focuses on making time records easier to inspect, edit, export, and review across desktop and mobile. Admin and member views now handle more realistic work patterns, including overnight entries, exact durations, responsive dialogs, cleaner mobile timer controls, and improved report exports.",
+      "features": [
+        {
+          "title": "Mobile Timer Form Shows the Important Fields First",
+          "description": "On mobile, the timer form now shows Client / Project / Task, Tags, Billable, Presets, and the Start button directly under the task description. The old hidden Options sheet has been removed so users can start accurate timers without hunting for fields.",
+          "image": null
+        },
+        {
+          "title": "Responsive Time Entry Editing Dialogs",
+          "description": "Editing a time entry now opens a responsive dialog instead of relying on cramped inline controls. The dialog keeps its header and action buttons visible, scrolls safely on smaller screens, and uses mobile-friendly picker panels when the keyboard is open.",
+          "image": null
+        },
+        {
+          "title": "Date Range Editing for Overnight and Multi-Day Work",
+          "description": "Time entries can now be edited with a range calendar. Selecting one date keeps the record on the same day, while selecting a start and end date supports overnight shifts and multi-day work such as a night shift ending the next morning.",
+          "image": null
+        },
+        {
+          "title": "Overnight Entries Stay Visible Across Tracker Views",
+          "description": "Day, Week, and Month tracker views now use overlap-based filtering so entries that started on a previous day but continue into the selected period still appear where users expect them.",
+          "image": null
+        },
+        {
+          "title": "Accurate Durations and Time Formatting",
+          "description": "Member analytics, exports, and tracker displays now avoid rounding time values and favor exact HH:MM:SS-style durations where needed. Time displays follow the user's selected time format more consistently.",
+          "image": null
+        },
+        {
+          "title": "Simplified All Entries View and Focused Totals",
+          "description": "The Time Tracker now opens as a single All entries view instead of switching between Day, Week, Month, and All modes. Date ranges are selected from the Entries filter, while the top summary provides a compact Today or Week total with Export my time placed beside the total.",
+          "image": null
+        },
+        {
+          "title": "Improved Individual and Bulk Exports",
+          "description": "Individual Export buttons now follow the same reporting behavior as Bulk Export, with shared export components, date-range selection using the app calendar, quick range buttons for Today, 1 Week, and 1 Month, portrait reports for individual exports, and landscape reports for bulk exports.",
+          "image": null
+        },
+        {
+          "title": "Department Analytics Is Easier to Review",
+          "description": "Department Analytics now defaults to the last 7 days and uses maximize dialogs for dense cards and containers. Filters stay outside the expanded view, helping admins inspect large datasets without making the page endlessly long.",
+          "image": null
+        },
+        {
+          "title": "Admin Review and Manual Time Entry Improvements",
+          "description": "Admin/member time entry review flows have been tightened so manual entries, edits, and deletes are easier to see and reflected in the UI like normal timer records.",
+          "image": null
+        },
+        {
+          "title": "Calendar View Upgrade",
+          "description": "The tracker calendar now supports familiar Month and Week views. Selecting a day opens the existing activity sheet for that date, and selecting a task shows the task details without exposing internal IDs.",
+          "image": null
+        },
+        {
+          "title": "Profile Position and Cohort Awareness",
+          "description": "Profile and admin-facing member data now account for employee position details, and the workspace member model has been reviewed for departments, cohorts, and group-style organization.",
+          "image": null
+        },
+        {
+          "title": "Ongoing Timer Reminder Emails",
+          "description": "The system can now remind users by email when a timer is still running late in the day, helping prevent forgotten timers from running past expected working hours.",
+          "image": null
+        }
+      ],
+      "actions": [
+        {
+          "label": "Track Time",
+          "to": "/app/time-tracker"
+        },
+        {
+          "label": "View Department Analytics",
+          "to": "/app/department-analytics"
+        },
+        {
+          "label": "Open Analytics",
+          "to": "/app/analytics"
+        }
+      ]
+    },
     {
       "version": "1.9.0",
       "publishedAt": "2026-06-22",

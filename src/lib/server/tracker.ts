@@ -46,6 +46,8 @@ const calendarMonthSchema = z.object({
 const paginatedEntriesSchema = z.object({
   cursor: z.string().datetime().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  startDate: z.string().date().optional(),
+  endDate: z.string().date().optional(),
 })
 
 const departmentDashboardSchema = z.object({

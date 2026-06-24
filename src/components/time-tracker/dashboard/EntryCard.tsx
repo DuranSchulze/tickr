@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import { Copy, Pencil, Play, Trash2 } from 'lucide-react'
+import { Copy, Loader2, Pencil, Play, Trash2 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
@@ -52,6 +52,7 @@ export const EntryCard = memo(function EntryCard({
   rateLookup,
   pending,
   isPending,
+  isDeleting,
   formatTime,
   hasActiveTimer,
   isSubEntry,
@@ -67,6 +68,7 @@ export const EntryCard = memo(function EntryCard({
   rateLookup: (memberId: string) => number
   pending: boolean
   isPending?: boolean
+  isDeleting?: boolean
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isSubEntry?: boolean
@@ -99,22 +101,30 @@ export const EntryCard = memo(function EntryCard({
   // Sub-entries (inside a grouped set) show only the time range + actions
   if (isSubEntry) {
     return (
-      <div className="min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2">
+      <div
+        className={`min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+      >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div
             className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
             suppressHydrationWarning
           >
-            <span className="shrink-0 text-muted-foreground/40">↳</span>
+            <span className="shrink-0 text-muted-foreground/40">
+              {isDeleting ? <Loader2 className="size-3 animate-spin" /> : '↳'}
+            </span>
             <span className="min-w-0 truncate">{timeRange}</span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <CardDuration
-              entry={entry}
-              formatTime={formatTime}
-              currency={currency}
-              rateLookup={rateLookup}
-            />
+            {isDeleting ? (
+              <span className="text-xs text-muted-foreground">Deleting…</span>
+            ) : (
+              <CardDuration
+                entry={entry}
+                formatTime={formatTime}
+                currency={currency}
+                rateLookup={rateLookup}
+              />
+            )}
             <div className="flex gap-1">
               <button
                 type="button"
@@ -159,9 +169,11 @@ export const EntryCard = memo(function EntryCard({
   return (
     <div
       className={`min-w-0 rounded-lg border bg-background p-3 shadow-sm ${
-        !entry.endedAt
-          ? 'border-primary/40 ring-1 ring-primary/20'
-          : 'border-border'
+        isDeleting
+          ? 'opacity-50 pointer-events-none'
+          : !entry.endedAt
+            ? 'border-primary/40 ring-1 ring-primary/20'
+            : 'border-border'
       }`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
@@ -221,49 +233,58 @@ export const EntryCard = memo(function EntryCard({
           </p>
         </div>
         <div className="flex shrink-0 gap-1.5">
-          {entry.endedAt && (
-            <button
-              type="button"
-              onClick={() => onResume(entry)}
-              disabled={actionsDisabled || hasActiveTimer}
-              title={
-                hasActiveTimer
-                  ? 'Stop the running timer first'
-                  : 'Resume this task'
-              }
-              className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Resume entry"
-            >
-              <Play className="size-3.5" />
-            </button>
+          {isDeleting ? (
+            <div className="flex items-center gap-1.5">
+              <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Deleting…</span>
+            </div>
+          ) : (
+            <>
+              {entry.endedAt && (
+                <button
+                  type="button"
+                  onClick={() => onResume(entry)}
+                  disabled={actionsDisabled || hasActiveTimer}
+                  title={
+                    hasActiveTimer
+                      ? 'Stop the running timer first'
+                      : 'Resume this task'
+                  }
+                  className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Resume entry"
+                >
+                  <Play className="size-3.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onStartEdit(entry)}
+                disabled={actionsDisabled}
+                className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                aria-label="Edit entry"
+              >
+                <Pencil className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDuplicateDialog(true)}
+                disabled={actionsDisabled}
+                className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                aria-label="Duplicate entry"
+              >
+                <Copy className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={actionsDisabled}
+                className="rounded-lg border border-destructive/30 p-1.5 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                aria-label="Delete entry"
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            onClick={() => onStartEdit(entry)}
-            disabled={actionsDisabled}
-            className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-            aria-label="Edit entry"
-          >
-            <Pencil className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDuplicateDialog(true)}
-            disabled={actionsDisabled}
-            className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
-            aria-label="Duplicate entry"
-          >
-            <Copy className="size-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={actionsDisabled}
-            className="rounded-lg border border-destructive/30 p-1.5 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-            aria-label="Delete entry"
-          >
-            <Trash2 className="size-3.5" />
-          </button>
         </div>
       </div>
 

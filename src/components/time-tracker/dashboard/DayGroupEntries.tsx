@@ -295,6 +295,7 @@ export function DayGroupsList({
   rateLookup,
   pending,
   pendingEntryIds,
+  deletingEntryId,
   formatTime,
   hasActiveTimer,
   isDayCollapsed,
@@ -317,6 +318,7 @@ export function DayGroupsList({
   rateLookup: (memberId: string) => number
   pending: boolean
   pendingEntryIds?: Set<string>
+  deletingEntryId?: string | null
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   isDayCollapsed: (dateKey: string) => boolean
@@ -451,6 +453,7 @@ export function DayGroupsList({
                                 tags={tags}
                                 pending={pending}
                                 isPending={pendingEntryIds?.has(entry.id)}
+                                isDeleting={deletingEntryId === entry.id}
                                 formatTime={formatTime}
                                 hasActiveTimer={hasActiveTimer}
                                 currency={currency}
@@ -490,6 +493,7 @@ export function DayGroupsList({
                                     tags={tags}
                                     pending={pending}
                                     isPending={pendingEntryIds?.has(entry.id)}
+                                    isDeleting={deletingEntryId === entry.id}
                                     formatTime={formatTime}
                                     hasActiveTimer={hasActiveTimer}
                                     isSubEntry
@@ -532,6 +536,7 @@ export function DayGroupsList({
                             rateLookup={rateLookup}
                             pending={pending}
                             isPending={pendingEntryIds?.has(entry.id)}
+                            isDeleting={deletingEntryId === entry.id}
                             formatTime={formatTime}
                             hasActiveTimer={hasActiveTimer}
                             onStartEdit={handleStartEdit}
@@ -570,6 +575,7 @@ export function DayGroupsList({
                                 rateLookup={rateLookup}
                                 pending={pending}
                                 isPending={pendingEntryIds?.has(entry.id)}
+                                isDeleting={deletingEntryId === entry.id}
                                 formatTime={formatTime}
                                 hasActiveTimer={hasActiveTimer}
                                 isSubEntry

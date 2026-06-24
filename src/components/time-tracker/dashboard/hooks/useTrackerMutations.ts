@@ -61,6 +61,7 @@ export function useTrackerMutations() {
   const [pending, setPending] = useState(false)
   const [startTimerPending, setStartTimerPending] = useState(false)
   const [stopTimerPending, setStopTimerPending] = useState(false)
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null)
 
   async function run<T>(
     action: () => Promise<T>,
@@ -91,6 +92,7 @@ export function useTrackerMutations() {
     pending,
     startTimerPending,
     stopTimerPending,
+    deletingEntryId,
     startTimer: (
       input: StartTimerInput,
       options?: MutationOptions<TimeEntry>,
@@ -138,11 +140,13 @@ export function useTrackerMutations() {
         successMessage: 'Entry updated',
         ...options,
       }),
-    deleteEntry: (id: string, options?: MutationOptions<unknown>) =>
-      run(() => deleteEntryFn({ data: { id } }), {
+    deleteEntry: (id: string, options?: MutationOptions<unknown>) => {
+      setDeletingEntryId(id)
+      return run(() => deleteEntryFn({ data: { id } }), {
         successMessage: 'Entry deleted',
         ...options,
-      }),
+      }).finally(() => setDeletingEntryId(null))
+    },
     duplicateEntry: (id: string, options?: MutationOptions<unknown>) =>
       run(
         async () => {

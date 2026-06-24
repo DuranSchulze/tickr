@@ -7,6 +7,8 @@ import { groupEntriesByDay } from './entries-grouping'
 import { DayGroupsList } from './DayGroupEntries'
 import type { BillableFilter, SortKey } from './hooks/useEntriesFilterSort'
 import { EntriesFilters } from './EntriesFilters'
+import { EntriesDateRangeFilter } from './EntriesDateRangeFilter'
+import type { EntriesDateRange } from './EntriesDateRangeFilter'
 
 type InlinePatch = Partial<
   Pick<
@@ -32,6 +34,8 @@ export function AllEntriesSection({
   hasMore,
   loadingMore,
   onLoadMore,
+  dateRange,
+  onDateRangeChange,
   activeFilterCount,
   clearFilters,
   filterControls,
@@ -43,6 +47,7 @@ export function AllEntriesSection({
   rateLookup,
   pending,
   pendingEntryIds,
+  deletingEntryId,
   formatTime,
   hasActiveTimer,
   onStartEdit,
@@ -56,6 +61,8 @@ export function AllEntriesSection({
   hasMore: boolean
   loadingMore: boolean
   onLoadMore: () => void
+  dateRange: EntriesDateRange | null
+  onDateRangeChange: (range: EntriesDateRange | null) => void
   activeFilterCount: number
   clearFilters: () => void
   filterControls: {
@@ -76,6 +83,7 @@ export function AllEntriesSection({
   rateLookup: (memberId: string) => number
   pending: boolean
   pendingEntryIds?: Set<string>
+  deletingEntryId?: string | null
   formatTime: (seconds: number) => string
   hasActiveTimer: boolean
   onStartEdit: (entry: TimeEntry) => void
@@ -133,6 +141,9 @@ export function AllEntriesSection({
       <div className="border-b border-border p-3 sm:p-4">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <h2 className="m-0 text-base font-bold text-foreground sm:text-lg">
+              Entries
+            </h2>
             <span className="min-w-0 truncate text-sm text-muted-foreground">
               {totalCount.toLocaleString()} total entr
               {totalCount === 1 ? 'y' : 'ies'}
@@ -185,7 +196,16 @@ export function AllEntriesSection({
         </div>
 
         {showFilters && (
-          <div className="mt-3">
+          <div className="mt-3 grid gap-3 rounded-lg border border-border bg-muted p-3">
+            <div className="grid gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Date range
+              </span>
+              <EntriesDateRangeFilter
+                range={dateRange}
+                onChange={onDateRangeChange}
+              />
+            </div>
             <EntriesFilters
               projects={projects}
               tags={tags}
@@ -216,6 +236,7 @@ export function AllEntriesSection({
         rateLookup={rateLookup}
         pending={pending}
         pendingEntryIds={pendingEntryIds}
+        deletingEntryId={deletingEntryId}
         formatTime={formatTime}
         hasActiveTimer={hasActiveTimer}
         isDayCollapsed={(dateKey) => collapsedDates.has(dateKey)}
