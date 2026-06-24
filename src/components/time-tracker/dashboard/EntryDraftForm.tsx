@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { FocusEvent } from 'react'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
-import { DateTimePicker } from './DateTimePicker'
+import { DraftTimeEditor } from './DraftTimeEditor'
 import type { DraftEntry } from './utils'
 
 type ClientItem = {
@@ -100,22 +100,14 @@ export function EntryDraftForm({
         />
       </div>
 
-      {/* Row 3: Start date + End date + Billable */}
-      <div
-        className={`grid gap-3 ${isRunning ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}
-      >
-        <DateTimePicker
-          value={draft.startedAt}
-          onChange={(value) => setDraft({ ...draft, startedAt: value })}
-          placeholder="Start date & time"
+      {/* Row 3: Date range + Billable */}
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <DraftTimeEditor
+          startedAt={draft.startedAt}
+          endedAt={draft.endedAt}
+          isRunning={isRunning}
+          onChange={(patch) => setDraft({ ...draft, ...patch })}
         />
-        {!isRunning && (
-          <DateTimePicker
-            value={draft.endedAt}
-            onChange={(value) => setDraft({ ...draft, endedAt: value })}
-            placeholder="End date & time"
-          />
-        )}
         <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground">
           <input
             type="checkbox"
