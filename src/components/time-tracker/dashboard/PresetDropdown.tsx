@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Bookmark, ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -9,14 +9,10 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Button } from '#/components/ui/button'
-import { clearLocalPresets, getLocalPresets } from '#/lib/time-tracker/presets'
 import type { TimerPreset } from '#/lib/time-tracker/presets'
-import {
-  deleteTimerPresetFn,
-  importTimerPresetsFn,
-  listTimerPresetsFn,
-} from '#/lib/server/tracker'
+import { deleteTimerPresetFn, listTimerPresetsFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
+import { useNetworkStatus } from '#/lib/time-tracker/useNetworkStatus'
 import type { Client, Project, Tag } from '#/lib/time-tracker/types'
 import { gooeyToast } from '#/lib/toast'
 import { SavePresetDialog } from './SavePresetDialog'
@@ -59,6 +55,7 @@ export function PresetDropdown({
 }: PresetDropdownProps) {
   const [open, setOpen] = useState(false)
   const [saveDialogOpen, setSaveDialogOpen] = useState(false)
+  const { isOnline } = useNetworkStatus()
   const queryClient = useQueryClient()
   const presetsQueryKey = useMemo(
     () => trackerKeys.timerPresets(workspaceId),
@@ -69,49 +66,11 @@ export function PresetDropdown({
     queryKey: presetsQueryKey,
     queryFn: () => listTimerPresetsFn(),
     staleTime: 60_000,
+    enabled: isOnline,
   })
 
-  useEffect(() => {
-    if (presets.length > 0) return
-
-    const localPresets = getLocalPresets(workspaceId)
-    if (localPresets.length === 0) return
-
-    let cancelled = false
-    void importTimerPresetsFn({
-      data: {
-        presets: localPresets.map(
-          ({
-            name: presetName,
-            clientId: presetClientId,
-            projectId: presetProjectId,
-            taskId: presetTaskId,
-            tagIds: presetTagIds,
-            billable: presetBillable,
-          }) => ({
-            name: presetName,
-            clientId: presetClientId,
-            projectId: presetProjectId,
-            taskId: presetTaskId,
-            tagIds: presetTagIds,
-            billable: presetBillable,
-          }),
-        ),
-      },
-    })
-      .then((imported) => {
-        if (cancelled || imported.length === 0) return
-        clearLocalPresets(workspaceId)
-        queryClient.setQueryData<TimerPreset[]>(presetsQueryKey, imported)
-      })
-      .catch(() => {
-        // Keep local presets intact so a later visit can retry migration.
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [presets.length, presetsQueryKey, queryClient, workspaceId])
+  // Presets are purely server-side — hide the feature entirely when offline.
+  if (!isOnline) return null
 
   function handleApplyPreset(preset: {
     clientId: string
@@ -128,6 +87,7 @@ export function PresetDropdown({
     e.stopPropagation()
     const previous = queryClient.getQueryData<TimerPreset[]>(presetsQueryKey)
 
+    // Optimistically remove from the cache immediately.
     queryClient.setQueryData<TimerPreset[]>(presetsQueryKey, (old) =>
       old ? old.filter((preset) => preset.id !== presetId) : old,
     )

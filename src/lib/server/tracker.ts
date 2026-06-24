@@ -100,10 +100,6 @@ export const timerPresetIdSchema = z.object({
   id: z.string().min(1),
 })
 
-export const importTimerPresetsSchema = z.object({
-  presets: z.array(timerPresetInputSchema).max(10),
-})
-
 const paginatedMembersSchema = z.object({
   page: z.number().int().min(0),
   pageSize: z.number().int().min(1).max(100),
@@ -295,13 +291,6 @@ export const deleteTimerPresetFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { deleteTimerPreset } = await import('./tracker/presets.server')
     return deleteTimerPreset(data)
-  })
-
-export const importTimerPresetsFn = createServerFn({ method: 'POST' })
-  .inputValidator((input) => importTimerPresetsSchema.parse(input))
-  .handler(async ({ data }) => {
-    const { importTimerPresets } = await import('./tracker/presets.server')
-    return importTimerPresets(data)
   })
 
 export const createWorkspaceMemberFn = createServerFn({ method: 'POST' })

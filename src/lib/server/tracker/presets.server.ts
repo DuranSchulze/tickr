@@ -9,15 +9,9 @@ import {
   timerPresets,
   timerPresetTags,
 } from '#/db/schema'
-import type {
-  importTimerPresetsSchema,
-  timerPresetIdSchema,
-  timerPresetInputSchema,
-} from '../tracker'
+import type { timerPresetIdSchema, timerPresetInputSchema } from '../tracker'
 import { requireWorkspaceMembership } from '../workspace-access.server'
-import { and, asc, count, eq, inArray, sql } from 'drizzle-orm'
-
-const MAX_PRESETS = 10
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 
 type TimerPresetInput = z.infer<typeof timerPresetInputSchema>
 
@@ -147,34 +141,19 @@ export async function saveTimerPreset(data: TimerPresetInput) {
   const access = await requireWorkspaceMembership()
   await assertPresetCatalogs(access.workspace.id, data)
 
-  const [countRows, duplicateRows] = await Promise.all([
-    db
-      .select({ total: count() })
-      .from(timerPresets)
-      .where(
-        and(
-          eq(timerPresets.workspaceId, access.workspace.id),
-          eq(timerPresets.workspaceMemberId, access.member.id),
-        ),
+  const [duplicateRows] = await db
+    .select({ id: timerPresets.id })
+    .from(timerPresets)
+    .where(
+      and(
+        eq(timerPresets.workspaceId, access.workspace.id),
+        eq(timerPresets.workspaceMemberId, access.member.id),
+        sql`lower(${timerPresets.name}) = ${data.name.toLowerCase()}`,
       ),
-    db
-      .select({ id: timerPresets.id })
-      .from(timerPresets)
-      .where(
-        and(
-          eq(timerPresets.workspaceId, access.workspace.id),
-          eq(timerPresets.workspaceMemberId, access.member.id),
-          sql`lower(${timerPresets.name}) = ${data.name.toLowerCase()}`,
-        ),
-      )
-      .limit(1),
-  ])
+    )
+    .limit(1)
 
-  if ((countRows[0]?.total ?? 0) >= MAX_PRESETS) {
-    throw new Error(`Maximum ${MAX_PRESETS} presets reached.`)
-  }
-
-  if (duplicateRows[0]) {
+  if (duplicateRows) {
     throw new Error('Preset name already exists.')
   }
 
@@ -226,40 +205,4 @@ export async function deleteTimerPreset(
         eq(timerPresets.workspaceMemberId, access.member.id),
       ),
     )
-}
-
-export async function importTimerPresets(
-  data: z.infer<typeof importTimerPresetsSchema>,
-) {
-  const access = await requireWorkspaceMembership()
-  const existing = await db
-    .select({ name: timerPresets.name })
-    .from(timerPresets)
-    .where(
-      and(
-        eq(timerPresets.workspaceId, access.workspace.id),
-        eq(timerPresets.workspaceMemberId, access.member.id),
-      ),
-    )
-
-  let remaining = Math.max(0, MAX_PRESETS - existing.length)
-  const existingNames = new Set(existing.map((row) => row.name.toLowerCase()))
-  const imported = []
-
-  for (const preset of data.presets) {
-    if (remaining <= 0) break
-    if (existingNames.has(preset.name.toLowerCase())) continue
-
-    try {
-      const created = await saveTimerPreset(preset)
-      imported.push(created)
-      existingNames.add(created.name.toLowerCase())
-      remaining -= 1
-    } catch {
-      // Stale local presets can reference archived/deleted catalogs. Skip those
-      // instead of blocking the rest of the migration.
-    }
-  }
-
-  return imported
 }
