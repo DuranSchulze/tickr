@@ -2,20 +2,10 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import {
-  Check,
-  CircleHelp,
-  LogOut,
-  Moon,
-  Settings,
-  Sparkles,
-  Sun,
-  UserCircle,
-} from 'lucide-react'
+import { Check, LogOut, Moon, Settings, Sun, UserCircle } from 'lucide-react'
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { authClient } from '#/lib/auth-client'
-import { useAnnouncementContext } from '#/features/announcements/AnnouncementProvider'
 import { BRAND } from '#/lib/brand'
 import {
   applyPrimaryColor,
@@ -82,10 +72,6 @@ export function Navbar({
     setColor(id)
   }
 
-  const { showOnboarding } = useAnnouncementContext()
-
-  const [infoOpen, setInfoOpen] = useState(false)
-
   const queryClient = useQueryClient()
 
   const handleSignOut = () => {
@@ -129,43 +115,6 @@ export function Navbar({
             currentWorkspaceName={workspace.name}
             permissionLevel={permissionLevel}
           />
-
-          <DropdownMenu open={infoOpen} onOpenChange={setInfoOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                title="What's new &amp; help"
-                className="rounded-full bg-card/80 text-muted-foreground hover:text-foreground"
-              >
-                <CircleHelp className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Info &amp; Updates
-              </DropdownMenuLabel>
-              <DropdownMenuItem
-                onSelect={() => {
-                  setInfoOpen(false)
-                  showOnboarding()
-                }}
-              >
-                <CircleHelp className="size-4" />
-                Tour the app
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  to="/app/changelog"
-                  className="flex items-center gap-2"
-                  onClick={() => setInfoOpen(false)}
-                >
-                  <Sparkles className="size-4" />
-                  What's new
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

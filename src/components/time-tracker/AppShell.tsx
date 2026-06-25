@@ -14,7 +14,6 @@ import {
 import { AppSidebar } from './AppSidebar'
 import { MobileNav } from './MobileNav'
 import { Navbar } from './Navbar'
-import { AnnouncementProvider } from '#/features/announcements/AnnouncementProvider'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
 
@@ -166,40 +165,15 @@ export function AppShell({
   }, [canAccessSettings, isOwnerOrAdmin])
 
   return (
-    <AnnouncementProvider>
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-        {!isEmbed && (
-          <div className="print:hidden">
-            <Navbar
-              workspace={workspace}
-              user={user}
-              permissionLevel={permissionLevel}
-              mobileMenuButton={
-                <MobileNav
-                  workspaceName={workspace.name}
-                  userEmail={user.email}
-                  timerActive={timerActive}
-                  analyticsGroupActive={analyticsGroupActive}
-                  analyticsOpen={analyticsOpen}
-                  onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
-                  analyticsChildren={analyticsChildren}
-                  calendarActive={calendarActive}
-                  settingsActive={settingsActive}
-                  settingsOpen={settingsOpen}
-                  onToggleSettings={() => setSettingsOpen((open) => !open)}
-                  settingsChildren={settingsChildren}
-                />
-              }
-            />
-          </div>
-        )}
-
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          {!isEmbed && (
-            <div className="print:hidden">
-              <AppSidebar
-                collapsed={collapsed}
-                onToggleCollapsed={() => setCollapsed((c) => !c)}
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+      {!isEmbed && (
+        <div className="print:hidden">
+          <Navbar
+            workspace={workspace}
+            user={user}
+            permissionLevel={permissionLevel}
+            mobileMenuButton={
+              <MobileNav
                 workspaceName={workspace.name}
                 userEmail={user.email}
                 timerActive={timerActive}
@@ -213,17 +187,40 @@ export function AppShell({
                 onToggleSettings={() => setSettingsOpen((open) => !open)}
                 settingsChildren={settingsChildren}
               />
-            </div>
-          )}
-
-          <main
-            className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
-          >
-            <Outlet />
-            {isEmbed && <EmbedFooter />}
-          </main>
+            }
+          />
         </div>
+      )}
+
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {!isEmbed && (
+          <div className="print:hidden">
+            <AppSidebar
+              collapsed={collapsed}
+              onToggleCollapsed={() => setCollapsed((c) => !c)}
+              workspaceName={workspace.name}
+              userEmail={user.email}
+              timerActive={timerActive}
+              analyticsGroupActive={analyticsGroupActive}
+              analyticsOpen={analyticsOpen}
+              onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+              analyticsChildren={analyticsChildren}
+              calendarActive={calendarActive}
+              settingsActive={settingsActive}
+              settingsOpen={settingsOpen}
+              onToggleSettings={() => setSettingsOpen((open) => !open)}
+              settingsChildren={settingsChildren}
+            />
+          </div>
+        )}
+
+        <main
+          className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
+        >
+          <Outlet />
+          {isEmbed && <EmbedFooter />}
+        </main>
       </div>
-    </AnnouncementProvider>
+    </div>
   )
 }
