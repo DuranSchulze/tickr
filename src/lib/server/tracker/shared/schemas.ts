@@ -77,6 +77,19 @@ export const updateEntrySchema = entryInputShape
   })
   .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
+export const overlapCheckSchema = z
+  .object({
+    memberId: z.string().min(1).optional(),
+    entryId: z.string().min(1).optional(),
+    excludeEntryId: z.string().min(1).optional(),
+    startedAt: z.string().datetime().optional(),
+    endedAt: z.string().datetime().optional(),
+  })
+  .refine(
+    (data) => data.entryId || (data.startedAt && data.endedAt),
+    'Provide an entry or a start and end time.',
+  )
+
 // ─── Analytics ────────────────────────────────────────────────────────────────
 
 export const analyticsRangeSchema = z.object({

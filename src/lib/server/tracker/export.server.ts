@@ -11,40 +11,34 @@ import {
   tags,
   timeEntryTags,
 } from '#/db/schema'
-import { and, desc, eq, inArray, isNotNull, lt, gte } from 'drizzle-orm'
+import { and, desc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import { getAnalyticsDateRange } from './shared/dates'
-import type { analyticsRangeSchema } from './shared/schemas'
 import {
-  computeEffectiveRate,
-  formatCurrency,
-} from '#/lib/time-tracker/billing'
-
-function escapeCsv(value: string | number | null | undefined): string {
-  const s = String(value ?? '')
-  if (
-    s.includes(',') ||
-    s.includes('"') ||
-    s.includes('\n') ||
-    s.includes('\r')
-  ) {
-    return '"' + s.replace(/"/g, '""') + '"'
-  }
-  return s
-}
-
-function buildCsv(rows: (string | number | null | undefined)[][]): string {
-  return rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n')
-}
+  formatDateInTimeZone,
+  formatDateTimeInTimeZone,
+  getWorkspaceDateRange,
+} from './shared/dates'
+import type { analyticsRangeSchema } from './shared/schemas'
+import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import {
+  clipWorkInterval,
+  summarizeWorkIntervals,
+} from '#/lib/time-tracker/work-intervals'
+import {
+  buildCsv,
+  formatDecimalRate,
+  formatHms,
+} from '#/lib/time-tracker/export-utils'
 
 export async function exportAnalyticsCsv(
   data: z.infer<typeof analyticsRangeSchema>,
 ): Promise<string> {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const range = getAnalyticsDateRange(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
 
   const tagIdList = data.tagIds ? data.tagIds.split(',').filter(Boolean) : []
   const memberIdList = data.memberIds
@@ -64,8 +58,8 @@ export async function exportAnalyticsCsv(
   const entryConditions: SQL[] = [
     eq(timeEntries.workspaceId, access.workspace.id),
     isNotNull(timeEntries.endedAt),
-    gte(timeEntries.startedAt, range.start),
     lt(timeEntries.startedAt, range.endExclusive),
+    gt(timeEntries.endedAt, range.start),
   ]
 
   // Scope filtering
@@ -140,6 +134,7 @@ export async function exportAnalyticsCsv(
   const rawEntries = await db
     .select({
       id: timeEntries.id,
+      workspaceMemberId: timeEntries.workspaceMemberId,
       description: timeEntries.description,
       notes: timeEntries.notes,
       startedAt: timeEntries.startedAt,
@@ -184,30 +179,51 @@ export async function exportAnalyticsCsv(
     tagsByEntry.set(row.timeEntryId, list)
   }
 
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const fmtDate = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  const fmtDT = (d: Date) =>
-    `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   const fh = (s: number) => (s / 3600).toFixed(2)
+  const clippedEntries = rawEntries.flatMap((entry) => {
+    const clipped = clipWorkInterval(
+      {
+        memberId: entry.workspaceMemberId,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+      },
+      range.start,
+      range.endExclusive,
+    )
+    return clipped ? [{ entry, clipped }] : []
+  })
+  const workSummary = summarizeWorkIntervals(
+    clippedEntries.map(({ entry, clipped }) => ({
+      memberId: entry.workspaceMemberId,
+      startedAt: clipped.startedAt,
+      endedAt: clipped.endedAt,
+    })),
+    range.start,
+    range.endExclusive,
+  )
 
   const rows: (string | number | null | undefined)[][] = [
     ['Analytics Export'],
     ['Workspace', access.workspace.name],
     ['Period', `${data.startDate} to ${data.endDate}`],
+    ['Timezone', timezone],
+    ['Currency', currency],
+    ['Tracked hours', formatHms(workSummary.totalSeconds)],
+    ['Actual hours', formatHms(workSummary.actualSeconds)],
+    ['Overlap', formatHms(workSummary.overlapSeconds)],
     ['Generated', new Date().toISOString().slice(0, 10)],
     [],
     [
-      'Date',
       'Member',
       'Email',
+      'Date',
+      'Start',
+      'End',
       'Project',
       'Client',
       'Tags',
       'Description',
-      'Started',
-      'Ended',
-      'Hours',
+      'Duration',
       'Billable',
       'Rate/hr',
       'Amount',
@@ -215,28 +231,28 @@ export async function exportAnalyticsCsv(
     ],
   ]
 
-  for (const e of rawEntries) {
+  for (const { entry: e, clipped } of clippedEntries) {
     const effectiveRate = computeEffectiveRate(
       e.billableRate ? Number(e.billableRate) : null,
       defaultRate,
     )
-    const hours = fh(e.durationSeconds)
+    const hours = fh(clipped.seconds)
     const amount = e.billable ? Number(hours) * effectiveRate : null
 
     rows.push([
-      fmtDate(e.startedAt),
       e.memberUserName ?? e.memberEmail ?? '',
       e.memberEmail ?? '',
+      formatDateInTimeZone(clipped.startedAt, timezone),
+      formatDateTimeInTimeZone(clipped.startedAt, timezone),
+      formatDateTimeInTimeZone(clipped.endedAt, timezone),
       e.projectName ?? '',
       e.clientName ?? '',
       (tagsByEntry.get(e.id) ?? []).join('; '),
       e.description,
-      fmtDT(e.startedAt),
-      e.endedAt ? fmtDT(e.endedAt) : '',
-      hours,
+      formatHms(clipped.seconds),
       e.billable ? 'Yes' : 'No',
-      e.billable ? formatCurrency(effectiveRate, currency) : '',
-      amount === null ? '' : formatCurrency(amount, currency),
+      e.billable ? formatDecimalRate(effectiveRate) : '',
+      amount === null ? '' : amount.toFixed(2),
       e.notes ?? '',
     ])
   }

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, LogOut, Moon, Settings, Sun, UserCircle } from 'lucide-react'
+import { Check, LogOut, Moon, Settings, Sparkles, Sun, UserCircle } from 'lucide-react'
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { authClient } from '#/lib/auth-client'
@@ -151,6 +151,13 @@ export function Navbar({
                 <Link to="/app/profile" className="flex items-center gap-2">
                   <Settings className="size-4" />
                   Profile settings
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link to="/app/changelog" className="flex items-center gap-2">
+                  <Sparkles className="size-4" />
+                  What's new
                 </Link>
               </DropdownMenuItem>
 

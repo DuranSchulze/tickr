@@ -22,6 +22,7 @@ import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppMyWorkspacesRouteImport } from './routes/app/my-workspaces'
 import { Route as AppMyPerformanceRouteImport } from './routes/app/my-performance'
 import { Route as AppDepartmentAnalyticsRouteImport } from './routes/app/department-analytics'
+import { Route as AppChangelogRouteImport } from './routes/app/changelog'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppAnalyticsRouteImport } from './routes/app/analytics'
@@ -111,6 +112,11 @@ const AppMyPerformanceRoute = AppMyPerformanceRouteImport.update({
 const AppDepartmentAnalyticsRoute = AppDepartmentAnalyticsRouteImport.update({
   id: '/department-analytics',
   path: '/department-analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChangelogRoute = AppChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCalendarRoute = AppCalendarRouteImport.update({
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
+  '/app/changelog': typeof AppChangelogRoute
   '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
@@ -296,6 +303,7 @@ export interface FileRoutesByTo {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
+  '/app/changelog': typeof AppChangelogRoute
   '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
@@ -337,6 +345,7 @@ export interface FileRoutesById {
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
+  '/app/changelog': typeof AppChangelogRoute
   '/app/department-analytics': typeof AppDepartmentAnalyticsRoute
   '/app/my-performance': typeof AppMyPerformanceRoute
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
+    | '/app/changelog'
     | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
+    | '/app/changelog'
     | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
+    | '/app/changelog'
     | '/app/department-analytics'
     | '/app/my-performance'
     | '/app/my-workspaces'
@@ -599,6 +611,13 @@ declare module '@tanstack/react-router' {
       path: '/department-analytics'
       fullPath: '/app/department-analytics'
       preLoaderRoute: typeof AppDepartmentAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/changelog': {
+      id: '/app/changelog'
+      path: '/changelog'
+      fullPath: '/app/changelog'
+      preLoaderRoute: typeof AppChangelogRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/calendar': {
@@ -815,6 +834,7 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppAuditLogsRoute: typeof AppAuditLogsRoute
   AppCalendarRoute: typeof AppCalendarRoute
+  AppChangelogRoute: typeof AppChangelogRoute
   AppDepartmentAnalyticsRoute: typeof AppDepartmentAnalyticsRoute
   AppMyPerformanceRoute: typeof AppMyPerformanceRoute
   AppMyWorkspacesRoute: typeof AppMyWorkspacesRoute
@@ -835,6 +855,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppAuditLogsRoute: AppAuditLogsRoute,
   AppCalendarRoute: AppCalendarRoute,
+  AppChangelogRoute: AppChangelogRoute,
   AppDepartmentAnalyticsRoute: AppDepartmentAnalyticsRoute,
   AppMyPerformanceRoute: AppMyPerformanceRoute,
   AppMyWorkspacesRoute: AppMyWorkspacesRoute,

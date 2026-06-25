@@ -3,6 +3,7 @@ import { z } from 'zod'
 import {
   entryIdSchema,
   entryInputSchema,
+  overlapCheckSchema,
   startTimerSchema,
   stopTimerSchema,
   updateActiveTimerSchema,
@@ -214,6 +215,13 @@ export const exportAnalyticsCsvFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { exportAnalyticsCsv } = await import('./tracker/export.server')
     return exportAnalyticsCsv(data)
+  })
+
+export const checkTimeEntryOverlapFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => overlapCheckSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { checkTimeEntryOverlap } = await import('./tracker.server')
+    return checkTimeEntryOverlap(data)
   })
 
 export const startTimerFn = createServerFn({ method: 'POST' })

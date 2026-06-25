@@ -15,16 +15,18 @@ function getDisplaySeconds(entry: AnalyticsTimeEntryRow): number {
   return Math.max(0, (endedAt - startedAt) / 1000)
 }
 
-function formatClockTime(value: string): string {
-  return new Date(value).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatTimeRange(entry: AnalyticsTimeEntryRow): string {
-  return `${formatClockTime(entry.startedAt)} – ${
-    entry.endedAt ? formatClockTime(entry.endedAt) : 'Now'
+function formatTimeRange(
+  entry: AnalyticsTimeEntryRow,
+  timezone: string,
+): string {
+  const format = (value: string) =>
+    new Date(value).toLocaleTimeString([], {
+      timeZone: timezone,
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  return `${format(entry.startedAt)} – ${
+    entry.endedAt ? format(entry.endedAt) : 'Now'
   }`
 }
 
@@ -32,10 +34,12 @@ function EntryMobileCard({
   entry,
   onEditEntry,
   formatTime,
+  timezone,
 }: {
   entry: AnalyticsTimeEntryRow
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
   formatTime: (seconds: number) => string
+  timezone: string
 }) {
   const displaySeconds = getDisplaySeconds(entry)
 
@@ -50,7 +54,7 @@ function EntryMobileCard({
             {entry.memberName} · {entry.date}
           </p>
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-            {formatTimeRange(entry)}
+            {formatTimeRange(entry, timezone)}
           </p>
         </div>
         <div className="shrink-0 text-right">
@@ -112,6 +116,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   pageSize = 50,
   onPageChange,
   onPageSizeChange,
+  timezone,
   onEditEntry,
 }: {
   entries: AnalyticsTimeEntryRow[]
@@ -120,6 +125,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   pageSize?: number
   onPageChange: (page: number) => void
   onPageSizeChange?: (pageSize: number) => void
+  timezone: string
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
 }) {
   const { formatTime } = useTimeFormat()
@@ -175,6 +181,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                 entry={entry}
                 onEditEntry={onEditEntry}
                 formatTime={formatTime}
+                timezone={timezone}
               />
             ))}
           </div>
@@ -225,7 +232,7 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                       {entry.date}
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-xs font-medium text-foreground">
-                      {formatTimeRange(entry)}
+                      {formatTimeRange(entry, timezone)}
                     </td>
                     <td className="px-4 py-2.5 text-xs font-medium text-foreground">
                       <div className="truncate" title={entry.memberName}>

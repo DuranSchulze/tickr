@@ -186,12 +186,21 @@ export function DepartmentDashboardScreen({
       {/* KPI cards */}
       <DepartmentSectionFrame
         title="Summary"
-        subtitle={`${formatHours(summary.totalSeconds)} total · ${activeMembers} active members`}
+        subtitle={`${formatHours(summary.totalSeconds)} tracked · ${activeMembers} active members`}
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <KpiCard
-            label="Total hours"
+            label="Tracked hours"
             value={formatHours(summary.totalSeconds)}
+          />
+          <KpiCard
+            label="Actual hours"
+            value={formatHours(summary.actualSeconds)}
+            sub={
+              summary.overlapSeconds > 0
+                ? `${formatHours(summary.overlapSeconds)} overlap`
+                : 'No overlap'
+            }
           />
           <KpiCard
             label="Billable hours"

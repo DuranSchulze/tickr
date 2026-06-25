@@ -6,9 +6,13 @@ import type { DepartmentMemberDetail } from '#/lib/server/tracker/department-das
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { updateWorkspaceMemberEntryFn } from '#/lib/server/tracker'
 import { gooeyToast } from '#/lib/toast'
-import { dateTimeLocalValue } from '#/lib/time-tracker/store'
+import {
+  dateTimeLocalValue,
+  formatDuration,
+} from '#/lib/time-tracker/store'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
+import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { EditEntryDrawer } from '../../dashboard/EditEntryDrawer'
 import type { DraftEntry } from '../../dashboard/utils'
 import { emptyDraft, toEntryPayload } from '../../dashboard/utils'
@@ -74,6 +78,13 @@ export function DepartmentMemberDetailScreen({
 
     setSavePending(true)
     try {
+      const confirmed = await confirmTimeEntryOverlap({
+        memberId: editingEntry.workspaceMemberId,
+        excludeEntryId: editingEntry.id,
+        startedAt: new Date(editingDraft.startedAt).toISOString(),
+        endedAt: new Date(editingDraft.endedAt).toISOString(),
+      })
+      if (!confirmed) return
       await updateWorkspaceMemberEntryFn({
         data: {
           id: editingEntry.id,
@@ -150,6 +161,28 @@ export function DepartmentMemberDetailScreen({
         </div>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-3">
+        <MemberTimeSummary
+          label="Tracked hours"
+          value={formatDuration(detail.summary.totalSeconds)}
+          helper="Sum of all entries"
+        />
+        <MemberTimeSummary
+          label="Actual hours"
+          value={formatDuration(detail.summary.actualSeconds)}
+          helper="Overlap counted once"
+        />
+        <MemberTimeSummary
+          label="Overlap"
+          value={formatDuration(detail.summary.overlapSeconds)}
+          helper={
+            detail.summary.overlapSeconds > 0
+              ? 'Concurrent entries'
+              : 'No overlapping time'
+          }
+        />
+      </div>
+
       <div className="grid min-w-0 gap-3">
         <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2">
@@ -183,6 +216,7 @@ export function DepartmentMemberDetailScreen({
           entriesTotal={detail.entriesTotal}
           page={detail.page}
           onPageChange={onChangePage}
+          timezone={detail.timezone}
           onEditEntry={canEditEntries ? openEdit : undefined}
         />
       </div>
@@ -210,5 +244,27 @@ export function DepartmentMemberDetailScreen({
         onCancel={() => setEditingEntry(null)}
       />
     </div>
+  )
+}
+
+function MemberTimeSummary({
+  label,
+  value,
+  helper,
+}: {
+  label: string
+  value: string
+  helper: string
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="m-0 mt-1 font-mono text-xl font-black text-foreground">
+        {value}
+      </p>
+      <p className="m-0 mt-1 text-xs text-muted-foreground">{helper}</p>
+    </section>
   )
 }

@@ -126,7 +126,7 @@ function OnboardingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-background dark:text-foreground">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-3 no-underline">
           <img
@@ -167,7 +167,7 @@ function OnboardingPage() {
             <button
               type="button"
               onClick={() => setMode('create')}
-              className="group rounded-xl border-2 border-slate-200 bg-white p-6 text-left transition-all hover:border-indigo-500 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-400"
+              className="group rounded-xl border-2 border-slate-200 bg-white p-6 text-left transition-all hover:border-indigo-500 hover:shadow-md dark:border-border dark:bg-card dark:hover:border-indigo-400"
             >
               <Sparkles className="size-7 text-indigo-600 dark:text-indigo-400" />
               <h2 className="m-0 mt-4 text-lg font-black">
@@ -182,7 +182,7 @@ function OnboardingPage() {
               </span>
             </button>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-xl border border-slate-200 bg-white p-6 dark:border-border dark:bg-card">
               <MailCheck className="size-7 text-teal-600 dark:text-teal-400" />
               <h2 className="m-0 mt-4 text-lg font-black">
                 Waiting for an invite?
@@ -211,7 +211,7 @@ function OnboardingPage() {
                     placeholder="A3K9X2"
                     aria-label="Join code"
                     maxLength={10}
-                    className="h-10 flex-1 rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold tracking-widest text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
+                    className="h-10 flex-1 rounded-lg border border-slate-300 bg-white px-3 font-mono text-sm font-bold tracking-widest text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-input dark:bg-background dark:text-foreground"
                   />
                   <button
                     type="submit"
@@ -230,7 +230,7 @@ function OnboardingPage() {
         ) : (
           <form
             onSubmit={handleCreate}
-            className="mt-8 grid gap-5 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+            className="mt-8 grid gap-5 rounded-xl border border-slate-200 bg-white p-6 dark:border-border dark:bg-card"
           >
             <div className="flex items-center gap-3">
               <Building2 className="size-6 text-indigo-600 dark:text-indigo-400" />
@@ -244,7 +244,7 @@ function OnboardingPage() {
                 onChange={(e) => setWsName(e.target.value)}
                 placeholder="Acme Inc."
                 maxLength={150}
-                className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
+                className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-input dark:bg-background dark:text-foreground"
                 required
               />
               <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
@@ -257,7 +257,7 @@ function OnboardingPage() {
               <TimezoneSelect
                 value={timezone}
                 onChange={setTimezone}
-                className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
+                className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-input dark:bg-background dark:text-foreground"
               />
             </label>
 

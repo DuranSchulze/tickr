@@ -1,11 +1,16 @@
 import { Link } from '@tanstack/react-router'
 import { AlertTriangle, BarChart3 } from 'lucide-react'
-import { formatCurrency } from '#/lib/time-tracker/billing'
+import { formatDecimalRate, formatMoney } from '#/lib/time-tracker/export-utils'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
+import {
+  downloadCsv,
+  ExportMenu,
+} from '#/components/time-tracker/shared/ExportMenu'
 import { Button } from '#/components/ui/button'
+import { exportAnalyticsCsvFn } from '#/lib/server/tracker'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
 import type { AnalyticsFilters } from './AnalyticsFilterBar'
@@ -14,7 +19,8 @@ import { AnalyticsHeatmap } from './AnalyticsHeatmap'
 import { AnalyticsSummaryCards } from './AnalyticsSummaryCards'
 import type { AnalyticsQuery, AnalyticsScopeSearch } from './analytics.utils'
 import { formatRange } from './analytics.utils'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useReducer, useState } from 'react'
+import type { SetStateAction } from 'react'
 
 type AnalyticsChartsComponent = (props: {
   analytics: AnalyticsPayload
@@ -44,17 +50,32 @@ const scopeLabels: Record<AnalyticsScopeSearch, string> = {
   department: 'Department',
 }
 
-export function AnalyticsScreen({
-  analytics,
-  state,
-  currentFilters,
-  onChangeQuery,
-}: {
+type AnalyticsScreenProps = {
   analytics: AnalyticsPayload
   state: TrackerState
   currentFilters: AnalyticsFilters
   onChangeQuery: (updates: Partial<AnalyticsQuery & AnalyticsFilters>) => void
-}) {
+}
+
+export function AnalyticsScreen(props: AnalyticsScreenProps) {
+  const { currentFilters } = props
+  const draftKey = [
+    currentFilters.projectId,
+    currentFilters.clientId,
+    currentFilters.tagIds,
+    currentFilters.memberIds,
+    currentFilters.billable,
+  ].join('|')
+
+  return <AnalyticsScreenContent key={draftKey} {...props} />
+}
+
+function AnalyticsScreenContent({
+  analytics,
+  state,
+  currentFilters,
+  onChangeQuery,
+}: AnalyticsScreenProps) {
   const copy = copyByScope[analytics.scope]
   const currentQuery = {
     startDate: analytics.startDate,
@@ -66,20 +87,14 @@ export function AnalyticsScreen({
   const pageSize = currentFilters.pageSize ?? 50
 
   // ── Draft filters: filter bar changes are staged until "Search" is clicked ──
-  const [draftFilters, setDraftFilters] =
-    useState<AnalyticsFilters>(currentFilters)
-
-  // Keep draft in sync when the URL-owned filters change (e.g. from pagination
-  // or external navigation), but only for the filter fields, not page/pageSize.
-  useEffect(() => {
-    setDraftFilters(currentFilters)
-  }, [
-    currentFilters.projectId,
-    currentFilters.clientId,
-    currentFilters.tagIds,
-    currentFilters.memberIds,
-    currentFilters.billable,
-  ])
+  const [draftFilters, setDraftFilters] = useReducer(
+    (
+      current: AnalyticsFilters,
+      action: SetStateAction<AnalyticsFilters>,
+    ): AnalyticsFilters =>
+      typeof action === 'function' ? action(current) : action,
+    currentFilters,
+  )
 
   // When exactly one member is selected, offer a per-member PDF report scoped
   // to the current analytics date range.
@@ -126,6 +141,34 @@ export function AnalyticsScreen({
     setDraftFilters(cleared)
     onChangeQuery(cleared)
   }, [onChangeQuery])
+
+  const handleAnalyticsCsvExport = useCallback(async () => {
+    const csv = await exportAnalyticsCsvFn({
+      data: {
+        startDate: analytics.startDate,
+        endDate: analytics.endDate,
+        scope: analytics.selectedScope,
+        projectId: currentFilters.projectId,
+        clientId: currentFilters.clientId,
+        tagIds: currentFilters.tagIds,
+        memberIds: currentFilters.memberIds,
+        billable: currentFilters.billable,
+      },
+    })
+    downloadCsv(
+      csv,
+      `analytics-${analytics.selectedScope}-${analytics.startDate}-${analytics.endDate}.csv`,
+    )
+  }, [
+    analytics.endDate,
+    analytics.selectedScope,
+    analytics.startDate,
+    currentFilters.billable,
+    currentFilters.clientId,
+    currentFilters.memberIds,
+    currentFilters.projectId,
+    currentFilters.tagIds,
+  ])
 
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
@@ -209,6 +252,9 @@ export function AnalyticsScreen({
                   defaultEndDate={analytics.endDate}
                 />
               </div>
+              <div className="min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
+                <ExportMenu onExportCsv={handleAnalyticsCsvExport} />
+              </div>
             </div>
           </div>
         </div>
@@ -259,87 +305,107 @@ export function AnalyticsScreen({
         onPageSizeChange={(nextPageSize) =>
           onChangeQuery({ pageSize: nextPageSize, page: undefined })
         }
+        timezone={analytics.timezone}
       />
 
-      {/* ── Print-only table ────────────────────────────────────────── */}
-      <div className="hidden print:block">
-        <div className="mb-4 text-center">
-          <h2 className="m-0 text-lg font-bold">
-            {analytics.scopeLabel}: Time Entries
-          </h2>
-          <p className="m-0 mt-1 text-xs text-muted-foreground">
-            {formatRange(analytics.startDate, analytics.endDate)} ·{' '}
-            {analytics.entriesTotal} entr
-            {analytics.entriesTotal === 1 ? 'y' : 'ies'}
-          </p>
-        </div>
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="px-2 py-1.5 text-left font-bold">Date</th>
-              <th className="px-2 py-1.5 text-left font-bold">Start – End</th>
-              <th className="px-2 py-1.5 text-left font-bold">Member</th>
-              <th className="px-2 py-1.5 text-left font-bold">Project</th>
-              <th className="px-2 py-1.5 text-left font-bold">Client</th>
-              <th className="px-2 py-1.5 text-left font-bold">Tags</th>
-              <th className="px-2 py-1.5 text-left font-bold">Description</th>
-              <th className="px-2 py-1.5 text-right font-bold">Hours</th>
-              <th className="px-2 py-1.5 text-right font-bold">Rate/hr</th>
-              <th className="px-2 py-1.5 text-center font-bold">Billable</th>
-            </tr>
-          </thead>
-          <tbody>
-            {analytics.entries.map((entry) => (
-              <tr key={entry.id} className="border-b border-border/50">
-                <td className="px-2 py-1.5 whitespace-nowrap">{entry.date}</td>
-                <td className="px-2 py-1.5 whitespace-nowrap">
-                  {formatEntryTimeRange(entry.startedAt, entry.endedAt)}
-                </td>
-                <td className="px-2 py-1.5 whitespace-nowrap">
-                  {entry.memberName}
-                </td>
-                <td className="px-2 py-1.5">{entry.projectName ?? '—'}</td>
-                <td className="px-2 py-1.5">{entry.clientName ?? '—'}</td>
-                <td className="px-2 py-1.5">
-                  {entry.tagNames.join(', ') || '—'}
-                </td>
-                <td className="px-2 py-1.5">
-                  <div
-                    className="max-w-[300px] truncate"
-                    title={entry.description || undefined}
-                  >
-                    {entry.description || '—'}
-                  </div>
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
-                  {formatDuration(entry.durationSeconds)}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
-                  {entry.billable && entry.effectiveRate != null
-                    ? formatCurrency(entry.effectiveRate, analytics.currency)
-                    : '—'}
-                </td>
-                <td className="px-2 py-1.5 text-center">
-                  {entry.billable ? 'Yes' : 'No'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {analytics.entries.length === 0 && (
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            No entries match your current filters
-          </p>
-        )}
-      </div>
+      <PrintEntriesTable analytics={analytics} />
 
       <style>{`
         @media print {
           .no-print { display: none !important; }
           body { background: white !important; }
-          @page { margin: 1.5cm; }
+          @page { size: landscape; margin: 1cm; }
+          table { table-layout: fixed; }
+          th, td { overflow-wrap: anywhere; vertical-align: top; }
         }
       `}</style>
+    </div>
+  )
+}
+
+function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
+  return (
+    <div className="hidden print:block">
+      <div className="mb-4 text-center">
+        <h2 className="m-0 text-lg font-bold">
+          {analytics.scopeLabel}: Time Entries
+        </h2>
+        <p className="m-0 mt-1 text-xs text-muted-foreground">
+          {formatRange(analytics.startDate, analytics.endDate)} ·{' '}
+          {analytics.entriesTotal} entr
+          {analytics.entriesTotal === 1 ? 'y' : 'ies'}
+        </p>
+      </div>
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr className="border-b border-border">
+            <th className="px-2 py-1.5 text-left font-bold">Date</th>
+            <th className="px-2 py-1.5 text-left font-bold">Start</th>
+            <th className="px-2 py-1.5 text-left font-bold">End</th>
+            <th className="px-2 py-1.5 text-left font-bold">Member</th>
+            <th className="px-2 py-1.5 text-left font-bold">Project</th>
+            <th className="px-2 py-1.5 text-left font-bold">Client</th>
+            <th className="px-2 py-1.5 text-left font-bold">Tags</th>
+            <th className="px-2 py-1.5 text-left font-bold">Description</th>
+            <th className="px-2 py-1.5 text-right font-bold">Duration</th>
+            <th className="px-2 py-1.5 text-center font-bold">Billable</th>
+            <th className="px-2 py-1.5 text-right font-bold">Rate/hr</th>
+            <th className="px-2 py-1.5 text-right font-bold">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {analytics.entries.map((entry) => (
+            <tr key={entry.id} className="border-b border-border/50">
+              <td className="px-2 py-1.5 whitespace-nowrap">{entry.date}</td>
+              <td className="px-2 py-1.5 whitespace-nowrap">
+                {formatClockTime(entry.startedAt, analytics.timezone)}
+              </td>
+              <td className="px-2 py-1.5 whitespace-nowrap">
+                {entry.endedAt
+                  ? formatClockTime(entry.endedAt, analytics.timezone)
+                  : 'Now'}
+              </td>
+              <td className="px-2 py-1.5 whitespace-nowrap">
+                {entry.memberName}
+              </td>
+              <td className="px-2 py-1.5">{entry.projectName ?? '—'}</td>
+              <td className="px-2 py-1.5">{entry.clientName ?? '—'}</td>
+              <td className="px-2 py-1.5">
+                {entry.tagNames.join(', ') || '—'}
+              </td>
+              <td className="px-2 py-1.5">
+                <div
+                  className="max-w-[300px] truncate"
+                  title={entry.description || undefined}
+                >
+                  {entry.description || '—'}
+                </div>
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                {formatDuration(entry.durationSeconds)}
+              </td>
+              <td className="px-2 py-1.5 text-center">
+                {entry.billable ? 'Yes' : 'No'}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                {entry.billable && entry.effectiveRate != null
+                  ? formatDecimalRate(entry.effectiveRate)
+                  : ''}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
+                {entry.billableAmount != null
+                  ? formatMoney(entry.billableAmount, analytics.currency)
+                  : ''}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {analytics.entries.length === 0 && (
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          No entries match your current filters
+        </p>
+      )}
     </div>
   )
 }
@@ -350,19 +416,12 @@ function formatDuration(seconds: number): string {
   return `${h}:${String(m).padStart(2, '0')}`
 }
 
-function formatEntryTimeRange(
-  startedAt: string,
-  endedAt: string | null,
-): string {
-  const formatClockTime = (value: string) =>
-    new Date(value).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-
-  return `${formatClockTime(startedAt)} – ${
-    endedAt ? formatClockTime(endedAt) : 'Now'
-  }`
+function formatClockTime(value: string, timezone: string): string {
+  return new Date(value).toLocaleTimeString([], {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function ClientAnalyticsCharts({

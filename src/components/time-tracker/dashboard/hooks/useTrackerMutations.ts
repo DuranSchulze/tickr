@@ -22,6 +22,7 @@ import {
   updateEntryFn,
   deleteTaskFn,
 } from '#/lib/server/tracker'
+import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 
 type StartTimerInput = {
   description: string
@@ -102,11 +103,18 @@ export function useTrackerMutations() {
         () => setStartTimerPending(false),
       )
     },
-    stopTimer: (id: string, options?: MutationOptions<TimeEntry | null>) => {
+    stopTimer: async (
+      id: string,
+      options?: MutationOptions<TimeEntry | null>,
+    ) => {
       setStopTimerPending(true)
-      return run(() => stopTimerFn({ data: { id } }), options).finally(() =>
-        setStopTimerPending(false),
-      )
+      try {
+        const confirmed = await confirmTimeEntryOverlap({ entryId: id })
+        if (!confirmed) return undefined
+        return await run(() => stopTimerFn({ data: { id } }), options)
+      } finally {
+        setStopTimerPending(false)
+      }
     },
     updateActiveTimer: (
       input: UpdateActiveTimerInput,
@@ -116,11 +124,16 @@ export function useTrackerMutations() {
         successMessage: 'Entry updated',
         ...options,
       }),
-    addManualEntry: (
+    addManualEntry: async (
       payload: EntryPayload,
       options?: MutationOptions<TimeEntry>,
-    ) =>
-      run(
+    ) => {
+      const confirmed = await confirmTimeEntryOverlap({
+        startedAt: payload.startedAt,
+        endedAt: payload.endedAt,
+      })
+      if (!confirmed) return undefined
+      return run(
         async () => {
           const created = await createManualEntryFn({ data: payload })
           upsertTrackerStateEntry(queryClient, created)
@@ -130,16 +143,24 @@ export function useTrackerMutations() {
           successMessage: 'Entry added',
           ...options,
         },
-      ),
-    updateEntry: (
+      )
+    },
+    updateEntry: async (
       id: string,
       payload: EntryPayload,
       options?: MutationOptions<unknown>,
-    ) =>
-      run(async () => updateEntryFn({ data: { id, ...payload } }), {
+    ) => {
+      const confirmed = await confirmTimeEntryOverlap({
+        excludeEntryId: id,
+        startedAt: payload.startedAt,
+        endedAt: payload.endedAt,
+      })
+      if (!confirmed) return undefined
+      return run(async () => updateEntryFn({ data: { id, ...payload } }), {
         successMessage: 'Entry updated',
         ...options,
-      }),
+      })
+    },
     deleteEntry: (id: string, options?: MutationOptions<unknown>) => {
       setDeletingEntryId(id)
       return run(() => deleteEntryFn({ data: { id } }), {

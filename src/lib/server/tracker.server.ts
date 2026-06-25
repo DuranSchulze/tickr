@@ -17,6 +17,10 @@ export {
   updateWorkspaceMemberEntry,
   deleteEntry,
 } from './tracker/manual-entries.server'
+export {
+  checkTimeEntryOverlap,
+  type TimeEntryOverlapConflict,
+} from './tracker/overlap.server'
 
 // Catalogs
 export {

@@ -101,7 +101,7 @@ function InvitePage() {
   const heading = getHeading(preview.status)
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-slate-950 dark:text-slate-50">
+    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-background dark:text-foreground">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-3 no-underline">
           <img
@@ -114,7 +114,7 @@ function InvitePage() {
         <ThemeToggle />
       </div>
 
-      <section className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <section className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-border dark:bg-card">
         <Mail className="size-8 text-indigo-600 dark:text-indigo-400" />
         <h1 className="m-0 mt-4 text-2xl font-black tracking-tight">
           {heading}
@@ -257,7 +257,7 @@ function StatusNotice({
   const toneClass =
     tone === 'warn'
       ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200'
-      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-border dark:bg-muted dark:text-muted-foreground'
   return (
     <div
       className={`mt-5 flex items-start gap-3 rounded-lg border p-3 text-sm ${toneClass}`}

@@ -4,6 +4,7 @@ import {
   buildDateKeys,
   calculateDuration,
   getAnalyticsDateRange,
+  getWorkspaceDateRange,
   parseDateOnly,
   toDateKey,
   toIso,
@@ -101,5 +102,25 @@ describe('getAnalyticsDateRange', () => {
       endDate: '2026-04-25',
     })
     expect(toDateKey(addUtcDays(r.start, 365))).toBe('2026-04-25')
+  })
+})
+
+describe('getWorkspaceDateRange', () => {
+  it('uses workspace-local midnight for range boundaries', () => {
+    const range = getWorkspaceDateRange(
+      { startDate: '2026-06-19', endDate: '2026-06-25' },
+      'Asia/Manila',
+    )
+    expect(range.start.toISOString()).toBe('2026-06-18T16:00:00.000Z')
+    expect(range.endExclusive.toISOString()).toBe('2026-06-25T16:00:00.000Z')
+  })
+
+  it('respects daylight-saving offsets at each boundary', () => {
+    const range = getWorkspaceDateRange(
+      { startDate: '2026-03-07', endDate: '2026-03-09' },
+      'America/New_York',
+    )
+    expect(range.start.toISOString()).toBe('2026-03-07T05:00:00.000Z')
+    expect(range.endExclusive.toISOString()).toBe('2026-03-10T04:00:00.000Z')
   })
 })

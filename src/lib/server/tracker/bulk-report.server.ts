@@ -11,18 +11,27 @@ import {
   tags,
   timeEntryTags,
 } from '#/db/schema'
-import { and, asc, eq, inArray, isNotNull, gte, lt } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import { getAnalyticsDateRange } from './shared/dates'
+import {
+  formatDateInTimeZone,
+  getWorkspaceDateRange,
+} from './shared/dates'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import {
+  clipWorkInterval,
+  summarizeWorkIntervals,
+} from '#/lib/time-tracker/work-intervals'
 
 export type BulkReportScopeType = 'all' | 'client' | 'department' | 'tag'
 
 export type BulkReportEntry = {
   id: string
   date: string // YYYY-MM-DD
+  startedAt: string
+  endedAt: string
   projectName: string | null
   clientName: string | null
   tagNames: string[]
@@ -40,6 +49,8 @@ export type BulkReportGroup = {
   entries: BulkReportEntry[]
   subtotal: {
     totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
     billableSeconds: number
     billableAmount: number
     entryCount: number
@@ -52,9 +63,12 @@ export type BulkReport = {
   startDate: string
   endDate: string
   currency: string
+  timezone: string
   groups: BulkReportGroup[]
   summary: {
     totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
     billableSeconds: number
     nonBillableSeconds: number
     billableAmount: number
@@ -79,13 +93,14 @@ export async function getBulkReport(data: {
 }): Promise<BulkReport> {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const range = getAnalyticsDateRange(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
 
   const entryConditions: SQL[] = [
     eq(timeEntries.workspaceId, access.workspace.id),
     isNotNull(timeEntries.endedAt),
-    gte(timeEntries.startedAt, range.start),
     lt(timeEntries.startedAt, range.endExclusive),
+    gt(timeEntries.endedAt, range.start),
   ]
 
   // Role-based member restriction.
@@ -161,6 +176,7 @@ export async function getBulkReport(data: {
       id: timeEntries.id,
       description: timeEntries.description,
       startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
       durationSeconds: timeEntries.durationSeconds,
       billable: timeEntries.billable,
       projectName: projects.name,
@@ -202,10 +218,6 @@ export async function getBulkReport(data: {
     tagsByEntry.set(row.timeEntryId, list)
   }
 
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const fmtDate = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-
   // Group by member.
   const groupMap = new Map<string, BulkReportGroup>()
   let totalSeconds = 0
@@ -223,6 +235,8 @@ export async function getBulkReport(data: {
         entries: [],
         subtotal: {
           totalSeconds: 0,
+          actualSeconds: 0,
+          overlapSeconds: 0,
           billableSeconds: 0,
           billableAmount: 0,
           entryCount: 0,
@@ -235,28 +249,40 @@ export async function getBulkReport(data: {
       e.memberRate ? Number(e.memberRate) : null,
       defaultRate,
     )
-    const hours = e.durationSeconds / 3600
+    const clipped = clipWorkInterval(
+      {
+        memberId: e.memberId,
+        startedAt: e.startedAt,
+        endedAt: e.endedAt,
+      },
+      range.start,
+      range.endExclusive,
+    )
+    if (!clipped) continue
+    const hours = clipped.seconds / 3600
     const amount = e.billable ? hours * effectiveRate : null
 
     group.entries.push({
       id: e.id,
-      date: fmtDate(e.startedAt),
+      date: formatDateInTimeZone(clipped.startedAt, timezone),
+      startedAt: clipped.startedAt.toISOString(),
+      endedAt: clipped.endedAt.toISOString(),
       projectName: e.projectName ?? null,
       clientName: e.clientName ?? null,
       tagNames: tagsByEntry.get(e.id) ?? [],
       description: e.description,
-      durationSeconds: e.durationSeconds,
+      durationSeconds: clipped.seconds,
       billable: e.billable,
       effectiveRate,
       billableAmount: amount,
     })
 
-    group.subtotal.totalSeconds += e.durationSeconds
+    group.subtotal.totalSeconds += clipped.seconds
     group.subtotal.entryCount++
-    totalSeconds += e.durationSeconds
+    totalSeconds += clipped.seconds
     if (e.billable) {
-      group.subtotal.billableSeconds += e.durationSeconds
-      billableSeconds += e.durationSeconds
+      group.subtotal.billableSeconds += clipped.seconds
+      billableSeconds += clipped.seconds
       if (amount) {
         group.subtotal.billableAmount += amount
         billableAmount += amount
@@ -266,6 +292,30 @@ export async function getBulkReport(data: {
 
   const groups = Array.from(groupMap.values()).sort((a, b) =>
     a.label.localeCompare(b.label),
+  )
+  for (const group of groups) {
+    const groupSummary = summarizeWorkIntervals(
+      group.entries.map((entry) => ({
+        memberId: group.key,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+      })),
+      range.start,
+      range.endExclusive,
+    )
+    group.subtotal.actualSeconds = groupSummary.actualSeconds
+    group.subtotal.overlapSeconds = groupSummary.overlapSeconds
+  }
+  const workSummary = summarizeWorkIntervals(
+    groups.flatMap((group) =>
+      group.entries.map((entry) => ({
+        memberId: group.key,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+      })),
+    ),
+    range.start,
+    range.endExclusive,
   )
 
   void createAuditLog({
@@ -284,9 +334,12 @@ export async function getBulkReport(data: {
     startDate: range.startDate,
     endDate: range.endDate,
     currency,
+    timezone,
     groups,
     summary: {
       totalSeconds,
+      actualSeconds: workSummary.actualSeconds,
+      overlapSeconds: workSummary.overlapSeconds,
       billableSeconds,
       nonBillableSeconds: totalSeconds - billableSeconds,
       billableAmount,

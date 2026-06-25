@@ -118,7 +118,7 @@ export function MemberBreakdownTable({
                 </th>
                 <th className="px-4 py-2.5 text-right">
                   <SortButton
-                    label="Total Hrs"
+                    label="Tracked Hrs"
                     sortKey="totalSeconds"
                     {...sortProps}
                   />

@@ -13,6 +13,7 @@ import {
   removeQueuedItemsForEntry,
 } from '#/lib/time-tracker/offline-queue'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
+import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
 import {
   invalidateTrackerState,
@@ -822,7 +823,7 @@ export function useTimerCore({
     })
   }
 
-  function stopTimer() {
+  async function stopTimer() {
     if (!activeEntry) return
 
     // Cancel any pending debounced autosave — the final field values are sent
@@ -873,6 +874,13 @@ export function useTimerCore({
       }
       clearTimerInputs()
       return
+    }
+
+    if (isOnline) {
+      const confirmed = await confirmTimeEntryOverlap({
+        entryId: entryToStop.id,
+      })
+      if (!confirmed) return
     }
 
     performOptimisticStop(entryToStop, undefined, {

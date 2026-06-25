@@ -10,13 +10,23 @@ import {
   users,
   workspaces,
 } from '#/db/schema'
-import { and, eq, gte, lt, inArray, isNotNull } from 'drizzle-orm'
+import { and, eq, gt, lt, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import {
+  clipWorkInterval,
+  summarizeWorkIntervals,
+} from '#/lib/time-tracker/work-intervals'
+import {
+  formatDateInTimeZone,
+  getWorkspaceDateRange,
+} from './shared/dates'
 
 export type MemberMonthlyReportEntry = {
   id: string
   date: string
+  startedAt: string
+  endedAt: string
   projectName: string | null
   clientName: string | null
   tagNames: string[]
@@ -34,9 +44,12 @@ export type MemberMonthlyReport = {
   startDate: string // YYYY-MM-DD
   endDate: string // YYYY-MM-DD
   currency: string
+  timezone: string
   entries: MemberMonthlyReportEntry[]
   summary: {
     totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
     billableSeconds: number
     nonBillableSeconds: number
     entryCount: number
@@ -88,14 +101,8 @@ export async function getMemberMonthlyReport(data: {
     }
   }
 
-  // Build inclusive date boundaries from the selected range.
-  // startDate is midnight at the start of the first day;
-  // endDate is midnight at the start of the day AFTER the last day so the
-  // existing lt(...) condition keeps endDate entries inclusive.
-  const startDate = new Date(data.startDate + 'T00:00:00')
-  const endDate = new Date(
-    new Date(data.endDate + 'T00:00:00').getTime() + 86_400_000,
-  )
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
 
   // Get workspace defaults
   const [workspaceRow] = await db
@@ -138,6 +145,7 @@ export async function getMemberMonthlyReport(data: {
       id: timeEntries.id,
       description: timeEntries.description,
       startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
       durationSeconds: timeEntries.durationSeconds,
       billable: timeEntries.billable,
       projectName: projects.name,
@@ -151,8 +159,8 @@ export async function getMemberMonthlyReport(data: {
         eq(timeEntries.workspaceId, access.workspace.id),
         eq(timeEntries.workspaceMemberId, data.memberId),
         isNotNull(timeEntries.endedAt),
-        gte(timeEntries.startedAt, startDate),
-        lt(timeEntries.startedAt, endDate),
+        lt(timeEntries.startedAt, range.endExclusive),
+        gt(timeEntries.endedAt, range.start),
       ),
     )
     .orderBy(timeEntries.startedAt)
@@ -178,10 +186,6 @@ export async function getMemberMonthlyReport(data: {
     tagsByEntry.set(row.timeEntryId, list)
   }
 
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const fmtDate = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-
   const effectiveRate = computeEffectiveRate(
     memberRow.billableRate ? Number(memberRow.billableRate) : null,
     defaultRate,
@@ -191,29 +195,52 @@ export async function getMemberMonthlyReport(data: {
   let billableSeconds = 0
   let totalBillableAmount = 0
 
-  const entries: MemberMonthlyReportEntry[] = rawEntries.map((e) => {
-    const hours = e.durationSeconds / 3600
+  const entries: MemberMonthlyReportEntry[] = rawEntries.flatMap((e) => {
+    const clipped = clipWorkInterval(
+      {
+        memberId: data.memberId,
+        startedAt: e.startedAt,
+        endedAt: e.endedAt,
+      },
+      range.start,
+      range.endExclusive,
+    )
+    if (!clipped) return []
+    const hours = clipped.seconds / 3600
     const billableAmount = e.billable ? hours * effectiveRate : null
 
-    totalSeconds += e.durationSeconds
+    totalSeconds += clipped.seconds
     if (e.billable) {
-      billableSeconds += e.durationSeconds
+      billableSeconds += clipped.seconds
       if (billableAmount) totalBillableAmount += billableAmount
     }
 
-    return {
-      id: e.id,
-      date: fmtDate(e.startedAt),
-      projectName: e.projectName ?? null,
-      clientName: e.clientName ?? null,
-      tagNames: tagsByEntry.get(e.id) ?? [],
-      description: e.description,
-      durationSeconds: e.durationSeconds,
-      billable: e.billable,
-      effectiveRate,
-      billableAmount,
-    }
+    return [
+      {
+        id: e.id,
+        date: formatDateInTimeZone(clipped.startedAt, timezone),
+        startedAt: clipped.startedAt.toISOString(),
+        endedAt: clipped.endedAt.toISOString(),
+        projectName: e.projectName ?? null,
+        clientName: e.clientName ?? null,
+        tagNames: tagsByEntry.get(e.id) ?? [],
+        description: e.description,
+        durationSeconds: clipped.seconds,
+        billable: e.billable,
+        effectiveRate,
+        billableAmount,
+      },
+    ]
   })
+  const workSummary = summarizeWorkIntervals(
+    entries.map((entry) => ({
+      memberId: data.memberId,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+    })),
+    range.start,
+    range.endExclusive,
+  )
 
   return {
     memberId: data.memberId,
@@ -222,9 +249,12 @@ export async function getMemberMonthlyReport(data: {
     startDate: data.startDate,
     endDate: data.endDate,
     currency,
+    timezone,
     entries,
     summary: {
       totalSeconds,
+      actualSeconds: workSummary.actualSeconds,
+      overlapSeconds: workSummary.overlapSeconds,
       billableSeconds,
       nonBillableSeconds: totalSeconds - billableSeconds,
       entryCount: entries.length,

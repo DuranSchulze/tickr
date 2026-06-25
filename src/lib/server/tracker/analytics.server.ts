@@ -11,10 +11,18 @@ import {
   users,
 } from '#/db/schema'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
-import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm'
+import {
+  clipWorkInterval,
+  summarizeWorkIntervals,
+} from '#/lib/time-tracker/work-intervals'
+import { and, desc, eq, gt, inArray, isNotNull, lt, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { buildDateKeys, getAnalyticsDateRange, toDateKey } from './shared/dates'
+import {
+  buildDateKeys,
+  formatDateInTimeZone,
+  getWorkspaceDateRange,
+} from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
 
 export type AnalyticsScope = 'workspace' | 'department' | 'personal'
@@ -51,6 +59,8 @@ export type AnalyticsPayload = {
   endDate: string
   summary: {
     totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
     billableSeconds: number
     nonBillableSeconds: number
     entryCount: number
@@ -84,13 +94,15 @@ export type AnalyticsPayload = {
   entriesTotal: number
   permissionLevel: string
   currency: string
+  timezone: string
 }
 
 export async function getAnalytics(
   data: z.infer<typeof analyticsRangeSchema>,
 ): Promise<AnalyticsPayload> {
   const access = await requireWorkspaceAccess()
-  const range = getAnalyticsDateRange(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
   const departmentId = access.member.departmentId
   const defaultScope: AnalyticsSelectedScope =
@@ -119,8 +131,8 @@ export async function getAnalytics(
   const entryConditions: SQL[] = [
     eq(timeEntries.workspaceId, access.workspace.id),
     isNotNull(timeEntries.endedAt),
-    gte(timeEntries.startedAt, range.start),
     lt(timeEntries.startedAt, range.endExclusive),
+    gt(timeEntries.endedAt, range.start),
   ]
 
   const memberConditions: SQL[] = [
@@ -211,10 +223,14 @@ export async function getAnalytics(
   const page = Math.max(1, data.page ?? 1)
   const pageSize = Math.min(100, Math.max(10, data.pageSize ?? 50))
   const whereClause = and(...entryConditions)
+  const rangeStartIso = range.start.toISOString()
+  const rangeEndExclusiveIso = range.endExclusive.toISOString()
+  const clippedSecondsSql = sql<number>`GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (LEAST(${timeEntries.endedAt}, ${rangeEndExclusiveIso}::timestamptz) - GREATEST(${timeEntries.startedAt}, ${rangeStartIso}::timestamptz)))))`
+  const clippedDateSql = sql<string>`TO_CHAR(GREATEST(${timeEntries.startedAt}, ${rangeStartIso}::timestamptz) AT TIME ZONE ${timezone}, 'YYYY-MM-DD')`
 
   // ── Run all queries in parallel ───────────────────────────────────────────────
   const [
-    summaryResult,
+    summaryRows,
     dailySqlRows,
     projectSqlRows,
     tagSqlRows,
@@ -224,11 +240,13 @@ export async function getAnalytics(
     countResult,
     memberCountResult,
   ] = await Promise.all([
-    // 1. Summary totals — single aggregate row, no row scan
+    // 1. Complete intervals for tracked vs actual time.
     db
       .select({
-        totalSeconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
-        billableSeconds: sql<number>`COALESCE(SUM(CASE WHEN ${timeEntries.billable} THEN ${timeEntries.durationSeconds} ELSE 0 END), 0)::int`,
+        memberId: timeEntries.workspaceMemberId,
+        startedAt: timeEntries.startedAt,
+        endedAt: timeEntries.endedAt,
+        billable: timeEntries.billable,
       })
       .from(timeEntries)
       .where(whereClause),
@@ -236,12 +254,12 @@ export async function getAnalytics(
     // 2. Daily totals — one row per active date
     db
       .select({
-        date: sql<string>`DATE(${timeEntries.startedAt})::text`,
-        seconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
+        date: clippedDateSql,
+        seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
       })
       .from(timeEntries)
       .where(whereClause)
-      .groupBy(sql`DATE(${timeEntries.startedAt})`),
+      .groupBy(sql`1`),
 
     // 3. Project totals — one row per project
     db
@@ -249,7 +267,7 @@ export async function getAnalytics(
         projectId: sql<string>`COALESCE(${timeEntries.projectId}, 'none')`,
         name: sql<string>`COALESCE(${projects.name}, 'No project')`,
         color: sql<string>`COALESCE(${projects.color}, '#94a3b8')`,
-        seconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
+        seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
       })
       .from(timeEntries)
       .leftJoin(projects, eq(timeEntries.projectId, projects.id))
@@ -259,7 +277,7 @@ export async function getAnalytics(
         sql`COALESCE(${projects.name}, 'No project')`,
         sql`COALESCE(${projects.color}, '#94a3b8')`,
       )
-      .orderBy(sql`COALESCE(SUM(${timeEntries.durationSeconds}), 0) DESC`),
+      .orderBy(sql`COALESCE(SUM(${clippedSecondsSql}), 0) DESC`),
 
     // 4. Top tags — at most 5 rows via SQL LIMIT
     db
@@ -267,7 +285,7 @@ export async function getAnalytics(
         tagId: tags.id,
         name: tags.name,
         color: tags.color,
-        seconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
+        seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
         entryCount: sql<number>`COUNT(DISTINCT ${timeEntries.id})::int`,
       })
       .from(timeEntries)
@@ -275,7 +293,7 @@ export async function getAnalytics(
       .innerJoin(tags, eq(timeEntryTags.tagId, tags.id))
       .where(whereClause)
       .groupBy(tags.id, tags.name, tags.color)
-      .orderBy(sql`SUM(${timeEntries.durationSeconds}) DESC`)
+      .orderBy(sql`SUM(${clippedSecondsSql}) DESC`)
       .limit(5),
 
     // 5. Department totals — skipped for personal scope
@@ -285,7 +303,7 @@ export async function getAnalytics(
             departmentId: sql<string>`COALESCE(${workspaceMembers.departmentId}, 'unassigned')`,
             name: sql<string>`COALESCE(${departments.name}, 'Unassigned')`,
             color: sql<string>`COALESCE(${departments.color}, '#94a3b8')`,
-            seconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
+            seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
             memberCount: sql<number>`COUNT(DISTINCT ${workspaceMembers.id})::int`,
           })
           .from(timeEntries)
@@ -303,7 +321,7 @@ export async function getAnalytics(
             sql`COALESCE(${departments.name}, 'Unassigned')`,
             sql`COALESCE(${departments.color}, '#94a3b8')`,
           )
-          .orderBy(sql`SUM(${timeEntries.durationSeconds}) DESC`)
+          .orderBy(sql`SUM(${clippedSecondsSql}) DESC`)
           .limit(5)
       : Promise.resolve(
           [] as {
@@ -320,7 +338,7 @@ export async function getAnalytics(
       ? db
           .select({
             description: sql<string>`CASE WHEN TRIM(${timeEntries.description}) = '' THEN 'Untitled task' ELSE TRIM(${timeEntries.description}) END`,
-            seconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
+            seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
             entryCount: sql<number>`COUNT(*)::int`,
           })
           .from(timeEntries)
@@ -328,7 +346,7 @@ export async function getAnalytics(
           .groupBy(
             sql`CASE WHEN TRIM(${timeEntries.description}) = '' THEN 'Untitled task' ELSE TRIM(${timeEntries.description}) END`,
           )
-          .orderBy(sql`SUM(${timeEntries.durationSeconds}) DESC`)
+          .orderBy(sql`SUM(${clippedSecondsSql}) DESC`)
           .limit(8)
       : Promise.resolve(
           [] as {
@@ -401,8 +419,31 @@ export async function getAnalytics(
       : []
 
   // ── Build outputs ─────────────────────────────────────────────────────────────
-  const totalSeconds = summaryResult[0]?.totalSeconds ?? 0
-  const billableSeconds = summaryResult[0]?.billableSeconds ?? 0
+  const workSummary = summarizeWorkIntervals(
+    summaryRows.map((entry) => ({
+      memberId: entry.memberId,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+    })),
+    range.start,
+    range.endExclusive,
+  )
+  const totalSeconds = workSummary.totalSeconds
+  const billableSeconds = summaryRows.reduce((sum, entry) => {
+    if (!entry.billable) return sum
+    return (
+      sum +
+      (clipWorkInterval(
+        {
+          memberId: entry.memberId,
+          startedAt: entry.startedAt,
+          endedAt: entry.endedAt,
+        },
+        range.start,
+        range.endExclusive,
+      )?.seconds ?? 0)
+    )
+  }, 0)
   const entriesTotal = countResult[0]?.c ?? 0
   const activeMembers = memberCountResult
     ? (memberCountResult[0]?.c ?? 0)
@@ -440,13 +481,25 @@ export async function getAnalytics(
       ? Number(e.memberBillableRate)
       : null
     const effectiveRate = computeEffectiveRate(memberRate, defaultRate)
+    const clipped = clipWorkInterval(
+      {
+        memberId: e.workspaceMemberId,
+        startedAt: e.startedAt,
+        endedAt: e.endedAt,
+      },
+      range.start,
+      range.endExclusive,
+    )
+    const displaySeconds = clipped?.seconds ?? 0
+    const displayStartedAt = clipped?.startedAt ?? e.startedAt
+    const displayEndedAt = clipped?.endedAt ?? e.endedAt
     const billableAmount = e.billable
-      ? (e.durationSeconds / 3600) * effectiveRate
+      ? (displaySeconds / 3600) * effectiveRate
       : null
     return {
       id: e.id,
       workspaceMemberId: e.workspaceMemberId,
-      date: toDateKey(e.startedAt),
+      date: formatDateInTimeZone(displayStartedAt, timezone),
       memberName: e.memberUserName ?? e.memberEmail ?? '',
       projectId: e.projectId ?? '',
       taskId: e.taskId ?? null,
@@ -455,9 +508,9 @@ export async function getAnalytics(
       tagIds: tagIdsByRawEntry.get(e.id) ?? [],
       tagNames: tagNamesByRawEntry.get(e.id) ?? [],
       description: e.description,
-      startedAt: e.startedAt.toISOString(),
-      endedAt: e.endedAt?.toISOString() ?? null,
-      durationSeconds: e.durationSeconds,
+      startedAt: displayStartedAt.toISOString(),
+      endedAt: displayEndedAt?.toISOString() ?? null,
+      durationSeconds: displaySeconds,
       billable: e.billable,
       notes: e.notes ?? '',
       billableAmount,
@@ -475,6 +528,8 @@ export async function getAnalytics(
     endDate: range.endDate,
     summary: {
       totalSeconds,
+      actualSeconds: workSummary.actualSeconds,
+      overlapSeconds: workSummary.overlapSeconds,
       billableSeconds,
       nonBillableSeconds: totalSeconds - billableSeconds,
       entryCount: entriesTotal,
@@ -500,5 +555,6 @@ export async function getAnalytics(
     entriesTotal,
     permissionLevel: level,
     currency,
+    timezone,
   }
 }

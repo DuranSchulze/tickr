@@ -17,6 +17,7 @@ import {
   asc,
   desc,
   eq,
+  gt,
   gte,
   ilike,
   inArray,
@@ -28,8 +29,15 @@ import {
 } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import {
+  clipWorkInterval,
+  summarizeWorkIntervals,
+} from '#/lib/time-tracker/work-intervals'
 import type { AnalyticsTimeEntryRow } from './analytics.server'
-import { getAnalyticsDateRange, toDateKey } from './shared/dates'
+import {
+  formatDateInTimeZone,
+  getWorkspaceDateRange,
+} from './shared/dates'
 
 export type DepartmentMemberBreakdown = {
   memberId: string
@@ -75,6 +83,8 @@ export type DepartmentDashboard = {
   }
   summary: {
     totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
     billableSeconds: number
     nonBillableSeconds: number
     entryCount: number
@@ -146,6 +156,12 @@ export type DepartmentMemberDetail = {
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
   currency: string
+  timezone: string
+  summary: {
+    totalSeconds: number
+    actualSeconds: number
+    overlapSeconds: number
+  }
 }
 
 function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
@@ -263,8 +279,10 @@ export async function getDepartmentDashboard(data: {
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
   const currency = access.workspace.billableCurrency ?? 'PHP'
 
-  const rangeStart = new Date(`${data.startDate}T00:00:00`)
-  const rangeEnd = new Date(`${data.endDate}T23:59:59.999`)
+  const timezone = access.workspace.timezone || 'UTC'
+  const workspaceRange = getWorkspaceDateRange(data, timezone)
+  const rangeStart = workspaceRange.start
+  const rangeEnd = workspaceRange.endExclusive
   const q = data.q?.trim() ?? ''
   const projectPageSize = 10
   const requestedProjectPage = Math.max(1, data.projectPage ?? 1)
@@ -350,6 +368,8 @@ export async function getDepartmentDashboard(data: {
       },
       summary: {
         totalSeconds: 0,
+        actualSeconds: 0,
+        overlapSeconds: 0,
         billableSeconds: 0,
         nonBillableSeconds: 0,
         entryCount: 0,
@@ -379,6 +399,7 @@ export async function getDepartmentDashboard(data: {
         durationSeconds: timeEntries.durationSeconds,
         billable: timeEntries.billable,
         startedAt: timeEntries.startedAt,
+        endedAt: timeEntries.endedAt,
         projectId: timeEntries.projectId,
       })
       .from(timeEntries)
@@ -387,8 +408,8 @@ export async function getDepartmentDashboard(data: {
           eq(timeEntries.workspaceId, workspaceId),
           inArray(timeEntries.workspaceMemberId, memberIds),
           isNotNull(timeEntries.endedAt),
-          gte(timeEntries.startedAt, rangeStart),
           lt(timeEntries.startedAt, rangeEnd),
+          gt(timeEntries.endedAt, rangeStart),
         ),
       ),
     // Fetch tags for entries in range (we'll join them in memory)
@@ -404,8 +425,8 @@ export async function getDepartmentDashboard(data: {
           eq(timeEntries.workspaceId, workspaceId),
           inArray(timeEntries.workspaceMemberId, memberIds),
           isNotNull(timeEntries.endedAt),
-          gte(timeEntries.startedAt, rangeStart),
           lt(timeEntries.startedAt, rangeEnd),
+          gt(timeEntries.endedAt, rangeStart),
         ),
       ),
   ])
@@ -466,7 +487,17 @@ export async function getDepartmentDashboard(data: {
     const member = memberMap.get(entry.workspaceMemberId)
     if (!member) continue
     const s = memberStats.get(entry.workspaceMemberId)!
-    const secs = entry.durationSeconds
+    const clipped = clipWorkInterval(
+      {
+        memberId: entry.workspaceMemberId,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+      },
+      rangeStart,
+      rangeEnd,
+    )
+    if (!clipped) continue
+    const secs = clipped.seconds
 
     s.totalSeconds += secs
     s.entryCount++
@@ -474,13 +505,12 @@ export async function getDepartmentDashboard(data: {
       s.billableSeconds += secs
       s.billableAmount += (secs / 3600) * member.effectiveRate
     }
-    const entryStart = new Date(entry.startedAt)
+    const entryStart = clipped.startedAt
     if (entryStart >= weekStart) s.thisWeekSeconds += secs
     if (entryStart >= monthStart) s.thisMonthSeconds += secs
 
     // Daily totals
-    const d = entry.startedAt
-    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const dateKey = formatDateInTimeZone(clipped.startedAt, timezone)
     const daily = dailyMap.get(dateKey) ?? {
       seconds: 0,
       billableSeconds: 0,
@@ -517,7 +547,16 @@ export async function getDepartmentDashboard(data: {
     if (!entry) continue
     tagSeconds.set(
       tr.tagId,
-      (tagSeconds.get(tr.tagId) ?? 0) + entry.durationSeconds,
+      (tagSeconds.get(tr.tagId) ?? 0) +
+        (clipWorkInterval(
+          {
+            memberId: entry.workspaceMemberId,
+            startedAt: entry.startedAt,
+            endedAt: entry.endedAt,
+          },
+          rangeStart,
+          rangeEnd,
+        )?.seconds ?? 0),
     )
   }
 
@@ -622,6 +661,15 @@ export async function getDepartmentDashboard(data: {
     .slice(0, 10)
 
   const totalSeconds = membersBreakdown.reduce((s, m) => s + m.totalSeconds, 0)
+  const workSummary = summarizeWorkIntervals(
+    entryRows.map((entry) => ({
+      memberId: entry.workspaceMemberId,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+    })),
+    rangeStart,
+    rangeEnd,
+  )
   const billableSeconds = membersBreakdown.reduce(
     (s, m) => s + m.billableSeconds,
     0,
@@ -647,6 +695,8 @@ export async function getDepartmentDashboard(data: {
     },
     summary: {
       totalSeconds,
+      actualSeconds: workSummary.actualSeconds,
+      overlapSeconds: workSummary.overlapSeconds,
       billableSeconds,
       nonBillableSeconds: totalSeconds - billableSeconds,
       entryCount,
@@ -860,7 +910,8 @@ export async function getDepartmentMemberDetail(data: {
 
   if (!member) throw new Error('Member not found.')
 
-  const range = getAnalyticsDateRange(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
   const PAGE_SIZE = 50
   const page = Math.max(1, data.page ?? 1)
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
@@ -871,11 +922,11 @@ export async function getDepartmentMemberDetail(data: {
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, member.id),
     isNotNull(timeEntries.endedAt),
-    gte(timeEntries.startedAt, range.start),
     lt(timeEntries.startedAt, range.endExclusive),
+    gt(timeEntries.endedAt, range.start),
   )
 
-  const [activity, rawRows, countResult] = await Promise.all([
+  const [activity, rawRows, countResult, summaryRows] = await Promise.all([
     getDepartmentMemberTodayActivity({ memberId: member.id }),
     db
       .select({
@@ -901,6 +952,14 @@ export async function getDepartmentMemberDetail(data: {
       .offset((page - 1) * PAGE_SIZE),
     db
       .select({ c: sql<number>`count(*)::int` })
+      .from(timeEntries)
+      .where(whereClause),
+    db
+      .select({
+        workspaceMemberId: timeEntries.workspaceMemberId,
+        startedAt: timeEntries.startedAt,
+        endedAt: timeEntries.endedAt,
+      })
       .from(timeEntries)
       .where(whereClause),
   ])
@@ -930,6 +989,16 @@ export async function getDepartmentMemberDetail(data: {
     tagIdsByEntry.set(row.timeEntryId, ids)
   }
 
+  const workSummary = summarizeWorkIntervals(
+    summaryRows.map((entry) => ({
+      memberId: entry.workspaceMemberId,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+    })),
+    range.start,
+    range.endExclusive,
+  )
+
   return {
     activity,
     startDate: range.startDate,
@@ -937,27 +1006,43 @@ export async function getDepartmentMemberDetail(data: {
     page,
     entriesTotal: countResult[0]?.c ?? 0,
     currency,
-    entries: rawRows.map((entry) => ({
-      id: entry.id,
-      workspaceMemberId: entry.workspaceMemberId,
-      date: toDateKey(entry.startedAt),
-      memberName: member.userName ?? member.email,
-      projectId: entry.projectId ?? '',
-      taskId: entry.taskId ?? null,
-      projectName: entry.projectName ?? null,
-      clientName: entry.clientName ?? null,
-      tagIds: tagIdsByEntry.get(entry.id) ?? [],
-      tagNames: tagNamesByEntry.get(entry.id) ?? [],
-      description: entry.description,
-      startedAt: entry.startedAt.toISOString(),
-      endedAt: entry.endedAt?.toISOString() ?? null,
-      durationSeconds: entry.durationSeconds,
-      billable: entry.billable,
-      notes: entry.notes ?? '',
-      billableAmount: entry.billable
-        ? (entry.durationSeconds / 3600) * effectiveRate
-        : null,
-      effectiveRate: entry.billable ? effectiveRate : null,
-    })),
+    timezone,
+    summary: workSummary,
+    entries: rawRows.flatMap((entry) => {
+      const clipped = clipWorkInterval(
+        {
+          memberId: entry.workspaceMemberId,
+          startedAt: entry.startedAt,
+          endedAt: entry.endedAt,
+        },
+        range.start,
+        range.endExclusive,
+      )
+      if (!clipped) return []
+      return [
+        {
+          id: entry.id,
+          workspaceMemberId: entry.workspaceMemberId,
+          date: formatDateInTimeZone(clipped.startedAt, timezone),
+          memberName: member.userName ?? member.email,
+          projectId: entry.projectId ?? '',
+          taskId: entry.taskId ?? null,
+          projectName: entry.projectName ?? null,
+          clientName: entry.clientName ?? null,
+          tagIds: tagIdsByEntry.get(entry.id) ?? [],
+          tagNames: tagNamesByEntry.get(entry.id) ?? [],
+          description: entry.description,
+          startedAt: clipped.startedAt.toISOString(),
+          endedAt: clipped.endedAt.toISOString(),
+          durationSeconds: clipped.seconds,
+          billable: entry.billable,
+          notes: entry.notes ?? '',
+          billableAmount: entry.billable
+            ? (clipped.seconds / 3600) * effectiveRate
+            : null,
+          effectiveRate: entry.billable ? effectiveRate : null,
+        },
+      ]
+    }),
   }
 }

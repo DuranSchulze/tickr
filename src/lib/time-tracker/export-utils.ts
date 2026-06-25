@@ -25,6 +25,22 @@ export function formatMoney(
   return `${code} ${value}`
 }
 
+/** Plain decimal rate for spreadsheet-friendly report cells (e.g. "150.00"). */
+export function formatDecimalRate(rate: number | null | undefined): string {
+  const value =
+    typeof rate === 'number' && Number.isFinite(rate) && rate >= 0 ? rate : 0
+  return value.toFixed(2)
+}
+
+/** Duration represented as decimal hours for spreadsheet calculations. */
+export function formatDecimalHours(seconds: number): string {
+  const safeSeconds =
+    typeof seconds === 'number' && Number.isFinite(seconds) && seconds >= 0
+      ? seconds
+      : 0
+  return (safeSeconds / 3600).toFixed(2)
+}
+
 /** Human-readable duration, e.g. "5h 22m" - easier to read than "5.38". */
 export function formatHm(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -42,7 +58,10 @@ export function formatHms(seconds: number): string {
 }
 
 function escapeCsv(value: string | number | null | undefined): string {
-  const str = String(value ?? '')
+  const raw = String(value ?? '')
+  // Prevent user-controlled text from becoming a spreadsheet formula when a
+  // CSV is opened in Excel or Google Sheets.
+  const str = /^[\t ]*[=+\-@]/.test(raw) ? `'${raw}` : raw
   if (/[",\n\r]/.test(str)) {
     return '"' + str.replace(/"/g, '""') + '"'
   }

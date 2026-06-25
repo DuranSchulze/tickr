@@ -72,3 +72,75 @@ export function getAnalyticsDateRange(data: {
     endDate: toDateKey(end),
   }
 }
+
+function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+      hour: '2-digit',
+    }).formatToParts(date)
+    const value = parts.find((part) => part.type === 'timeZoneName')?.value
+    if (!value || value === 'GMT') return 0
+    const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
+    if (!match) return 0
+    const sign = match[1] === '-' ? -1 : 1
+    return sign * (Number(match[2]) * 60 + Number(match[3] ?? 0)) * 60_000
+  } catch {
+    return 0
+  }
+}
+
+function zonedDateTimeToUtc(
+  dateKey: string,
+  timeZone: string,
+): Date {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const utcGuess = new Date(Date.UTC(year, month - 1, day))
+  return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, utcGuess))
+}
+
+export function getWorkspaceDateRange(
+  data: { startDate: string; endDate: string },
+  timeZone: string,
+) {
+  const normalized = getAnalyticsDateRange(data)
+  const nextDate = toDateKey(addUtcDays(parseDateOnly(normalized.endDate), 1))
+  return {
+    ...normalized,
+    start: zonedDateTimeToUtc(normalized.startDate, timeZone),
+    end: zonedDateTimeToUtc(normalized.endDate, timeZone),
+    endExclusive: zonedDateTimeToUtc(nextDate, timeZone),
+  }
+}
+
+export function formatDateTimeInTimeZone(
+  value: Date | string,
+  timeZone: string,
+): string {
+  const date = value instanceof Date ? value : new Date(value)
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .format(date)
+    .replace(',', '')
+}
+
+export function formatDateInTimeZone(
+  value: Date | string,
+  timeZone: string,
+): string {
+  const date = value instanceof Date ? value : new Date(value)
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}

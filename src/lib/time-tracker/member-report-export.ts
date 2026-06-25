@@ -12,6 +12,7 @@ function toGroupedReport(report: MemberMonthlyReport): BulkReport {
     startDate: report.startDate,
     endDate: report.endDate,
     currency: report.currency,
+    timezone: report.timezone,
     groups: [
       {
         key: report.memberId,
@@ -20,6 +21,8 @@ function toGroupedReport(report: MemberMonthlyReport): BulkReport {
         entries: report.entries,
         subtotal: {
           totalSeconds: report.summary.totalSeconds,
+          actualSeconds: report.summary.actualSeconds,
+          overlapSeconds: report.summary.overlapSeconds,
           billableSeconds: report.summary.billableSeconds,
           billableAmount: report.summary.totalBillableAmount,
           entryCount: report.summary.entryCount,
@@ -28,6 +31,8 @@ function toGroupedReport(report: MemberMonthlyReport): BulkReport {
     ],
     summary: {
       totalSeconds: report.summary.totalSeconds,
+      actualSeconds: report.summary.actualSeconds,
+      overlapSeconds: report.summary.overlapSeconds,
       billableSeconds: report.summary.billableSeconds,
       nonBillableSeconds: report.summary.nonBillableSeconds,
       billableAmount: report.summary.totalBillableAmount,
@@ -37,7 +42,7 @@ function toGroupedReport(report: MemberMonthlyReport): BulkReport {
 }
 
 /**
- * Generates and downloads a portrait PDF report for a single member using the
+ * Generates and downloads a landscape PDF report for a single member using the
  * same grouped report renderer as Bulk Export.
  */
 export async function downloadMemberReportPdf(
@@ -46,7 +51,7 @@ export async function downloadMemberReportPdf(
   await downloadGroupedTimeReportPdf(toGroupedReport(report), {
     title: 'Member Time Report',
     filenamePrefix: 'member-report',
-    orientation: 'portrait',
+    orientation: 'landscape',
   })
 }
 

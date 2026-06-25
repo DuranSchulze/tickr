@@ -1,0 +1,396 @@
+{
+  "appVersion": "1.11.0",
+  "updates": [
+    {
+      "version": "1.11.0",
+      "publishedAt": "2026-06-26",
+      "title": "Tracked vs. Actual Hours, Overlap Detection, Date-Range Clipping & Workspace-Timezone Times",
+      "body": "Time tracking now accounts for realistic schedules — Tracked vs. Actual hour breakdown, overlap warnings with a 'Save anyway' escape hatch, date-range clipping so entries stay within the selected view, and workspace-timezone-aware Start/End times in staff logs and exports.",
+      "features": [
+        {
+          "title": "Tracked vs. Actual vs. Overlap Hours",
+          "description": "Time entries now distinguish between total Tracked hours (clock-in to clock-out) and Actual hours (Tracked minus overlap). Overlap is calculated when multiple entries run concurrently on the same day, giving managers an honest view of billed vs. real work time.",
+          "image": null
+        },
+        {
+          "title": "Workspace-Timezone Start/End Times",
+          "description": "Staff logs, exports, and time-entry displays now show Start and End times in the workspace's configured timezone instead of the viewer's local time. This eliminates confusion when team members work across different time zones.",
+          "image": null
+        },
+        {
+          "title": "Updated Staff Logs and Exports",
+          "description": "Staff logs and exports have been updated to display Tracked hours, Actual hours, Overlap hours, and workspace-timezone Start/End times — giving everyone a consistent and accurate record.",
+          "image": null
+        },
+        {
+          "title": "Date-Range Clipping",
+          "description": "When viewing time entries by day, week, or month, entries that extend beyond the view's boundaries are now clipped to the visible range. This prevents overnight and multi-day entries from distorting daily totals.",
+          "image": null
+        },
+        {
+          "title": "Overlap Warnings with 'Save Anyway'",
+          "description": "Saving a time entry that overlaps with existing entries now shows a clear warning dialog. The user can review the conflict and choose to save anyway, preventing accidental double-billing while still allowing intentional overlaps.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.10.0",
+      "publishedAt": "2026-06-24",
+      "title": "Admin Time Editing, Accurate Reports & Overnight Entries",
+      "body": "This update focuses on making time records easier to inspect, edit, export, and review across desktop and mobile. Admin and member views now handle more realistic work patterns, including overnight entries, exact durations, responsive dialogs, cleaner mobile timer controls, and improved report exports.",
+      "features": [
+        {
+          "title": "Mobile Timer Form Shows the Important Fields First",
+          "description": "On mobile, the timer form now shows Client / Project / Task, Tags, Billable, Presets, and the Start button directly under the task description. The old hidden Options sheet has been removed so users can start accurate timers without hunting for fields.",
+          "image": null
+        },
+        {
+          "title": "Responsive Time Entry Editing Dialogs",
+          "description": "Editing a time entry now opens a responsive dialog instead of relying on cramped inline controls. The dialog keeps its header and action buttons visible, scrolls safely on smaller screens, and uses mobile-friendly picker panels when the keyboard is open.",
+          "image": null
+        },
+        {
+          "title": "Date Range Editing for Overnight and Multi-Day Work",
+          "description": "Time entries can now be edited with a range calendar. Selecting one date keeps the record on the same day, while selecting a start and end date supports overnight shifts and multi-day work such as a night shift ending the next morning.",
+          "image": null
+        },
+        {
+          "title": "Overnight Entries Stay Visible Across Tracker Views",
+          "description": "Day, Week, and Month tracker views now use overlap-based filtering so entries that started on a previous day but continue into the selected period still appear where users expect them.",
+          "image": null
+        },
+        {
+          "title": "Accurate Durations and Time Formatting",
+          "description": "Member analytics, exports, and tracker displays now avoid rounding time values and favor exact HH:MM:SS-style durations where needed. Time displays follow the user's selected time format more consistently.",
+          "image": null
+        },
+        {
+          "title": "Simplified All Entries View and Focused Totals",
+          "description": "The Time Tracker now opens as a single All entries view instead of switching between Day, Week, Month, and All modes. Date ranges are selected from the Entries filter, while the top summary provides a compact Today or Week total with Export my time placed beside the total.",
+          "image": null
+        },
+        {
+          "title": "Improved Individual and Bulk Exports",
+          "description": "Individual Export buttons now follow the same reporting behavior as Bulk Export, with shared export components, date-range selection using the app calendar, quick range buttons for Today, 1 Week, and 1 Month, portrait reports for individual exports, and landscape reports for bulk exports.",
+          "image": null
+        },
+        {
+          "title": "Department Analytics Is Easier to Review",
+          "description": "Department Analytics now defaults to the last 7 days and uses maximize dialogs for dense cards and containers. Filters stay outside the expanded view, helping admins inspect large datasets without making the page endlessly long.",
+          "image": null
+        },
+        {
+          "title": "Admin Review and Manual Time Entry Improvements",
+          "description": "Admin/member time entry review flows have been tightened so manual entries, edits, and deletes are easier to see and reflected in the UI like normal timer records.",
+          "image": null
+        },
+        {
+          "title": "Calendar View Upgrade",
+          "description": "The tracker calendar now supports familiar Month and Week views. Selecting a day opens the existing activity sheet for that date, and selecting a task shows the task details without exposing internal IDs.",
+          "image": null
+        },
+        {
+          "title": "Profile Position and Cohort Awareness",
+          "description": "Profile and admin-facing member data now account for employee position details, and the workspace member model has been reviewed for departments, cohorts, and group-style organization.",
+          "image": null
+        },
+        {
+          "title": "Ongoing Timer Reminder Emails",
+          "description": "The system can now remind users by email when a timer is still running late in the day, helping prevent forgotten timers from running past expected working hours.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.9.0",
+      "publishedAt": "2026-06-22",
+      "title": "Chrome Extension, Timer Reliability, Time Presets & Cleaner UI",
+      "body": "The Trackly Chrome extension has been rebuilt to be faster, more secure, and only activates when you open it. Time tracking is more reliable — tasks stay linked correctly across start, stop, and edit flows, and everything still works even when you're offline. Plus, a new Time Presets feature lets you start tracked entries in one click.",
+      "features": [
+        {
+          "title": "New Time Presets",
+          "description": "Save your frequently-used task descriptions as presets so you can start tracking with one click. Set up common project + description + tag combinations and avoid typing the same thing every day.",
+          "image": null
+        },
+        {
+          "title": "Rebuilt Chrome Extension — Lighter & More Secure",
+          "description": "The Trackly extension has been rewritten from the ground up. It no longer runs in the background on every website — it only activates when you open the side panel. Permissions have been reduced to the minimum needed, and message validation has been added to keep your data safe.",
+          "image": null
+        },
+        {
+          "title": "More Reliable Time Tracking",
+          "description": "Starting, stopping, and editing entries now correctly preserves the task you selected across every path — manual entry, inline edits, duplicate, resume, and offline mode. The UI is also cleaner with no more distracting per-row loading spinners.",
+          "image": null
+        },
+        {
+          "title": "Smarter Offline Mode",
+          "description": "If you switch between workspaces or accounts while offline, your pending entries and queued actions now stay correctly scoped — no more mixing up data between different workspaces or team members.",
+          "image": null
+        },
+        {
+          "title": "Server Validation for Tasks",
+          "description": "When saving a time entry, the system now double-checks that the selected task belongs to the right project and hasn't been archived. This prevents orphaned entries and keeps your reports accurate.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.8.0",
+      "publishedAt": "2026-06-18",
+      "title": "Performance Boost, Calendar View, Responsive Overhaul & Better Mobile Experience",
+      "body": "Major performance improvements eliminate lag and slowdowns, plus a new calendar view for task accomplishments and responsive layout improvements across the entire app — sidebar navigation collapses into a mobile drawer, tables and cards reflow on narrow viewports, dialogs use full-screen modals on small screens, and touch targets are sized for thumbs.",
+      "features": [
+        {
+          "title": "Performance Boost & Lag Fixes",
+          "description": "Significant under-the-hood optimizations eliminate the sluggishness and UI stutter users experienced. Page navigation is snappier, time entry actions respond instantly, and the dashboard stays buttery smooth even with large datasets. No more waiting for filters, date switches, or search to catch up.",
+          "image": null
+        },
+        {
+          "title": "Calmer Timer — Now HH:MM:SS by Default",
+          "description": "The timer no longer shows centiseconds by default. New users will see a clean HH:MM:SS display that ticks once per second — easier on the eyes, just as accurate. You can still switch back to the precise format in settings anytime.",
+          "image": null
+        },
+        {
+          "title": "Calendar View for Task Accomplishment",
+          "description": "A new calendar view lets you see your tracked tasks and accomplishments laid out by day, week, or month. Quickly spot which days you logged time, review past entries, and plan ahead — all from a familiar calendar interface.",
+          "image": null
+        },
+        {
+          "title": "Mobile-Friendly Sidebar Navigation",
+          "description": "The sidebar collapses into a slide-out drawer on narrow screens. Navigation links, workspace switcher, and user menu remain fully accessible without wasting precious screen width. A backdrop overlay prevents accidental taps behind the drawer.",
+          "image": null
+        },
+        {
+          "title": "Responsive Dashboard & Tables",
+          "description": "Time tracker views, member tables, and analytics dashboards now reflow gracefully on tablets and phones. Columns stack, text wraps, and horizontal scrolling is eliminated. Cards resize and grid layouts adapt to the available space.",
+          "image": null
+        },
+        {
+          "title": "Touch-Friendly Controls",
+          "description": "Buttons, dropdowns, date pickers, and form controls have enlarged touch targets on mobile. Dialogs and modals switch to full-screen on small viewports for easier interaction.",
+          "image": null
+        },
+        {
+          "title": "Consistent Spacing & Typography Scaling",
+          "description": "Padding, margins, and font sizes now scale proportionally across breakpoints. Text remains readable without zooming, and interactive elements maintain comfortable spacing on any device.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "publishedAt": "2026-06-09",
+      "title": "Consistent \"All\" View Grouping, Faster Page Loads & Snappier Dashboard",
+      "body": "The All view now groups repeated tasks just like Day/Week/Month, stopped timers no longer disappear from it, analytics and dashboard pages load from cache instead of re-querying the database, and the dashboard stays smooth while a timer runs.",
+      "features": [
+        {
+          "title": "Repeated Tasks Now Group in the All View",
+          "description": "When you track the same task more than once, the All view now collapses those entries into a single ×N task group with per-day date headers and day totals — identical to the Day, Week, and Month views. Day groups and task groups are collapsible, with an Expand all / Collapse all toggle.",
+          "image": null
+        },
+        {
+          "title": "Stopped Timers Stay Visible in the All View",
+          "description": "Stopping a running timer while on the default All view previously made the new entry flash in and then vanish until a manual refresh. The All view now reloads correctly after stop, resume, edit, delete, and duplicate, so your entry stays put.",
+          "image": null
+        },
+        {
+          "title": "Faster Page Loads with Smart Caching",
+          "description": "The Trackly dashboard, Analytics, My Performance, and Department Analytics pages now serve recently loaded data from a 60-second cache instead of hitting the database on every visit. Revisiting a page within the window is instant, while timer and entry actions still refresh the dashboard immediately.",
+          "image": null
+        },
+        {
+          "title": "Smoother Dashboard While Tracking",
+          "description": "The live total in the header used to re-render the entire header once per second while a timer ran. That per-second update is now isolated to the total itself, keeping the rest of the page idle.",
+          "image": null
+        },
+        {
+          "title": "Built-in Performance Monitoring",
+          "description": "Added lightweight, no-cost performance instrumentation: a development-only render profiler (react-scan) to spot re-render hotspots and Core Web Vitals logging (web-vitals) for real load/interaction metrics.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "publishedAt": "2026-06-03",
+      "title": "Code Quality Sweep — Duplication Eliminated, React Doctor Score 67, Bulk Export & Analytics Fixes",
+      "body": "Major codebase cleanup: removed 80% of duplicated code (12.4% → 2% duplication), fixed all React Doctor errors, eliminated 350+ warnings, and resolved several UI bugs in Bulk Export and Analytics.",
+      "features": [
+        {
+          "title": "Duplication Eliminated Across the Codebase",
+          "description": "Extracted 15 shared modules from previously duplicated logic: entry grouping, client/project pickers, catalog table columns, server-side report utilities, export dialog footers, theme state management, and Drizzle schema helpers. Reduced clone groups from 184 to 72 and duplicated lines from 6,120 to 1,863.",
+          "image": null
+        },
+        {
+          "title": "React Doctor Score 67 — 13 Errors Fixed, 350+ Warnings Resolved",
+          "description": "Fixed all error-severity issues: removed 11 useEffect state-reset anti-patterns, added timer cleanup in picker components, and fixed route property ordering. Also converted 493 Tailwind class pairs to the size-* shorthand, added 54 aria-labels for accessibility, removed 11 unnecessary autoFocus attributes, and added 8 keyboard event handlers for interactive elements.",
+          "image": null
+        },
+        {
+          "title": "Bulk Export Filter Selection Fixed",
+          "description": "The Client, Department, and Tag scope filters in the Bulk Export dialog were effectively broken — the form always used default values regardless of what the user selected. Fixed a state-liveness bug in the derived-state pattern that kept formState.open out of sync with the dialog's open state.",
+          "image": null
+        },
+        {
+          "title": "Duplicate Export Button Removed from Analytics",
+          "description": "The Analytics page previously showed both a dedicated Export button and a Bulk Export button. Since Bulk Export already provides CSV and PDF exports, the redundant Export button has been removed for a cleaner UI.",
+          "image": null
+        },
+        {
+          "title": "Duplicate React Keys Fixed in Analytics Charts",
+          "description": "Fixed duplicate child keys in the analytics charts (Pie chart Cells, Bar chart Cells) and heatmap (intensity legend, top-tasks rankings) that used non-unique values like entry names and Tailwind class strings as React keys.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.4.2",
+      "publishedAt": "2026-06-01",
+      "title": "Member Row Export Button & Activity CSV Export",
+      "body": "Per-user PDF export for time entries on the Members table and Activity page, plus a global CSV export for the workspace activity view.",
+      "features": [
+        {
+          "title": "Per-User Export Button on Members Table",
+          "description": "Each member row in the workspace members table now has a labeled Export button (instead of a hidden icon). Click to pick a month and generate a print-ready PDF report with all time entries, billable amounts, and summary cards.",
+          "image": null
+        },
+        {
+          "title": "Export Button on Activity Cards",
+          "description": "Each member card on the Team Activity page now has an Export button. Same month-picker and PDF report generation as the members table.",
+          "image": null
+        },
+        {
+          "title": "Global Activity CSV Export",
+          "description": "A new Export dropdown in the activity page header provides CSV export of all member activity data (online/offline status, active entries, project names).",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.4.1",
+      "publishedAt": "2026-05-28",
+      "title": "Timer Start-Time Editing & Production Auth Fixes",
+      "body": "Patch fixing two timer bugs and a cross-origin authentication error that prevented the timer from saving in production.",
+      "features": [
+        {
+          "title": "Timer Start Time Now Saves Correctly",
+          "description": "Editing the start time on a running timer previously appeared to do nothing — the display would snap back to the old time immediately after saving. The updated time is now reflected instantly without requiring a page refresh.",
+          "image": null
+        },
+        {
+          "title": "Start Time Edit Input No Longer Gets Stuck",
+          "description": "If an invalid or future time was entered, the time input would become unresponsive. Pressing Enter or clicking away now always closes the edit field.",
+          "image": null
+        },
+        {
+          "title": "Fixed 'Request Origin Not Trusted' Error in Production",
+          "description": "Starting, stopping, and saving timers was failing in production with a forbidden origin error. The CSRF origin allowlist now correctly includes all Vercel deployment URLs alongside any configured custom domain.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.4.0",
+      "publishedAt": "2026-05-22",
+      "title": "Google Sheet Bidirectional Sync & Feature Announcements",
+      "body": "Major improvements to the Google Sheet integration: bidirectional catalog sync, auto-archive of deleted rows, and automatic export of app-created records.",
+      "features": [
+        {
+          "title": "Bidirectional Catalog Sync",
+          "description": "Catalog sync is now three-phase: Sheet → DB imports new/changed records, rows removed from the sheet are archived in the DB, and records created in the app are automatically exported to the sheet.",
+          "image": null
+        },
+        {
+          "title": "Auto-Sync Every 2 Hours",
+          "description": "Time entries are now automatically pushed to the linked Google Sheet every two hours for Owners, Admins, and Managers — no manual sync needed.",
+          "image": null
+        },
+        {
+          "title": "Catalog & Settings Reorganization",
+          "description": "The catalogs page now shows only catalog navigation cards. Google Sheet sync controls have moved to workspace settings alongside a new Sync time entries button and last-sync timestamp.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.3.2",
+      "publishedAt": "2026-05-21",
+      "title": "Invite Flow & Role Permissions",
+      "body": "Fixed an error when inviting users with Admin role and added proper role assignment restrictions.",
+      "features": [
+        {
+          "title": "Admin Role Assignment Restricted to Owner",
+          "description": "Only the workspace Owner can now invite or promote someone to Admin. Previously, any Admin could assign the Admin role to another person.",
+          "image": null
+        },
+        {
+          "title": "Better Error Visibility on Failed Invites",
+          "description": "When an invitation fails, the error message is now shown directly in the toast instead of a generic 'something failed' message.",
+          "image": null
+        },
+        {
+          "title": "Input Validation on Invite Server Functions",
+          "description": "All invite-related server functions now validate their inputs with Zod schemas, catching malformed data before it reaches database operations.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.3.1",
+      "publishedAt": "2026-05-20",
+      "title": "Timer Reliability Fixes",
+      "body": "A focused patch addressing timer input loss, database errors on edits, and button state accuracy across the app.",
+      "features": [
+        {
+          "title": "Input No Longer Wiped After Stop",
+          "description": "Typing your next task description immediately after stopping a timer now works reliably. Previously, the form would silently clear your input when the server confirmed the stop.",
+          "image": null
+        },
+        {
+          "title": "Final Description Saved Atomically on Stop",
+          "description": "Any edits to the task description, project, or tags made while a timer was running are now saved in the same operation as the stop.",
+          "image": null
+        },
+        {
+          "title": "Database Errors Fixed on Entry Edits",
+          "description": "Editing time entries from the list, updating your profile, and managing member details no longer throw database driver errors.",
+          "image": null
+        },
+        {
+          "title": "Faster Timer State Updates",
+          "description": "Stopped entries now appear in the list immediately after the server confirms the stop. The previous 800 ms artificial delay has been removed.",
+          "image": null
+        },
+        {
+          "title": "Accurate Start Button State",
+          "description": "The Start button now reflects the actual timer operation state. It no longer gets stuck in a disabled or loading state during unrelated background actions.",
+          "image": null
+        }
+      ]
+    },
+    {
+      "version": "1.3.0",
+      "publishedAt": "2026-06-10",
+      "title": "Bulk Actions & Performance Page",
+      "body": "This release brings two major improvements — bulk archive/activate for catalog items and a dedicated My Performance dashboard.",
+      "features": [
+        {
+          "title": "Bulk Archive / Activate",
+          "description": "Select multiple rows in Clients, Projects, or Tags and update their status in one action. Look for the checkboxes on the left of each table row.",
+          "image": null
+        },
+        {
+          "title": "My Performance Dashboard",
+          "description": "A new page that shows your attendance grade, a yearly activity heatmap, grade history, and detailed charts with a period selector.",
+          "image": null
+        },
+        {
+          "title": "Compact Share Button",
+          "description": "Share your performance page with a single click. The new Share button sits right on your profile card — no more scrolling to the bottom.",
+          "image": null
+        }
+      ]
+    }
+  ]
+}
