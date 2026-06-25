@@ -2,9 +2,6 @@ import type { DepartmentDashboard } from '#/lib/server/tracker/department-dashbo
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { MemberBreakdownTable } from './MemberBreakdownTable'
-import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
-import { DepartmentDailyChart } from './DepartmentDailyChart'
-import { DepartmentTopTagsChart } from './DepartmentTopTagsChart'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
@@ -42,7 +39,6 @@ export function DepartmentDashboardScreen({
   endDate,
   onChangeRange,
   onChangeFilters,
-  onChangeProjectPage,
   onViewMember,
 }: {
   dashboard: DepartmentDashboard
@@ -50,7 +46,6 @@ export function DepartmentDashboardScreen({
   endDate: string
   onChangeRange: (startDate: string, endDate: string) => void
   onChangeFilters: (filters: { departmentId?: string; q?: string }) => void
-  onChangeProjectPage: (page: number) => void
   onViewMember: (memberId: string) => void
 }) {
   const {
@@ -60,11 +55,6 @@ export function DepartmentDashboardScreen({
     filters,
     summary,
     membersBreakdown,
-    topProjectsBreakdown,
-    projectsBreakdown,
-    projectsPagination,
-    dailyTotals,
-    topTags,
   } = dashboard
   const utilization =
     summary.totalSeconds === 0
@@ -227,29 +217,12 @@ export function DepartmentDashboardScreen({
         </div>
       </DepartmentSectionFrame>
 
-      {/* Daily chart */}
-      {dailyTotals.length > 0 && (
-        <DepartmentDailyChart dailyTotals={dailyTotals} />
-      )}
-
       {/* Member breakdown */}
       <MemberBreakdownTable
         members={membersBreakdown}
         currency={summary.currency}
         onViewMember={(member) => onViewMember(member.memberId)}
       />
-
-      {/* Project breakdown */}
-      <DepartmentProjectBreakdown
-        projects={projectsBreakdown}
-        topProjects={topProjectsBreakdown}
-        pagination={projectsPagination}
-        currency={summary.currency}
-        onPageChange={onChangeProjectPage}
-      />
-
-      {/* Top tags */}
-      <DepartmentTopTagsChart tags={topTags} />
     </div>
   )
 }

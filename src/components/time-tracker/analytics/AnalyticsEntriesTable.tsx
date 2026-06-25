@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
-import { formatCurrency } from '#/lib/time-tracker/billing'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 
 const pageSizeOptions = [25, 50, 100] as const
@@ -16,14 +15,25 @@ function getDisplaySeconds(entry: AnalyticsTimeEntryRow): number {
   return Math.max(0, (endedAt - startedAt) / 1000)
 }
 
+function formatClockTime(value: string): string {
+  return new Date(value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function formatTimeRange(entry: AnalyticsTimeEntryRow): string {
+  return `${formatClockTime(entry.startedAt)} – ${
+    entry.endedAt ? formatClockTime(entry.endedAt) : 'Now'
+  }`
+}
+
 function EntryMobileCard({
   entry,
-  currency,
   onEditEntry,
   formatTime,
 }: {
   entry: AnalyticsTimeEntryRow
-  currency: string
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
   formatTime: (seconds: number) => string
 }) {
@@ -39,16 +49,14 @@ function EntryMobileCard({
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
             {entry.memberName} · {entry.date}
           </p>
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            {formatTimeRange(entry)}
+          </p>
         </div>
         <div className="shrink-0 text-right">
           <p className="m-0 font-mono text-sm font-bold text-foreground">
             {formatTime(displaySeconds)}
           </p>
-          {entry.billableAmount != null && (
-            <p className="m-0 text-xs text-muted-foreground">
-              {formatCurrency(entry.billableAmount, currency)}
-            </p>
-          )}
         </div>
       </div>
 
@@ -104,7 +112,6 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   pageSize = 50,
   onPageChange,
   onPageSizeChange,
-  currency,
   onEditEntry,
 }: {
   entries: AnalyticsTimeEntryRow[]
@@ -113,7 +120,6 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
   pageSize?: number
   onPageChange: (page: number) => void
   onPageSizeChange?: (pageSize: number) => void
-  currency: string
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
 }) {
   const { formatTime } = useTimeFormat()
@@ -167,7 +173,6 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
               <EntryMobileCard
                 key={entry.id}
                 entry={entry}
-                currency={currency}
                 onEditEntry={onEditEntry}
                 formatTime={formatTime}
               />
@@ -176,11 +181,14 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
 
           {/* Desktop: table */}
           <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full min-w-[980px] table-fixed text-sm">
+            <table className="w-full min-w-[1040px] table-fixed text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Date
+                  </th>
+                  <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Start – End
                   </th>
                   <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Member
@@ -196,9 +204,6 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                   </th>
                   <th className="w-[130px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Duration
-                  </th>
-                  <th className="w-[110px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Amount
                   </th>
                   <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Billable
@@ -219,6 +224,9 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                     <td className="whitespace-nowrap px-4 py-2.5 text-xs text-muted-foreground">
                       {entry.date}
                     </td>
+                    <td className="whitespace-nowrap px-4 py-2.5 text-xs font-medium text-foreground">
+                      {formatTimeRange(entry)}
+                    </td>
                     <td className="px-4 py-2.5 text-xs font-medium text-foreground">
                       <div className="truncate" title={entry.memberName}>
                         {entry.memberName}
@@ -228,10 +236,9 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                       {entry.projectName ? (
                         <div
                           className="truncate text-xs font-medium text-foreground"
-                          title={[
-                            entry.projectName,
-                            entry.clientName,
-                          ].filter(Boolean).join(' · ')}
+                          title={[entry.projectName, entry.clientName]
+                            .filter(Boolean)
+                            .join(' · ')}
                         >
                           {entry.projectName}
                           {entry.clientName && (
@@ -274,13 +281,6 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono font-semibold text-foreground">
                       {formatTime(getDisplaySeconds(entry))}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono text-foreground">
-                      {entry.billableAmount != null ? (
-                        formatCurrency(entry.billableAmount, currency)
-                      ) : (
-                        <span className="text-muted-foreground">–</span>
-                      )}
                     </td>
                     <td className="px-4 py-2.5 text-center">
                       {entry.billable ? (

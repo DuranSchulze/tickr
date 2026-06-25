@@ -12,6 +12,7 @@ import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { EditEntryDrawer } from '../../dashboard/EditEntryDrawer'
 import type { DraftEntry } from '../../dashboard/utils'
 import { emptyDraft, toEntryPayload } from '../../dashboard/utils'
+import { MemberExportButton } from '../../shared/MemberExportDialog'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { AnalyticsEntriesTable } from '../AnalyticsEntriesTable'
 import { DepartmentMemberActivitySheet } from './DepartmentMemberActivitySheet'
@@ -133,12 +134,20 @@ export function DepartmentMemberDetailScreen({
           </p>
         </div>
 
-        <AnalyticsDateRange
-          range={{ startDate: detail.startDate, endDate: detail.endDate }}
-          onChangeRange={(range) =>
-            onChangeRange(range.startDate, range.endDate)
-          }
-        />
+        <div className="flex flex-col gap-2 sm:items-end">
+          <AnalyticsDateRange
+            range={{ startDate: detail.startDate, endDate: detail.endDate }}
+            onChangeRange={(range) =>
+              onChangeRange(range.startDate, range.endDate)
+            }
+          />
+          <MemberExportButton
+            memberId={detail.activity.member.id}
+            memberName={detail.activity.member.name}
+            defaultStartDate={detail.startDate}
+            defaultEndDate={detail.endDate}
+          />
+        </div>
       </div>
 
       <div className="grid min-w-0 gap-3">
@@ -174,7 +183,6 @@ export function DepartmentMemberDetailScreen({
           entriesTotal={detail.entriesTotal}
           page={detail.page}
           onPageChange={onChangePage}
-          currency={detail.currency}
           onEditEntry={canEditEntries ? openEdit : undefined}
         />
       </div>

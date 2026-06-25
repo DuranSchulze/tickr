@@ -186,12 +186,14 @@ export function AnalyticsFilterBar({
   filters,
   selectedScope,
   onChange,
+  onSearch,
   onClear,
 }: {
   state: TrackerState
   filters: AnalyticsFilters
   selectedScope: AnalyticsScopeSearch
   onChange: (updates: Partial<AnalyticsFilters>) => void
+  onSearch: () => void
   onClear: () => void
 }) {
   const currentMember = state.members.find(
@@ -369,6 +371,16 @@ export function AnalyticsFilterBar({
           Clear filters
         </button>
       )}
+
+      {/* Search / Apply button — commits draft filters to URL */}
+      <button
+        type="button"
+        onClick={onSearch}
+        className="inline-flex h-9 w-full items-center justify-center gap-1.5 self-end rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:brightness-110 sm:w-auto"
+      >
+        <Search className="size-3.5" />
+        Search
+      </button>
     </div>
   )
 }

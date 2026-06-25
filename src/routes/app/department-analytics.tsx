@@ -126,19 +126,6 @@ function DepartmentAnalyticsRoute() {
     [navigate],
   )
 
-  const changeProjectPage = useCallback(
-    (projectPage: number) => {
-      void navigate({
-        to: '/app/department-analytics',
-        search: (prev) => ({
-          ...prev,
-          projectPage: projectPage > 1 ? projectPage : undefined,
-        }),
-      })
-    },
-    [navigate],
-  )
-
   const viewMember = useCallback(
     (memberId: string) => {
       void navigate({
@@ -160,7 +147,6 @@ function DepartmentAnalyticsRoute() {
       endDate={resolved.endDate}
       onChangeRange={changeRange}
       onChangeFilters={changeFilters}
-      onChangeProjectPage={changeProjectPage}
       onViewMember={viewMember}
     />
   )

@@ -65,6 +65,22 @@ export function AnalyticsScreen({
   const page = currentFilters.page ?? 1
   const pageSize = currentFilters.pageSize ?? 50
 
+  // ── Draft filters: filter bar changes are staged until "Search" is clicked ──
+  const [draftFilters, setDraftFilters] =
+    useState<AnalyticsFilters>(currentFilters)
+
+  // Keep draft in sync when the URL-owned filters change (e.g. from pagination
+  // or external navigation), but only for the filter fields, not page/pageSize.
+  useEffect(() => {
+    setDraftFilters(currentFilters)
+  }, [
+    currentFilters.projectId,
+    currentFilters.clientId,
+    currentFilters.tagIds,
+    currentFilters.memberIds,
+    currentFilters.billable,
+  ])
+
   // When exactly one member is selected, offer a per-member PDF report scoped
   // to the current analytics date range.
   const selectedMemberIds = (currentFilters.memberIds ?? '')
@@ -73,24 +89,43 @@ export function AnalyticsScreen({
   const singleSelectedMemberId =
     selectedMemberIds.length === 1 ? selectedMemberIds[0] : null
 
+  // Filter bar changes only update the draft — no navigation / re-fetch yet.
   const handleFilterChange = useCallback(
     (updates: Partial<AnalyticsFilters>) =>
-      onChangeQuery({ ...updates, page: undefined }),
-    [onChangeQuery],
+      setDraftFilters((prev) => ({ ...prev, ...updates, page: undefined })),
+    [],
   )
 
-  const handleClearFilters = useCallback(
+  // "Search" / "Apply" button: commit the draft filters to the URL, triggering
+  // the loader re-fetch.
+  const handleSearch = useCallback(
     () =>
-      onChangeQuery({
-        projectId: undefined,
-        clientId: undefined,
-        tagIds: undefined,
-        memberIds: undefined,
-        billable: undefined,
-        page: undefined,
+      setDraftFilters((draft) => {
+        onChangeQuery({
+          projectId: draft.projectId,
+          clientId: draft.clientId,
+          tagIds: draft.tagIds,
+          memberIds: draft.memberIds,
+          billable: draft.billable,
+        })
+        return draft
       }),
     [onChangeQuery],
   )
+
+  // "Clear filters" resets the draft AND applies immediately (definitive action).
+  const handleClearFilters = useCallback(() => {
+    const cleared: AnalyticsFilters = {
+      projectId: undefined,
+      clientId: undefined,
+      tagIds: undefined,
+      memberIds: undefined,
+      billable: undefined,
+      page: undefined,
+    }
+    setDraftFilters(cleared)
+    onChangeQuery(cleared)
+  }, [onChangeQuery])
 
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
@@ -183,9 +218,10 @@ export function AnalyticsScreen({
       <div className="no-print">
         <AnalyticsFilterBar
           state={state}
-          filters={currentFilters}
+          filters={draftFilters}
           selectedScope={analytics.selectedScope}
           onChange={handleFilterChange}
+          onSearch={handleSearch}
           onClear={handleClearFilters}
         />
       </div>
@@ -223,7 +259,6 @@ export function AnalyticsScreen({
         onPageSizeChange={(nextPageSize) =>
           onChangeQuery({ pageSize: nextPageSize, page: undefined })
         }
-        currency={analytics.currency}
       />
 
       {/* ── Print-only table ────────────────────────────────────────── */}
@@ -242,6 +277,7 @@ export function AnalyticsScreen({
           <thead>
             <tr className="border-b border-border">
               <th className="px-2 py-1.5 text-left font-bold">Date</th>
+              <th className="px-2 py-1.5 text-left font-bold">Start – End</th>
               <th className="px-2 py-1.5 text-left font-bold">Member</th>
               <th className="px-2 py-1.5 text-left font-bold">Project</th>
               <th className="px-2 py-1.5 text-left font-bold">Client</th>
@@ -249,7 +285,6 @@ export function AnalyticsScreen({
               <th className="px-2 py-1.5 text-left font-bold">Description</th>
               <th className="px-2 py-1.5 text-right font-bold">Hours</th>
               <th className="px-2 py-1.5 text-right font-bold">Rate/hr</th>
-              <th className="px-2 py-1.5 text-right font-bold">Amount</th>
               <th className="px-2 py-1.5 text-center font-bold">Billable</th>
             </tr>
           </thead>
@@ -257,6 +292,9 @@ export function AnalyticsScreen({
             {analytics.entries.map((entry) => (
               <tr key={entry.id} className="border-b border-border/50">
                 <td className="px-2 py-1.5 whitespace-nowrap">{entry.date}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap">
+                  {formatEntryTimeRange(entry.startedAt, entry.endedAt)}
+                </td>
                 <td className="px-2 py-1.5 whitespace-nowrap">
                   {entry.memberName}
                 </td>
@@ -279,11 +317,6 @@ export function AnalyticsScreen({
                 <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
                   {entry.billable && entry.effectiveRate != null
                     ? formatCurrency(entry.effectiveRate, analytics.currency)
-                    : '—'}
-                </td>
-                <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
-                  {entry.billable && entry.billableAmount != null
-                    ? formatCurrency(entry.billableAmount, analytics.currency)
                     : '—'}
                 </td>
                 <td className="px-2 py-1.5 text-center">
@@ -315,6 +348,21 @@ function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return `${h}:${String(m).padStart(2, '0')}`
+}
+
+function formatEntryTimeRange(
+  startedAt: string,
+  endedAt: string | null,
+): string {
+  const formatClockTime = (value: string) =>
+    new Date(value).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+  return `${formatClockTime(startedAt)} – ${
+    endedAt ? formatClockTime(endedAt) : 'Now'
+  }`
 }
 
 function ClientAnalyticsCharts({
