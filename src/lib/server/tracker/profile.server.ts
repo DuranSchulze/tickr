@@ -24,7 +24,7 @@ function fromDateOnly(value?: Date | string | null) {
 export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
   const access = await requireWorkspaceAccess()
 
-  const birthDate = data.birthDate ? new Date(data.birthDate) : null
+  const birthDate = data.birthDate || null
   const gender = data.gender || null
   const maritalStatus = data.maritalStatus ? data.maritalStatus : null
   const positionTitle = emptyToNull(data.positionTitle)

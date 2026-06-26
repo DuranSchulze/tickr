@@ -171,6 +171,36 @@ code {
   }
 }
 
+@keyframes birthday-confetti-float {
+  0% {
+    transform: translate3d(0, -8px, 0) rotate(0deg);
+  }
+  45% {
+    transform: translate3d(7px, 16px, 0) rotate(16deg);
+  }
+  100% {
+    transform: translate3d(-5px, 34px, 0) rotate(34deg);
+  }
+}
+
+.birthday-confetti-piece {
+  animation: birthday-confetti-float 4.8s ease-in-out infinite alternate;
+}
+
+.birthday-confetti-piece:nth-child(even) {
+  animation-duration: 5.6s;
+}
+
+.birthday-confetti-piece:nth-child(3n) {
+  animation-duration: 6.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .birthday-confetti-piece {
+    animation: none !important;
+  }
+}
+
 /* Elegant grain texture overlay */
 .grain-texture {
   position: relative;

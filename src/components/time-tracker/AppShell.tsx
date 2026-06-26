@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react'
 import { AppSidebar } from './AppSidebar'
+import { BirthdayCelebration } from './BirthdayCelebration'
 import { MobileNav } from './MobileNav'
 import { Navbar } from './Navbar'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
@@ -41,7 +42,13 @@ export function AppShell({
   permissionLevel,
 }: {
   workspace: AppShellWorkspace
-  user: { id: string; name: string; email: string; image?: string | null }
+  user: {
+    id: string
+    name: string
+    email: string
+    image?: string | null
+    birthDate?: string | null
+  }
   permissionLevel: string
 }) {
   useEffect(() => {
@@ -166,6 +173,14 @@ export function AppShell({
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+      {!isEmbed && (
+        <BirthdayCelebration
+          birthDate={user.birthDate}
+          userId={user.id}
+          userName={user.name}
+        />
+      )}
+
       {!isEmbed && (
         <div className="print:hidden">
           <Navbar

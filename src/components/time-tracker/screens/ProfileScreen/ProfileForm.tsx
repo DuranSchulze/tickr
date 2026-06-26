@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { useRouter } from '@tanstack/react-router'
+import { useMemo, useRef, useState } from 'react'
+import { useRouter, useBlocker } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, Cake } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -26,6 +28,7 @@ import { SectionCard } from '../shared/SectionCard'
 import { ProfileSelect } from './ProfileSelect'
 import { ImageUploader } from './ImageUploader'
 import type { AddressDraft, SelfProfileData } from './types'
+import { BirthdayDialog } from './BirthdayDialog'
 
 // Set to true to re-enable Contact Number, Birth Date, Gender, Marital Status, and Address fields.
 const SHOW_EXTENDED_PROFILE_FIELDS = false as boolean
@@ -74,6 +77,7 @@ export function ProfileForm({
   onNameChange: (name: string) => void
 }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // ── Field state ─────────────────────────────────────────────────────────────
   const [name, setName] = useState(selfProfile.user.name)
@@ -115,6 +119,87 @@ export function ProfileForm({
     },
   )
   const [pending, setPending] = useState(false)
+  const [birthdayDialogOpen, setBirthdayDialogOpen] = useState(false)
+  const savingRef = useRef(false)
+
+  // ── Dirty-tracking (capture the server-provided values once) ────────────────
+  const initialValues = useRef({
+    name: selfProfile.user.name,
+    firstName:
+      selfProfile.profile?.firstName ||
+      fallbackName.split(' ')[0] ||
+      fallbackEmail,
+    middleName: selfProfile.profile?.middleName ?? '',
+    lastName:
+      selfProfile.profile?.lastName ||
+      fallbackName.split(' ').slice(1).join(' ') ||
+      fallbackName,
+    positionTitle: selfProfile.employeeProfile?.positionTitle ?? '',
+    contactNumber: selfProfile.profile?.contactNumber ?? '',
+    birthDate: selfProfile.profile?.birthDate ?? '',
+    gender: selfProfile.profile?.gender ?? '',
+    maritalStatus: selfProfile.profile?.maritalStatus ?? '',
+    avatarUrl: selfProfile.user.image ?? '',
+    address: selfProfile.address ?? {
+      buildingNo: '',
+      street: '',
+      city: '',
+      province: '',
+      postalCode: '',
+      country: 'Philippines',
+    },
+  })
+
+  const isDirty = useMemo(() => {
+    const iv = initialValues.current
+    if (name !== iv.name) return true
+    if (firstName !== iv.firstName) return true
+    if (middleName !== iv.middleName) return true
+    if (lastName !== iv.lastName) return true
+    if (positionTitle !== iv.positionTitle) return true
+    if (birthDate !== iv.birthDate) return true
+    if (avatarUrl !== iv.avatarUrl) return true
+    if (SHOW_EXTENDED_PROFILE_FIELDS) {
+      if (contactNumber !== iv.contactNumber) return true
+      if (gender !== iv.gender) return true
+      if (maritalStatus !== iv.maritalStatus) return true
+      if (address.buildingNo !== iv.address.buildingNo) return true
+      if (address.street !== iv.address.street) return true
+      if (address.city !== iv.address.city) return true
+      if (address.province !== iv.address.province) return true
+      if (address.postalCode !== iv.address.postalCode) return true
+      if (address.country !== iv.address.country) return true
+    }
+    return false
+  }, [
+    name,
+    firstName,
+    middleName,
+    lastName,
+    positionTitle,
+    contactNumber,
+    birthDate,
+    gender,
+    maritalStatus,
+    avatarUrl,
+    address,
+  ])
+
+  const blocker = useBlocker({
+    shouldBlockFn: () => isDirty,
+    enableBeforeUnload: true,
+    withResolver: true,
+  })
+
+  function formatBirthday(value: string): string {
+    if (!value) return 'Not set'
+    const date = new Date(value + 'T00:00:00')
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
 
   // ── Error state ──────────────────────────────────────────────────────────────
   const [errors, setErrors] = useState<ProfileErrors>(EMPTY_PROFILE_ERRORS)
@@ -155,9 +240,10 @@ export function ProfileForm({
     }
   }
 
-  async function handleSave(event: React.FormEvent) {
-    event.preventDefault()
-
+  async function saveProfile(overrides: { birthDate?: string } = {}) {
+    if (pending || savingRef.current) return
+    savingRef.current = true
+    const nextBirthDate = overrides.birthDate ?? birthDate
     const next = validateAllProfileFields({
       name,
       avatarUrl,
@@ -167,7 +253,7 @@ export function ProfileForm({
       positionTitle,
       // Only validate extended fields when they are visible
       contactNumber: SHOW_EXTENDED_PROFILE_FIELDS ? contactNumber : '',
-      birthDate: SHOW_EXTENDED_PROFILE_FIELDS ? birthDate : '',
+      birthDate: nextBirthDate,
       buildingNo: SHOW_EXTENDED_PROFILE_FIELDS ? address.buildingNo : '',
       street: SHOW_EXTENDED_PROFILE_FIELDS ? address.street : '',
       city: SHOW_EXTENDED_PROFILE_FIELDS ? address.city : '',
@@ -177,7 +263,15 @@ export function ProfileForm({
     })
 
     setErrors(next)
-    if (hasProfileErrors(next)) return
+    if (hasProfileErrors(next)) {
+      savingRef.current = false
+      gooeyToast.error('Check profile fields', {
+        description:
+          Object.values(next).find((message) => message.length > 0) ??
+          'Please fix the highlighted fields.',
+      })
+      return
+    }
 
     setPending(true)
     try {
@@ -189,27 +283,45 @@ export function ProfileForm({
           lastName,
           positionTitle,
           avatarUrl,
-          // Extended fields are omitted entirely when hidden so existing DB values are preserved
-          ...(SHOW_EXTENDED_PROFILE_FIELDS
-            ? {
-                contactNumber: contactNumber || undefined,
-                birthDate,
-                gender,
-                maritalStatus,
-                address,
-              }
+          contactNumber: contactNumber || undefined,
+          birthDate: nextBirthDate,
+          gender,
+          maritalStatus,
+          ...(SHOW_EXTENDED_PROFILE_FIELDS || selfProfile.address
+            ? { address }
             : {}),
         },
       })
+      await queryClient.invalidateQueries({ queryKey: ['self-profile'] })
       await router.invalidate()
+      // Reset dirty state so the save is the new baseline
+      initialValues.current = {
+        name,
+        firstName,
+        middleName,
+        lastName,
+        positionTitle,
+        contactNumber,
+        birthDate: nextBirthDate,
+        gender,
+        maritalStatus,
+        avatarUrl,
+        address: { ...address },
+      }
       gooeyToast.success('Profile updated')
     } catch (err) {
       gooeyToast.error('Could not update profile', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
+      savingRef.current = false
       setPending(false)
     }
+  }
+
+  function handleSave(event: React.FormEvent) {
+    event.preventDefault()
+    void saveProfile()
   }
 
   return (
@@ -346,6 +458,37 @@ export function ProfileForm({
               className={errorInputClass(errors.lastName)}
             />
             <FieldError id="pf-last-err" message={errors.lastName} />
+          </div>
+
+          {/* Birthday — always visible, opens a dialog picker */}
+          <div className="col-span-full grid gap-2">
+            <span className="text-sm font-medium leading-none">Birthday</span>
+            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+              <span
+                className={cn(
+                  'text-sm',
+                  errors.birthDate
+                    ? 'text-red-500'
+                    : birthDate
+                      ? 'text-foreground'
+                      : 'text-muted-foreground italic',
+                )}
+              >
+                {errors.birthDate || formatBirthday(birthDate)}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setError('birthDate', '')
+                  setBirthdayDialogOpen(true)
+                }}
+              >
+                <Cake className="mr-1.5 size-3.5" />
+                {birthDate ? 'Change' : 'Set'}
+              </Button>
+            </div>
           </div>
 
           {/* Contact Number, Birth Date, Gender, Marital Status — hidden until SHOW_EXTENDED_PROFILE_FIELDS = true */}
@@ -505,10 +648,68 @@ export function ProfileForm({
       )}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
+        <button
+          type="button"
+          disabled={pending}
+          onMouseDownCapture={() => void saveProfile()}
+          onPointerDownCapture={() => void saveProfile()}
+          onPointerDown={() => void saveProfile()}
+          onClick={() => void saveProfile()}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              void saveProfile()
+            }
+          }}
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 text-sm font-medium whitespace-nowrap text-primary-foreground transition-all hover:bg-primary/80 disabled:pointer-events-none disabled:opacity-50"
+        >
           {pending ? 'Saving…' : 'Save profile'}
-        </Button>
+        </button>
       </div>
+
+      {birthdayDialogOpen && (
+        <BirthdayDialog
+          currentBirthDate={birthDate}
+          onSave={(dateStr) => {
+            setBirthDate(dateStr)
+            setBirthdayDialogOpen(false)
+            void saveProfile({ birthDate: dateStr })
+          }}
+          onClose={() => setBirthdayDialogOpen(false)}
+        />
+      )}
+
+      {blocker.status === 'blocked' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="flex flex-col items-center gap-4 py-6">
+              <AlertTriangle className="size-10 text-amber-500" />
+              <p className="text-center text-sm text-foreground">
+                You have unsaved changes. Discard them?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => blocker.reset()}
+                >
+                  Keep editing
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => blocker.proceed()}
+                >
+                  Discard
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

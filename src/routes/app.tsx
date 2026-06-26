@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '#/components/ui/card'
 import { getSessionFn } from '#/lib/server/session'
+import { getSelfProfileFn } from '#/lib/server/tracker'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 import { ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 
@@ -27,11 +28,18 @@ export const Route = createFileRoute('/app')({
   },
   loader: async ({ context }) => {
     try {
-      const access = await context.queryClient.ensureQueryData({
-        queryKey: ['workspace-access'],
-        queryFn: () => getWorkspaceAccessFn(),
-        staleTime: 5 * 60 * 1000,
-      })
+      const [access, selfProfile] = await Promise.all([
+        context.queryClient.ensureQueryData({
+          queryKey: ['workspace-access'],
+          queryFn: () => getWorkspaceAccessFn(),
+          staleTime: 5 * 60 * 1000,
+        }),
+        context.queryClient.ensureQueryData({
+          queryKey: ['self-profile'],
+          queryFn: () => getSelfProfileFn(),
+          staleTime: 5 * 60 * 1000,
+        }),
+      ])
       return {
         workspace: {
           id: access.workspace.id,
@@ -43,6 +51,7 @@ export const Route = createFileRoute('/app')({
           name: access.user.name,
           email: access.user.email,
           image: access.user.image ?? null,
+          birthDate: selfProfile.profile?.birthDate ?? '',
         },
         permissionLevel: access.member.permissionLevel,
       }
