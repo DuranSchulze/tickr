@@ -6,10 +6,7 @@ import type { DepartmentMemberDetail } from '#/lib/server/tracker/department-das
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { updateWorkspaceMemberEntryFn } from '#/lib/server/tracker'
 import { gooeyToast } from '#/lib/toast'
-import {
-  dateTimeLocalValue,
-  formatDuration,
-} from '#/lib/time-tracker/store'
+import { dateTimeLocalValue, formatDuration } from '#/lib/time-tracker/store'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
@@ -94,12 +91,7 @@ export function DepartmentMemberDetailScreen({
       setEditingEntry(null)
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: trackerKeys.departmentMemberDetail({
-            memberId: detail.activity.member.id,
-            startDate: detail.startDate,
-            endDate: detail.endDate,
-            page: detail.page,
-          }),
+          queryKey: trackerKeys.departmentMemberDetails,
         }),
         queryClient.invalidateQueries({
           queryKey: ['department-dashboard'],
