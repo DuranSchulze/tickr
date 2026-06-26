@@ -97,7 +97,10 @@ export function DepartmentMemberDetailScreen({
           queryKey: ['department-dashboard'],
         }),
       ])
-      void router.invalidate()
+      // This screen renders route loader data rather than a useQuery
+      // subscription. Wait for the loader to rerun so the edited row is
+      // replaced before reporting success and releasing the pending state.
+      await router.invalidate()
       gooeyToast.success('Entry updated')
     } catch (err) {
       gooeyToast.error('Action failed', {
