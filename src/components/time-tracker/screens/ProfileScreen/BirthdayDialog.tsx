@@ -3,6 +3,8 @@ import { AlertTriangle, Cake, X } from 'lucide-react'
 import { Calendar } from '#/components/ui/calendar'
 import { Button } from '#/components/ui/button'
 
+const BIRTHDAY_PICKER_DEFAULT_MONTH = new Date(2001, 0, 1)
+
 function formatDate(dateStr: string): string {
   if (!dateStr) return ''
   const date = new Date(dateStr + 'T00:00:00')
@@ -31,11 +33,6 @@ export function BirthdayDialog({
 }) {
   const [selected, setSelected] = useState<Date | undefined>(
     currentBirthDate ? new Date(currentBirthDate + 'T00:00:00') : undefined,
-  )
-
-  const defaultMonth = useMemo(
-    () => selected ?? new Date(new Date().getFullYear() - 25, 0, 1),
-    [selected],
   )
 
   const hasChanges = useMemo(() => {
@@ -133,7 +130,7 @@ export function BirthdayDialog({
                 mode="single"
                 selected={selected}
                 onSelect={setSelected}
-                defaultMonth={defaultMonth}
+                defaultMonth={BIRTHDAY_PICKER_DEFAULT_MONTH}
                 captionLayout="dropdown"
                 fromYear={1920}
                 toYear={new Date().getFullYear()}
