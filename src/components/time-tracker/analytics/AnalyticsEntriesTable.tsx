@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import { ChevronLeft, ChevronRight, Pencil } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
@@ -109,7 +108,7 @@ function EntryMobileCard({
   )
 }
 
-export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
+export function AnalyticsEntriesTable({
   entries,
   entriesTotal,
   page,
@@ -347,4 +346,4 @@ export const AnalyticsEntriesTable = memo(function AnalyticsEntriesTable({
       )}
     </section>
   )
-})
+}
