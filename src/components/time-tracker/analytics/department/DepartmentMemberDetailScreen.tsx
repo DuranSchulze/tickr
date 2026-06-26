@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useReducer } from 'react'
+import type { SetStateAction } from 'react'
 import { ArrowLeft, PanelRightOpen, Timer } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
@@ -18,6 +19,111 @@ import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { AnalyticsEntriesTable } from '../AnalyticsEntriesTable'
 import { DepartmentMemberActivitySheet } from './DepartmentMemberActivitySheet'
 
+function buildUpdatedAnalyticsEntry(
+  entry: AnalyticsTimeEntryRow,
+  draft: DraftEntry,
+  state: TrackerState,
+  dateFormatter: Intl.DateTimeFormat,
+): AnalyticsTimeEntryRow {
+  const payload = toEntryPayload(draft)
+  const project = state.projects.find((item) => item.id === payload.projectId)
+  const client = project
+    ? state.clients.find((item) => item.id === project.clientId)
+    : null
+  const tagNames = payload.tagIds.flatMap((tagId) => {
+    const tag = state.tags.find((item) => item.id === tagId)
+    return tag ? [tag.name] : []
+  })
+  const effectiveRate = payload.billable ? entry.effectiveRate : null
+
+  return {
+    ...entry,
+    date: dateFormatter.format(new Date(payload.startedAt)),
+    description: payload.description,
+    projectId: payload.projectId,
+    taskId: payload.taskId,
+    projectName: project?.name ?? null,
+    clientName: client?.name ?? null,
+    tagIds: payload.tagIds,
+    tagNames,
+    startedAt: payload.startedAt,
+    endedAt: payload.endedAt,
+    durationSeconds: payload.durationSeconds,
+    billable: payload.billable,
+    notes: payload.notes,
+    billableAmount:
+      payload.billable && effectiveRate !== null
+        ? (payload.durationSeconds / 3600) * effectiveRate
+        : null,
+    effectiveRate,
+  }
+}
+
+type ScreenState = {
+  activitySheetOpen: boolean
+  editingEntry: TimeEntry | null
+  editingDraft: DraftEntry
+  entryPatches: Record<string, AnalyticsTimeEntryRow>
+  savePending: boolean
+}
+
+type ScreenAction =
+  | { type: 'openActivitySheet' }
+  | { type: 'closeActivitySheet' }
+  | { type: 'startEdit'; entry: TimeEntry; draft: DraftEntry }
+  | { type: 'closeEdit' }
+  | { type: 'setEditingDraft'; update: SetStateAction<DraftEntry> }
+  | { type: 'patchEntry'; entry: AnalyticsTimeEntryRow }
+  | { type: 'setSavePending'; pending: boolean }
+
+function screenReducer(
+  current: ScreenState,
+  action: ScreenAction,
+): ScreenState {
+  switch (action.type) {
+    case 'openActivitySheet':
+      return { ...current, activitySheetOpen: true }
+    case 'closeActivitySheet':
+      return { ...current, activitySheetOpen: false }
+    case 'startEdit':
+      return {
+        ...current,
+        editingEntry: action.entry,
+        editingDraft: action.draft,
+      }
+    case 'closeEdit':
+      return { ...current, editingEntry: null }
+    case 'setEditingDraft':
+      return {
+        ...current,
+        editingDraft:
+          typeof action.update === 'function'
+            ? action.update(current.editingDraft)
+            : action.update,
+      }
+    case 'patchEntry':
+      return {
+        ...current,
+        entryPatches: {
+          ...current.entryPatches,
+          [action.entry.id]: action.entry,
+        },
+      }
+    case 'setSavePending':
+      return { ...current, savePending: action.pending }
+  }
+}
+
+function createInitialScreenState(): ScreenState {
+  return {
+    activitySheetOpen: false,
+    editingEntry: null,
+    editingDraft: emptyDraft(),
+    entryPatches: {},
+    savePending: false,
+  }
+}
+
 export function DepartmentMemberDetailScreen({
   detail,
   state,
@@ -35,45 +141,69 @@ export function DepartmentMemberDetailScreen({
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const [activitySheetOpen, setActivitySheetOpen] = useState(false)
-  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
-  const [editingDraft, setEditingDraft] = useState<DraftEntry>(() =>
-    emptyDraft(),
+  const [screenState, dispatch] = useReducer(
+    screenReducer,
+    undefined,
+    createInitialScreenState,
   )
-  const [savePending, setSavePending] = useState(false)
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone: detail.timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+    [detail.timezone],
+  )
+  const tableEntries = useMemo(
+    () =>
+      detail.entries.map(
+        (entry) => screenState.entryPatches[entry.id] ?? entry,
+      ),
+    [detail.entries, screenState.entryPatches],
+  )
+
+  function setEditingDraft(update: SetStateAction<DraftEntry>) {
+    dispatch({ type: 'setEditingDraft', update })
+  }
 
   function openEdit(entry: AnalyticsTimeEntryRow) {
     const project = state.projects.find((p) => p.id === entry.projectId)
-    setEditingEntry({
-      id: entry.id,
-      workspaceMemberId: entry.workspaceMemberId,
-      description: entry.description,
-      projectId: entry.projectId,
-      taskId: entry.taskId,
-      tagIds: entry.tagIds,
-      billable: entry.billable,
-      startedAt: entry.startedAt,
-      endedAt: entry.endedAt,
-      durationSeconds: entry.durationSeconds,
-      notes: entry.notes,
-    })
-    setEditingDraft({
-      description: entry.description,
-      clientId: project?.clientId ?? '',
-      projectId: entry.projectId,
-      taskId: entry.taskId ?? '',
-      tagIds: entry.tagIds,
-      billable: entry.billable,
-      startedAt: dateTimeLocalValue(new Date(entry.startedAt)),
-      endedAt: dateTimeLocalValue(new Date(entry.endedAt ?? Date.now())),
-      notes: entry.notes,
+    dispatch({
+      type: 'startEdit',
+      entry: {
+        id: entry.id,
+        workspaceMemberId: entry.workspaceMemberId,
+        description: entry.description,
+        projectId: entry.projectId,
+        taskId: entry.taskId,
+        tagIds: entry.tagIds,
+        billable: entry.billable,
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+        durationSeconds: entry.durationSeconds,
+        notes: entry.notes,
+      },
+      draft: {
+        description: entry.description,
+        clientId: project?.clientId ?? '',
+        projectId: entry.projectId,
+        taskId: entry.taskId ?? '',
+        tagIds: entry.tagIds,
+        billable: entry.billable,
+        startedAt: dateTimeLocalValue(new Date(entry.startedAt)),
+        endedAt: dateTimeLocalValue(new Date(entry.endedAt ?? Date.now())),
+        notes: entry.notes,
+      },
     })
   }
 
   async function saveEdit() {
+    const { editingDraft, editingEntry } = screenState
     if (!editingEntry || !editingDraft.description.trim()) return
 
-    setSavePending(true)
+    dispatch({ type: 'setSavePending', pending: true })
     try {
       const confirmed = await confirmTimeEntryOverlap({
         memberId: editingEntry.workspaceMemberId,
@@ -88,7 +218,21 @@ export function DepartmentMemberDetailScreen({
           ...toEntryPayload(editingDraft),
         },
       })
-      setEditingEntry(null)
+      const currentEntry = tableEntries.find(
+        (entry) => entry.id === editingEntry.id,
+      )
+      if (currentEntry) {
+        dispatch({
+          type: 'patchEntry',
+          entry: buildUpdatedAnalyticsEntry(
+            currentEntry,
+            editingDraft,
+            state,
+            dateFormatter,
+          ),
+        })
+      }
+      dispatch({ type: 'closeEdit' })
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: trackerKeys.departmentMemberDetails,
@@ -98,8 +242,8 @@ export function DepartmentMemberDetailScreen({
         }),
       ])
       // This screen renders route loader data rather than a useQuery
-      // subscription. Wait for the loader to rerun so the edited row is
-      // replaced before reporting success and releasing the pending state.
+      // subscription. Wait for the loader to rerun so summary cards and
+      // pagination totals follow the updated row.
       await router.invalidate()
       gooeyToast.success('Entry updated')
     } catch (err) {
@@ -108,7 +252,7 @@ export function DepartmentMemberDetailScreen({
           err instanceof Error ? err.message : 'Something went wrong.',
       })
     } finally {
-      setSavePending(false)
+      dispatch({ type: 'setSavePending', pending: false })
     }
   }
 
@@ -198,7 +342,7 @@ export function DepartmentMemberDetailScreen({
           </div>
           <button
             type="button"
-            onClick={() => setActivitySheetOpen(true)}
+            onClick={() => dispatch({ type: 'openActivitySheet' })}
             className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent sm:w-auto"
           >
             <PanelRightOpen className="size-3.5" />
@@ -207,7 +351,7 @@ export function DepartmentMemberDetailScreen({
         </div>
 
         <AnalyticsEntriesTable
-          entries={detail.entries}
+          entries={tableEntries}
           entriesTotal={detail.entriesTotal}
           page={detail.page}
           onPageChange={onChangePage}
@@ -217,26 +361,28 @@ export function DepartmentMemberDetailScreen({
       </div>
 
       <DepartmentMemberActivitySheet
-        memberId={activitySheetOpen ? detail.activity.member.id : null}
-        onClose={() => setActivitySheetOpen(false)}
+        memberId={
+          screenState.activitySheetOpen ? detail.activity.member.id : null
+        }
+        onClose={() => dispatch({ type: 'closeActivitySheet' })}
       />
 
       <EditEntryDrawer
-        open={!!editingEntry}
+        open={!!screenState.editingEntry}
         onOpenChange={(open) => {
-          if (!open) setEditingEntry(null)
+          if (!open) dispatch({ type: 'closeEdit' })
         }}
-        entry={editingEntry}
-        editingDraft={editingDraft}
+        entry={screenState.editingEntry}
+        editingDraft={screenState.editingDraft}
         setEditingDraft={setEditingDraft}
         clients={state.clients}
         projects={state.projects}
         projectTasks={state.projectTasks}
         tags={state.tags}
         canManageCatalog={false}
-        pending={savePending}
+        pending={screenState.savePending}
         onSave={saveEdit}
-        onCancel={() => setEditingEntry(null)}
+        onCancel={() => dispatch({ type: 'closeEdit' })}
       />
     </div>
   )
