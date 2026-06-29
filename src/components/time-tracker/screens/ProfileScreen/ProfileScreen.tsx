@@ -1,9 +1,14 @@
 import { useState } from 'react'
+import { Cake, PartyPopper } from 'lucide-react'
+import { isBirthdayToday } from '../../BirthdayCelebration'
+import { Button } from '#/components/ui/button'
+import { fireSideCannons } from '#/components/ui/confetti'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { Page } from '../shared/Page'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 import { ProfileForm } from './ProfileForm'
 import { ProfileSidebar } from './ProfileSidebar'
+import { SectionCard } from '../shared/SectionCard'
 import type { SelfProfileData } from './types'
 
 export function ProfileScreen({
@@ -27,6 +32,7 @@ export function ProfileScreen({
     selfProfile.user.image ?? '',
   )
   const [pwDialog, setPwDialog] = useState(false)
+  const birthdayToday = isBirthdayToday(selfProfile.profile?.birthDate ?? '')
 
   const initials = member.name
     .split(' ')
@@ -37,6 +43,38 @@ export function ProfileScreen({
 
   return (
     <Page title="My Profile" eyebrow="Account">
+      {birthdayToday && (
+        <SectionCard
+          title="Birthday Celebration"
+          action={
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-full"
+              onClick={() => fireSideCannons({ durationMs: 1600, particleCount: 2 })}
+            >
+              <PartyPopper className="size-4" />
+              Celebrate
+            </Button>
+          }
+        >
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/70 px-4 py-4 text-amber-950">
+            <div className="grid size-10 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
+              <Cake className="size-5" />
+            </div>
+            <div>
+              <p className="m-0 text-sm font-bold">
+                Happy birthday, {displayName}!
+              </p>
+              <p className="m-0 mt-1 text-sm text-amber-900/80">
+                Your profile joins the celebration too. Tap celebrate whenever
+                you want another confetti burst.
+              </p>
+            </div>
+          </div>
+        </SectionCard>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
         <ProfileSidebar
           name={displayName}
