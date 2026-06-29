@@ -314,7 +314,10 @@ export function ClientProjectPicker({
 
   return (
     <>
-      <Popover open={open} onOpenChange={disabled ? undefined : handleOpenChange}>
+      <Popover
+        open={open}
+        onOpenChange={disabled ? undefined : handleOpenChange}
+      >
         {/* Trigger */}
         <div
           className={
@@ -331,38 +334,46 @@ export function ClientProjectPicker({
               disabled={disabled}
               className={
                 compact
-                  ? 'flex items-center rounded px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
+                  ? 'flex h-9 w-full items-center justify-start rounded-md px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
                   : bare
                     ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
                     : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
               }
             >
-              <div className="flex flex-1 items-center gap-1.5 overflow-hidden">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 {hasSelection ? (
                   compact ? (
-                    <span className="flex min-w-0 items-center gap-0 text-left">
-                      {selectedClient?.name ? (
-                        <>
-                          <span className="truncate max-w-[80px]">
-                            {selectedClient.name}
-                          </span>
-                          <span className="shrink-0 text-muted-foreground">
-                            &nbsp;/&nbsp;
-                          </span>
-                        </>
-                      ) : null}
-                      {selectedTask ? (
-                        <>
-                          <span className="shrink-0 whitespace-nowrap">
-                            {selectedTask.name}
-                          </span>
-                          <span className="shrink-0 text-muted-foreground">
-                            &nbsp;-&nbsp;
-                          </span>
-                        </>
-                      ) : null}
-                      <span className="truncate">{selectedProject.name}</span>
-                    </span>
+                    <>
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: selectedProject.color }}
+                      />
+                      <span className="flex min-w-0 items-center gap-0 text-left leading-tight">
+                        {selectedClient?.name ? (
+                          <>
+                            <span className="truncate max-w-[82px]">
+                              {selectedClient.name}
+                            </span>
+                            <span className="shrink-0 text-muted-foreground">
+                              &nbsp;/&nbsp;
+                            </span>
+                          </>
+                        ) : null}
+                        {selectedTask ? (
+                          <>
+                            <span className="shrink-0 whitespace-nowrap text-foreground">
+                              {selectedTask.name}
+                            </span>
+                            <span className="shrink-0 text-muted-foreground">
+                              &nbsp;-&nbsp;
+                            </span>
+                          </>
+                        ) : null}
+                        <span className="truncate text-foreground">
+                          {selectedProject.name}
+                        </span>
+                      </span>
+                    </>
                   ) : (
                     <>
                       <span

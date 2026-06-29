@@ -550,20 +550,24 @@ export function useTimerCore({
       })
   }
 
-  function resumeEntry(entry: TimeEntry) {
-    if (activeEntry) return
-    const project = state.projects.find((p) => p.id === entry.projectId)
-    const description = entry.description
-    const projectId = entry.projectId
-    const tagIds = entry.tagIds.filter(Boolean)
-    const billable = entry.billable
+  function launchTimer(input: {
+    description: string
+    projectId: string
+    taskId: string | null
+    tagIds: string[]
+    billable: boolean
+  }) {
+    const { description, projectId, taskId, tagIds, billable } = input
+    const project = state.projects.find((p) => p.id === projectId)
     const startedAt = new Date().toISOString()
 
     setTimerDescription(description)
     setTimerClientId(project?.clientId ?? '')
     setTimerProjectId(projectId)
+    setTimerTaskId(taskId ?? '')
     setTimerTagIds(tagIds)
     setTimerBillable(billable)
+    setTimerStartedAt(null)
     timerInputDirtyRef.current = false
 
     const token = nextOperationToken()
@@ -572,7 +576,7 @@ export function useTimerCore({
       workspaceMemberId: state.currentMemberId,
       description,
       projectId,
-      taskId: entry.taskId ?? null,
+      taskId,
       tagIds,
       billable,
       startedAt,
@@ -586,16 +590,16 @@ export function useTimerCore({
       token,
       optimisticId: optimisticEntry.id,
     })
+    lastSyncedEntryIdRef.current = optimisticEntry.id
     gooeyToast.success('Timer started')
 
-    const resumeInput = { description, projectId, tagIds, billable }
-    const resumePayload = { ...resumeInput, taskId: entry.taskId ?? null }
+    const nextInput = { description, projectId, taskId, tagIds, billable }
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'startTimer',
         optimisticId: optimisticEntry.id,
-        payload: { ...resumePayload, startedAt },
+        payload: { ...nextInput, startedAt },
       })
       setTimerOperation({
         kind: 'runningOptimistic',
@@ -605,7 +609,7 @@ export function useTimerCore({
       return
     }
 
-    void mutations.startTimer(resumePayload, {
+    void mutations.startTimer(nextInput, {
       invalidate: false,
       onSuccess: (newEntry) => {
         const op = timerOperationRef.current
@@ -647,6 +651,65 @@ export function useTimerCore({
           description: 'Please try again.',
         })
       },
+    })
+  }
+
+  async function resumeEntry(entry: TimeEntry) {
+    if (activeEntry) {
+      if (stopBlocked) {
+        gooeyToast.error('Finish the running timer details first', {
+          description:
+            'Add the missing description, project, and tags before switching tasks.',
+        })
+        return
+      }
+
+      if (!isOnline) {
+        gooeyToast.error('Reconnect to switch timers', {
+          description:
+            'The one-click switch needs a connection so the current timer can stop before the next one starts.',
+        })
+        return
+      }
+
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = null
+      }
+
+      const confirmed = await confirmTimeEntryOverlap({
+        entryId: activeEntry.id,
+      })
+      if (!confirmed) return
+
+      try {
+        const stoppedEntry = await stopTimerFn({
+          data: {
+            id: activeEntry.id,
+            description: timerDescription.trim(),
+            projectId: timerProjectId,
+            taskId: timerTaskId || null,
+            tagIds: timerTagIds.filter(Boolean),
+            billable: timerBillable,
+          },
+        })
+        if (!stoppedEntry) return
+        upsertOptimisticStoppedEntry(stoppedEntry)
+        upsertTrackerStateEntry(queryClient, stoppedEntry)
+      } catch (err) {
+        gooeyToast.error('Failed to stop timer', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+        return
+      }
+    }
+
+    launchTimer({
+      description: entry.description,
+      projectId: entry.projectId,
+      taskId: entry.taskId ?? null,
+      tagIds: entry.tagIds.filter(Boolean),
+      billable: entry.billable,
     })
   }
 
@@ -730,96 +793,12 @@ export function useTimerCore({
 
   function startTimer() {
     if (activeEntry) return
-    const description = timerDescription.trim()
-    const nextInput = {
-      description,
+    launchTimer({
+      description: timerDescription.trim(),
       projectId: timerProjectId,
       taskId: timerTaskId || null,
       tagIds: timerTagIds.filter(Boolean),
       billable: timerBillable,
-    }
-    const startedAt = new Date().toISOString()
-    const token = nextOperationToken()
-
-    const optimisticEntry: TimeEntry = {
-      id: `optimistic-${startedAt}`,
-      workspaceMemberId: state.currentMemberId,
-      description,
-      projectId: timerProjectId,
-      taskId: timerTaskId || null,
-      tagIds: nextInput.tagIds,
-      billable: timerBillable,
-      startedAt,
-      endedAt: null,
-      durationSeconds: 0,
-      notes: '',
-    }
-    setOptimisticActiveEntry(optimisticEntry)
-    setTimerOperation({
-      kind: 'starting',
-      token,
-      optimisticId: optimisticEntry.id,
-    })
-    lastSyncedEntryIdRef.current = optimisticEntry.id
-    timerInputDirtyRef.current = false
-    gooeyToast.success('Timer started')
-
-    if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
-        type: 'startTimer',
-        optimisticId: optimisticEntry.id,
-        payload: { ...nextInput, startedAt },
-      })
-      setTimerOperation({
-        kind: 'runningOptimistic',
-        token,
-        entryId: optimisticEntry.id,
-      })
-      return
-    }
-
-    void mutations.startTimer(nextInput, {
-      invalidate: false,
-      onSuccess: (entry) => {
-        const op = timerOperationRef.current
-        if (!operationHasToken(op, token)) return
-
-        if (op.kind === 'discarding') {
-          setOptimisticActiveEntry(null)
-          void deleteEntryFn({ data: { id: entry.id } }).finally(() => {
-            if (operationHasToken(timerOperationRef.current, token)) {
-              setTimerOperation({ kind: 'idle' })
-            }
-            invalidateDashboard()
-          })
-          return
-        }
-
-        if (op.kind === 'stopping') {
-          removeOptimisticStoppedEntry(op.entryId)
-          performOptimisticStop(entry, token)
-          return
-        }
-
-        setOptimisticActiveEntry(entry)
-        setTimerOperation({
-          kind: 'runningOptimistic',
-          token,
-          entryId: entry.id,
-        })
-        // Patch the running entry into the cache so serverActiveEntry resolves
-        // it without a full dashboard refetch.
-        upsertTrackerStateEntry(queryClient, entry)
-        void router.invalidate()
-      },
-      onError: () => {
-        if (!operationHasToken(timerOperationRef.current, token)) return
-        setOptimisticActiveEntry(null)
-        setTimerOperation({ kind: 'idle' })
-        gooeyToast.error('Failed to start timer', {
-          description: 'Please try again.',
-        })
-      },
     })
   }
 

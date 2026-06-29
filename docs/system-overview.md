@@ -6,6 +6,8 @@
 
 ## Branding & Configuration
 
+For email delivery flows, templates, and operational findings, see `docs/email-logics/README.md`.
+
 All brand values live in a single source-of-truth file:
 
 **`src/lib/brand.ts`**

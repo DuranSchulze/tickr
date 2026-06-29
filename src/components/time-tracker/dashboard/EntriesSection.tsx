@@ -38,7 +38,6 @@ export function EntriesSection({
   pending,
   pendingEntryIds,
   formatTime,
-  hasActiveTimer,
   onStartEdit,
   onUpdate,
   onResume,
@@ -70,7 +69,6 @@ export function EntriesSection({
   pending: boolean
   pendingEntryIds?: Set<string>
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   onStartEdit: (entry: TimeEntry) => void
   onUpdate: (
     entryId: string,
@@ -236,7 +234,6 @@ export function EntriesSection({
         pending={pending}
         pendingEntryIds={pendingEntryIds}
         formatTime={formatTime}
-        hasActiveTimer={hasActiveTimer}
         isDayCollapsed={(dateKey) => collapsedDates.has(dateKey)}
         toggleDayGroup={toggleDayGroup}
         isTaskGroupExpanded={isTaskGroupExpanded}

@@ -3,10 +3,12 @@ import type { DateRange } from 'react-day-picker'
 import {
   CalendarDays,
   Clock,
+  CornerDownRight,
   Copy,
   Loader2,
   MoreVertical,
   Play,
+  Radio,
   Trash2,
   X,
 } from 'lucide-react'
@@ -361,7 +363,6 @@ export const EntryRow = memo(function EntryRow({
   isPending,
   isDeleting,
   formatTime,
-  hasActiveTimer,
   isSubEntry,
   onStartEdit,
   onUpdate,
@@ -378,7 +379,6 @@ export const EntryRow = memo(function EntryRow({
   isPending?: boolean
   isDeleting?: boolean
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   isSubEntry?: boolean
   currency?: string
   rateLookup?: (memberId: string) => number
@@ -391,6 +391,7 @@ export const EntryRow = memo(function EntryRow({
   onDelete: (entryId: string) => void
 }) {
   const update = (patch: InlinePatch) => onUpdate(entry.id, patch)
+  const isRunning = !entry.endedAt
 
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -434,57 +435,79 @@ export const EntryRow = memo(function EntryRow({
       className={
         isDeleting
           ? 'opacity-50 pointer-events-none'
-          : isSubEntry
-            ? 'bg-muted/20'
-            : ''
+          : isRunning
+            ? 'bg-primary/5 opacity-75'
+            : isSubEntry
+              ? 'bg-muted/20'
+              : ''
       }
     >
       {/* Description — inline editable */}
       <TableCell className="py-3 px-4 w-[26%]">
-        {editDesc ? (
-          <input
-            ref={attachDescInput}
-            className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-            value={draftDesc}
-            onChange={(e) => setDraftDesc(e.target.value)}
-            onBlur={commitDesc}
-            aria-label="Task description"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                e.stopPropagation()
-                descInputRef.current?.blur()
-              } else if (e.key === 'Escape') {
-                e.preventDefault()
-                e.stopPropagation()
-                skipDescCommit.current = true
-                setDraftDesc(entry.description)
-                descInputRef.current?.blur()
-              }
-            }}
-          />
-        ) : (
-          <button
-            type="button"
-            className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
-            title={entry.description || 'No description'}
-            onClick={() => {
-              setDraftDesc(entry.description)
-              setEditDesc(true)
-            }}
-          >
-            {entry.description || (
-              <span className="text-muted-foreground font-normal">
-                No description
-              </span>
+        <div
+          className={`flex min-w-0 items-center gap-2 ${isSubEntry ? 'pl-5' : ''}`}
+        >
+          {isSubEntry && (
+            <span
+              aria-hidden="true"
+              className="inline-flex shrink-0 items-center text-muted-foreground/60"
+            >
+              <CornerDownRight className="size-3.5" />
+            </span>
+          )}
+          {isRunning && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
+              <Radio className="size-2.5 fill-current" />
+              Ongoing
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            {editDesc ? (
+              <input
+                ref={attachDescInput}
+                className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                value={draftDesc}
+                onChange={(e) => setDraftDesc(e.target.value)}
+                onBlur={commitDesc}
+                aria-label="Task description"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    descInputRef.current?.blur()
+                  } else if (e.key === 'Escape') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    skipDescCommit.current = true
+                    setDraftDesc(entry.description)
+                    descInputRef.current?.blur()
+                  }
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                className="block max-w-full cursor-text truncate border-0 bg-transparent p-0 text-left text-sm font-semibold text-foreground hover:underline focus:outline-none focus:ring-1 focus:ring-primary"
+                title={entry.description || 'No description'}
+                onClick={() => {
+                  setDraftDesc(entry.description)
+                  setEditDesc(true)
+                }}
+              >
+                {entry.description || (
+                  <span className="text-muted-foreground font-normal">
+                    No description
+                  </span>
+                )}
+              </button>
             )}
-          </button>
-        )}
+          </div>
+        </div>
       </TableCell>
 
       {/* Client + Project — same picker used in the timer bar & edit drawer */}
       <TableCell className="py-3 px-4 w-[18%]">
-        <div className="h-9">
+        <div className="flex h-9 items-center">
           <ClientProjectPicker
             clients={activeClients}
             projects={projects}
@@ -544,21 +567,22 @@ export const EntryRow = memo(function EntryRow({
           </div>
         ) : (
           <div className="flex items-center justify-end gap-1">
-            {entry.endedAt && (
+            {!isSubEntry && entry.endedAt ? (
               <button
                 type="button"
                 onClick={() => onResume(entry)}
-                disabled={actionsDisabled || hasActiveTimer}
-                title={
-                  hasActiveTimer
-                    ? 'Stop the running timer first'
-                    : 'Resume this task'
-                }
+                disabled={actionsDisabled}
+                title="Resume this task"
                 className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Resume entry"
               >
                 <Play className="size-3.5" />
               </button>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="size-8 shrink-0 rounded-lg border border-transparent"
+              />
             )}
 
             <DropdownMenu>
@@ -575,18 +599,24 @@ export const EntryRow = memo(function EntryRow({
                   <Clock className="mr-2 size-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
-                  <Copy className="mr-2 size-4" />
-                  Duplicate
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 size-4" />
-                  Delete
-                </DropdownMenuItem>
+                {!isSubEntry && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => setShowDuplicateDialog(true)}
+                    >
+                      <Copy className="mr-2 size-4" />
+                      Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setShowDeleteDialog(true)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 size-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

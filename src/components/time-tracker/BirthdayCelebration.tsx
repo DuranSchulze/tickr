@@ -129,9 +129,16 @@ export function BirthdayCelebration({
 
       {showGreeting && (
         <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center px-3 print:hidden">
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={triggerSideCelebration}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                triggerSideCelebration()
+              }
+            }}
             className="pointer-events-auto flex max-w-[min(32rem,calc(100vw-1.5rem))] items-center gap-3 rounded-full border border-amber-200/70 bg-background/95 px-3 py-2 text-left shadow-lg backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
@@ -157,7 +164,7 @@ export function BirthdayCelebration({
             >
               Dismiss
             </Button>
-          </button>
+          </div>
         </div>
       )}
     </>

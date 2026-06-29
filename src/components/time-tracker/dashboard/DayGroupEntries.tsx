@@ -34,15 +34,43 @@ type InlinePatch = Partial<
 
 type ClientItem = { id: string; name: string; clientStatus: string }
 
-// ─── Shared formatter for group totals ───────────────────────────────────────
+function formatShortDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })
+}
 
-function formatGroupTime(seconds: number): string {
-  const s = Math.max(0, Math.floor(seconds))
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
+function formatTimeDisplay(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function isSameLocalDate(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  )
+}
+
+function getTaskGroupTimeBounds(group: TaskGroup) {
+  const starts = group.entries.map((entry) => new Date(entry.startedAt))
+  const endedEntries = group.entries.filter((entry) => !!entry.endedAt)
+  const start = new Date(Math.min(...starts.map((date) => date.getTime())))
+  const end = group.runningEntry
+    ? null
+    : endedEntries.length > 0
+      ? new Date(
+          Math.max(
+            ...endedEntries.map((entry) => new Date(entry.endedAt!).getTime()),
+          ),
+        )
+      : null
+
+  return { start, end }
 }
 
 // ─── Live total (ticks when a timer is running) ───────────────────────────────
@@ -68,19 +96,41 @@ export function LiveGroupTotal({
   )
 }
 
+function GroupTimeSummary({ group }: { group: TaskGroup }) {
+  const { start, end } = getTaskGroupTimeBounds(group)
+  const spansDates = !!end && !isSameLocalDate(start, end)
+  const startLabel = spansDates
+    ? `${formatShortDate(start)} ${formatTimeDisplay(start.toISOString())}`
+    : formatTimeDisplay(start.toISOString())
+  const endLabel = group.runningEntry
+    ? 'now'
+    : end
+      ? spansDates
+        ? `${formatShortDate(end)} ${formatTimeDisplay(end.toISOString())}`
+        : formatTimeDisplay(end.toISOString())
+      : '—'
+
+  return (
+    <div className="grid justify-items-end gap-0.5 text-xs leading-tight tabular-nums">
+      <span className="font-semibold text-foreground">{startLabel}</span>
+      <span className="text-muted-foreground">{endLabel}</span>
+    </div>
+  )
+}
+
 // ─── Task group header row (desktop table) ────────────────────────────────────
 
 function TaskGroupHeaderRow({
   group,
   projects,
-  hasActiveTimer,
+  formatTime,
   isExpanded,
   onToggle,
   onResume,
 }: {
   group: TaskGroup
   projects: Project[]
-  hasActiveTimer: boolean
+  formatTime: (seconds: number) => string
   isExpanded: boolean
   onToggle: () => void
   onResume: () => void
@@ -89,27 +139,34 @@ function TaskGroupHeaderRow({
 
   return (
     <TableRow
-      className="bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+      className="cursor-pointer bg-muted/30 transition-colors hover:bg-muted/50"
       onClick={onToggle}
     >
       {/* Description + count + expand toggle */}
       <td className="px-4 py-3 w-[26%]">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-start gap-2">
           {isExpanded ? (
             <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           ) : (
             <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
           )}
-          <span className="truncate text-sm font-semibold text-foreground">
-            {group.description || (
-              <span className="text-muted-foreground font-normal">
-                No description
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {group.description || (
+                  <span className="text-muted-foreground font-normal">
+                    No description
+                  </span>
+                )}
               </span>
-            )}
-          </span>
-          <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-            ×{group.entries.length}
-          </span>
+              <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+                ×{group.entries.length}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Grouped task · one-click resume
+            </p>
+          </div>
         </div>
       </td>
 
@@ -143,15 +200,17 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Time (per-entry only) */}
-      <td className="px-4 py-3 w-[12%] text-center text-xs text-muted-foreground">
-        —
+      <td className="px-4 py-3 w-[12%] text-center">
+        <GroupTimeSummary group={group} />
       </td>
 
       {/* Duration */}
       <td className="px-4 py-3 w-[10%] text-right">
-        <span className="font-mono text-sm font-bold tabular-nums text-foreground">
-          {formatGroupTime(group.totalSeconds)}
-        </span>
+        <LiveGroupTotal
+          completedSeconds={group.completedSeconds}
+          runningEntry={group.runningEntry}
+          formatTime={formatTime}
+        />
       </td>
 
       {/* Resume */}
@@ -160,12 +219,7 @@ function TaskGroupHeaderRow({
           <button
             type="button"
             onClick={onResume}
-            disabled={hasActiveTimer}
-            title={
-              hasActiveTimer
-                ? 'Stop the running timer first'
-                : 'Resume this task'
-            }
+            title="Resume this task"
             className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Resume task"
           >
@@ -184,7 +238,6 @@ function TaskGroupHeaderCard({
   projects,
   tags,
   formatTime,
-  hasActiveTimer,
   isExpanded,
   onToggle,
   onResume,
@@ -193,7 +246,6 @@ function TaskGroupHeaderCard({
   projects: Project[]
   tags: SearchableItem[]
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   isExpanded: boolean
   onToggle: () => void
   onResume: () => void
@@ -204,8 +256,17 @@ function TaskGroupHeaderCard({
     group.runningEntry ? getFormatterLiveTickMs(formatTime) : null,
   )
   const totalSeconds =
-    group.totalSeconds +
+    group.completedSeconds +
     (group.runningEntry ? getEntrySeconds(group.runningEntry, tick) : 0)
+  const { start, end } = getTaskGroupTimeBounds(group)
+  const spansDates = !!end && !isSameLocalDate(start, end)
+  const timeSummary = `${spansDates ? `${formatShortDate(start)} ` : ''}${formatTimeDisplay(start.toISOString())} - ${
+    group.runningEntry
+      ? 'now'
+      : end
+        ? `${spansDates ? `${formatShortDate(end)} ` : ''}${formatTimeDisplay(end.toISOString())}`
+        : '—'
+  }`
 
   return (
     <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-muted/30">
@@ -235,39 +296,39 @@ function TaskGroupHeaderCard({
       </button>
 
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-border/40 px-3 py-2">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-          {project && (
-            <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <p className="m-0 text-xs text-muted-foreground">{timeSummary}</p>
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {project && (
+              <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: project.color }}
+                />
+                <span className="min-w-0 truncate">{project.name}</span>
+              </span>
+            )}
+            {entryTags.map((tag) => (
               <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: project.color }}
-              />
-              <span className="min-w-0 truncate">{project.name}</span>
-            </span>
-          )}
-          {entryTags.map((tag) => (
-            <span
-              key={tag.id}
-              className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
-              style={{ color: tag.color, borderColor: `${tag.color}55` }}
-              title={tag.name}
-            >
-              {tag.name}
-            </span>
-          ))}
-          {group.billable && (
-            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
-              Billable
-            </span>
-          )}
+                key={tag.id}
+                className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
+                style={{ color: tag.color, borderColor: `${tag.color}55` }}
+                title={tag.name}
+              >
+                {tag.name}
+              </span>
+            ))}
+            {group.billable && (
+              <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+                Billable
+              </span>
+            )}
+          </div>
         </div>
         <button
           type="button"
           onClick={onResume}
-          disabled={hasActiveTimer}
-          title={
-            hasActiveTimer ? 'Stop the running timer first' : 'Resume this task'
-          }
+          title="Resume this task"
           className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Resume task"
         >
@@ -297,7 +358,6 @@ export function DayGroupsList({
   pendingEntryIds,
   deletingEntryId,
   formatTime,
-  hasActiveTimer,
   isDayCollapsed,
   toggleDayGroup,
   isTaskGroupExpanded,
@@ -320,7 +380,6 @@ export function DayGroupsList({
   pendingEntryIds?: Set<string>
   deletingEntryId?: string | null
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   isDayCollapsed: (dateKey: string) => boolean
   toggleDayGroup: (dateKey: string) => void
   isTaskGroupExpanded: (dateKey: string, groupKey: string) => boolean
@@ -455,7 +514,6 @@ export function DayGroupsList({
                                 isPending={pendingEntryIds?.has(entry.id)}
                                 isDeleting={deletingEntryId === entry.id}
                                 formatTime={formatTime}
-                                hasActiveTimer={hasActiveTimer}
                                 currency={currency}
                                 rateLookup={rateLookup}
                                 onStartEdit={handleStartEdit}
@@ -473,7 +531,7 @@ export function DayGroupsList({
                                 key={`header-${taskGroup.key}`}
                                 group={taskGroup}
                                 projects={projects}
-                                hasActiveTimer={hasActiveTimer}
+                                formatTime={formatTime}
                                 isExpanded={expanded}
                                 onToggle={() =>
                                   toggleTaskGroup(group.dateKey, taskGroup.key)
@@ -495,7 +553,6 @@ export function DayGroupsList({
                                     isPending={pendingEntryIds?.has(entry.id)}
                                     isDeleting={deletingEntryId === entry.id}
                                     formatTime={formatTime}
-                                    hasActiveTimer={hasActiveTimer}
                                     isSubEntry
                                     currency={currency}
                                     rateLookup={rateLookup}
@@ -538,7 +595,6 @@ export function DayGroupsList({
                             isPending={pendingEntryIds?.has(entry.id)}
                             isDeleting={deletingEntryId === entry.id}
                             formatTime={formatTime}
-                            hasActiveTimer={hasActiveTimer}
                             onStartEdit={handleStartEdit}
                             onResume={handleResume}
                             onDuplicate={handleDuplicate}
@@ -557,7 +613,6 @@ export function DayGroupsList({
                             projects={projects}
                             tags={tags}
                             formatTime={formatTime}
-                            hasActiveTimer={hasActiveTimer}
                             isExpanded={expanded}
                             onToggle={() =>
                               toggleTaskGroup(group.dateKey, taskGroup.key)
@@ -577,7 +632,6 @@ export function DayGroupsList({
                                 isPending={pendingEntryIds?.has(entry.id)}
                                 isDeleting={deletingEntryId === entry.id}
                                 formatTime={formatTime}
-                                hasActiveTimer={hasActiveTimer}
                                 isSubEntry
                                 onStartEdit={handleStartEdit}
                                 onResume={handleResume}

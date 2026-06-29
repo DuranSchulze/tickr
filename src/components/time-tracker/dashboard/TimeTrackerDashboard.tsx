@@ -216,6 +216,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const drainingRef = useRef(false)
   useEffect(() => {
     if (!isOnline || drainingRef.current) return
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return
     const queue = loadOfflineQueue(state.workspace.id, state.currentMemberId)
     if (queue.length === 0) return
     drainingRef.current = true
@@ -351,13 +352,6 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     return () => clearInterval(id)
   }, [activeEntryId])
 
-  const {
-    filteredEntries: serverFilteredEntries,
-    activeFilterCount,
-    clearFilters,
-    controls: filterControls,
-  } = useEntriesFilterSort(allEntries)
-
   const pendingEntryIds = useMemo(
     () => new Set(optimisticStoppedEntries.map((e) => e.id)),
     [optimisticStoppedEntries],
@@ -373,18 +367,32 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     )
   }, [entriesDateRange, optimisticStoppedEntries])
 
-  // Merge pending stopped entries into the visible list so they appear instantly.
-  // When a pending entry shares an id with a server row (e.g. a just-stopped timer
-  // that the server still reports as running until the next invalidate), the pending
-  // version wins — otherwise the row would keep showing as "running" until a reload.
-  const filteredEntries = useMemo(() => {
-    if (pendingInRange.length === 0) return serverFilteredEntries
-    const pendingById = new Map(pendingInRange.map((e) => [e.id, e]))
-    const merged = serverFilteredEntries.map((e) => pendingById.get(e.id) ?? e)
-    const realIds = new Set(serverFilteredEntries.map((e) => e.id))
-    const newPending = pendingInRange.filter((e) => !realIds.has(e.id))
-    return newPending.length > 0 ? [...merged, ...newPending] : merged
-  }, [serverFilteredEntries, pendingInRange])
+  const visibleEntriesSource = useMemo(() => {
+    const byId = new Map(allEntries.map((entry) => [entry.id, entry]))
+    for (const entry of pendingInRange) byId.set(entry.id, entry)
+    if (
+      activeEntry &&
+      (!entriesDateRange ||
+        entryOverlapsRange(
+          activeEntry,
+          parseLocalDateKey(entriesDateRange.startDate),
+          new Date(
+            parseLocalDateKey(entriesDateRange.endDate).getTime() +
+              24 * 60 * 60 * 1000,
+          ),
+        ))
+    ) {
+      byId.set(activeEntry.id, activeEntry)
+    }
+    return Array.from(byId.values())
+  }, [activeEntry, allEntries, entriesDateRange, pendingInRange])
+
+  const {
+    filteredEntries,
+    activeFilterCount,
+    clearFilters,
+    controls: filterControls,
+  } = useEntriesFilterSort(visibleEntriesSource)
 
   const currency = normalizeCurrency(state.workspace.billableCurrency)
   const defaultRate = state.workspace.defaultBillableRate
@@ -569,7 +577,6 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
         pendingEntryIds={pendingEntryIds}
         deletingEntryId={mutations.deletingEntryId}
         formatTime={formatTime}
-        hasActiveTimer={!!activeEntry}
         onStartEdit={startEdit}
         onUpdate={handleInlineUpdate}
         onResume={resumeEntry}

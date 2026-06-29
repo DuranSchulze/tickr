@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer'
 import { BRAND } from '#/lib/brand'
+import { renderTimerReminderEmail } from '#/lib/server/email-templates/timer-reminder'
 
 export type SendEmailInput = {
   to: string
@@ -224,60 +225,8 @@ export async function sendTimerReminderEmail(params: {
   taskName?: string | null
   timerUrl: string
 }): Promise<void> {
-  const {
-    to,
-    memberName,
-    workspaceName,
-    taskDescription,
-    startedAtLabel,
-    runningDuration,
-    projectName,
-    taskName,
-    timerUrl,
-  } = params
-  const subject = `Your ${BRAND.name} timer is still running`
-  const taskLine = taskName
-    ? `${taskDescription} (${taskName})`
-    : taskDescription
-  const projectLine = projectName ? [`Project: ${projectName}`] : []
-  const text = [
-    `Hi ${memberName},`,
-    ``,
-    `Your timer in "${workspaceName}" is still running.`,
-    ``,
-    `Task: ${taskLine}`,
-    ...projectLine,
-    `Started: ${startedAtLabel}`,
-    `Current duration: ${runningDuration}`,
-    ``,
-    `Open your timer: ${timerUrl}`,
-    ``,
-    `If you are still working, you can ignore this reminder. Otherwise, stop or update the timer so your records stay accurate.`,
-  ].join('\n')
-  const projectHtml = projectName
-    ? `<tr><td style="padding:6px 16px 6px 0;color:#64748b;">Project</td><td style="padding:6px 0;color:#0f172a;">${escapeHtml(projectName)}</td></tr>`
-    : ''
-  const html = `
-    <div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px;">
-      <h2 style="margin:0 0 12px;font-size:20px;">Your timer is still running</h2>
-      <p style="margin:0 0 16px;color:#475569;line-height:1.55;">
-        Hi ${escapeHtml(memberName)}, your timer in <strong>${escapeHtml(workspaceName)}</strong> is still active.
-      </p>
-      <table style="width:100%;border-collapse:collapse;margin:18px 0;padding:0;">
-        <tr><td style="padding:6px 16px 6px 0;color:#64748b;">Task</td><td style="padding:6px 0;color:#0f172a;">${escapeHtml(taskLine)}</td></tr>
-        ${projectHtml}
-        <tr><td style="padding:6px 16px 6px 0;color:#64748b;">Started</td><td style="padding:6px 0;color:#0f172a;">${escapeHtml(startedAtLabel)}</td></tr>
-        <tr><td style="padding:6px 16px 6px 0;color:#64748b;">Duration</td><td style="padding:6px 0;color:#0f172a;font-family:monospace;">${escapeHtml(runningDuration)}</td></tr>
-      </table>
-      <p style="margin:24px 0;">
-        <a href="${escapeHtml(timerUrl)}" style="background:#4f46e5;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block;">Open timer</a>
-      </p>
-      <p style="margin:16px 0 0;color:#64748b;font-size:13px;line-height:1.5;">
-        If you are still working, you can ignore this reminder. Otherwise, stop or update the timer so your records stay accurate.
-      </p>
-    </div>
-  `
-
+  const { to, ...templateInput } = params
+  const { subject, html, text } = renderTimerReminderEmail(templateInput)
   await sendEmail({ to, subject, text, html })
 }
 

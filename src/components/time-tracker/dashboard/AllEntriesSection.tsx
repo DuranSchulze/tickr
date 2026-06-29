@@ -49,7 +49,6 @@ export function AllEntriesSection({
   pendingEntryIds,
   deletingEntryId,
   formatTime,
-  hasActiveTimer,
   onStartEdit,
   onUpdate,
   onResume,
@@ -85,7 +84,6 @@ export function AllEntriesSection({
   pendingEntryIds?: Set<string>
   deletingEntryId?: string | null
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   onStartEdit: (entry: TimeEntry) => void
   onUpdate: (entryId: string, patch: InlinePatch) => void
   onResume: (entry: TimeEntry) => void
@@ -238,7 +236,6 @@ export function AllEntriesSection({
         pendingEntryIds={pendingEntryIds}
         deletingEntryId={deletingEntryId}
         formatTime={formatTime}
-        hasActiveTimer={hasActiveTimer}
         isDayCollapsed={(dateKey) => collapsedDates.has(dateKey)}
         toggleDayGroup={toggleDayGroup}
         isTaskGroupExpanded={isTaskGroupExpanded}

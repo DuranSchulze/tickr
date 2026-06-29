@@ -42,6 +42,43 @@ const ADDRESS_FIELDS = [
   ['country', 'Country', 100],
 ] as const satisfies readonly [keyof AddressDraft, string, number | null][]
 
+function getProfileInitialValues({
+  selfProfile,
+  fallbackName,
+  fallbackEmail,
+}: {
+  selfProfile: SelfProfileData
+  fallbackName: string
+  fallbackEmail: string
+}) {
+  return {
+    name: selfProfile.user.name,
+    firstName:
+      selfProfile.profile?.firstName ||
+      fallbackName.split(' ')[0] ||
+      fallbackEmail,
+    middleName: selfProfile.profile?.middleName ?? '',
+    lastName:
+      selfProfile.profile?.lastName ||
+      fallbackName.split(' ').slice(1).join(' ') ||
+      fallbackName,
+    positionTitle: selfProfile.employeeProfile?.positionTitle ?? '',
+    contactNumber: selfProfile.profile?.contactNumber ?? '',
+    birthDate: selfProfile.profile?.birthDate ?? '',
+    gender: selfProfile.profile?.gender ?? '',
+    maritalStatus: selfProfile.profile?.maritalStatus ?? '',
+    avatarUrl: selfProfile.user.image ?? '',
+    address: selfProfile.address ?? {
+      buildingNo: '',
+      street: '',
+      city: '',
+      province: '',
+      postalCode: '',
+      country: 'Philippines',
+    },
+  }
+}
+
 function FieldError({ id, message }: { id: string; message: string }) {
   if (!message) return null
   return (
@@ -121,37 +158,12 @@ export function ProfileForm({
   const [pending, setPending] = useState(false)
   const [birthdayDialogOpen, setBirthdayDialogOpen] = useState(false)
   const savingRef = useRef(false)
-
-  // ── Dirty-tracking (capture the server-provided values once) ────────────────
-  const initialValues = useRef({
-    name: selfProfile.user.name,
-    firstName:
-      selfProfile.profile?.firstName ||
-      fallbackName.split(' ')[0] ||
-      fallbackEmail,
-    middleName: selfProfile.profile?.middleName ?? '',
-    lastName:
-      selfProfile.profile?.lastName ||
-      fallbackName.split(' ').slice(1).join(' ') ||
-      fallbackName,
-    positionTitle: selfProfile.employeeProfile?.positionTitle ?? '',
-    contactNumber: selfProfile.profile?.contactNumber ?? '',
-    birthDate: selfProfile.profile?.birthDate ?? '',
-    gender: selfProfile.profile?.gender ?? '',
-    maritalStatus: selfProfile.profile?.maritalStatus ?? '',
-    avatarUrl: selfProfile.user.image ?? '',
-    address: selfProfile.address ?? {
-      buildingNo: '',
-      street: '',
-      city: '',
-      province: '',
-      postalCode: '',
-      country: 'Philippines',
-    },
-  })
+  const [initialValues, setInitialValues] = useState(() =>
+    getProfileInitialValues({ selfProfile, fallbackName, fallbackEmail }),
+  )
 
   const isDirty = useMemo(() => {
-    const iv = initialValues.current
+    const iv = initialValues
     if (name !== iv.name) return true
     if (firstName !== iv.firstName) return true
     if (middleName !== iv.middleName) return true
@@ -183,10 +195,11 @@ export function ProfileForm({
     maritalStatus,
     avatarUrl,
     address,
+    initialValues,
   ])
 
   const blocker = useBlocker({
-    shouldBlockFn: () => isDirty,
+    shouldBlockFn: () => !pending && isDirty,
     enableBeforeUnload: true,
     withResolver: true,
   })
@@ -292,10 +305,7 @@ export function ProfileForm({
             : {}),
         },
       })
-      await queryClient.invalidateQueries({ queryKey: ['self-profile'] })
-      await router.invalidate()
-      // Reset dirty state so the save is the new baseline
-      initialValues.current = {
+      setInitialValues({
         name,
         firstName,
         middleName,
@@ -307,7 +317,9 @@ export function ProfileForm({
         maritalStatus,
         avatarUrl,
         address: { ...address },
-      }
+      })
+      await queryClient.invalidateQueries({ queryKey: ['self-profile'] })
+      await router.invalidate()
       gooeyToast.success('Profile updated')
     } catch (err) {
       gooeyToast.error('Could not update profile', {
@@ -647,39 +659,38 @@ export function ProfileForm({
         </SectionCard>
       )}
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          disabled={pending}
-          onMouseDownCapture={() => void saveProfile()}
-          onPointerDownCapture={() => void saveProfile()}
-          onPointerDown={() => void saveProfile()}
-          onClick={() => void saveProfile()}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault()
-              void saveProfile()
-            }
-          }}
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-transparent bg-primary px-2.5 text-sm font-medium whitespace-nowrap text-primary-foreground transition-all hover:bg-primary/80 disabled:pointer-events-none disabled:opacity-50"
+      <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <p
+          className={cn(
+            'm-0 text-xs font-medium',
+            isDirty ? 'text-amber-600' : 'text-muted-foreground',
+          )}
         >
-          {pending ? 'Saving…' : 'Save profile'}
-        </button>
+          {isDirty ? 'Unsaved changes' : 'No changes'}
+        </p>
+        <Button
+          type="button"
+          disabled={pending || !isDirty}
+          onClick={() => void saveProfile()}
+        >
+          {pending ? 'Saving…' : 'Save changes'}
+        </Button>
       </div>
 
       {birthdayDialogOpen && (
         <BirthdayDialog
           currentBirthDate={birthDate}
-          onSave={(dateStr) => {
+          onChange={(dateStr) => {
             setBirthDate(dateStr)
-            setBirthdayDialogOpen(false)
-            void saveProfile({ birthDate: dateStr })
+            if (errors.birthDate) {
+              setError('birthDate', validateBirthDate(dateStr))
+            }
           }}
           onClose={() => setBirthdayDialogOpen(false)}
         />
       )}
 
-      {blocker.status === 'blocked' && (
+      {isDirty && blocker.status === 'blocked' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">

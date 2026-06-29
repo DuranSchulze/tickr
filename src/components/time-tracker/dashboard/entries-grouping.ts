@@ -7,6 +7,7 @@ export type TaskGroup = {
   tagIds: string[]
   billable: boolean
   entries: TimeEntry[]
+  completedSeconds: number
   totalSeconds: number
   runningEntry: TimeEntry | null
 }
@@ -41,6 +42,9 @@ function groupEntriesByTask(entries: TimeEntry[]): TaskGroup[] {
         new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
     )
     const first = sorted[0]
+    const completedSeconds = sorted
+      .filter((entry) => !!entry.endedAt)
+      .reduce((sum, entry) => sum + entry.durationSeconds, 0)
     const totalSeconds = sorted.reduce((sum, e) => sum + e.durationSeconds, 0)
     return {
       key,
@@ -49,6 +53,7 @@ function groupEntriesByTask(entries: TimeEntry[]): TaskGroup[] {
       tagIds: first.tagIds,
       billable: first.billable,
       entries: sorted,
+      completedSeconds,
       totalSeconds,
       runningEntry: sorted.find((e) => !e.endedAt) ?? null,
     }
@@ -99,9 +104,7 @@ function getEntryDisplayDateKeys(
 
   const entryStart = new Date(entry.startedAt)
   const entryEnd = entry.endedAt ? new Date(entry.endedAt) : new Date()
-  const start = startOfDay(
-    entryStart > range.start ? entryStart : range.start,
-  )
+  const start = startOfDay(entryStart > range.start ? entryStart : range.start)
   const endExclusive = entryEnd < range.end ? entryEnd : range.end
   const end = startOfDay(new Date(endExclusive.getTime() - 1))
   const keys: string[] = []

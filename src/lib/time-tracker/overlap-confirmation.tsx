@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
 import { checkTimeEntryOverlapFn } from '#/lib/server/tracker'
+import { gooeyToast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
@@ -91,7 +92,17 @@ function showOverlapConfirmation(
 export async function confirmTimeEntryOverlap(
   input: OverlapCheckInput,
 ): Promise<boolean> {
-  const conflicts = await checkTimeEntryOverlapFn({ data: input })
+  let conflicts: TimeEntryOverlapConflict[]
+  try {
+    conflicts = await checkTimeEntryOverlapFn({ data: input })
+  } catch (err) {
+    gooeyToast.error('Could not check time overlap', {
+      description:
+        err instanceof Error ? err.message : 'Please try again in a moment.',
+    })
+    return false
+  }
+
   if (conflicts.length === 0) return true
   return showOverlapConfirmation(conflicts)
 }

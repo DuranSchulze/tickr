@@ -54,7 +54,6 @@ export const EntryCard = memo(function EntryCard({
   isPending,
   isDeleting,
   formatTime,
-  hasActiveTimer,
   isSubEntry,
   onStartEdit,
   onResume,
@@ -70,7 +69,6 @@ export const EntryCard = memo(function EntryCard({
   isPending?: boolean
   isDeleting?: boolean
   formatTime: (seconds: number) => string
-  hasActiveTimer: boolean
   isSubEntry?: boolean
   // Entry-aware handlers: the same stable function reference is shared by
   // every card, so React.memo can actually skip unchanged cards.
@@ -135,33 +133,9 @@ export const EntryCard = memo(function EntryCard({
               >
                 <Pencil className="size-3" />
               </button>
-              <button
-                type="button"
-                onClick={() => setShowDeleteDialog(true)}
-                disabled={actionsDisabled}
-                className="rounded-md border border-destructive/30 p-1 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
-                aria-label="Delete entry"
-              >
-                <Trash2 className="size-3" />
-              </button>
             </div>
           </div>
         </div>
-        <ConfirmDialog
-          open={showDeleteDialog}
-          onOpenChange={setShowDeleteDialog}
-          title="Delete Entry"
-          description={`Delete this entry? This action cannot be undone.`}
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
-          variant="destructive"
-          onConfirm={() => {
-            if (actionsDisabled) return
-            onDelete(entry.id)
-            setShowDeleteDialog(false)
-          }}
-          pending={pending}
-        />
       </div>
     )
   }
@@ -244,12 +218,8 @@ export const EntryCard = memo(function EntryCard({
                 <button
                   type="button"
                   onClick={() => onResume(entry)}
-                  disabled={actionsDisabled || hasActiveTimer}
-                  title={
-                    hasActiveTimer
-                      ? 'Stop the running timer first'
-                      : 'Resume this task'
-                  }
+                  disabled={actionsDisabled}
+                  title="Resume this task"
                   className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Resume entry"
                 >
