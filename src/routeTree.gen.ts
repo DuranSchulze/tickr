@@ -26,7 +26,9 @@ import { Route as AppChangelogRouteImport } from './routes/app/changelog'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppAnalyticsRouteImport } from './routes/app/analytics'
+import { Route as ApiOpenapiDotjsonRouteImport } from './routes/api/openapi[.]json'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiDocsRouteImport } from './routes/api/docs'
 import { Route as AppTimeTrackerIndexRouteImport } from './routes/app/time-tracker/index'
 import { Route as AppWorkspaceSettingsRouteImport } from './routes/app/workspace/settings'
 import { Route as AppWorkspaceMembersRouteImport } from './routes/app/workspace/members'
@@ -37,6 +39,15 @@ import { Route as AppTimeTrackerMonthRouteImport } from './routes/app/time-track
 import { Route as AppTimeTrackerDayRouteImport } from './routes/app/time-tracker/day'
 import { Route as AppDepartmentMemberAnalyticsMemberIdRouteImport } from './routes/app/department-member-analytics.$memberId'
 import { Route as AppAnalyticsOverviewRouteImport } from './routes/app/analytics_.overview'
+import { Route as ApiV1WorkspaceRouteImport } from './routes/api/v1/workspace'
+import { Route as ApiV1TimeEntriesRouteImport } from './routes/api/v1/time-entries'
+import { Route as ApiV1TasksRouteImport } from './routes/api/v1/tasks'
+import { Route as ApiV1TagsRouteImport } from './routes/api/v1/tags'
+import { Route as ApiV1ProjectsRouteImport } from './routes/api/v1/projects'
+import { Route as ApiV1MembersRouteImport } from './routes/api/v1/members'
+import { Route as ApiV1MemberDayActivityRouteImport } from './routes/api/v1/member-day-activity'
+import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
+import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
 import { Route as ApiImportStreamRouteImport } from './routes/api/import/stream'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
 import { Route as ApiCronSyncGsheetsRouteImport } from './routes/api/cron/sync-gsheets'
@@ -134,9 +145,19 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiOpenapiDotjsonRoute = ApiOpenapiDotjsonRouteImport.update({
+  id: '/api/openapi.json',
+  path: '/api/openapi.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDocsRoute = ApiDocsRouteImport.update({
+  id: '/api/docs',
+  path: '/api/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTimeTrackerIndexRoute = AppTimeTrackerIndexRouteImport.update({
@@ -189,6 +210,51 @@ const AppAnalyticsOverviewRoute = AppAnalyticsOverviewRouteImport.update({
   id: '/analytics_/overview',
   path: '/analytics/overview',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiV1WorkspaceRoute = ApiV1WorkspaceRouteImport.update({
+  id: '/api/v1/workspace',
+  path: '/api/v1/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TimeEntriesRoute = ApiV1TimeEntriesRouteImport.update({
+  id: '/api/v1/time-entries',
+  path: '/api/v1/time-entries',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TasksRoute = ApiV1TasksRouteImport.update({
+  id: '/api/v1/tasks',
+  path: '/api/v1/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1TagsRoute = ApiV1TagsRouteImport.update({
+  id: '/api/v1/tags',
+  path: '/api/v1/tags',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ProjectsRoute = ApiV1ProjectsRouteImport.update({
+  id: '/api/v1/projects',
+  path: '/api/v1/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MembersRoute = ApiV1MembersRouteImport.update({
+  id: '/api/v1/members',
+  path: '/api/v1/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1MemberDayActivityRoute = ApiV1MemberDayActivityRouteImport.update({
+  id: '/api/v1/member-day-activity',
+  path: '/api/v1/member-day-activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DepartmentsRoute = ApiV1DepartmentsRouteImport.update({
+  id: '/api/v1/departments',
+  path: '/api/v1/departments',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1ClientsRoute = ApiV1ClientsRouteImport.update({
+  id: '/api/v1/clients',
+  path: '/api/v1/clients',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportStreamRoute = ApiImportStreamRouteImport.update({
   id: '/api/import/stream',
@@ -258,7 +324,9 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -276,6 +344,15 @@ export interface FileRoutesByFullPath {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/v1/clients': typeof ApiV1ClientsRoute
+  '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
+  '/api/v1/members': typeof ApiV1MembersRoute
+  '/api/v1/projects': typeof ApiV1ProjectsRoute
+  '/api/v1/tags': typeof ApiV1TagsRoute
+  '/api/v1/tasks': typeof ApiV1TasksRoute
+  '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
@@ -299,7 +376,9 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -317,6 +396,15 @@ export interface FileRoutesByTo {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/v1/clients': typeof ApiV1ClientsRoute
+  '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
+  '/api/v1/members': typeof ApiV1MembersRoute
+  '/api/v1/projects': typeof ApiV1ProjectsRoute
+  '/api/v1/tags': typeof ApiV1TagsRoute
+  '/api/v1/tasks': typeof ApiV1TasksRoute
+  '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
@@ -341,7 +429,9 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -359,6 +449,15 @@ export interface FileRoutesById {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/v1/clients': typeof ApiV1ClientsRoute
+  '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
+  '/api/v1/members': typeof ApiV1MembersRoute
+  '/api/v1/projects': typeof ApiV1ProjectsRoute
+  '/api/v1/tags': typeof ApiV1TagsRoute
+  '/api/v1/tasks': typeof ApiV1TasksRoute
+  '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
+  '/api/v1/workspace': typeof ApiV1WorkspaceRoute
   '/app/analytics_/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/time-tracker/day': typeof AppTimeTrackerDayRoute
@@ -384,7 +483,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/api/docs'
     | '/api/health'
+    | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
@@ -402,6 +503,15 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/v1/clients'
+    | '/api/v1/departments'
+    | '/api/v1/member-day-activity'
+    | '/api/v1/members'
+    | '/api/v1/projects'
+    | '/api/v1/tags'
+    | '/api/v1/tasks'
+    | '/api/v1/time-entries'
+    | '/api/v1/workspace'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
@@ -425,7 +535,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/api/docs'
     | '/api/health'
+    | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
@@ -443,6 +555,15 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/v1/clients'
+    | '/api/v1/departments'
+    | '/api/v1/member-day-activity'
+    | '/api/v1/members'
+    | '/api/v1/projects'
+    | '/api/v1/tags'
+    | '/api/v1/tasks'
+    | '/api/v1/time-entries'
+    | '/api/v1/workspace'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
@@ -466,7 +587,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/api/docs'
     | '/api/health'
+    | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
     | '/app/calendar'
@@ -484,6 +607,15 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/v1/clients'
+    | '/api/v1/departments'
+    | '/api/v1/member-day-activity'
+    | '/api/v1/members'
+    | '/api/v1/projects'
+    | '/api/v1/tags'
+    | '/api/v1/tasks'
+    | '/api/v1/time-entries'
+    | '/api/v1/workspace'
     | '/app/analytics_/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/time-tracker/day'
@@ -508,7 +640,9 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoungeRoute: typeof LoungeRoute
   OnboardingRoute: typeof OnboardingRoute
+  ApiDocsRoute: typeof ApiDocsRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiOpenapiDotjsonRoute: typeof ApiOpenapiDotjsonRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -518,6 +652,15 @@ export interface RootRouteChildren {
   ApiCronSyncGsheetsRoute: typeof ApiCronSyncGsheetsRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
   ApiImportStreamRoute: typeof ApiImportStreamRoute
+  ApiV1ClientsRoute: typeof ApiV1ClientsRoute
+  ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
+  ApiV1MemberDayActivityRoute: typeof ApiV1MemberDayActivityRoute
+  ApiV1MembersRoute: typeof ApiV1MembersRoute
+  ApiV1ProjectsRoute: typeof ApiV1ProjectsRoute
+  ApiV1TagsRoute: typeof ApiV1TagsRoute
+  ApiV1TasksRoute: typeof ApiV1TasksRoute
+  ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
+  ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -641,11 +784,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAnalyticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/openapi.json': {
+      id: '/api/openapi.json'
+      path: '/api/openapi.json'
+      fullPath: '/api/openapi.json'
+      preLoaderRoute: typeof ApiOpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health': {
       id: '/api/health'
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/docs': {
+      id: '/api/docs'
+      path: '/api/docs'
+      fullPath: '/api/docs'
+      preLoaderRoute: typeof ApiDocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/time-tracker/': {
@@ -717,6 +874,69 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/analytics/overview'
       preLoaderRoute: typeof AppAnalyticsOverviewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/v1/workspace': {
+      id: '/api/v1/workspace'
+      path: '/api/v1/workspace'
+      fullPath: '/api/v1/workspace'
+      preLoaderRoute: typeof ApiV1WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/time-entries': {
+      id: '/api/v1/time-entries'
+      path: '/api/v1/time-entries'
+      fullPath: '/api/v1/time-entries'
+      preLoaderRoute: typeof ApiV1TimeEntriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/tasks': {
+      id: '/api/v1/tasks'
+      path: '/api/v1/tasks'
+      fullPath: '/api/v1/tasks'
+      preLoaderRoute: typeof ApiV1TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/tags': {
+      id: '/api/v1/tags'
+      path: '/api/v1/tags'
+      fullPath: '/api/v1/tags'
+      preLoaderRoute: typeof ApiV1TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/projects': {
+      id: '/api/v1/projects'
+      path: '/api/v1/projects'
+      fullPath: '/api/v1/projects'
+      preLoaderRoute: typeof ApiV1ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/members': {
+      id: '/api/v1/members'
+      path: '/api/v1/members'
+      fullPath: '/api/v1/members'
+      preLoaderRoute: typeof ApiV1MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/member-day-activity': {
+      id: '/api/v1/member-day-activity'
+      path: '/api/v1/member-day-activity'
+      fullPath: '/api/v1/member-day-activity'
+      preLoaderRoute: typeof ApiV1MemberDayActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/departments': {
+      id: '/api/v1/departments'
+      path: '/api/v1/departments'
+      fullPath: '/api/v1/departments'
+      preLoaderRoute: typeof ApiV1DepartmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/clients': {
+      id: '/api/v1/clients'
+      path: '/api/v1/clients'
+      fullPath: '/api/v1/clients'
+      preLoaderRoute: typeof ApiV1ClientsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/import/stream': {
       id: '/api/import/stream'
@@ -880,7 +1100,9 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoungeRoute: LoungeRoute,
   OnboardingRoute: OnboardingRoute,
+  ApiDocsRoute: ApiDocsRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiOpenapiDotjsonRoute: ApiOpenapiDotjsonRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
@@ -890,6 +1112,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronSyncGsheetsRoute: ApiCronSyncGsheetsRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
   ApiImportStreamRoute: ApiImportStreamRoute,
+  ApiV1ClientsRoute: ApiV1ClientsRoute,
+  ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
+  ApiV1MemberDayActivityRoute: ApiV1MemberDayActivityRoute,
+  ApiV1MembersRoute: ApiV1MembersRoute,
+  ApiV1ProjectsRoute: ApiV1ProjectsRoute,
+  ApiV1TagsRoute: ApiV1TagsRoute,
+  ApiV1TasksRoute: ApiV1TasksRoute,
+  ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
+  ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -32,11 +32,19 @@ export function Navbar({
   workspace,
   user,
   permissionLevel,
+  birthdayCelebration,
   mobileMenuButton,
 }: {
   workspace: { name: string }
-  user: { id: string; name: string; email: string; image?: string | null }
+  user: {
+    id: string
+    name: string
+    email: string
+    image?: string | null
+    birthDate?: string | null
+  }
   permissionLevel: string
+  birthdayCelebration?: ReactNode
   mobileMenuButton?: ReactNode
 }) {
   const navigate = useNavigate()
@@ -86,8 +94,10 @@ export function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex h-[4.5rem] max-w-[1600px] items-center gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-40 overflow-hidden border-b border-border/70 bg-background/85 backdrop-blur-xl">
+      <div className="relative mx-auto flex h-[4.5rem] max-w-[1600px] items-center gap-4 px-4 py-3 sm:px-6">
+        {birthdayCelebration}
+
         {mobileMenuButton}
         <Link
           to="/app/time-tracker"

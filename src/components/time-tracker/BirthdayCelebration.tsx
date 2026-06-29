@@ -1,28 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cake } from 'lucide-react'
 import { Button } from '#/components/ui/button'
+import { Confetti, fireSideCannons } from '#/components/ui/confetti'
+import type { ConfettiRef } from '#/components/ui/confetti'
 
 const DISMISSED_VALUE = 'dismissed'
-
-const CONFETTI_PIECES = [
-  { id: 'a', left: '4%', top: '16%', color: 'bg-rose-400', delay: '0s' },
-  { id: 'b', left: '9%', top: '54%', color: 'bg-amber-400', delay: '0.2s' },
-  { id: 'c', left: '14%', top: '28%', color: 'bg-sky-400', delay: '0.5s' },
-  { id: 'd', left: '19%', top: '72%', color: 'bg-emerald-400', delay: '0.1s' },
-  { id: 'e', left: '25%', top: '18%', color: 'bg-violet-400', delay: '0.4s' },
-  { id: 'f', left: '31%', top: '62%', color: 'bg-pink-400', delay: '0.7s' },
-  { id: 'g', left: '37%', top: '36%', color: 'bg-amber-300', delay: '0.3s' },
-  { id: 'h', left: '43%', top: '74%', color: 'bg-cyan-400', delay: '0.6s' },
-  { id: 'i', left: '49%', top: '20%', color: 'bg-lime-400', delay: '0.15s' },
-  { id: 'j', left: '55%', top: '58%', color: 'bg-rose-300', delay: '0.45s' },
-  { id: 'k', left: '61%', top: '34%', color: 'bg-blue-400', delay: '0.9s' },
-  { id: 'l', left: '67%', top: '70%', color: 'bg-fuchsia-400', delay: '0.25s' },
-  { id: 'm', left: '73%', top: '24%', color: 'bg-yellow-300', delay: '0.55s' },
-  { id: 'n', left: '79%', top: '64%', color: 'bg-teal-400', delay: '0.8s' },
-  { id: 'o', left: '85%', top: '38%', color: 'bg-orange-400', delay: '0.35s' },
-  { id: 'p', left: '91%', top: '76%', color: 'bg-indigo-400', delay: '0.65s' },
-  { id: 'q', left: '96%', top: '22%', color: 'bg-red-300', delay: '0.95s' },
-] as const
 
 export function isBirthdayToday(birthDate: string, today = new Date()) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate)
@@ -60,6 +42,7 @@ export function BirthdayCelebration({
   userId: string
   userName: string
 }) {
+  const confettiRef = useRef<ConfettiRef>(null)
   const [today, setToday] = useState<Date | null>(null)
   const birthdayToday = today ? isBirthdayToday(birthDate ?? '', today) : false
   const todayKey = today ? getLocalDateKey(today) : ''
@@ -88,6 +71,38 @@ export function BirthdayCelebration({
     }
   }, [birthdayToday, storageKey])
 
+  useEffect(() => {
+    if (!birthdayToday) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const fireBurst = () => {
+      confettiRef.current?.fire({
+        particleCount: 6,
+        spread: 24,
+        startVelocity: 14,
+        gravity: 0.7,
+        ticks: 90,
+        scalar: 0.55,
+        origin: { x: 0.16, y: 0.72 },
+        colors: ['#f59e0b', '#fb7185', '#60a5fa', '#34d399'],
+      })
+      confettiRef.current?.fire({
+        particleCount: 6,
+        spread: 24,
+        startVelocity: 14,
+        gravity: 0.7,
+        ticks: 90,
+        scalar: 0.55,
+        origin: { x: 0.84, y: 0.72 },
+        colors: ['#f59e0b', '#fb7185', '#60a5fa', '#34d399'],
+      })
+    }
+
+    fireBurst()
+    const intervalId = window.setInterval(fireBurst, 9000)
+    return () => window.clearInterval(intervalId)
+  }, [birthdayToday])
+
   function dismissGreeting() {
     try {
       window.localStorage.setItem(storageKey, DISMISSED_VALUE)
@@ -97,53 +112,52 @@ export function BirthdayCelebration({
     setShowGreeting(false)
   }
 
+  function triggerSideCelebration() {
+    fireSideCannons({ durationMs: 1400, particleCount: 2 })
+  }
+
   if (!birthdayToday) return null
 
   return (
     <>
-      <div
+      <Confetti
+        ref={confettiRef}
+        manualstart
         aria-hidden
-        className="birthday-confetti pointer-events-none fixed inset-x-0 top-0 z-30 h-28 overflow-hidden print:hidden"
-      >
-        {CONFETTI_PIECES.map((piece) => (
-          <span
-            key={piece.id}
-            className={`birthday-confetti-piece absolute block size-1.5 rounded-[2px] opacity-65 sm:size-2 ${piece.color}`}
-            style={{
-              left: piece.left,
-              top: piece.top,
-              animationDelay: piece.delay,
-            }}
-          />
-        ))}
-      </div>
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-16 w-full opacity-65 print:hidden"
+      />
 
       {showGreeting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 print:hidden">
+        <div className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center px-3 print:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/35 backdrop-blur-sm"
-            onClick={dismissGreeting}
-            aria-label="Close birthday greeting"
-          />
-          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-xl">
-            <div className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-primary/10 text-primary">
-              <Cake className="size-6" />
+            onClick={triggerSideCelebration}
+            className="pointer-events-auto flex max-w-[min(32rem,calc(100vw-1.5rem))] items-center gap-3 rounded-full border border-amber-200/70 bg-background/95 px-3 py-2 text-left shadow-lg backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
+              <Cake className="size-4" />
             </div>
-            <h2 className="m-0 text-xl font-black text-foreground">
-              Happy birthday, {userName}!
-            </h2>
-            <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
-              Hope today treats you kindly. Enjoy the little celebration.
-            </p>
+            <div className="min-w-0">
+              <p className="m-0 truncate text-sm font-bold text-foreground">
+                Happy birthday, {userName}!
+              </p>
+              <p className="m-0 truncate text-xs text-muted-foreground">
+                Enjoy the little celebration.
+              </p>
+            </div>
             <Button
               type="button"
-              className="mt-5 w-full"
-              onClick={dismissGreeting}
+              size="sm"
+              variant="ghost"
+              className="shrink-0 rounded-full"
+              onClick={(event) => {
+                event.stopPropagation()
+                dismissGreeting()
+              }}
             >
-              Thanks!
+              Dismiss
             </Button>
-          </div>
+          </button>
         </div>
       )}
     </>

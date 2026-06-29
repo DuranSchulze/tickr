@@ -15,6 +15,7 @@ import { AppSidebar } from './AppSidebar'
 import { BirthdayCelebration } from './BirthdayCelebration'
 import { MobileNav } from './MobileNav'
 import { Navbar } from './Navbar'
+import { fireSideCannons } from '#/components/ui/confetti'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
 
@@ -110,6 +111,21 @@ export function AppShell({
   const [settingsOpen, setSettingsOpen] = useState(settingsActive)
   const [collapsed, setCollapsed] = useState(false)
 
+  useEffect(() => {
+    if (isEmbed) return
+
+    const storageKey = `tickr:first-open-confetti:${user.id}`
+
+    try {
+      if (window.localStorage.getItem(storageKey) === 'seen') return
+      window.localStorage.setItem(storageKey, 'seen')
+    } catch {
+      // Keep going even if storage is unavailable.
+    }
+
+    return fireSideCannons()
+  }, [isEmbed, user.id])
+
   const isOwnerOrAdmin =
     permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const canAccessSettings = permissionLevel !== 'EMPLOYEE'
@@ -174,19 +190,18 @@ export function AppShell({
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
       {!isEmbed && (
-        <BirthdayCelebration
-          birthDate={user.birthDate}
-          userId={user.id}
-          userName={user.name}
-        />
-      )}
-
-      {!isEmbed && (
         <div className="print:hidden">
           <Navbar
             workspace={workspace}
             user={user}
             permissionLevel={permissionLevel}
+            birthdayCelebration={
+              <BirthdayCelebration
+                birthDate={user.birthDate}
+                userId={user.id}
+                userName={user.name}
+              />
+            }
             mobileMenuButton={
               <MobileNav
                 workspaceName={workspace.name}

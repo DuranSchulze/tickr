@@ -71,6 +71,13 @@
       "when": 1782200000000,
       "tag": "0009_timer_reminder_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1782628000000,
+      "tag": "0010_workspace_api_keys",
+      "breakpoints": true
     }
   ]
 }

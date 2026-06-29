@@ -348,6 +348,56 @@ export const workspaceMembers = pgTable(
   ],
 )
 
+export const workspaceApiKeys = pgTable(
+  'workspace_api_keys',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdByUserId: varchar('created_by_user_id', { length: 30 }).references(
+      () => users.id,
+      { onDelete: 'set null' },
+    ),
+    createdByMemberId: varchar('created_by_member_id', {
+      length: 30,
+    }).references(() => workspaceMembers.id, { onDelete: 'set null' }),
+    name: varchar('name', { length: 100 }).notNull(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+    tokenPrefix: varchar('token_prefix', { length: 24 }).notNull(),
+    lastFour: varchar('last_four', { length: 4 }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    lastUsedIp: varchar('last_used_ip', { length: 64 }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    revokedByUserId: varchar('revoked_by_user_id', { length: 30 }).references(
+      () => users.id,
+      { onDelete: 'set null' },
+    ),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('workspace_api_keys_workspace_idx').on(table.workspaceId),
+    index('workspace_api_keys_workspace_revoked_idx').on(
+      table.workspaceId,
+      table.revokedAt,
+    ),
+    index('workspace_api_keys_workspace_expires_idx').on(
+      table.workspaceId,
+      table.expiresAt,
+    ),
+    index('workspace_api_keys_created_by_user_idx').on(table.createdByUserId),
+  ],
+)
+
 export const workspaceInvites = pgTable(
   'workspace_invites',
   {

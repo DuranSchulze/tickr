@@ -112,6 +112,7 @@ These files contain brand name strings directly (they can't import `BRAND`):
 - **Catalog management** — clients, projects, tags, departments, and cohorts
 - **Role-based access** — Owner, Admin, Manager, and Employee roles
 - **Google Sheets sync** — export time entries, members, and catalog data
+- **API integrations** — Owner/Admin generated workspace API keys for read-only external API access with Swagger docs
 - **Workspace invites** — token-based invitations with role assignment and expiry
 - **Theme customization** — primary color picker and dark/light mode toggle
 - **Employee profiles** — profile photo upload, employment details, and government ID storage

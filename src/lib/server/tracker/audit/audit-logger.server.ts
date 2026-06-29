@@ -45,6 +45,9 @@ export type AuditAction =
   | 'GSHEET_SYNC'
   | 'GSHEET_AUTO_SYNC'
   | 'GSHEET_IMPORT'
+  | 'API_KEY_CREATE'
+  | 'API_KEY_REVOKE'
+  | 'API_KEY_AUTH_FAILURE'
   // Exports
   | 'EXPORT_MEMBERS'
   | 'EXPORT_ANALYTICS'

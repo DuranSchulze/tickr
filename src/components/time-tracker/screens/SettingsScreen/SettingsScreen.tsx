@@ -5,6 +5,7 @@ import { Page } from '../shared/Page'
 import { SmtpTestPanel } from './SmtpTestPanel'
 import { ResendTestPanel } from './ResendTestPanel'
 import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
+import { WorkspaceApiKeysPanel } from './WorkspaceApiKeysPanel'
 
 export function SettingsScreen({ state }: { state: TrackerState }) {
   const currentMember = state.members.find(
@@ -50,6 +51,8 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
         workspace={state.workspace}
         permissionLevel={permissionLevel}
       />
+
+      {isOwnerOrAdmin && <WorkspaceApiKeysPanel />}
 
       {isOwnerOrAdmin && <SmtpTestPanel defaultEmail={currentMember.email} />}
 

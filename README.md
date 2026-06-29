@@ -73,6 +73,8 @@ GOOGLE_PRIVATE_KEY=   # keep the \n escapes in the key value
 
 See [docs/google-sheets-integration.md](docs/google-sheets-integration.md) for the full Google Sheets setup guide.
 
+For external systems that need read-only workspace data, see [docs/api-integrations.md](docs/api-integrations.md).
+
 ### 3. Apply the database migration
 
 Run this once to create all tables in your Neon database:
