@@ -12,6 +12,10 @@ export type DraftEntry = {
   notes: string
 }
 
+export function singleTagIds(tagIds: string[]) {
+  return tagIds.filter(Boolean).slice(0, 1)
+}
+
 export function emptyDraft(
   clientId = '',
   projectId = '',
@@ -27,7 +31,7 @@ export function emptyDraft(
     clientId,
     projectId,
     taskId: '',
-    tagIds: tagId ? [tagId] : [],
+    tagIds: singleTagIds(tagId ? [tagId] : []),
     billable: false,
     startedAt: dateTimeLocalValue(start),
     endedAt: dateTimeLocalValue(end),
@@ -49,7 +53,7 @@ export function toEntryPayload(d: DraftEntry) {
     description: d.description.trim(),
     projectId: d.projectId,
     taskId: d.taskId || null,
-    tagIds: d.tagIds.filter(Boolean),
+    tagIds: singleTagIds(d.tagIds),
     billable: d.billable,
     startedAt: new Date(d.startedAt).toISOString(),
     endedAt: new Date(d.endedAt).toISOString(),

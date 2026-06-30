@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
-import { ChevronDown, ChevronRight, Play } from 'lucide-react'
+import { ChevronDown, ChevronRight, Copy, Play } from 'lucide-react'
+import { gooeyToast } from '#/lib/toast'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry, ViewMode } from '#/lib/time-tracker/types'
@@ -46,6 +47,185 @@ function formatTimeDisplay(iso: string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function formatDtrTime(date: Date): string {
+  return date.toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+function formatDtrDuration(totalSeconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(totalSeconds))
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+  const seconds = safeSeconds % 60
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function formatDtrDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: 'long',
+    day: 'numeric',
+  })
+}
+
+function formatDtrDay(date: Date): string {
+  return date.toLocaleDateString(undefined, { weekday: 'long' })
+}
+
+function getDayEntries(group: DayGroup) {
+  return group.taskGroups.flatMap((taskGroup) => taskGroup.entries)
+}
+
+function getDayDtrRow(group: DayGroup) {
+  const entries = getDayEntries(group)
+  const now = new Date()
+  const starts = entries.map((entry) => new Date(entry.startedAt))
+  const ends = entries.map((entry) =>
+    entry.endedAt ? new Date(entry.endedAt) : now,
+  )
+  const firstStart = new Date(
+    Math.min(...starts.map((date) => date.getTime())),
+  )
+  const lastEnd = new Date(Math.max(...ends.map((date) => date.getTime())))
+  const totalSeconds = entries.reduce(
+    (sum, entry) =>
+      sum +
+      (entry.endedAt
+        ? entry.durationSeconds
+        : getEntrySeconds(entry, now.getTime())),
+    0,
+  )
+
+  return [
+    formatDtrDate(firstStart),
+    formatDtrDay(firstStart),
+    formatDtrTime(firstStart),
+    formatDtrTime(lastEnd),
+    formatDtrDuration(totalSeconds),
+    'WORK',
+  ].join('\t')
+}
+
+async function writeClipboardText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return
+  } catch {
+    // Fall through to the textarea fallback for stricter browser contexts.
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.top = '-9999px'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  if (!copied) throw new Error('Copy command failed')
+}
+
+async function copyDayDtrRow(group: DayGroup) {
+  try {
+    await writeClipboardText(getDayDtrRow(group))
+    gooeyToast.success('DTR row copied')
+  } catch {
+    gooeyToast.error('Could not copy DTR row')
+  }
+}
+
+function DayGroupHeaderRow({
+  group,
+  view,
+  entryCount,
+  dayCollapsed,
+  formatTime,
+  onToggle,
+}: {
+  group: DayGroup
+  view?: ViewMode
+  entryCount: number
+  dayCollapsed: boolean
+  formatTime: (seconds: number) => string
+  onToggle: () => void
+}) {
+  const copyButton = (
+    <button
+      type="button"
+      onClick={() => void copyDayDtrRow(group)}
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      title="Copy DTR row for Google Sheets"
+    >
+      <Copy className="size-3.5" />
+      Copy
+    </button>
+  )
+
+  if (view === 'day') {
+    return (
+      <div className="flex w-full min-w-0 items-center justify-between gap-3 bg-muted/30 px-3 py-3 sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="min-w-0 truncate text-sm font-bold text-foreground">
+            {group.label}
+          </span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {copyButton}
+          <LiveGroupTotal
+            completedSeconds={group.completedSeconds}
+            runningEntry={group.runningEntry}
+            formatTime={formatTime}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex w-full min-w-0 items-center justify-between gap-2 bg-muted/30 px-3 py-3 transition-colors hover:bg-muted/50 sm:px-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+      >
+        <span className="shrink-0">
+          {dayCollapsed ? (
+            <ChevronRight className="size-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="size-4 text-muted-foreground" />
+          )}
+        </span>
+        <span className="min-w-0 truncate text-sm font-bold text-foreground">
+          {group.label}
+        </span>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
+          {group.taskGroups.length > 1 && (
+            <span className="ml-1 text-muted-foreground/60">
+              · {group.taskGroups.length} tasks
+            </span>
+          )}
+        </span>
+      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        {copyButton}
+        <LiveGroupTotal
+          completedSeconds={group.completedSeconds}
+          runningEntry={group.runningEntry}
+          formatTime={formatTime}
+        />
+      </div>
+    </div>
+  )
 }
 
 function isSameLocalDate(a: Date, b: Date): boolean {
@@ -145,11 +325,22 @@ function TaskGroupHeaderRow({
       {/* Description + count + expand toggle */}
       <td className="px-4 py-3 w-[26%]">
         <div className="flex min-w-0 items-start gap-2">
-          {isExpanded ? (
-            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-          )}
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onToggle()
+            }}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label={isExpanded ? 'Collapse task group' : 'Expand task group'}
+            title={isExpanded ? 'Collapse task group' : 'Expand task group'}
+          >
+            {isExpanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </button>
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-sm font-semibold text-foreground">
@@ -159,7 +350,10 @@ function TaskGroupHeaderRow({
                   </span>
                 )}
               </span>
-              <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+              <span
+                className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary"
+                title={`${group.entries.length} similar records`}
+              >
                 ×{group.entries.length}
               </span>
             </div>
@@ -276,17 +470,22 @@ function TaskGroupHeaderCard({
         className="flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2.5 text-left"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          {isExpanded ? (
-            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-          )}
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground">
+            {isExpanded ? (
+              <ChevronDown className="size-4" />
+            ) : (
+              <ChevronRight className="size-4" />
+            )}
+          </span>
           <span className="truncate font-semibold text-foreground">
             {group.description || (
               <span className="text-muted-foreground">No description</span>
             )}
           </span>
-          <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+          <span
+            className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary"
+            title={`${group.entries.length} similar records`}
+          >
             ×{group.entries.length}
           </span>
         </div>
@@ -404,7 +603,7 @@ export function DayGroupsList({
   const handleDelete = useStableCallback(onDelete)
 
   return (
-    <div className="min-w-0 divide-y divide-border">
+    <div className="grid min-w-0 gap-3 bg-transparent sm:gap-4">
       {groups.map((group) => {
         const dayCollapsed = isDayCollapsed(group.dateKey)
         const entryCount = group.taskGroups.reduce(
@@ -412,65 +611,29 @@ export function DayGroupsList({
           0,
         )
         return (
-          <div key={group.dateKey} className="min-w-0">
+          <div
+            key={group.dateKey}
+            className="min-w-0 overflow-hidden rounded-lg border border-border bg-card"
+          >
             {/* Day group header — static in day view, collapsible otherwise */}
-            {view === 'day' ? (
-              <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3">
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="min-w-0 truncate text-sm font-bold text-foreground">
-                    {group.label}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
-                  </span>
-                </div>
-                <LiveGroupTotal
-                  completedSeconds={group.completedSeconds}
-                  runningEntry={group.runningEntry}
-                  formatTime={formatTime}
-                />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => toggleDayGroup(group.dateKey)}
-                className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  {dayCollapsed ? (
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className="min-w-0 truncate text-sm font-bold text-foreground">
-                    {group.label}
-                  </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
-                    {group.taskGroups.length > 1 && (
-                      <span className="ml-1 text-muted-foreground/60">
-                        · {group.taskGroups.length} tasks
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <LiveGroupTotal
-                  completedSeconds={group.completedSeconds}
-                  runningEntry={group.runningEntry}
-                  formatTime={formatTime}
-                />
-              </button>
-            )}
+            <DayGroupHeaderRow
+              group={group}
+              view={view}
+              entryCount={entryCount}
+              dayCollapsed={dayCollapsed}
+              formatTime={formatTime}
+              onToggle={() => toggleDayGroup(group.dateKey)}
+            />
 
             {/* Expanded day content — always visible in day view */}
             {(view === 'day' || !dayCollapsed) && (
               <>
                 {/* Desktop table */}
                 {isDesktop && (
-                  <div className="hidden min-w-0 border-t border-border/40 sm:block">
+                  <div className="hidden min-w-0 sm:block">
                     <Table className="table-fixed">
-                      <TableHeader className="bg-muted/60">
-                        <TableRow className="text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
+                      <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
+                        <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
                           <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
                             Task
                           </TableHead>
@@ -492,7 +655,7 @@ export function DayGroupsList({
                           <TableHead className="px-4 py-2.5 w-[12%]" />
                         </TableRow>
                       </TableHeader>
-                      <TableBody>
+                      <TableBody className="[&_tr]:border-b-0">
                         {group.taskGroups.map((taskGroup) => {
                           const isGrouped = taskGroup.entries.length > 1
                           const expanded = isTaskGroupExpanded(
@@ -573,7 +736,7 @@ export function DayGroupsList({
 
                 {/* Mobile cards */}
                 {!isDesktop && (
-                  <div className="grid min-w-0 gap-2 border-t border-border/40 p-3 sm:hidden">
+                  <div className="grid min-w-0 gap-2 p-2.5 sm:hidden">
                     {group.taskGroups.map((taskGroup) => {
                       const isGrouped = taskGroup.entries.length > 1
                       const expanded = isTaskGroupExpanded(

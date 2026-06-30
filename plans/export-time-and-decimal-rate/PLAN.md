@@ -1,5 +1,7 @@
 # Export Start/End Time and Decimal Rate Consistency
 
+> **Status:** 🟡 In Progress — formatting done, tests missing
+
 ## 1. Goal
 
 Improve every supported time-report export so that users receive accurate, readable, and structurally consistent PDF and CSV files containing:

@@ -22,6 +22,7 @@ import {
 } from '#/lib/time-tracker/query-keys'
 import type { useTrackerMutations } from './useTrackerMutations'
 import { useDescriptionSuggestions } from './useDescriptionSuggestions'
+import { singleTagIds } from '../utils'
 
 type TimerOperation =
   | { kind: 'idle' }
@@ -140,7 +141,7 @@ export function useTimerCore({
           description: timerDescription,
           projectId: timerProjectId,
           taskId: timerTaskId || null,
-          tagIds: timerTagIds.filter(Boolean),
+          tagIds: singleTagIds(timerTagIds),
           billable: timerBillable,
           ...(timerStartedAt ? { startedAt: timerStartedAt } : {}),
         }
@@ -225,7 +226,7 @@ export function useTimerCore({
       setTimerClientId(entryProject?.clientId ?? '')
       setTimerProjectId(activeEntryBase.projectId)
       setTimerTaskId(activeEntryBase.taskId ?? '')
-      setTimerTagIds(activeEntryBase.tagIds)
+      setTimerTagIds(singleTagIds(activeEntryBase.tagIds))
       setTimerBillable(activeEntryBase.billable)
       setTimerStartedAt(null)
     } else if (lastSyncedEntryIdRef.current && timerOperation.kind === 'idle') {
@@ -342,9 +343,9 @@ export function useTimerCore({
       }
       nextTaskId = matchingEntry.taskId ?? ''
       setTimerTaskId(nextTaskId)
-      nextTagIds = matchingEntry.tagIds
+      nextTagIds = singleTagIds(matchingEntry.tagIds)
       nextBillable = matchingEntry.billable
-      setTimerTagIds(matchingEntry.tagIds)
+      setTimerTagIds(nextTagIds)
       setTimerBillable(matchingEntry.billable)
     }
     if (activeEntry) {
@@ -412,14 +413,15 @@ export function useTimerCore({
   }
 
   function changeTimerTagIds(nextTagIds: string[]) {
+    const nextSingleTagIds = singleTagIds(nextTagIds)
     timerInputDirtyRef.current = true
-    setTimerTagIds(nextTagIds)
+    setTimerTagIds(nextSingleTagIds)
     if (activeEntry) {
       persistActiveTimer({
         description: timerDescription.trim(),
         projectId: timerProjectId,
         taskId: timerTaskId || null,
-        tagIds: nextTagIds,
+        tagIds: nextSingleTagIds,
         billable: timerBillable,
       })
     }
@@ -448,10 +450,11 @@ export function useTimerCore({
   }) {
     isApplyingPresetRef.current = true
     timerInputDirtyRef.current = true
+    const presetTagIds = singleTagIds(preset.tagIds)
     setTimerClientId(preset.clientId)
     setTimerProjectId(preset.projectId)
     setTimerTaskId(preset.taskId)
-    setTimerTagIds(preset.tagIds)
+    setTimerTagIds(presetTagIds)
     setTimerBillable(preset.billable)
     // Allow the sync-back effect to run again after this render cycle.
     Promise.resolve().then(() => {
@@ -462,7 +465,7 @@ export function useTimerCore({
         description: timerDescription.trim(),
         projectId: preset.projectId,
         taskId: preset.taskId || null,
-        tagIds: preset.tagIds.filter(Boolean),
+        tagIds: presetTagIds,
         billable: preset.billable,
       })
     }
@@ -565,7 +568,7 @@ export function useTimerCore({
     setTimerClientId(project?.clientId ?? '')
     setTimerProjectId(projectId)
     setTimerTaskId(taskId ?? '')
-    setTimerTagIds(tagIds)
+    setTimerTagIds(singleTagIds(tagIds))
     setTimerBillable(billable)
     setTimerStartedAt(null)
     timerInputDirtyRef.current = false
@@ -577,7 +580,7 @@ export function useTimerCore({
       description,
       projectId,
       taskId,
-      tagIds,
+      tagIds: singleTagIds(tagIds),
       billable,
       startedAt,
       endedAt: null,
@@ -689,7 +692,7 @@ export function useTimerCore({
             description: timerDescription.trim(),
             projectId: timerProjectId,
             taskId: timerTaskId || null,
-            tagIds: timerTagIds.filter(Boolean),
+            tagIds: singleTagIds(timerTagIds),
             billable: timerBillable,
           },
         })
@@ -797,7 +800,7 @@ export function useTimerCore({
       description: timerDescription.trim(),
       projectId: timerProjectId,
       taskId: timerTaskId || null,
-      tagIds: timerTagIds.filter(Boolean),
+      tagIds: singleTagIds(timerTagIds),
       billable: timerBillable,
     })
   }
@@ -846,7 +849,7 @@ export function useTimerCore({
             description: timerDescription.trim(),
             projectId: timerProjectId,
             taskId: timerTaskId || null,
-            tagIds: timerTagIds.filter(Boolean),
+            tagIds: singleTagIds(timerTagIds),
             billable: timerBillable,
           },
         })
@@ -866,7 +869,7 @@ export function useTimerCore({
       description: timerDescription.trim(),
       projectId: timerProjectId,
       taskId: timerTaskId || null,
-      tagIds: timerTagIds.filter(Boolean),
+      tagIds: singleTagIds(timerTagIds),
       billable: timerBillable,
     })
     clearTimerInputs()

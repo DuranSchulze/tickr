@@ -134,9 +134,9 @@ export function AllEntriesSection({
   }
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0">
       {/* Section header */}
-      <div className="border-b border-border p-3 sm:p-4">
+      <div className="px-1 pb-3 sm:px-0 sm:pb-4">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             <h2 className="m-0 text-base font-bold text-foreground sm:text-lg">

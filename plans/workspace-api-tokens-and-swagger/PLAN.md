@@ -1,5 +1,7 @@
 # Workspace API Tokens and Swagger
 
+> **Status:** ✅ Done
+
 ## 1. Goal
 
 Create a secure workspace integration API for Tickr so workspace Owners and Admins can generate API keys, manage/revoke them from the workspace settings UI, and use those keys to call documented external API endpoints. The first implementation should include Swagger/OpenAPI documentation and a Swagger UI so integrators can discover and test the API routes.

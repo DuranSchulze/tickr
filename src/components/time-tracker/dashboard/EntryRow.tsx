@@ -433,13 +433,18 @@ export const EntryRow = memo(function EntryRow({
   return (
     <TableRow
       className={
-        isDeleting
-          ? 'opacity-50 pointer-events-none'
-          : isRunning
-            ? 'bg-primary/5 opacity-75'
-            : isSubEntry
-              ? 'bg-muted/20'
-              : ''
+        [
+          isDeleting ? 'pointer-events-none opacity-50' : '',
+          isSubEntry && isRunning
+            ? 'bg-primary/10 opacity-80 hover:bg-primary/15 dark:bg-primary/20 dark:hover:bg-primary/25'
+            : isRunning
+              ? 'bg-primary/5 opacity-75'
+              : isSubEntry
+                ? 'bg-foreground/[0.045] hover:bg-foreground/[0.065] dark:bg-white/[0.075] dark:hover:bg-white/[0.095]'
+                : '',
+        ]
+          .filter(Boolean)
+          .join(' ')
       }
     >
       {/* Description — inline editable */}

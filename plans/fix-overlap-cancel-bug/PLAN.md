@@ -1,5 +1,7 @@
 # Fix Overlap Cancel + Timezone Display Defects
 
+> **Status:** 🔴 Not Started
+
 ## 1. Goal
 
 Fix two remaining edge-case defects in the Tracked vs. Actual hours feature:
