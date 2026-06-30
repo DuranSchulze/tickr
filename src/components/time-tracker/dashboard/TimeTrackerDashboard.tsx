@@ -164,6 +164,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     stopTimer,
     discardTimer,
     resumeEntry,
+    flushDescriptionSave,
     persistActiveTimerStartedAt,
   } = useTimerCore({ state, mutations, isOnline, onMutated: refreshAllEntries })
 
@@ -446,6 +447,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
       tags: state.tags,
       description: timerDescription,
       onDescriptionChange: changeTimerDescription,
+      onDescriptionBlur: flushDescriptionSave,
       descriptionSuggestions,
       onApplySuggestion: applyDescriptionSuggestion,
       clientId: timerClientId,
@@ -486,6 +488,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
       state.tags,
       timerDescription,
       changeTimerDescription,
+      flushDescriptionSave,
       descriptionSuggestions,
       applyDescriptionSuggestion,
       timerClientId,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Play, Pencil } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
@@ -15,6 +15,7 @@ export function InputSection({
   // timer
   description,
   onDescriptionChange,
+  onDescriptionBlur,
   descriptionSuggestions,
   onApplySuggestion,
   clientId,
@@ -57,6 +58,7 @@ export function InputSection({
   tags: SearchableItem[]
   description: string
   onDescriptionChange: (v: string) => void
+  onDescriptionBlur?: () => void
   descriptionSuggestions: string[]
   onApplySuggestion: (description: string) => void
   clientId: string
@@ -102,15 +104,7 @@ export function InputSection({
   descriptionDropdownUp?: boolean
 }) {
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
-
-  // Force-switch to Timer mode when a timer starts running — the Manual
-  // button is disabled while a timer is active so users can't open a manual
-  // entry form alongside a running timer.
-  useEffect(() => {
-    if (activeEntry) {
-      setMode('timer')
-    }
-  }, [activeEntry])
+  const effectiveMode = activeEntry ? 'timer' : mode
 
   const modeToggle = (
     <div
@@ -122,10 +116,10 @@ export function InputSection({
         type="button"
         onClick={() => setMode('timer')}
         role="tab"
-        aria-selected={mode === 'timer'}
+        aria-selected={effectiveMode === 'timer'}
         title="Timer"
         className={`grid size-8 place-items-center rounded-md transition-colors ${
-          mode === 'timer'
+          effectiveMode === 'timer'
             ? 'bg-primary/10 text-primary'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         }`}
@@ -136,13 +130,13 @@ export function InputSection({
         type="button"
         onClick={() => setMode('manual')}
         role="tab"
-        aria-selected={mode === 'manual'}
+        aria-selected={effectiveMode === 'manual'}
         title={activeEntry ? 'Stop the timer first' : 'Manual entry'}
         disabled={!!activeEntry}
         className={`grid size-8 place-items-center rounded-md transition-colors ${
           activeEntry
             ? 'cursor-not-allowed text-muted-foreground/40'
-            : mode === 'manual'
+            : effectiveMode === 'manual'
               ? 'bg-primary/10 text-primary'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         }`}
@@ -162,7 +156,7 @@ export function InputSection({
             taller mode-toggle column instead of pinned to the card's top. */}
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <AnimatePresence mode="wait">
-            {mode === 'timer' && (
+            {effectiveMode === 'timer' && (
               <motion.div
                 key="timer"
                 initial={{ opacity: 0, y: 6 }}
@@ -177,6 +171,7 @@ export function InputSection({
                   tags={tags}
                   description={description}
                   onDescriptionChange={onDescriptionChange}
+                  onDescriptionBlur={onDescriptionBlur}
                   descriptionSuggestions={descriptionSuggestions}
                   onApplySuggestion={onApplySuggestion}
                   clientId={clientId}
@@ -208,7 +203,7 @@ export function InputSection({
               </motion.div>
             )}
 
-            {mode === 'manual' && (
+            {effectiveMode === 'manual' && (
               <motion.div
                 key="manual"
                 initial={{ opacity: 0, y: 6 }}

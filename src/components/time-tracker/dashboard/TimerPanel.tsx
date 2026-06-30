@@ -18,6 +18,7 @@ export function TimerPanel({
   tags,
   description,
   onDescriptionChange,
+  onDescriptionBlur,
   descriptionSuggestions,
   onApplySuggestion,
   clientId,
@@ -52,6 +53,7 @@ export function TimerPanel({
   tags: SearchableItem[]
   description: string
   onDescriptionChange: (value: string) => void
+  onDescriptionBlur?: () => void
   descriptionSuggestions: string[]
   onApplySuggestion: (description: string) => void
   clientId: string
@@ -153,6 +155,7 @@ export function TimerPanel({
             <DescriptionAutocomplete
               value={description}
               onChange={onDescriptionChange}
+              onBlur={onDescriptionBlur}
               suggestions={descriptionSuggestions}
               onApplySuggestion={onApplySuggestion}
               onSubmit={activeEntry ? onStop : onStart}

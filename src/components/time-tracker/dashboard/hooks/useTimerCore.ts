@@ -275,23 +275,33 @@ export function useTimerCore({
   }
 
   function flushDescriptionSave() {
-    if (!saveTimeoutRef.current) return
-    clearTimeout(saveTimeoutRef.current)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = null
     if (!activeEntryBase || activeEntryBase.id.startsWith('optimistic-')) return
     const op = timerOperationRef.current
     if (op.kind === 'stopping' || op.kind === 'discarding') return
-    void mutations.updateActiveTimer(
-      {
-        id: activeEntryBase.id,
-        description: timerDescription.trim(),
-        projectId: timerProjectId,
-        taskId: timerTaskId || null,
-        tagIds: timerTagIds,
-        billable: timerBillable,
-      },
-      { invalidate: false },
-    )
+    const nextDescription = timerDescription.trim()
+    if (
+      nextDescription === activeEntryBase.description &&
+      timerProjectId === activeEntryBase.projectId &&
+      (timerTaskId || null) === activeEntryBase.taskId &&
+      singleTagIds(timerTagIds).join(',') ===
+        singleTagIds(activeEntryBase.tagIds).join(',') &&
+      timerBillable === activeEntryBase.billable
+    ) {
+      return
+    }
+    const id = activeEntryBase.id
+    const next = {
+      description: nextDescription,
+      projectId: timerProjectId,
+      taskId: timerTaskId || null,
+      tagIds: singleTagIds(timerTagIds),
+      billable: timerBillable,
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      void mutations.updateActiveTimer({ id, ...next }, { invalidate: false })
+    }, 0)
   }
 
   // --- Clear all timer inputs (called on stop so the form feels instantly fresh) ---
@@ -310,18 +320,6 @@ export function useTimerCore({
   function changeTimerDescription(value: string) {
     timerInputDirtyRef.current = true
     setTimerDescription(value)
-    if (activeEntry) {
-      persistActiveTimer(
-        {
-          description: value.trim(),
-          projectId: timerProjectId,
-          taskId: timerTaskId || null,
-          tagIds: timerTagIds,
-          billable: timerBillable,
-        },
-        500,
-      )
-    }
   }
 
   function applyDescriptionSuggestion(description: string) {

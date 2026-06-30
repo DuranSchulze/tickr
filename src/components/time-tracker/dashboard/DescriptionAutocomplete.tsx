@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 export function DescriptionAutocomplete({
   value,
   onChange,
+  onBlur,
   suggestions,
   onApplySuggestion,
   onSubmit,
@@ -13,6 +14,7 @@ export function DescriptionAutocomplete({
 }: {
   value: string
   onChange: (value: string) => void
+  onBlur?: () => void
   suggestions: string[]
   onApplySuggestion: (description: string) => void
   onSubmit?: () => void
@@ -48,8 +50,12 @@ export function DescriptionAutocomplete({
           setOpen(true)
         }}
         onFocus={() => setOpen(true)}
+        onBlur={onBlur}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') onSubmit?.()
+          if (e.key === 'Enter') {
+            onBlur?.()
+            onSubmit?.()
+          }
           if (e.key === 'Escape') setOpen(false)
         }}
         placeholder={placeholder}
