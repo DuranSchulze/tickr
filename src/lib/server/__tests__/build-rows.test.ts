@@ -44,7 +44,7 @@ const members: SyncMember[] = [
   },
 ]
 
-const projects = [{ id: 'p1', name: 'API rewrite' }]
+const projects = [{ id: 'p1', name: 'API rewrite', clientId: 'c1' }]
 const tags = [
   { id: 't1', name: 'backend' },
   { id: 't2', name: 'urgent' },
@@ -104,6 +104,30 @@ describe('buildSyncRows', () => {
     expect(dataRow[9]).toBe('2.00')
     expect(dataRow[10]).toContain('1,000')
     expect(dataRow[11]).toContain('2,000')
+  })
+
+  it('uses the member client rate over the member and workspace rates', () => {
+    const result = buildSyncRows({
+      entries: [makeEntry({ workspaceMemberId: 'm1' })],
+      members,
+      memberClientRates: [
+        {
+          workspaceMemberId: 'm1',
+          clientId: 'c1',
+          billableRate: 1500,
+          effectiveFrom: '2026-04-01',
+          effectiveTo: null,
+        },
+      ],
+      projects,
+      tags,
+      workspace: baseWorkspace,
+      syncedAtIso: SYNCED_AT,
+      syncedByName: SYNCED_BY,
+    })
+    const dataRow = result.departments[0].rows[2]
+    expect(dataRow[10]).toContain('1,500')
+    expect(dataRow[11]).toContain('3,000')
   })
 
   it('falls back to the workspace default rate when member rate is null', () => {

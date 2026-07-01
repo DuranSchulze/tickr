@@ -5,12 +5,7 @@ import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { BulkExportButton } from '#/components/time-tracker/shared/BulkExportDialog'
-import {
-  downloadCsv,
-  ExportMenu,
-} from '#/components/time-tracker/shared/ExportMenu'
 import { Button } from '#/components/ui/button'
-import { exportAnalyticsCsvFn } from '#/lib/server/tracker'
 import { AnalyticsDateRange } from './AnalyticsDateRange'
 import { AnalyticsEntriesTable } from './AnalyticsEntriesTable'
 import type { AnalyticsFilters } from './AnalyticsFilterBar'
@@ -142,34 +137,6 @@ function AnalyticsScreenContent({
     onChangeQuery(cleared)
   }, [onChangeQuery])
 
-  const handleAnalyticsCsvExport = useCallback(async () => {
-    const csv = await exportAnalyticsCsvFn({
-      data: {
-        startDate: analytics.startDate,
-        endDate: analytics.endDate,
-        scope: analytics.selectedScope,
-        projectId: currentFilters.projectId,
-        clientId: currentFilters.clientId,
-        tagIds: currentFilters.tagIds,
-        memberIds: currentFilters.memberIds,
-        billable: currentFilters.billable,
-      },
-    })
-    downloadCsv(
-      csv,
-      `analytics-${analytics.selectedScope}-${analytics.startDate}-${analytics.endDate}.csv`,
-    )
-  }, [
-    analytics.endDate,
-    analytics.selectedScope,
-    analytics.startDate,
-    currentFilters.billable,
-    currentFilters.clientId,
-    currentFilters.memberIds,
-    currentFilters.projectId,
-    currentFilters.tagIds,
-  ])
-
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
       {/* Header */}
@@ -251,9 +218,6 @@ function AnalyticsScreenContent({
                   defaultStartDate={analytics.startDate}
                   defaultEndDate={analytics.endDate}
                 />
-              </div>
-              <div className="min-w-0 [&>button]:w-full sm:[&>button]:w-auto">
-                <ExportMenu onExportCsv={handleAnalyticsCsvExport} />
               </div>
             </div>
           </div>

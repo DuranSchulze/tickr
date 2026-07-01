@@ -1,10 +1,19 @@
 import { BRAND } from '#/lib/brand'
-import type { RenderedEmail } from './reset-password'
+import {
+  escapeHtml,
+  mutedParagraph,
+  paragraph,
+  renderButton,
+  renderDetailTable,
+  renderEmailLayout,
+  renderFallbackLink,
+} from './layout'
+import type { RenderedEmail } from './layout'
 
 export type KnownDevice = {
   ipAddress: string
   location: string | null
-  lastSeen: string // ISO string
+  lastSeen: string
 }
 
 export type SuspiciousLoginEmailInput = {
@@ -12,18 +21,9 @@ export type SuspiciousLoginEmailInput = {
   ipAddress: string
   userAgent: string | null | undefined
   location: string | null
-  timestamp: string // ISO string
+  timestamp: string
   knownDevices: KnownDevice[]
   resetUrl: string
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
 
 function fmtDate(iso: string): string {
@@ -52,21 +52,19 @@ export function renderSuspiciousLoginEmail({
 }: SuspiciousLoginEmailInput): RenderedEmail {
   const greeting = name ? `Hi ${name},` : 'Hi,'
   const subject = `New sign-in to your ${BRAND.name} account`
-  const safeResetUrl = escapeHtml(resetUrl)
   const locationLabel = location ?? 'Unknown location'
   const deviceLabel = userAgent ?? 'Unknown device'
   const timeLabel = fmtDate(timestamp)
 
-  // ── Plain text ──────────────────────────────────────────────────────────────
   const knownDevicesText =
     knownDevices.length > 0
       ? knownDevices
           .map(
-            (d) =>
-              `  • ${d.ipAddress}${d.location ? ` (${d.location})` : ''} — last seen ${fmtDate(d.lastSeen)}`,
+            (device) =>
+              `  - ${device.ipAddress}${device.location ? ` (${device.location})` : ''} - last seen ${fmtDate(device.lastSeen)}`,
           )
           .join('\n')
-      : '  • No previous sign-in locations on record'
+      : '  - No previous sign-in locations on record'
 
   const text = [
     greeting,
@@ -87,123 +85,47 @@ export function renderSuspiciousLoginEmail({
     '',
     resetUrl,
     '',
-    `— ${BRAND.name}`,
+    `- ${BRAND.name}`,
   ].join('\n')
 
-  // ── Known-devices rows ───────────────────────────────────────────────────────
-  const knownDevicesRows =
+  const knownDevicesHtml =
     knownDevices.length > 0
-      ? knownDevices
-          .map(
-            (d) => `
-              <tr>
-                <td style="padding:6px 0;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">
-                  ${escapeHtml(d.ipAddress)}
-                  ${d.location ? `<span style="color:#64748b;"> · ${escapeHtml(d.location)}</span>` : ''}
-                </td>
-                <td style="padding:6px 0 6px 16px;font-size:12px;color:#94a3b8;border-bottom:1px solid #f1f5f9;white-space:nowrap;">
-                  ${fmtDate(d.lastSeen)}
-                </td>
-              </tr>`,
-          )
-          .join('')
-      : `<tr><td colspan="2" style="padding:6px 0;font-size:13px;color:#94a3b8;">No previous sign-in locations on record</td></tr>`
+      ? renderDetailTable(
+          knownDevices.map((device) => ({
+            label: device.ipAddress,
+            value: `${device.location ? `${device.location} - ` : ''}Last seen ${fmtDate(device.lastSeen)}`,
+          })),
+        )
+      : `<div style="margin:18px 0;padding:14px 16px;background:#f8fafc;border:1px solid #dfe4ea;border-radius:8px;font-size:13px;color:#667085;">No previous sign-in locations on record</div>`
 
-  // ── HTML ────────────────────────────────────────────────────────────────────
-  const html = `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a;">
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:520px;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
-
-            <!-- Header -->
-            <tr>
-              <td style="padding:28px 32px 0 32px;">
-                <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0f766e;">${escapeHtml(BRAND.name)}</p>
-                <h1 style="margin:12px 0 0 0;font-size:22px;font-weight:800;color:#0f172a;">New sign-in detected</h1>
-              </td>
-            </tr>
-
-            <!-- Body -->
-            <tr>
-              <td style="padding:20px 32px 8px 32px;font-size:15px;line-height:1.6;color:#334155;">
-                <p style="margin:0 0 12px 0;">${escapeHtml(greeting)}</p>
-                <p style="margin:0 0 16px 0;">We detected a sign-in to your ${escapeHtml(BRAND.name)} account from a <strong>new location</strong>. Here are the details:</p>
-              </td>
-            </tr>
-
-            <!-- Sign-in details table -->
-            <tr>
-              <td style="padding:0 32px 20px 32px;">
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-                  <tr>
-                    <td style="padding:10px 16px;font-size:12px;font-weight:600;color:#64748b;width:110px;border-bottom:1px solid #e2e8f0;">IP Address</td>
-                    <td style="padding:10px 16px;font-size:13px;color:#0f172a;border-bottom:1px solid #e2e8f0;font-family:monospace;">${escapeHtml(ipAddress)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 16px;font-size:12px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Location</td>
-                    <td style="padding:10px 16px;font-size:13px;color:#0f172a;border-bottom:1px solid #e2e8f0;">${escapeHtml(locationLabel)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 16px;font-size:12px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;">Device</td>
-                    <td style="padding:10px 16px;font-size:13px;color:#0f172a;border-bottom:1px solid #e2e8f0;">${escapeHtml(deviceLabel)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:10px 16px;font-size:12px;font-weight:600;color:#64748b;">Time</td>
-                    <td style="padding:10px 16px;font-size:13px;color:#0f172a;">${escapeHtml(timeLabel)}</td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-
-            <!-- Known devices -->
-            <tr>
-              <td style="padding:0 32px 8px 32px;">
-                <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;color:#475569;">Your known recent sign-in locations</p>
-                <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-                  ${knownDevicesRows}
-                </table>
-              </td>
-            </tr>
-
-            <!-- Action -->
-            <tr>
-              <td style="padding:16px 32px 8px 32px;font-size:14px;line-height:1.6;color:#334155;">
-                <p style="margin:0 0 4px 0;"><strong>If this was you</strong> — you can safely ignore this email.</p>
-                <p style="margin:0;"><strong>If this wasn't you</strong> — reset your password immediately to secure your account.</p>
-              </td>
-            </tr>
-
-            <!-- CTA button -->
-            <tr>
-              <td align="center" style="padding:16px 32px 8px 32px;">
-                <a href="${safeResetUrl}" style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px;">Reset my password</a>
-              </td>
-            </tr>
-
-            <!-- Fallback link -->
-            <tr>
-              <td style="padding:8px 32px 24px 32px;font-size:13px;color:#64748b;">
-                <p style="margin:0 0 4px 0;">Or paste this link in your browser:</p>
-                <p style="margin:0;word-break:break-all;"><a href="${safeResetUrl}" style="color:#0f766e;">${safeResetUrl}</a></p>
-              </td>
-            </tr>
-
-            <!-- Footer -->
-            <tr>
-              <td style="padding:16px 32px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;">
-                ${escapeHtml(BRAND.name)} · ${escapeHtml(BRAND.tagline)}
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`
+  const html = renderEmailLayout({
+    title: 'New sign-in detected',
+    children: [
+      paragraph(escapeHtml(greeting)),
+      paragraph(
+        `We detected a sign-in to your ${escapeHtml(BRAND.name)} account from a <strong>new location</strong>.`,
+      ),
+      renderDetailTable([
+        { label: 'IP address', value: ipAddress, monospace: true },
+        { label: 'Location', value: locationLabel },
+        { label: 'Device', value: deviceLabel },
+        { label: 'Time', value: timeLabel },
+      ]),
+      `<p style="margin:20px 0 8px 0;font-size:13px;line-height:1.5;font-weight:800;color:#475467;">Your known recent sign-in locations</p>`,
+      knownDevicesHtml,
+      paragraph(
+        '<strong>If this was you</strong>, you can safely ignore this email.',
+      ),
+      paragraph(
+        "<strong>If this wasn't you</strong>, reset your password immediately to secure your account.",
+      ),
+      renderButton({ href: resetUrl, label: 'Reset my password' }),
+      renderFallbackLink(resetUrl),
+      mutedParagraph(
+        `This alert helps keep your ${escapeHtml(BRAND.name)} account protected.`,
+      ),
+    ].join(''),
+  })
 
   return { subject, html, text }
 }

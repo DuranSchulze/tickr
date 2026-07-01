@@ -220,6 +220,19 @@ export const updateMemberBillableRateSchema = z.object({
   billableRate: z.number().finite().min(0).nullable(),
 })
 
+export const setMemberClientBillableRateSchema = z.object({
+  memberId: z.string().min(1),
+  clientId: z.string().min(1),
+  billableRate: z.number().finite().min(0),
+  effectiveFrom: z.string().date(),
+})
+
+export const unsetMemberClientBillableRateSchema = z.object({
+  memberId: z.string().min(1),
+  clientId: z.string().min(1),
+  effectiveFrom: z.string().date(),
+})
+
 // ─── Member detail (employee profile + gov't IDs) ─────────────────────────────
 
 export const employeeProfileSchema = z.object({

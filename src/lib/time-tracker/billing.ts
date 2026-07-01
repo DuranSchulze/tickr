@@ -13,7 +13,7 @@ export function normalizeCurrency(currency: string | null | undefined) {
     : DEFAULT_BILLABLE_CURRENCY
 }
 
-export function computeEffectiveRate(
+export function computeMemberEffectiveRate(
   memberRate: number | null | undefined,
   defaultRate: number,
 ) {
@@ -21,6 +21,28 @@ export function computeEffectiveRate(
   return memberRate == null
     ? safeDefault
     : toFiniteRate(memberRate, safeDefault)
+}
+
+export function computeEffectiveRate(
+  memberRate: number | null | undefined,
+  defaultRate: number,
+): number
+export function computeEffectiveRate(
+  clientRate: number | null | undefined,
+  memberRate: number | null | undefined,
+  defaultRate: number,
+): number
+export function computeEffectiveRate(
+  firstRate: number | null | undefined,
+  secondRate: number | null | undefined,
+  thirdRate?: number,
+) {
+  if (thirdRate === undefined) {
+    return computeMemberEffectiveRate(firstRate, secondRate ?? 0)
+  }
+
+  const memberFallback = computeMemberEffectiveRate(secondRate, thirdRate)
+  return firstRate == null ? memberFallback : toFiniteRate(firstRate, memberFallback)
 }
 
 export function formatCurrency(

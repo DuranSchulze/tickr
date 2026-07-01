@@ -21,7 +21,7 @@ const CardDuration = memo(function CardDuration({
   entry: TimeEntry
   formatTime: (seconds: number) => string
   currency: string
-  rateLookup: (memberId: string) => number
+  rateLookup: (memberId: string, projectId?: string, dateIso?: string) => number
 }) {
   const tick = useNowTick(
     !entry.endedAt ? getFormatterLiveTickMs(formatTime) : null,
@@ -35,7 +35,12 @@ const CardDuration = memo(function CardDuration({
       {entry.billable && (
         <p className="m-0 mt-0.5 text-xs font-semibold text-muted-foreground">
           {formatCurrency(
-            (seconds / 3600) * rateLookup(entry.workspaceMemberId),
+            (seconds / 3600) *
+              rateLookup(
+                entry.workspaceMemberId,
+                entry.projectId,
+                entry.startedAt,
+              ),
             currency,
           )}
         </p>
@@ -64,7 +69,7 @@ export const EntryCard = memo(function EntryCard({
   projects: Project[]
   tags: SearchableItem[]
   currency: string
-  rateLookup: (memberId: string) => number
+  rateLookup: (memberId: string, projectId?: string, dateIso?: string) => number
   pending: boolean
   isPending?: boolean
   isDeleting?: boolean

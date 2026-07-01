@@ -381,7 +381,7 @@ export const EntryRow = memo(function EntryRow({
   formatTime: (seconds: number) => string
   isSubEntry?: boolean
   currency?: string
-  rateLookup?: (memberId: string) => number
+  rateLookup?: (memberId: string, projectId?: string, dateIso?: string) => number
   // Entry-aware handlers: the same stable function reference is shared by
   // every row, so React.memo can actually skip unchanged rows.
   onStartEdit: (entry: TimeEntry) => void

@@ -354,5 +354,6 @@ export function buildTrackerStateBase(
           member.billableRate == null ? null : Number(member.billableRate),
       }
     }),
+    memberClientBillableRates: [],
   }
 }

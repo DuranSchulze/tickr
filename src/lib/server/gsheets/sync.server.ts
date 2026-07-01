@@ -8,6 +8,7 @@ import {
   timeEntryTags,
   users,
   departments,
+  memberClientBillableRates,
 } from '#/db/schema'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
@@ -94,7 +95,8 @@ export async function syncWorkspaceById({
     .map((m) => m.userId)
     .filter((id): id is string => id != null)
 
-  const [usersData, departmentsData, entryTagsData] = await Promise.all([
+  const [usersData, departmentsData, entryTagsData, memberClientRateRows] =
+    await Promise.all([
     userIds.length > 0
       ? db.select().from(users).where(inArray(users.id, userIds))
       : Promise.resolve([]),
@@ -108,6 +110,10 @@ export async function syncWorkspaceById({
           .from(timeEntryTags)
           .where(inArray(timeEntryTags.timeEntryId, entryIds))
       : Promise.resolve([]),
+    db
+      .select()
+      .from(memberClientBillableRates)
+      .where(eq(memberClientBillableRates.workspaceId, workspace.id)),
   ])
 
   const userMap = new Map(usersData.map((u) => [u.id, u]))
@@ -148,7 +154,18 @@ export async function syncWorkspaceById({
   const { departments: syncDepts, totalRowCount } = buildSyncRows({
     entries: syncEntries,
     members: syncMembers,
-    projects: projectRows.map((p) => ({ id: p.id, name: p.name })),
+    memberClientRates: memberClientRateRows.map((rate) => ({
+      workspaceMemberId: rate.workspaceMemberId,
+      clientId: rate.clientId,
+      billableRate: Number(rate.billableRate),
+      effectiveFrom: rate.effectiveFrom,
+      effectiveTo: rate.effectiveTo,
+    })),
+    projects: projectRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      clientId: p.clientId,
+    })),
     tags: tagRows.map((t) => ({ id: t.id, name: t.name })),
     workspace: {
       defaultBillableRate: Number(workspace.defaultBillableRate),

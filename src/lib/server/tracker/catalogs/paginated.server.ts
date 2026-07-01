@@ -10,6 +10,7 @@ import {
   departments,
   cohorts,
   workspaceRoles,
+  memberClientBillableRates,
 } from '#/db/schema'
 import { and, eq, ilike, asc, desc, sql, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
@@ -33,7 +34,7 @@ async function fetchClientStats(
     .select({
       clientId: projects.clientId,
       totalSeconds: sql<number>`coalesce(sum(${timeEntries.durationSeconds}) filter (where ${timeEntries.endedAt} is not null), 0)::int`,
-      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
+      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
       activeMembersCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId}) filter (where ${timeEntries.endedAt} is not null)::int`,
     })
     .from(timeEntries)
@@ -41,6 +42,19 @@ async function fetchClientStats(
     .innerJoin(
       workspaceMembers,
       eq(workspaceMembers.id, timeEntries.workspaceMemberId),
+    )
+    .leftJoin(
+      memberClientBillableRates,
+      and(
+        eq(memberClientBillableRates.workspaceId, timeEntries.workspaceId),
+        eq(
+          memberClientBillableRates.workspaceMemberId,
+          timeEntries.workspaceMemberId,
+        ),
+        eq(memberClientBillableRates.clientId, projects.clientId),
+        sql`${memberClientBillableRates.effectiveFrom} <= date(${timeEntries.startedAt})`,
+        sql`(${memberClientBillableRates.effectiveTo} is null or ${memberClientBillableRates.effectiveTo} >= date(${timeEntries.startedAt}))`,
+      ),
     )
     .where(
       and(
@@ -61,13 +75,27 @@ async function fetchProjectStats(
     .select({
       projectId: timeEntries.projectId,
       totalSeconds: sql<number>`coalesce(sum(${timeEntries.durationSeconds}) filter (where ${timeEntries.endedAt} is not null), 0)::int`,
-      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
+      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
       activeMembersCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId}) filter (where ${timeEntries.endedAt} is not null)::int`,
     })
     .from(timeEntries)
+    .innerJoin(projects, eq(projects.id, timeEntries.projectId))
     .innerJoin(
       workspaceMembers,
       eq(workspaceMembers.id, timeEntries.workspaceMemberId),
+    )
+    .leftJoin(
+      memberClientBillableRates,
+      and(
+        eq(memberClientBillableRates.workspaceId, timeEntries.workspaceId),
+        eq(
+          memberClientBillableRates.workspaceMemberId,
+          timeEntries.workspaceMemberId,
+        ),
+        eq(memberClientBillableRates.clientId, projects.clientId),
+        sql`${memberClientBillableRates.effectiveFrom} <= date(${timeEntries.startedAt})`,
+        sql`(${memberClientBillableRates.effectiveTo} is null or ${memberClientBillableRates.effectiveTo} >= date(${timeEntries.startedAt}))`,
+      ),
     )
     .where(
       and(

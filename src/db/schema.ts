@@ -11,7 +11,9 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  check,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
 
 // ── Enums ────────────────────────────────────────────────────────────────────
@@ -517,6 +519,60 @@ export const clients = pgTable(
     uniqueIndex('clients_workspace_id_name_unique').on(
       table.workspaceId,
       table.name,
+    ),
+  ],
+)
+
+export const memberClientBillableRates = pgTable(
+  'member_client_billable_rates',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    workspaceMemberId: varchar('workspace_member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    clientId: varchar('client_id', { length: 30 })
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    billableRate: numeric('billable_rate', { precision: 12, scale: 2 })
+      .notNull(),
+    effectiveFrom: date('effective_from').notNull(),
+    effectiveTo: date('effective_to'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('member_client_rates_workspace_member_client_idx').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+      table.clientId,
+    ),
+    index('member_client_rates_member_client_from_idx').on(
+      table.workspaceMemberId,
+      table.clientId,
+      table.effectiveFrom,
+    ),
+    uniqueIndex('member_client_rates_member_client_from_unique').on(
+      table.workspaceMemberId,
+      table.clientId,
+      table.effectiveFrom,
+    ),
+    check(
+      'member_client_rates_billable_rate_nonnegative',
+      sql`${table.billableRate} >= 0`,
+    ),
+    check(
+      'member_client_rates_effective_dates_valid',
+      sql`${table.effectiveTo} is null or ${table.effectiveTo} >= ${table.effectiveFrom}`,
     ),
   ],
 )

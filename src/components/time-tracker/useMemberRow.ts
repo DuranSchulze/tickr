@@ -3,13 +3,12 @@ import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
 import {
   setMemberStatusFn,
-  updateMemberBillableRateFn,
   updateWorkspaceMemberFn,
 } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 
 type Member = TrackerState['members'][number]
-export type EditingField = 'role' | 'dept' | 'cohorts' | 'rate' | null
+export type EditingField = 'role' | 'dept' | 'cohorts' | null
 
 export function useMemberRow(member: Member) {
   const router = useRouter()
@@ -18,21 +17,12 @@ export function useMemberRow(member: Member) {
   const [roleId, setRoleId] = useState(member.workspaceRoleId)
   const [deptId, setDeptId] = useState(member.departmentId)
   const [cohortIds, setCohortIds] = useState<string[]>(member.cohortIds)
-  const [rate, setRate] = useState(
-    member.billableRate == null ? '' : String(member.billableRate),
-  )
   const [pending, setPending] = useState(false)
-
-  const rateInput = rate.trim()
-  const parsedRate = rateInput === '' ? null : Number(rateInput)
-  const rateInputInvalid =
-    parsedRate !== null && (!Number.isFinite(parsedRate) || parsedRate < 0)
 
   function cancelEdit() {
     setRoleId(member.workspaceRoleId)
     setDeptId(member.departmentId)
     setCohortIds(member.cohortIds)
-    setRate(member.billableRate == null ? '' : String(member.billableRate))
     setEditingField(null)
   }
 
@@ -55,32 +45,6 @@ export function useMemberRow(member: Member) {
       gooeyToast.success('Member updated')
     } catch (err) {
       gooeyToast.error('Could not update member', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      setPending(false)
-    }
-  }
-
-  async function saveRate() {
-    const currentRate =
-      member.billableRate == null ? '' : String(member.billableRate)
-    if (rate.trim() === currentRate) return
-    if (rateInputInvalid) {
-      gooeyToast.error('Enter a valid hourly rate', {
-        description: 'Use a positive number, or leave it blank for default.',
-      })
-      return
-    }
-    setPending(true)
-    try {
-      await updateMemberBillableRateFn({
-        data: { memberId: member.id, billableRate: parsedRate },
-      })
-      await router.invalidate()
-      gooeyToast.success('Rate updated')
-    } catch (err) {
-      gooeyToast.error('Could not update rate', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -123,14 +87,9 @@ export function useMemberRow(member: Member) {
     setDeptId,
     cohortIds,
     setCohortIds,
-    rate,
-    setRate,
     pending,
-    parsedRate,
-    rateInputInvalid,
     cancelEdit,
     saveMemberFields,
-    saveRate,
     handleToggleStatus,
     toggleCohort,
   }

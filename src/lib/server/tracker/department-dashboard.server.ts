@@ -38,6 +38,7 @@ import {
   formatDateInTimeZone,
   getWorkspaceDateRange,
 } from './shared/dates'
+import { resolveEntryRateMap } from './rates.server'
 
 export type DepartmentMemberBreakdown = {
   memberId: string
@@ -401,8 +402,10 @@ export async function getDepartmentDashboard(data: {
         startedAt: timeEntries.startedAt,
         endedAt: timeEntries.endedAt,
         projectId: timeEntries.projectId,
+        clientId: projects.clientId,
       })
       .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
       .where(
         and(
           eq(timeEntries.workspaceId, workspaceId),
@@ -436,13 +439,26 @@ export async function getDepartmentDashboard(data: {
       .map((m) => ({
         ...m,
         name: m.name ?? m.email,
-        effectiveRate: computeEffectiveRate(
-          m.billableRate ? Number(m.billableRate) : null,
-          defaultRate,
-        ),
       }))
       .map((m) => [m.id, m]),
   )
+  const memberRateById = new Map(
+    memberRows.map((member) => [
+      member.id,
+      member.billableRate ? Number(member.billableRate) : null,
+    ]),
+  )
+  const entryRateMap = await resolveEntryRateMap({
+    workspaceId,
+    defaultRate,
+    memberRateById,
+    entries: entryRows.map((entry) => ({
+      id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
+      clientId: entry.clientId ?? null,
+      date: entry.startedAt,
+    })),
+  })
 
   // Build per-member stats
   type MemberStats = {
@@ -498,12 +514,14 @@ export async function getDepartmentDashboard(data: {
     )
     if (!clipped) continue
     const secs = clipped.seconds
+    const effectiveRate =
+      entryRateMap.get(entry.id)?.effectiveRate ?? defaultRate
 
     s.totalSeconds += secs
     s.entryCount++
     if (entry.billable) {
       s.billableSeconds += secs
-      s.billableAmount += (secs / 3600) * member.effectiveRate
+      s.billableAmount += (secs / 3600) * effectiveRate
     }
     const entryStart = clipped.startedAt
     if (entryStart >= weekStart) s.thisWeekSeconds += secs
@@ -533,7 +551,7 @@ export async function getDepartmentDashboard(data: {
       ps.members.add(entry.workspaceMemberId)
       if (entry.billable) {
         ps.billableSeconds += secs
-        ps.billableAmount += (secs / 3600) * member.effectiveRate
+        ps.billableAmount += (secs / 3600) * effectiveRate
       }
       projectStats.set(entry.projectId, ps)
     }
@@ -616,7 +634,10 @@ export async function getDepartmentDashboard(data: {
         name: m.name,
         email: m.email,
         ...s,
-        effectiveRate: m.effectiveRate,
+        effectiveRate: computeEffectiveRate(
+          m.billableRate ? Number(m.billableRate) : null,
+          defaultRate,
+        ),
       }
     })
     .sort((a, b) => b.totalSeconds - a.totalSeconds)
@@ -917,7 +938,6 @@ export async function getDepartmentMemberDetail(data: {
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
   const currency = access.workspace.billableCurrency ?? 'PHP'
   const memberRate = member.billableRate ? Number(member.billableRate) : null
-  const effectiveRate = computeEffectiveRate(memberRate, defaultRate)
   const whereClause = and(
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, member.id),
@@ -941,6 +961,7 @@ export async function getDepartmentMemberDetail(data: {
         billable: timeEntries.billable,
         notes: timeEntries.notes,
         projectName: projects.name,
+        clientId: projects.clientId,
         clientName: clients.name,
       })
       .from(timeEntries)
@@ -998,6 +1019,17 @@ export async function getDepartmentMemberDetail(data: {
     range.start,
     range.endExclusive,
   )
+  const entryRateMap = await resolveEntryRateMap({
+    workspaceId,
+    defaultRate,
+    memberRateById: new Map([[member.id, memberRate]]),
+    entries: rawRows.map((entry) => ({
+      id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
+      clientId: entry.clientId ?? null,
+      date: entry.startedAt,
+    })),
+  })
 
   return {
     activity,
@@ -1019,6 +1051,8 @@ export async function getDepartmentMemberDetail(data: {
         range.endExclusive,
       )
       if (!clipped) return []
+      const effectiveRate =
+        entryRateMap.get(entry.id)?.effectiveRate ?? defaultRate
       return [
         {
           id: entry.id,

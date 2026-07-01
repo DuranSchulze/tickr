@@ -1,5 +1,5 @@
-import { memo, useState } from 'react'
-import { Link } from '@tanstack/react-router'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useRouter } from '@tanstack/react-router'
 import {
   BarChart2,
   CheckCircle,
@@ -9,7 +9,17 @@ import {
   UserX,
 } from 'lucide-react'
 import { Input } from '#/components/ui/input'
+import { Button } from '#/components/ui/button'
+import { Combobox } from '#/components/ui/combobox'
 import { TableCell, TableRow } from '#/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +27,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import {
+  setMemberClientBillableRateFn,
+  unsetMemberClientBillableRateFn,
+} from '#/lib/server/tracker'
+import { gooeyToast } from '#/lib/toast'
 import {
   computeEffectiveRate,
   formatCurrency,
@@ -35,6 +50,286 @@ const STATUS_STYLES: Record<string, string> = {
   INVITED:
     'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
   DISABLED: 'bg-destructive/15 text-destructive',
+}
+
+function todayKey(timeZone?: string) {
+  if (!timeZone) return new Date().toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
+function MemberRateDialog({
+  open,
+  onOpenChange,
+  member,
+  state,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  member: Member
+  state: TrackerState
+}) {
+  const router = useRouter()
+  const timezone = state.workspace.timezone
+  const activeClients = state.clients.filter(
+    (client) => client.clientStatus === 'ACTIVE',
+  )
+  const clientById = useMemo(
+    () => new Map(state.clients.map((client) => [client.id, client])),
+    [state.clients],
+  )
+  const clientOptions = activeClients.map((client) => ({
+    value: client.id,
+    label: client.name,
+  }))
+  const [clientId, setClientId] = useState(activeClients[0]?.id ?? '')
+  const initialClientRates = useCallback(() => {
+    return Object.fromEntries(
+      state.memberClientBillableRates
+        .filter(
+          (rate) =>
+            rate.workspaceMemberId === member.id && rate.effectiveTo == null,
+        )
+        .map((rate) => [rate.clientId, rate.billableRate]),
+    )
+  }, [member.id, state.memberClientBillableRates])
+  const [clientRates, setClientRates] =
+    useState<Partial<Record<string, number>>>(initialClientRates)
+  const [clientRate, setClientRate] = useState('')
+  const [pending, setPending] = useState(false)
+
+  const savedClientRates = useMemo(() => {
+    return Object.entries(clientRates)
+      .map(([savedClientId, billableRate]) => ({
+        clientId: savedClientId,
+        clientName: clientById.get(savedClientId)?.name ?? 'Unknown client',
+        billableRate,
+      }))
+      .sort((a, b) => a.clientName.localeCompare(b.clientName))
+  }, [clientById, clientRates])
+
+  const syncClientDraft = useCallback(
+    (nextClientId: string, rates: Partial<Record<string, number>>) => {
+      const rate = rates[nextClientId]
+      setClientRate(rate == null ? '' : String(rate))
+    },
+    [],
+  )
+
+  const clientRateInput = clientRate.trim()
+  const parsedClientRate =
+    clientRateInput === '' ? null : Number(clientRateInput)
+  const clientRateInvalid =
+    parsedClientRate !== null &&
+    (!Number.isFinite(parsedClientRate) || parsedClientRate < 0)
+  const previewRate = computeEffectiveRate(
+    parsedClientRate,
+    state.workspace.defaultBillableRate,
+  )
+
+  useEffect(() => {
+    if (!open) return
+    const rates = initialClientRates()
+    setClientRates(rates)
+  }, [initialClientRates, open])
+
+  useEffect(() => {
+    if (!open) return
+    syncClientDraft(clientId, clientRates)
+  }, [clientId, clientRates, open, syncClientDraft])
+
+  function selectClient(nextClientId: string) {
+    setClientId(nextClientId)
+    syncClientDraft(nextClientId, clientRates)
+  }
+
+  async function saveClientRate() {
+    if (!clientId) {
+      gooeyToast.error('Select a client')
+      return
+    }
+    if (parsedClientRate === null || clientRateInvalid) {
+      gooeyToast.error('Enter a valid client rate', {
+        description: 'Use a positive number before saving an override.',
+      })
+      return
+    }
+    setPending(true)
+    try {
+      await setMemberClientBillableRateFn({
+        data: {
+          memberId: member.id,
+          clientId,
+          billableRate: parsedClientRate,
+          effectiveFrom: todayKey(timezone),
+        },
+      })
+      setClientRates((current) => ({
+        ...current,
+        [clientId]: parsedClientRate,
+      }))
+      void router.invalidate()
+      gooeyToast.success('Client rate updated')
+    } catch (err) {
+      gooeyToast.error('Could not update client rate', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  async function clearClientRate() {
+    if (!clientId) return
+    setPending(true)
+    try {
+      await unsetMemberClientBillableRateFn({
+        data: {
+          memberId: member.id,
+          clientId,
+          effectiveFrom: todayKey(timezone),
+        },
+      })
+      setClientRate('')
+      setClientRates((current) => {
+        const next = { ...current }
+        delete next[clientId]
+        return next
+      })
+      void router.invalidate()
+      gooeyToast.success('Client rate cleared')
+    } catch (err) {
+      gooeyToast.error('Could not clear client rate', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-visible sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Client billing rates for {member.name}</DialogTitle>
+          <DialogDescription>
+            Manage the client-specific hourly rates for this member.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid max-h-[calc(100dvh-12rem)] gap-4 overflow-y-auto pr-1 lg:grid-cols-[minmax(16rem,0.9fr)_minmax(0,1.2fr)]">
+          <section className="rounded-lg border border-border">
+            <div className="border-b border-border px-4 py-3">
+              <h3 className="m-0 text-sm font-bold text-foreground">
+                Saved client rates
+              </h3>
+              <p className="m-0 mt-1 text-xs text-muted-foreground">
+                {savedClientRates.length} configured
+              </p>
+            </div>
+            <div className="max-h-[22rem] overflow-y-auto p-2">
+              {savedClientRates.length === 0 ? (
+                <p className="m-0 px-2 py-6 text-sm text-muted-foreground">
+                  No client-specific rates yet.
+                </p>
+              ) : (
+                <div className="grid gap-1.5">
+                  {savedClientRates.map((rate) => (
+                    <button
+                      key={rate.clientId}
+                      type="button"
+                      onClick={() => selectClient(rate.clientId)}
+                      className={`rounded-md border px-3 py-2 text-left transition-colors ${
+                        rate.clientId === clientId
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:bg-muted'
+                      }`}
+                    >
+                      <span className="block truncate text-sm font-semibold text-foreground">
+                        {rate.clientName}
+                      </span>
+                      <span className="mt-1 block text-sm tabular-nums text-muted-foreground">
+                        {formatCurrency(
+                          rate.billableRate,
+                          state.workspace.billableCurrency,
+                        )}
+                        /hr
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-border p-4">
+            <h3 className="m-0 text-sm font-bold text-foreground">
+              Add or edit rate
+            </h3>
+            <div className="grid gap-3">
+              <label className="mt-3 space-y-1.5 text-xs font-semibold text-foreground">
+                <span>Client</span>
+                <Combobox
+                  options={clientOptions}
+                  value={clientId}
+                  onValueChange={selectClient}
+                  placeholder="Select client"
+                  searchPlaceholder="Search clients..."
+                  emptyText="No clients found."
+                  disabled={activeClients.length === 0}
+                  contentClassName="z-[60]"
+                />
+              </label>
+              <label className="space-y-1.5 text-xs font-semibold text-foreground">
+                <span>Client hourly rate</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={clientRate}
+                  onChange={(event) => setClientRate(event.target.value)}
+                  placeholder="Uses member/workspace fallback"
+                  aria-invalid={clientRateInvalid}
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  disabled={pending || !clientId || clientRateInvalid}
+                  onClick={() => void saveClientRate()}
+                >
+                  Save client rate
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={
+                    pending || !clientId || clientRates[clientId] == null
+                  }
+                  onClick={() => void clearClientRate()}
+                >
+                  Use fallback
+                </Button>
+              </div>
+            </div>
+            <p className="m-0 mt-3 text-sm text-muted-foreground">
+              Effective rate preview:{' '}
+              <span className="font-semibold text-foreground">
+                {formatCurrency(previewRate, state.workspace.billableCurrency)}
+                /hr
+              </span>
+            </p>
+          </section>
+        </div>
+
+        <DialogFooter showCloseButton />
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export const MemberRow = memo(function MemberRow({
@@ -58,6 +353,15 @@ export const MemberRow = memo(function MemberRow({
     member.billableRate,
     state.workspace.defaultBillableRate,
   )
+  const memberClientRateCount = state.memberClientBillableRates.filter(
+    (rate) => rate.workspaceMemberId === member.id && rate.effectiveTo == null,
+  ).length
+  const rateStatusLabel =
+    memberClientRateCount > 0
+      ? `${memberClientRateCount} client ${memberClientRateCount === 1 ? 'rate' : 'rates'}`
+      : member.billableRate == null
+        ? 'Workspace default'
+        : 'Member default'
 
   const {
     editingField,
@@ -70,18 +374,15 @@ export const MemberRow = memo(function MemberRow({
     setDeptId,
     cohortIds,
     setCohortIds,
-    rate,
-    setRate,
     pending,
-    rateInputInvalid,
     cancelEdit,
     saveMemberFields,
-    saveRate,
     handleToggleStatus,
     toggleCohort,
   } = useMemberRow(member)
 
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
+  const [rateDialogOpen, setRateDialogOpen] = useState(false)
 
   const assignableCohorts = state.cohorts.filter(
     (cohort) => deptId && cohort.departmentId === deptId,
@@ -276,55 +577,33 @@ export const MemberRow = memo(function MemberRow({
 
         {canManage && (
           <>
-            {/* Billable Rate — inline editable */}
+            {/* Billable Rate */}
             <TableCell className="overflow-hidden px-5 py-4 align-top">
-              {editingField === 'rate' ? (
-                <div className="grid gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    autoFocus
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
-                    placeholder={String(state.workspace.defaultBillableRate)}
-                    aria-invalid={rateInputInvalid}
-                    className="h-8 w-full text-right text-xs"
-                    onBlur={() => {
-                      setEditingField(null)
-                      void saveRate()
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        setEditingField(null)
-                        void saveRate()
-                      }
-                      if (e.key === 'Escape') cancelEdit()
-                    }}
-                  />
-                  <span className="text-right text-[10px] text-muted-foreground">
-                    Blank = default
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => !pending && setEditingField('rate')}
-                  title="Click to edit rate"
-                  className="group flex cursor-pointer items-center justify-end gap-1 rounded px-1 -mx-1 text-right text-sm tabular-nums text-muted-foreground hover:bg-accent"
-                >
-                  <span>
+              <button
+                type="button"
+                onClick={() => !pending && setRateDialogOpen(true)}
+                title="Click to edit billing rates"
+                className="group flex w-full cursor-pointer items-start justify-end gap-1 rounded px-1 -mx-1 text-right hover:bg-accent"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm tabular-nums text-foreground">
                     {formatCurrency(
                       effectiveRate,
                       state.workspace.billableCurrency,
                     )}
-                    {member.billableRate == null && (
-                      <span className="ml-1 text-xs">(default)</span>
-                    )}
                   </span>
-                  <Pencil className="size-3 flex-shrink-0 opacity-0 transition-opacity group-hover:opacity-40" />
-                </button>
-              )}
+                  <span
+                    className={`mt-1 inline-flex max-w-full rounded-md border px-1.5 py-0.5 text-[11px] font-semibold leading-none ${
+                      memberClientRateCount > 0
+                        ? 'border-primary/30 bg-primary/10 text-primary'
+                        : 'border-border bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <span className="truncate">{rateStatusLabel}</span>
+                  </span>
+                </span>
+                <Pencil className="mt-0.5 size-3 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60" />
+              </button>
             </TableCell>
 
             {/* Stats */}
@@ -409,6 +688,12 @@ export const MemberRow = memo(function MemberRow({
         memberName={member.name}
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
+      />
+      <MemberRateDialog
+        open={rateDialogOpen}
+        onOpenChange={setRateDialogOpen}
+        member={member}
+        state={state}
       />
     </>
   )

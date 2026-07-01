@@ -11,6 +11,8 @@ export type AuditAction =
   | 'MEMBER_ROLE_CHANGE'
   | 'MEMBER_STATUS_CHANGE'
   | 'MEMBER_DEPT_CHANGE'
+  | 'MEMBER_CLIENT_RATE_SET'
+  | 'MEMBER_CLIENT_RATE_UNSET'
   // Time entries (admin-visible data mutations)
   | 'ENTRY_CREATE'
   | 'ENTRY_EDIT'

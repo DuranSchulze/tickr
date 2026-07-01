@@ -12,7 +12,6 @@ import {
 } from '#/db/schema'
 import { and, eq, gt, lt, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 import {
   clipWorkInterval,
   summarizeWorkIntervals,
@@ -21,6 +20,7 @@ import {
   formatDateInTimeZone,
   getWorkspaceDateRange,
 } from './shared/dates'
+import { resolveEntryRateMap } from './rates.server'
 
 export type MemberMonthlyReportEntry = {
   id: string
@@ -149,6 +149,7 @@ export async function getMemberMonthlyReport(data: {
       durationSeconds: timeEntries.durationSeconds,
       billable: timeEntries.billable,
       projectName: projects.name,
+      clientId: projects.clientId,
       clientName: clients.name,
     })
     .from(timeEntries)
@@ -186,10 +187,22 @@ export async function getMemberMonthlyReport(data: {
     tagsByEntry.set(row.timeEntryId, list)
   }
 
-  const effectiveRate = computeEffectiveRate(
-    memberRow.billableRate ? Number(memberRow.billableRate) : null,
+  const entryRateMap = await resolveEntryRateMap({
+    workspaceId: access.workspace.id,
     defaultRate,
-  )
+    memberRateById: new Map([
+      [
+        data.memberId,
+        memberRow.billableRate ? Number(memberRow.billableRate) : null,
+      ],
+    ]),
+    entries: rawEntries.map((entry) => ({
+      id: entry.id,
+      workspaceMemberId: data.memberId,
+      clientId: entry.clientId ?? null,
+      date: entry.startedAt,
+    })),
+  })
 
   let totalSeconds = 0
   let billableSeconds = 0
@@ -207,6 +220,7 @@ export async function getMemberMonthlyReport(data: {
     )
     if (!clipped) return []
     const hours = clipped.seconds / 3600
+    const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
     const billableAmount = e.billable ? hours * effectiveRate : null
 
     totalSeconds += clipped.seconds

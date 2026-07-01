@@ -2,7 +2,9 @@ import { db } from '#/db'
 import {
   analyticsDailyMemberMetrics,
   pendingAnalyticsRollups,
+  projects,
   timeEntries,
+  memberClientBillableRates,
   workspaceMembers,
   workspaces,
 } from '#/db/schema'
@@ -66,7 +68,7 @@ export async function recomputeAnalyticsDailyMemberMetric({
         totalSeconds: sql<number>`coalesce(sum(${timeEntries.durationSeconds}), 0)::int`,
         billableSeconds: sql<number>`coalesce(sum(case when ${timeEntries.billable} then ${timeEntries.durationSeconds} else 0 end), 0)::int`,
         nonBillableSeconds: sql<number>`coalesce(sum(case when ${timeEntries.billable} then 0 else ${timeEntries.durationSeconds} end), 0)::int`,
-        billableAmount: sql<string>`coalesce(sum(case when ${timeEntries.billable} then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${workspaceMembers.billableRate}::numeric, ${workspaces.defaultBillableRate}::numeric, 0) else 0 end), 0)::numeric(12, 2)`,
+        billableAmount: sql<string>`coalesce(sum(case when ${timeEntries.billable} then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${workspaces.defaultBillableRate}::numeric, 0) else 0 end), 0)::numeric(12, 2)`,
         firstEntryAt: sql<Date | null>`min(${timeEntries.startedAt})`,
         lastEntryAt: sql<Date | null>`max(${timeEntries.endedAt})`,
       })
@@ -74,6 +76,20 @@ export async function recomputeAnalyticsDailyMemberMetric({
       .innerJoin(
         workspaceMembers,
         eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+      )
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(
+        memberClientBillableRates,
+        and(
+          eq(memberClientBillableRates.workspaceId, timeEntries.workspaceId),
+          eq(
+            memberClientBillableRates.workspaceMemberId,
+            timeEntries.workspaceMemberId,
+          ),
+          eq(memberClientBillableRates.clientId, projects.clientId),
+          sql`${memberClientBillableRates.effectiveFrom} <= date(${timeEntries.startedAt})`,
+          sql`(${memberClientBillableRates.effectiveTo} is null or ${memberClientBillableRates.effectiveTo} >= date(${timeEntries.startedAt}))`,
+        ),
       )
       .innerJoin(workspaces, eq(timeEntries.workspaceId, workspaces.id))
       .where(

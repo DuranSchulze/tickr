@@ -131,7 +131,7 @@ export function BulkExportButton({
         className={`no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
       >
         <Layers className="size-4" />
-        Bulk Export
+        Export
       </button>
 
       <Dialog
@@ -143,7 +143,7 @@ export function BulkExportButton({
       >
         <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Bulk Export</DialogTitle>
+            <DialogTitle>Export</DialogTitle>
             <DialogDescription>
               Export one report for a date range, grouped by member with
               computed billing.

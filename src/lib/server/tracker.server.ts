@@ -68,7 +68,12 @@ export {
   getMemberDetail,
   updateMemberDetail,
 } from './tracker/members/member-detail.server'
-export { updateMemberBillableRate } from './tracker/members/member-billing.server'
+export {
+  getMemberClientBillableRates,
+  setMemberClientBillableRate,
+  unsetMemberClientBillableRate,
+  updateMemberBillableRate,
+} from './tracker/members/member-billing.server'
 export {
   getMemberAnalytics,
   type MemberStat,

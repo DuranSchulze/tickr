@@ -65,7 +65,7 @@ export function EntriesSection({
   projectTasks: Array<{ id: string; projectId: string; name: string }>
   tags: SearchableItem[]
   currency: string
-  rateLookup: (memberId: string) => number
+  rateLookup: (memberId: string, projectId?: string, dateIso?: string) => number
   pending: boolean
   pendingEntryIds?: Set<string>
   formatTime: (seconds: number) => string

@@ -584,6 +584,19 @@ const memberIdSchema = z.object({
   memberId: z.string().min(1),
 })
 
+const setMemberClientBillableRateSchema = z.object({
+  memberId: z.string().min(1),
+  clientId: z.string().min(1),
+  billableRate: z.number().finite().min(0),
+  effectiveFrom: z.string().date(),
+})
+
+const unsetMemberClientBillableRateSchema = z.object({
+  memberId: z.string().min(1),
+  clientId: z.string().min(1),
+  effectiveFrom: z.string().date(),
+})
+
 const employeeProfileSchema = z.object({
   employeeNumber: z.string().trim().max(50).optional().or(z.literal('')),
   positionTitle: z.string().trim().max(100).optional().or(z.literal('')),
@@ -637,6 +650,29 @@ export const updateMemberBillableRateFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { updateMemberBillableRate } = await import('./tracker.server')
     return updateMemberBillableRate(data)
+  })
+
+export const getMemberClientBillableRatesFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => memberIdSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getMemberClientBillableRates } = await import('./tracker.server')
+    return getMemberClientBillableRates(data)
+  })
+
+export const setMemberClientBillableRateFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => setMemberClientBillableRateSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { setMemberClientBillableRate } = await import('./tracker.server')
+    return setMemberClientBillableRate(data)
+  })
+
+export const unsetMemberClientBillableRateFn = createServerFn({
+  method: 'POST',
+})
+  .inputValidator((input) => unsetMemberClientBillableRateSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { unsetMemberClientBillableRate } = await import('./tracker.server')
+    return unsetMemberClientBillableRate(data)
   })
 
 export const getMemberDetailFn = createServerFn({ method: 'GET' })

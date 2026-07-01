@@ -72,6 +72,14 @@ export type Member = {
   billableRate: number | null
 }
 
+export type MemberClientBillableRate = {
+  workspaceMemberId: string
+  clientId: string
+  billableRate: number
+  effectiveFrom: string
+  effectiveTo: string | null
+}
+
 export type TimeEntry = {
   id: string
   workspaceMemberId: string
@@ -97,5 +105,6 @@ export type TrackerState = {
   clients: Client[]
   tags: Tag[]
   members: Member[]
+  memberClientBillableRates: MemberClientBillableRate[]
   entries: TimeEntry[]
 }

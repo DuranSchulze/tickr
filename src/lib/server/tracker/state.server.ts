@@ -12,6 +12,7 @@ import {
   timeEntries,
   timeEntryTags,
   projectTasks,
+  memberClientBillableRates,
 } from '#/db/schema'
 import { and, eq, gte, isNull, or, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
@@ -57,6 +58,7 @@ export async function getTrackerState(): Promise<TrackerState> {
     cohortMemberData,
     entryTagData,
     projectTasksRows,
+    memberClientRateRows,
   ] = await Promise.all([
     db
       .select()
@@ -137,6 +139,10 @@ export async function getTrackerState(): Promise<TrackerState> {
         ),
       )
       .orderBy(asc(projectTasks.name)),
+    db
+      .select()
+      .from(memberClientBillableRates)
+      .where(eq(memberClientBillableRates.workspaceId, workspaceId)),
   ])
 
   // Member roles are always roles of this workspace, so the full roles list
@@ -226,6 +232,13 @@ export async function getTrackerState(): Promise<TrackerState> {
           member.billableRate == null ? null : Number(member.billableRate),
       }
     }),
+    memberClientBillableRates: memberClientRateRows.map((rate) => ({
+      workspaceMemberId: rate.workspaceMemberId,
+      clientId: rate.clientId,
+      billableRate: Number(rate.billableRate),
+      effectiveFrom: rate.effectiveFrom,
+      effectiveTo: rate.effectiveTo,
+    })),
     entries: entryRows.map((entry) => ({
       id: entry.id,
       workspaceMemberId: entry.workspaceMemberId,

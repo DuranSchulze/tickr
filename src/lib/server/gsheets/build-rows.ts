@@ -43,7 +43,15 @@ export type SyncMember = {
   billableRate: number | null
 }
 
-export type SyncProject = { id: string; name: string }
+export type SyncMemberClientRate = {
+  workspaceMemberId: string
+  clientId: string
+  billableRate: number
+  effectiveFrom: string
+  effectiveTo: string | null
+}
+
+export type SyncProject = { id: string; name: string; clientId?: string | null }
 export type SyncTag = { id: string; name: string }
 
 export type SyncWorkspace = {
@@ -76,6 +84,7 @@ function formatLocalDateTime(date: Date) {
 export function buildSyncRows({
   entries,
   members,
+  memberClientRates = [],
   projects,
   tags,
   workspace,
@@ -84,6 +93,7 @@ export function buildSyncRows({
 }: {
   entries: SyncEntry[]
   members: SyncMember[]
+  memberClientRates?: SyncMemberClientRate[]
   projects: SyncProject[]
   tags: SyncTag[]
   workspace: SyncWorkspace
@@ -91,7 +101,7 @@ export function buildSyncRows({
   syncedByName: string
 }): BuildRowsResult {
   const memberById = new Map(members.map((m) => [m.id, m]))
-  const projectName = new Map(projects.map((p) => [p.id, p.name]))
+  const projectById = new Map(projects.map((p) => [p.id, p]))
   const tagName = new Map(tags.map((t) => [t.id, t.name]))
   const currency = normalizeCurrency(workspace.billableCurrency)
   const defaultRate = workspace.defaultBillableRate
@@ -133,8 +143,8 @@ export function buildSyncRows({
       const memberName = member?.name ?? '—'
       const memberEmail = member?.email ?? ''
       const project = entry.projectId
-        ? (projectName.get(entry.projectId) ?? '')
-        : ''
+        ? projectById.get(entry.projectId)
+        : null
       const tagList = entry.tagIds
         .flatMap((id) => {
           const name = tagName.get(id)
@@ -142,7 +152,22 @@ export function buildSyncRows({
         })
         .join(', ')
       const hours = entry.durationSeconds / 3600
+      const entryDateKey = formatLocalDate(entry.startedAt)
+      const clientRate =
+        project == null
+          ? null
+          : (memberClientRates
+              .filter(
+                (rate) =>
+                  rate.workspaceMemberId === entry.workspaceMemberId &&
+                  rate.clientId === (project.clientId ?? '') &&
+                  rate.effectiveFrom <= entryDateKey &&
+                  (rate.effectiveTo == null || rate.effectiveTo >= entryDateKey),
+              )
+              .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
+              ?.billableRate ?? null)
       const effectiveRate = computeEffectiveRate(
+        clientRate,
         member?.billableRate ?? null,
         defaultRate,
       )
@@ -153,7 +178,7 @@ export function buildSyncRows({
         memberEmail,
         formatLocalDate(entry.startedAt),
         entry.description,
-        project,
+        project?.name ?? '',
         tagList,
         entry.billable ? 'Yes' : 'No',
         formatLocalDateTime(entry.startedAt),

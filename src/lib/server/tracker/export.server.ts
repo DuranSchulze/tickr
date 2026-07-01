@@ -21,7 +21,6 @@ import {
   getWorkspaceDateRange,
 } from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
-import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 import {
   clipWorkInterval,
   summarizeWorkIntervals,
@@ -31,6 +30,7 @@ import {
   formatDecimalRate,
   formatHms,
 } from '#/lib/time-tracker/export-utils'
+import { resolveEntryRateMap } from './rates.server'
 
 export async function exportAnalyticsCsv(
   data: z.infer<typeof analyticsRangeSchema>,
@@ -142,6 +142,7 @@ export async function exportAnalyticsCsv(
       durationSeconds: timeEntries.durationSeconds,
       billable: timeEntries.billable,
       projectName: projects.name,
+      clientId: projects.clientId,
       clientName: clients.name,
       memberEmail: workspaceMembers.email,
       memberUserName: users.name,
@@ -201,6 +202,23 @@ export async function exportAnalyticsCsv(
     range.start,
     range.endExclusive,
   )
+  const memberRateById = new Map(
+    rawEntries.map((entry) => [
+      entry.workspaceMemberId,
+      entry.billableRate ? Number(entry.billableRate) : null,
+    ]),
+  )
+  const entryRateMap = await resolveEntryRateMap({
+    workspaceId: access.workspace.id,
+    defaultRate,
+    memberRateById,
+    entries: rawEntries.map((entry) => ({
+      id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
+      clientId: entry.clientId ?? null,
+      date: entry.startedAt,
+    })),
+  })
 
   const rows: (string | number | null | undefined)[][] = [
     ['Analytics Export'],
@@ -232,10 +250,7 @@ export async function exportAnalyticsCsv(
   ]
 
   for (const { entry: e, clipped } of clippedEntries) {
-    const effectiveRate = computeEffectiveRate(
-      e.billableRate ? Number(e.billableRate) : null,
-      defaultRate,
-    )
+    const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
     const hours = fh(clipped.seconds)
     const amount = e.billable ? Number(hours) * effectiveRate : null
 

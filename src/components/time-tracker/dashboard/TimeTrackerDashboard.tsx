@@ -399,13 +399,31 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const defaultRate = state.workspace.defaultBillableRate
   const rateLookup = useMemo(() => {
     const byMember = new Map(
-      state.members.map((m) => [
-        m.id,
-        computeEffectiveRate(m.billableRate ?? null, defaultRate),
-      ]),
+      state.members.map((m) => [m.id, m.billableRate ?? null]),
     )
-    return (memberId: string) => byMember.get(memberId) ?? defaultRate
-  }, [state.members, defaultRate])
+    const projectClient = new Map(
+      state.projects.map((project) => [project.id, project.clientId]),
+    )
+    return (memberId: string, projectId?: string, dateIso?: string) => {
+      const memberRate = byMember.get(memberId) ?? null
+      const clientId = projectId ? projectClient.get(projectId) : null
+      const dateKey = dateIso ? dateIso.slice(0, 10) : null
+      const clientRate =
+        clientId && dateKey
+          ? (state.memberClientBillableRates
+              .filter(
+                (rate) =>
+                  rate.workspaceMemberId === memberId &&
+                  rate.clientId === clientId &&
+                  rate.effectiveFrom <= dateKey &&
+                  (rate.effectiveTo == null || rate.effectiveTo >= dateKey),
+              )
+              .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
+              ?.billableRate ?? null)
+          : null
+      return computeEffectiveRate(clientRate, memberRate, defaultRate)
+    }
+  }, [defaultRate, state.memberClientBillableRates, state.members, state.projects])
 
   const summaryEntries = useMemo(() => {
     const byId = new Map(state.entries.map((entry) => [entry.id, entry]))

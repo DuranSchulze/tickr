@@ -10,7 +10,6 @@ import {
   departments,
   users,
 } from '#/db/schema'
-import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 import {
   clipWorkInterval,
   summarizeWorkIntervals,
@@ -24,6 +23,7 @@ import {
   getWorkspaceDateRange,
 } from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
+import { resolveEntryRateMap } from './rates.server'
 
 export type AnalyticsScope = 'workspace' | 'department' | 'personal'
 export type AnalyticsSelectedScope = 'personal' | 'organization' | 'department'
@@ -370,6 +370,7 @@ export async function getAnalytics(
         billable: timeEntries.billable,
         notes: timeEntries.notes,
         projectName: projects.name,
+        clientId: projects.clientId,
         clientName: clients.name,
         memberEmail: workspaceMembers.email,
         memberUserName: users.name,
@@ -475,12 +476,27 @@ export async function getAnalytics(
 
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
   const currency = access.workspace.billableCurrency ?? 'PHP'
+  const memberRateById = new Map(
+    rawRows.map((entry) => [
+      entry.workspaceMemberId,
+      entry.memberBillableRate ? Number(entry.memberBillableRate) : null,
+    ]),
+  )
+  const entryRateMap = await resolveEntryRateMap({
+    workspaceId: access.workspace.id,
+    defaultRate,
+    memberRateById,
+    entries: rawRows.map((entry) => ({
+      id: entry.id,
+      workspaceMemberId: entry.workspaceMemberId,
+      clientId: entry.clientId ?? null,
+      date: entry.startedAt,
+    })),
+  })
 
   const entryRows: AnalyticsTimeEntryRow[] = rawRows.map((e) => {
-    const memberRate = e.memberBillableRate
-      ? Number(e.memberBillableRate)
-      : null
-    const effectiveRate = computeEffectiveRate(memberRate, defaultRate)
+    const effectiveRate =
+      entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
     const clipped = clipWorkInterval(
       {
         memberId: e.workspaceMemberId,
