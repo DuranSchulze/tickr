@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Layers } from 'lucide-react'
 import {
   Dialog,
@@ -7,7 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { getBulkReportFn } from '#/lib/server/tracker'
+import {
+  getBulkReportFn,
+  getBulkReportOngoingTaskSummaryFn,
+} from '#/lib/server/tracker'
 import type { BulkReportScopeType } from '#/lib/server/tracker.server'
 import {
   downloadBulkReportCsv,
@@ -18,12 +21,16 @@ import { Combobox } from '#/components/ui/combobox'
 import type { ComboboxOption } from '#/components/ui/combobox'
 import { ExportDateRangePicker } from './ExportDateRangePicker'
 import { ExportActionsFooter } from './export-dialog-footer'
+import { ExportOngoingTasksDialog } from './ExportOngoingTasksDialog'
 import { ExportSortControls } from './ExportSortControls'
 import { useExportDialogState } from './export-dialog-state'
+import type { ExportFormat } from './export-dialog-state'
 import type {
   ExportSortBy,
   ExportSortOrder,
 } from '#/lib/time-tracker/export-sort'
+import { hasOngoingExportTasks } from '#/lib/time-tracker/export-ongoing-tasks'
+import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing-tasks'
 
 const scopeOptions: { value: BulkReportScopeType; label: string }[] = [
   { value: 'all', label: 'Everything' },
@@ -68,6 +75,13 @@ export function BulkExportButton({
     sortBy: 'date',
     sortOrder: 'asc',
   })
+  const [checkingFormat, setCheckingFormat] = useState<ExportFormat | null>(
+    null,
+  )
+  const pendingExportFormatRef = useRef<ExportFormat | null>(null)
+  const [ongoingTaskSummary, setOngoingTaskSummary] =
+    useState<ExportOngoingTaskSummary | null>(null)
+  const [ongoingWarningOpen, setOngoingWarningOpen] = useState(false)
 
   const {
     startDate,
@@ -128,23 +142,32 @@ export function BulkExportButton({
   const invalid = invalidRange || (needsScopeId && !scopeId)
 
   function handleDialogOpenChange(nextOpen: boolean) {
-    if (!nextOpen) setScopeState((prev) => ({ ...prev, open: false }))
+    if (!nextOpen) {
+      setScopeState((prev) => ({ ...prev, open: false }))
+      setOngoingWarningOpen(false)
+      setOngoingTaskSummary(null)
+      pendingExportFormatRef.current = null
+    }
     handleOpenChange(nextOpen)
   }
 
-  async function handleExport(format: 'pdf' | 'csv') {
+  function getReportPayload(range: { startDate: string; endDate: string }) {
+    return {
+      startDate: range.startDate,
+      endDate: range.endDate,
+      scopeType,
+      scopeId: needsScopeId ? scopeId : undefined,
+      memberId: memberId || undefined,
+      clientId: !clientFilterHidden && clientId ? clientId : undefined,
+      sortBy,
+      sortOrder,
+    }
+  }
+
+  async function runBulkExport(format: ExportFormat) {
     await runExport(format, async (_, range) => {
       const report = await getBulkReportFn({
-        data: {
-          startDate: range.startDate,
-          endDate: range.endDate,
-          scopeType,
-          scopeId: needsScopeId ? scopeId : undefined,
-          memberId: memberId || undefined,
-          clientId: !clientFilterHidden && clientId ? clientId : undefined,
-          sortBy,
-          sortOrder,
-        },
+        data: getReportPayload(range),
       })
       if (format === 'pdf') {
         await downloadBulkReportPdf(report)
@@ -152,6 +175,32 @@ export function BulkExportButton({
         downloadBulkReportCsv(report)
       }
     })
+  }
+
+  async function handleExport(format: ExportFormat) {
+    setCheckingFormat(format)
+    try {
+      const summary = await getBulkReportOngoingTaskSummaryFn({
+        data: getReportPayload({ startDate, endDate }),
+      })
+      if (hasOngoingExportTasks(summary)) {
+        setOngoingTaskSummary(summary)
+        pendingExportFormatRef.current = format
+        setOngoingWarningOpen(true)
+        return
+      }
+      await runBulkExport(format)
+    } finally {
+      setCheckingFormat(null)
+    }
+  }
+
+  async function handleConfirmedExport() {
+    const format = pendingExportFormatRef.current
+    if (!format) return
+    setOngoingWarningOpen(false)
+    pendingExportFormatRef.current = null
+    await runBulkExport(format)
   }
 
   return (
@@ -243,12 +292,19 @@ export function BulkExportButton({
           </div>
 
           <ExportActionsFooter
-            exporting={exporting}
+            exporting={checkingFormat ?? exporting}
             invalid={invalid}
             onExport={handleExport}
           />
         </DialogContent>
       </Dialog>
+      <ExportOngoingTasksDialog
+        open={ongoingWarningOpen}
+        summary={ongoingTaskSummary}
+        pending={exporting !== null}
+        onOpenChange={setOngoingWarningOpen}
+        onConfirm={() => void handleConfirmedExport()}
+      />
     </>
   )
 }

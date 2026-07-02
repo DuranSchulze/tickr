@@ -125,11 +125,13 @@ export {
   type DepartmentProjectBreakdown,
 } from './tracker/department-dashboard.server'
 export {
+  getMemberReportOngoingTaskSummary,
   getMemberMonthlyReport,
   type MemberMonthlyReport,
   type MemberMonthlyReportEntry,
 } from './tracker/member-report.server'
 export {
+  getBulkReportOngoingTaskSummary,
   getBulkReport,
   type BulkReport,
   type BulkReportGroup,

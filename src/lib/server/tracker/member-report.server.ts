@@ -11,7 +11,17 @@ import {
   users,
   workspaces,
 } from '#/db/schema'
-import { and, asc, eq, gt, lt, inArray, isNotNull } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  lt,
+  inArray,
+  isNotNull,
+  isNull,
+  sql,
+} from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import {
   clipWorkInterval,
@@ -24,6 +34,7 @@ import type {
   ExportSortBy,
   ExportSortOrder,
 } from '#/lib/time-tracker/export-sort'
+import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing-tasks'
 
 export type MemberMonthlyReportEntry = {
   id: string
@@ -61,30 +72,24 @@ export type MemberMonthlyReport = {
   }
 }
 
-/**
- * Returns a monthly time-entry report for a specific member.
- * - OWNER/ADMIN: can target any member in the workspace
- * - MANAGER: can only target members in their own department (or themselves)
- * - EMPLOYEE: can only target themselves
- */
-export async function getMemberMonthlyReport(data: {
+type MemberMonthlyReportInput = {
   memberId: string
-  startDate: string // YYYY-MM-DD
-  endDate: string // YYYY-MM-DD
+  startDate: string
+  endDate: string
   sortBy?: ExportSortBy
   sortOrder?: ExportSortOrder
-}): Promise<MemberMonthlyReport> {
+}
+
+async function assertMemberReportAccess(data: MemberMonthlyReportInput) {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
   const currentMemberId = access.member.id
 
-  // Permission gates
   if (level === 'EMPLOYEE' && data.memberId !== currentMemberId) {
     throw new Error('You can only export your own time entries.')
   }
 
   if (level === 'MANAGER' && data.memberId !== currentMemberId) {
-    // Ensure the target member is in the same department
     const [targetMember] = await db
       .select({ departmentId: workspaceMembers.departmentId })
       .from(workspaceMembers)
@@ -106,6 +111,81 @@ export async function getMemberMonthlyReport(data: {
       )
     }
   }
+
+  return access
+}
+
+export async function getMemberReportOngoingTaskSummary(
+  data: MemberMonthlyReportInput,
+): Promise<ExportOngoingTaskSummary> {
+  const access = await assertMemberReportAccess(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
+
+  const entryConditions = [
+    eq(timeEntries.workspaceId, access.workspace.id),
+    eq(timeEntries.workspaceMemberId, data.memberId),
+    isNull(timeEntries.endedAt),
+    lt(timeEntries.startedAt, range.endExclusive),
+  ]
+
+  const [summary] = await db
+    .select({
+      count: sql<number>`count(${timeEntries.id})::int`,
+      memberCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId})::int`,
+    })
+    .from(timeEntries)
+    .where(and(...entryConditions))
+
+  const examples = await db
+    .select({
+      id: timeEntries.id,
+      memberName: users.name,
+      memberEmail: workspaceMembers.email,
+      startedAt: timeEntries.startedAt,
+      projectName: projects.name,
+      clientName: clients.name,
+      taskName: projectTasks.name,
+      description: timeEntries.description,
+    })
+    .from(timeEntries)
+    .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+    .leftJoin(clients, eq(projects.clientId, clients.id))
+    .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+    .leftJoin(
+      workspaceMembers,
+      eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+    )
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(and(...entryConditions))
+    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
+    .limit(5)
+
+  return {
+    count: summary?.count ?? 0,
+    memberCount: summary?.memberCount ?? 0,
+    examples: examples.map((entry) => ({
+      id: entry.id,
+      memberName: entry.memberName ?? entry.memberEmail ?? 'Unknown',
+      startedAt: entry.startedAt.toISOString(),
+      projectName: entry.projectName ?? null,
+      clientName: entry.clientName ?? null,
+      taskName: entry.taskName ?? null,
+      description: entry.description,
+    })),
+  }
+}
+
+/**
+ * Returns a monthly time-entry report for a specific member.
+ * - OWNER/ADMIN: can target any member in the workspace
+ * - MANAGER: can only target members in their own department (or themselves)
+ * - EMPLOYEE: can only target themselves
+ */
+export async function getMemberMonthlyReport(
+  data: MemberMonthlyReportInput,
+): Promise<MemberMonthlyReport> {
+  const access = await assertMemberReportAccess(data)
 
   const timezone = access.workspace.timezone || 'UTC'
   const range = getWorkspaceDateRange(data, timezone)

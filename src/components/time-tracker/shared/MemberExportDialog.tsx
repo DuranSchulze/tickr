@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { FileDown } from 'lucide-react'
 import {
   Dialog,
@@ -7,19 +7,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { getMemberMonthlyReportFn } from '#/lib/server/tracker'
+import {
+  getMemberMonthlyReportFn,
+  getMemberReportOngoingTaskSummaryFn,
+} from '#/lib/server/tracker'
 import {
   downloadMemberReportCsv,
   downloadMemberReportPdf,
 } from '#/lib/time-tracker/member-report-export'
 import { ExportDateRangePicker } from './ExportDateRangePicker'
 import { ExportActionsFooter } from './export-dialog-footer'
+import { ExportOngoingTasksDialog } from './ExportOngoingTasksDialog'
 import { ExportSortControls } from './ExportSortControls'
 import { useExportDialogState } from './export-dialog-state'
+import type { ExportFormat } from './export-dialog-state'
 import type {
   ExportSortBy,
   ExportSortOrder,
 } from '#/lib/time-tracker/export-sort'
+import { hasOngoingExportTasks } from '#/lib/time-tracker/export-ongoing-tasks'
+import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing-tasks'
 
 /**
  * Single source of truth for per-member report export. Lets the user pick a
@@ -48,6 +55,13 @@ export function MemberExportDialog({
 }) {
   const [sortBy, setSortBy] = useState<ExportSortBy>('date')
   const [sortOrder, setSortOrder] = useState<ExportSortOrder>('asc')
+  const [checkingFormat, setCheckingFormat] = useState<ExportFormat | null>(
+    null,
+  )
+  const pendingExportFormatRef = useRef<ExportFormat | null>(null)
+  const [ongoingTaskSummary, setOngoingTaskSummary] =
+    useState<ExportOngoingTaskSummary | null>(null)
+  const [ongoingWarningOpen, setOngoingWarningOpen] = useState(false)
   const {
     startDate,
     endDate,
@@ -63,10 +77,14 @@ export function MemberExportDialog({
     defaultEndDate,
   })
 
-  async function handleExport(format: 'pdf' | 'csv') {
+  function getReportPayload(range: { startDate: string; endDate: string }) {
+    return { memberId, ...range, sortBy, sortOrder }
+  }
+
+  async function runMemberExport(format: ExportFormat) {
     await runExport(format, async (_, range) => {
       const report = await getMemberMonthlyReportFn({
-        data: { memberId, ...range, sortBy, sortOrder },
+        data: getReportPayload(range),
       })
       if (format === 'pdf') {
         await downloadMemberReportPdf(report)
@@ -76,50 +94,95 @@ export function MemberExportDialog({
     })
   }
 
+  async function handleExport(format: ExportFormat) {
+    setCheckingFormat(format)
+    try {
+      const summary = await getMemberReportOngoingTaskSummaryFn({
+        data: getReportPayload({ startDate, endDate }),
+      })
+      if (hasOngoingExportTasks(summary)) {
+        setOngoingTaskSummary(summary)
+        pendingExportFormatRef.current = format
+        setOngoingWarningOpen(true)
+        return
+      }
+      await runMemberExport(format)
+    } finally {
+      setCheckingFormat(null)
+    }
+  }
+
+  async function handleConfirmedExport() {
+    const format = pendingExportFormatRef.current
+    if (!format) return
+    setOngoingWarningOpen(false)
+    pendingExportFormatRef.current = null
+    await runMemberExport(format)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[52rem]">
-        <DialogHeader>
-          <DialogTitle>Export Time Report</DialogTitle>
-          <DialogDescription>
-            Choose a date range to include in the report
-            {memberName ? (
-              <>
-                {' '}
-                for{' '}
-                <span className="font-semibold text-foreground">
-                  {memberName}
-                </span>
-              </>
-            ) : null}
-            .
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setOngoingWarningOpen(false)
+            setOngoingTaskSummary(null)
+            pendingExportFormatRef.current = null
+          }
+          handleOpenChange(nextOpen)
+        }}
+      >
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[52rem]">
+          <DialogHeader>
+            <DialogTitle>Export Time Report</DialogTitle>
+            <DialogDescription>
+              Choose a date range to include in the report
+              {memberName ? (
+                <>
+                  {' '}
+                  for{' '}
+                  <span className="font-semibold text-foreground">
+                    {memberName}
+                  </span>
+                </>
+              ) : null}
+              .
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-start">
-          <ExportDateRangePicker
-            startDate={startDate}
-            endDate={endDate}
-            onChangeRange={setRange}
-          />
-
-          <div className="rounded-lg border border-border bg-background p-3">
-            <ExportSortControls
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSortByChange={setSortBy}
-              onSortOrderChange={setSortOrder}
+          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-start">
+            <ExportDateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChangeRange={setRange}
             />
-          </div>
-        </div>
 
-        <ExportActionsFooter
-          exporting={exporting}
-          invalid={invalidRange}
-          onExport={handleExport}
-        />
-      </DialogContent>
-    </Dialog>
+            <div className="rounded-lg border border-border bg-background p-3">
+              <ExportSortControls
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSortByChange={setSortBy}
+                onSortOrderChange={setSortOrder}
+              />
+            </div>
+          </div>
+
+          <ExportActionsFooter
+            exporting={checkingFormat ?? exporting}
+            invalid={invalidRange}
+            onExport={handleExport}
+          />
+        </DialogContent>
+      </Dialog>
+      <ExportOngoingTasksDialog
+        open={ongoingWarningOpen}
+        summary={ongoingTaskSummary}
+        pending={exporting !== null}
+        onOpenChange={setOngoingWarningOpen}
+        onConfirm={() => void handleConfirmedExport()}
+      />
+    </>
   )
 }
 

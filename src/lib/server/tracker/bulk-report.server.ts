@@ -12,7 +12,17 @@ import {
   tags,
   timeEntryTags,
 } from '#/db/schema'
-import { and, asc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  sql,
+} from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
@@ -27,6 +37,7 @@ import type {
   ExportSortBy,
   ExportSortOrder,
 } from '#/lib/time-tracker/export-sort'
+import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing-tasks'
 
 export type BulkReportScopeType = 'all' | 'client' | 'department' | 'tag'
 
@@ -77,6 +88,141 @@ export type BulkReport = {
     nonBillableSeconds: number
     billableAmount: number
     entryCount: number
+  }
+}
+
+type BulkReportInput = {
+  startDate: string
+  endDate: string
+  scopeType: BulkReportScopeType
+  scopeId?: string
+  memberId?: string
+  clientId?: string
+  sortBy?: ExportSortBy
+  sortOrder?: ExportSortOrder
+}
+
+async function applyBulkReportAccessAndFilters({
+  access,
+  level,
+  data,
+  entryConditions,
+}: {
+  access: Awaited<ReturnType<typeof requireWorkspaceAccess>>
+  level: string
+  data: BulkReportInput
+  entryConditions: SQL[]
+}) {
+  if (level === 'OWNER' || level === 'ADMIN') {
+    // no restriction
+  } else if (level === 'MANAGER' && access.member.departmentId) {
+    const deptMemberIds = db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.departmentId, access.member.departmentId))
+    entryConditions.push(inArray(timeEntries.workspaceMemberId, deptMemberIds))
+  } else {
+    entryConditions.push(eq(timeEntries.workspaceMemberId, access.member.id))
+  }
+
+  if (data.scopeType === 'client' && data.scopeId) {
+    const projectIdsWithClient = db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.clientId, data.scopeId))
+    entryConditions.push(inArray(timeEntries.projectId, projectIdsWithClient))
+  } else if (data.scopeType === 'department' && data.scopeId) {
+    const deptMemberIds = db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.departmentId, data.scopeId))
+    entryConditions.push(inArray(timeEntries.workspaceMemberId, deptMemberIds))
+  } else if (data.scopeType === 'tag' && data.scopeId) {
+    const entryIdsWithTag = db
+      .select({ timeEntryId: timeEntryTags.timeEntryId })
+      .from(timeEntryTags)
+      .where(eq(timeEntryTags.tagId, data.scopeId))
+    entryConditions.push(inArray(timeEntries.id, entryIdsWithTag))
+  }
+
+  if (data.memberId) {
+    entryConditions.push(eq(timeEntries.workspaceMemberId, data.memberId))
+  }
+
+  if (data.clientId && data.scopeType !== 'client') {
+    const projectIdsWithClient = db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.clientId, data.clientId))
+    entryConditions.push(inArray(timeEntries.projectId, projectIdsWithClient))
+  }
+}
+
+export async function getBulkReportOngoingTaskSummary(
+  data: BulkReportInput,
+): Promise<ExportOngoingTaskSummary> {
+  const access = await requireWorkspaceAccess()
+  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
+
+  const entryConditions: SQL[] = [
+    eq(timeEntries.workspaceId, access.workspace.id),
+    isNull(timeEntries.endedAt),
+    lt(timeEntries.startedAt, range.endExclusive),
+  ]
+
+  await applyBulkReportAccessAndFilters({
+    access,
+    level,
+    data,
+    entryConditions,
+  })
+
+  const [summary] = await db
+    .select({
+      count: sql<number>`count(${timeEntries.id})::int`,
+      memberCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId})::int`,
+    })
+    .from(timeEntries)
+    .where(and(...entryConditions))
+
+  const examples = await db
+    .select({
+      id: timeEntries.id,
+      memberName: users.name,
+      memberEmail: workspaceMembers.email,
+      startedAt: timeEntries.startedAt,
+      projectName: projects.name,
+      clientName: clients.name,
+      taskName: projectTasks.name,
+      description: timeEntries.description,
+    })
+    .from(timeEntries)
+    .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+    .leftJoin(clients, eq(projects.clientId, clients.id))
+    .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+    .leftJoin(
+      workspaceMembers,
+      eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+    )
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .where(and(...entryConditions))
+    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
+    .limit(5)
+
+  return {
+    count: summary?.count ?? 0,
+    memberCount: summary?.memberCount ?? 0,
+    examples: examples.map((entry) => ({
+      id: entry.id,
+      memberName: entry.memberName ?? entry.memberEmail ?? 'Unknown',
+      startedAt: entry.startedAt.toISOString(),
+      projectName: entry.projectName ?? null,
+      clientName: entry.clientName ?? null,
+      taskName: entry.taskName ?? null,
+      description: entry.description,
+    })),
   }
 }
 

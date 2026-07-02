@@ -218,11 +218,30 @@ export const getMemberMonthlyReportFn = createServerFn({ method: 'GET' })
     return getMemberMonthlyReport(data)
   })
 
+export const getMemberReportOngoingTaskSummaryFn = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((input) => memberMonthlyReportSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getMemberReportOngoingTaskSummary } =
+      await import('./tracker.server')
+    return getMemberReportOngoingTaskSummary(data)
+  })
+
 export const getBulkReportFn = createServerFn({ method: 'GET' })
   .inputValidator((input) => bulkReportSchema.parse(input))
   .handler(async ({ data }) => {
     const { getBulkReport } = await import('./tracker.server')
     return getBulkReport(data)
+  })
+
+export const getBulkReportOngoingTaskSummaryFn = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((input) => bulkReportSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getBulkReportOngoingTaskSummary } = await import('./tracker.server')
+    return getBulkReportOngoingTaskSummary(data)
   })
 
 export const exportAnalyticsCsvFn = createServerFn({ method: 'POST' })

@@ -12,6 +12,7 @@
 - [x] Browser smoke checked on `/app/analytics` and `/app/department-member-analytics/$memberId`.
 - [x] Bulk Export expanded with member/client/task filters and task/rate detail in CSV/PDF exports.
 - [x] Bulk and Member exports now share Date/Client/Tag/Billable sort controls with ascending/descending server-side report ordering.
+- [x] Bulk and Member exports warn when matching ongoing tasks exist before exporting completed entries.
 
 ## 1. Goal
 
