@@ -9,6 +9,10 @@ import {
   updateActiveTimerSchema,
   updateEntrySchema,
 } from './tracker/shared/schemas'
+import {
+  exportSortByValues,
+  exportSortOrderValues,
+} from '#/lib/time-tracker/export-sort'
 
 const inviteMemberSchema = z.object({
   email: z.string().trim().email(),
@@ -75,18 +79,29 @@ const workspaceActivitySchema = z.object({
   q: z.string().trim().max(120).optional(),
 })
 
-const memberMonthlyReportSchema = z.object({
-  memberId: z.string().min(1),
-  startDate: z.string().date(), // YYYY-MM-DD
-  endDate: z.string().date(), // YYYY-MM-DD
+const reportSortSchema = z.object({
+  sortBy: z.enum(exportSortByValues).optional(),
+  sortOrder: z.enum(exportSortOrderValues).optional(),
 })
 
-const bulkReportSchema = z.object({
-  startDate: z.string().date(), // YYYY-MM-DD
-  endDate: z.string().date(), // YYYY-MM-DD
-  scopeType: z.enum(['all', 'client', 'department', 'tag']),
-  scopeId: z.string().optional(),
-})
+const memberMonthlyReportSchema = z
+  .object({
+    memberId: z.string().min(1),
+    startDate: z.string().date(), // YYYY-MM-DD
+    endDate: z.string().date(), // YYYY-MM-DD
+  })
+  .merge(reportSortSchema)
+
+const bulkReportSchema = z
+  .object({
+    startDate: z.string().date(), // YYYY-MM-DD
+    endDate: z.string().date(), // YYYY-MM-DD
+    scopeType: z.enum(['all', 'client', 'department', 'tag']),
+    scopeId: z.string().optional(),
+    memberId: z.string().optional(),
+    clientId: z.string().optional(),
+  })
+  .merge(reportSortSchema)
 
 export const timerPresetInputSchema = z.object({
   name: z.string().trim().min(1).max(50),

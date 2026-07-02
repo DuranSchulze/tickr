@@ -1,33 +1,25 @@
 import { useState } from 'react'
-import { FileDown, FileSpreadsheet, FileText, Loader2 } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { FileDown } from 'lucide-react'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '#/components/ui/dialog'
-import { Button } from '#/components/ui/button'
 import { getMemberMonthlyReportFn } from '#/lib/server/tracker'
 import {
   downloadMemberReportCsv,
   downloadMemberReportPdf,
 } from '#/lib/time-tracker/member-report-export'
 import { ExportDateRangePicker } from './ExportDateRangePicker'
-
-type ExportFormat = 'pdf' | 'csv'
-
-const pad = (n: number) => String(n).padStart(2, '0')
-const fmt = (d: Date) =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-const monthStartStr = () => {
-  const now = new Date()
-  return fmt(new Date(now.getFullYear(), now.getMonth(), 1))
-}
-const todayStr = () => fmt(new Date())
+import { ExportActionsFooter } from './export-dialog-footer'
+import { ExportSortControls } from './ExportSortControls'
+import { useExportDialogState } from './export-dialog-state'
+import type {
+  ExportSortBy,
+  ExportSortOrder,
+} from '#/lib/time-tracker/export-sort'
 
 /**
  * Single source of truth for per-member report export. Lets the user pick a
@@ -54,53 +46,39 @@ export function MemberExportDialog({
   defaultStartDate?: string
   defaultEndDate?: string
 }) {
-  const [formState, setFormState] = useState({
-    open: false,
-    startDate: defaultStartDate ?? monthStartStr(),
-    endDate: defaultEndDate ?? todayStr(),
+  const [sortBy, setSortBy] = useState<ExportSortBy>('date')
+  const [sortOrder, setSortOrder] = useState<ExportSortOrder>('asc')
+  const {
+    startDate,
+    endDate,
+    exporting,
+    invalidRange,
+    setRange,
+    handleOpenChange,
+    runExport,
+  } = useExportDialogState({
+    open,
+    onOpenChange,
+    defaultStartDate,
+    defaultEndDate,
   })
-  const startDate =
-    formState.open === open
-      ? formState.startDate
-      : (defaultStartDate ?? monthStartStr())
-  const endDate =
-    formState.open === open ? formState.endDate : (defaultEndDate ?? todayStr())
-  const [exporting, setExporting] = useState<ExportFormat | null>(null)
 
-  const invalid = !startDate || !endDate || startDate > endDate
-
-  async function handleExport(format: ExportFormat) {
-    setExporting(format)
-    try {
+  async function handleExport(format: 'pdf' | 'csv') {
+    await runExport(format, async (_, range) => {
       const report = await getMemberMonthlyReportFn({
-        data: { memberId, startDate, endDate },
+        data: { memberId, ...range, sortBy, sortOrder },
       })
       if (format === 'pdf') {
         await downloadMemberReportPdf(report)
       } else {
         downloadMemberReportCsv(report)
       }
-      setFormState((prev) => ({ ...prev, open: false }))
-      onOpenChange(false)
-    } catch (err) {
-      gooeyToast.error('Export failed', {
-        description:
-          err instanceof Error ? err.message : 'Could not generate report.',
-      })
-    } finally {
-      setExporting(null)
-    }
+    })
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) setFormState((prev) => ({ ...prev, open: false }))
-        onOpenChange(nextOpen)
-      }}
-    >
-      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[52rem]">
         <DialogHeader>
           <DialogTitle>Export Time Report</DialogTitle>
           <DialogDescription>
@@ -118,48 +96,28 @@ export function MemberExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ExportDateRangePicker
-          startDate={startDate}
-          endDate={endDate}
-          onChangeRange={(range) =>
-            setFormState({
-              open,
-              startDate: range.startDate,
-              endDate: range.endDate,
-            })
-          }
-        />
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-start">
+          <ExportDateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChangeRange={setRange}
+          />
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline" disabled={exporting !== null}>
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            variant="outline"
-            onClick={() => handleExport('csv')}
-            disabled={invalid || exporting !== null}
-          >
-            {exporting === 'csv' ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="mr-2 size-4" />
-            )}
-            CSV
-          </Button>
-          <Button
-            onClick={() => handleExport('pdf')}
-            disabled={invalid || exporting !== null}
-          >
-            {exporting === 'pdf' ? (
-              <Loader2 className="mr-2 size-4 animate-spin" />
-            ) : (
-              <FileText className="mr-2 size-4" />
-            )}
-            PDF
-          </Button>
-        </DialogFooter>
+          <div className="rounded-lg border border-border bg-background p-3">
+            <ExportSortControls
+              sortBy={sortBy}
+              sortOrder={sortOrder}
+              onSortByChange={setSortBy}
+              onSortOrderChange={setSortOrder}
+            />
+          </div>
+        </div>
+
+        <ExportActionsFooter
+          exporting={exporting}
+          invalid={invalidRange}
+          onExport={handleExport}
+        />
       </DialogContent>
     </Dialog>
   )

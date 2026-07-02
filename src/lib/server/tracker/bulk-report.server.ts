@@ -6,6 +6,7 @@ import {
   users,
   departments,
   timeEntries,
+  projectTasks,
   projects,
   clients,
   tags,
@@ -15,15 +16,17 @@ import { and, asc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import {
-  formatDateInTimeZone,
-  getWorkspaceDateRange,
-} from './shared/dates'
+import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
 import {
   clipWorkInterval,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 import { resolveEntryRateMap } from './rates.server'
+import { sortReportEntries } from './report-sort.server'
+import type {
+  ExportSortBy,
+  ExportSortOrder,
+} from '#/lib/time-tracker/export-sort'
 
 export type BulkReportScopeType = 'all' | 'client' | 'department' | 'tag'
 
@@ -34,6 +37,7 @@ export type BulkReportEntry = {
   endedAt: string
   projectName: string | null
   clientName: string | null
+  taskName: string | null
   tagNames: string[]
   description: string
   durationSeconds: number
@@ -90,6 +94,10 @@ export async function getBulkReport(data: {
   endDate: string
   scopeType: BulkReportScopeType
   scopeId?: string
+  memberId?: string
+  clientId?: string
+  sortBy?: ExportSortBy
+  sortOrder?: ExportSortOrder
 }): Promise<BulkReport> {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
@@ -156,6 +164,44 @@ export async function getBulkReport(data: {
     scopeLabel = `Tag: ${tag?.name ?? 'Unknown'}`
   }
 
+  const filterLabels: string[] = []
+  if (data.memberId) {
+    entryConditions.push(eq(timeEntries.workspaceMemberId, data.memberId))
+    const [member] = await db
+      .select({
+        name: users.name,
+        email: workspaceMembers.email,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(
+        and(
+          eq(workspaceMembers.id, data.memberId),
+          eq(workspaceMembers.workspaceId, access.workspace.id),
+        ),
+      )
+      .limit(1)
+    filterLabels.push(`Member: ${member?.name ?? member?.email ?? 'Unknown'}`)
+  }
+
+  if (data.clientId && data.scopeType !== 'client') {
+    const projectIdsWithClient = db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.clientId, data.clientId))
+    entryConditions.push(inArray(timeEntries.projectId, projectIdsWithClient))
+    const [client] = await db
+      .select({ name: clients.name })
+      .from(clients)
+      .where(eq(clients.id, data.clientId))
+      .limit(1)
+    filterLabels.push(`Client: ${client?.name ?? 'Unknown'}`)
+  }
+
+  if (filterLabels.length > 0) {
+    scopeLabel = `${scopeLabel} · ${filterLabels.join(' · ')}`
+  }
+
   // Workspace billing defaults.
   const [workspaceRow] = await db
     .select({
@@ -182,6 +228,7 @@ export async function getBulkReport(data: {
       projectName: projects.name,
       clientId: projects.clientId,
       clientName: clients.name,
+      taskName: projectTasks.name,
       memberId: timeEntries.workspaceMemberId,
       memberEmail: workspaceMembers.email,
       memberUserName: users.name,
@@ -190,13 +237,14 @@ export async function getBulkReport(data: {
     .from(timeEntries)
     .leftJoin(projects, eq(timeEntries.projectId, projects.id))
     .leftJoin(clients, eq(projects.clientId, clients.id))
+    .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
     .leftJoin(
       workspaceMembers,
       eq(timeEntries.workspaceMemberId, workspaceMembers.id),
     )
     .leftJoin(users, eq(workspaceMembers.userId, users.id))
     .where(and(...entryConditions))
-    .orderBy(asc(timeEntries.startedAt))
+    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
 
   // Tags for all returned entries.
   const entryIds = rawEntries.map((e) => e.id)
@@ -284,6 +332,7 @@ export async function getBulkReport(data: {
       endedAt: clipped.endedAt.toISOString(),
       projectName: e.projectName ?? null,
       clientName: e.clientName ?? null,
+      taskName: e.taskName ?? null,
       tagNames: tagsByEntry.get(e.id) ?? [],
       description: e.description,
       durationSeconds: clipped.seconds,
@@ -309,6 +358,7 @@ export async function getBulkReport(data: {
     a.label.localeCompare(b.label),
   )
   for (const group of groups) {
+    sortReportEntries(group.entries, data.sortBy, data.sortOrder)
     const groupSummary = summarizeWorkIntervals(
       group.entries.map((entry) => ({
         memberId: group.key,
@@ -358,7 +408,10 @@ export async function getBulkReport(data: {
       billableSeconds,
       nonBillableSeconds: totalSeconds - billableSeconds,
       billableAmount,
-      entryCount: rawEntries.length,
+      entryCount: groups.reduce(
+        (count, group) => count + group.subtotal.entryCount,
+        0,
+      ),
     },
   }
 }

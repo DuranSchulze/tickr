@@ -1,6 +1,53 @@
+import { useId } from 'react'
 import { FileSpreadsheet, FileText, Loader2 } from 'lucide-react'
 import { DialogClose, DialogFooter } from '#/components/ui/dialog'
 import { Button } from '#/components/ui/button'
+import type { ExportFormat } from './export-dialog-state'
+
+export interface ExportActionsFooterProps {
+  exporting: ExportFormat | null
+  invalid: boolean
+  onExport: (format: ExportFormat) => void
+}
+
+export function ExportActionsFooter({
+  exporting,
+  invalid,
+  onExport,
+}: ExportActionsFooterProps) {
+  return (
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button variant="outline" disabled={exporting !== null}>
+          Cancel
+        </Button>
+      </DialogClose>
+      <Button
+        variant="outline"
+        onClick={() => onExport('csv')}
+        disabled={invalid || exporting !== null}
+      >
+        {exporting === 'csv' ? (
+          <Loader2 className="mr-2 size-4 animate-spin" />
+        ) : (
+          <FileSpreadsheet className="mr-2 size-4" />
+        )}
+        CSV
+      </Button>
+      <Button
+        onClick={() => onExport('pdf')}
+        disabled={invalid || exporting !== null}
+      >
+        {exporting === 'pdf' ? (
+          <Loader2 className="mr-2 size-4 animate-spin" />
+        ) : (
+          <FileText className="mr-2 size-4" />
+        )}
+        PDF
+      </Button>
+    </DialogFooter>
+  )
+}
 
 export interface ExportDialogFooterProps {
   startDate: string
@@ -19,8 +66,9 @@ export interface ExportDialogFooterProps {
 }
 
 /**
- * Shared date-range picker + export buttons (CSV / PDF) used by
- * {@link BulkExportButton} and {@link MemberExportDialog}.
+ * Legacy date-input footer retained for any future compact export surface.
+ * Current member and bulk dialogs use ExportDateRangePicker plus
+ * ExportActionsFooter.
  */
 export function ExportDialogFooter({
   startDate,
@@ -37,14 +85,21 @@ export function ExportDialogFooter({
   onExport,
   onCancel,
 }: ExportDialogFooterProps) {
+  const startDateId = useId()
+  const endDateId = useId()
+
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
-          <label className="text-xs font-semibold text-foreground">
+          <label
+            htmlFor={startDateId}
+            className="text-xs font-semibold text-foreground"
+          >
             Start date
           </label>
           <input
+            id={startDateId}
             type="date"
             value={startDate}
             min={startDateMin}
@@ -55,10 +110,14 @@ export function ExportDialogFooter({
           />
         </div>
         <div className="grid gap-1.5">
-          <label className="text-xs font-semibold text-foreground">
+          <label
+            htmlFor={endDateId}
+            className="text-xs font-semibold text-foreground"
+          >
             End date
           </label>
           <input
+            id={endDateId}
             type="date"
             value={endDate}
             min={endDateMin}

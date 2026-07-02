@@ -10,6 +10,7 @@ import {
 
 type GroupedReportExportOptions = {
   title?: string
+  subtitle?: string
   filenamePrefix?: string
   orientation?: 'portrait' | 'landscape'
 }
@@ -35,13 +36,53 @@ function formatReportDate(value: string, timeZone: string): string {
 function reportFilename(
   report: BulkReport,
   ext: string,
-  filenamePrefix = 'bulk-report',
+  filenamePrefix = 'time-billing-report',
 ): string {
-  const safeScope = report.scopeLabel
-    .replace(/[^a-z0-9]+/gi, '-')
-    .toLowerCase()
-    .replace(/^-+|-+$/g, '')
-  return `${filenamePrefix}-${safeScope}-${report.startDate}-${report.endDate}.${ext}`
+  const safeScope =
+    report.scopeLabel
+      .replace(/[^a-z0-9]+/gi, '-')
+      .toLowerCase()
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) || 'selected-entries'
+  const generatedDate = new Date().toISOString().slice(0, 10)
+  return `${filenamePrefix}-${safeScope}-${report.startDate}-to-${report.endDate}-generated-${generatedDate}.${ext}`
+}
+
+function reportTitle(options: GroupedReportExportOptions) {
+  return options.title ?? 'Time & Billing Detail Report'
+}
+
+function reportSubtitle(options: GroupedReportExportOptions) {
+  return (
+    options.subtitle ??
+    'Detailed time entries with project, client, task, tags, billable status, rates, and computed amounts.'
+  )
+}
+
+function generatedDateLabel() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function scopeLabel(report: BulkReport) {
+  return report.scopeLabel || 'Selected time entries'
+}
+
+function breakdownLabel(report: BulkReport) {
+  const count = report.groups.length
+  return count === 1 ? '1 member/group' : `${count} members/groups`
+}
+
+function summaryRows(report: BulkReport): [string, string][] {
+  const s = report.summary
+  return [
+    ['Tracked time', formatHms(s.totalSeconds)],
+    ['Actual time', formatHms(s.actualSeconds)],
+    ['Overlapped time', formatHms(s.overlapSeconds)],
+    ['Billable time', formatHms(s.billableSeconds)],
+    ['Non-billable time', formatHms(s.nonBillableSeconds)],
+    ['Entries', String(s.entryCount)],
+    ['Billable amount', formatMoney(s.billableAmount, report.currency)],
+  ]
 }
 
 /**
@@ -63,39 +104,59 @@ export async function downloadGroupedTimeReportPdf(
   const doc = new jsPDF({ orientation, unit: 'pt', format: 'a4' })
   const margin = 40
   const pageHeight = doc.internal.pageSize.getHeight()
+  const pageWidth = doc.internal.pageSize.getWidth()
   let y = margin
 
-  doc.setFontSize(16)
+  doc.setFontSize(18)
   doc.setFont('helvetica', 'bold')
-  doc.text(options.title ?? 'Bulk Time Report', margin, y)
-  y += 20
-
-  doc.setFontSize(11)
-  doc.text(report.scopeLabel, margin, y)
+  doc.text(reportTitle(options), margin, y)
   y += 16
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text(reportSubtitle(options), margin, y, {
+    maxWidth: pageWidth - margin * 2,
+  })
+  y += 16
+
+  doc.setDrawColor(220, 224, 232)
+  doc.line(margin, y, pageWidth - margin, y)
+  y += 18
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Period: ${report.startDate} to ${report.endDate}`, margin, y)
+  const metaColWidth = (pageWidth - margin * 2) / 2
+  const writeMeta = (label: string, value: string, x: number, rowY: number) => {
+    doc.setFont('helvetica', 'bold')
+    doc.text(label, x, rowY)
+    doc.setFont('helvetica', 'normal')
+    doc.text(value, x + 78, rowY, { maxWidth: metaColWidth - 86 })
+  }
+  writeMeta('Scope', scopeLabel(report), margin, y)
+  writeMeta(
+    'Period',
+    `${report.startDate} to ${report.endDate}`,
+    margin + metaColWidth,
+    y,
+  )
   y += 14
-  doc.text(`Generated: ${new Date().toISOString().slice(0, 10)}`, margin, y)
-  y += 20
+  writeMeta('Generated', generatedDateLabel(), margin, y)
+  writeMeta('Timezone', report.timezone, margin + metaColWidth, y)
+  y += 14
+  writeMeta('Currency', (report.currency || 'PHP').toUpperCase(), margin, y)
+  writeMeta('Breakdown', breakdownLabel(report), margin + metaColWidth, y)
+  y += 22
 
   // Grand totals
-  const s = report.summary
   doc.setFont('helvetica', 'bold')
-  doc.text('Totals', margin, y)
+  doc.setFontSize(11)
+  doc.text('Report Summary', margin, y)
   y += 16
   doc.setFont('helvetica', 'normal')
-  const totalsLine = [
-    `Tracked: ${formatHms(s.totalSeconds)}`,
-    `Actual: ${formatHms(s.actualSeconds)}`,
-    `Overlap: ${formatHms(s.overlapSeconds)}`,
-    `Billable: ${formatHms(s.billableSeconds)}`,
-    `Non-billable: ${formatHms(s.nonBillableSeconds)}`,
-    `Entries: ${s.entryCount}`,
-    `Billable amount: ${formatMoney(s.billableAmount, report.currency)}`,
-  ]
+  doc.setFontSize(9)
+  const totalsLine = summaryRows(report).map(
+    ([label, value]) => `${label}: ${value}`,
+  )
   const summaryColumnCount = orientation === 'portrait' ? 2 : 4
   const colWidth =
     (doc.internal.pageSize.getWidth() - margin * 2) / summaryColumnCount
@@ -143,6 +204,7 @@ export async function downloadGroupedTimeReportPdf(
           'End Time',
           'Project',
           'Client',
+          'Task',
           'Tags',
           'Description',
           'Duration',
@@ -159,6 +221,7 @@ export async function downloadGroupedTimeReportPdf(
         formatReportTime(e.endedAt, report.timezone),
         e.projectName ?? '',
         e.clientName ?? '',
+        e.taskName ?? '',
         e.tagNames.join('; '),
         e.description,
         formatHms(e.durationSeconds),
@@ -186,13 +249,14 @@ export async function downloadGroupedTimeReportPdf(
         3: { cellWidth: 44 },
         4: { cellWidth: 60 },
         5: { cellWidth: 60 },
-        6: { cellWidth: 50 },
-        7: { cellWidth: 'auto' },
-        8: { cellWidth: 52, halign: 'right' },
+        6: { cellWidth: 55 },
+        7: { cellWidth: 45 },
+        8: { cellWidth: 'auto' },
         9: { cellWidth: 48, halign: 'right' },
-        10: { cellWidth: 38, halign: 'center' },
-        11: { cellWidth: 45, halign: 'right' },
-        12: { cellWidth: 62, halign: 'right' },
+        10: { cellWidth: 45, halign: 'right' },
+        11: { cellWidth: 36, halign: 'center' },
+        12: { cellWidth: 42, halign: 'right' },
+        13: { cellWidth: 58, halign: 'right' },
       },
       showHead: 'everyPage',
       rowPageBreak: 'avoid',
@@ -219,11 +283,18 @@ export function buildGroupedTimeReportCsv(
   const currency = (report.currency || 'PHP').toUpperCase()
 
   const rows: (string | number | null | undefined)[][] = [
-    [options.title ?? 'Bulk Time Report'],
-    ['Scope', report.scopeLabel],
-    ['Period', `${report.startDate} to ${report.endDate}`],
+    [reportTitle(options)],
+    ['Report detail', reportSubtitle(options)],
+    ['Scope', scopeLabel(report)],
+    ['Period start', report.startDate],
+    ['Period end', report.endDate],
     ['Currency', currency],
-    ['Generated', new Date().toISOString().slice(0, 10)],
+    ['Timezone', report.timezone],
+    ['Generated', generatedDateLabel()],
+    ['Breakdown', breakdownLabel(report)],
+    [],
+    ['Summary'],
+    ...summaryRows(report),
     [],
     [
       'Member',
@@ -234,6 +305,7 @@ export function buildGroupedTimeReportCsv(
       'End Time',
       'Project',
       'Client',
+      'Task',
       'Tags',
       'Description',
       'Duration',
@@ -255,6 +327,7 @@ export function buildGroupedTimeReportCsv(
         formatReportTime(e.endedAt, report.timezone),
         e.projectName ?? '',
         e.clientName ?? '',
+        e.taskName ?? '',
         e.tagNames.join('; '),
         e.description,
         formatHms(e.durationSeconds),
@@ -273,12 +346,12 @@ export function buildGroupedTimeReportCsv(
     description = '',
     amount = '',
   ): string[] => {
-    const row = Array<string>(15).fill('')
+    const row = Array<string>(16).fill('')
     row[0] = label
-    row[9] = description
-    row[10] = formatHms(seconds)
-    row[11] = formatDecimalHours(seconds)
-    row[14] = amount
+    row[10] = description
+    row[11] = formatHms(seconds)
+    row[12] = formatDecimalHours(seconds)
+    row[15] = amount
     return row
   }
   rows.push(
@@ -309,15 +382,19 @@ export function downloadGroupedTimeReportCsv(
 
 export async function downloadBulkReportPdf(report: BulkReport): Promise<void> {
   await downloadGroupedTimeReportPdf(report, {
-    title: 'Bulk Time Report',
-    filenamePrefix: 'bulk-report',
+    title: 'Workspace Time & Billing Report',
+    subtitle:
+      'Workspace activity grouped by member with client filters, task detail, rates, and computed billable amounts.',
+    filenamePrefix: 'workspace-time-billing-report',
     orientation: 'landscape',
   })
 }
 
 export function downloadBulkReportCsv(report: BulkReport): void {
   downloadGroupedTimeReportCsv(report, {
-    title: 'Bulk Time Report',
-    filenamePrefix: 'bulk-report',
+    title: 'Workspace Time & Billing Report',
+    subtitle:
+      'Workspace activity grouped by member with client filters, task detail, rates, and computed billable amounts.',
+    filenamePrefix: 'workspace-time-billing-report',
   })
 }

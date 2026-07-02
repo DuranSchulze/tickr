@@ -49,8 +49,10 @@ export async function downloadMemberReportPdf(
   report: MemberMonthlyReport,
 ): Promise<void> {
   await downloadGroupedTimeReportPdf(toGroupedReport(report), {
-    title: 'Member Time Report',
-    filenamePrefix: 'member-report',
+    title: 'Member Time & Billing Report',
+    subtitle:
+      'Individual member time entries with task detail, client rates, billable status, and computed amounts.',
+    filenamePrefix: 'member-time-billing-report',
     orientation: 'landscape',
   })
 }
@@ -60,7 +62,9 @@ export async function downloadMemberReportPdf(
  */
 export function downloadMemberReportCsv(report: MemberMonthlyReport): void {
   downloadGroupedTimeReportCsv(toGroupedReport(report), {
-    title: 'Member Time Report',
-    filenamePrefix: 'member-report',
+    title: 'Member Time & Billing Report',
+    subtitle:
+      'Individual member time entries with task detail, client rates, billable status, and computed amounts.',
+    filenamePrefix: 'member-time-billing-report',
   })
 }

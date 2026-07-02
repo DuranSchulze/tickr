@@ -5,22 +5,25 @@ import {
   timeEntryTags,
   tags,
   projects,
+  projectTasks,
   clients,
   workspaceMembers,
   users,
   workspaces,
 } from '#/db/schema'
-import { and, eq, gt, lt, inArray, isNotNull } from 'drizzle-orm'
+import { and, asc, eq, gt, lt, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import {
   clipWorkInterval,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
-import {
-  formatDateInTimeZone,
-  getWorkspaceDateRange,
-} from './shared/dates'
+import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
 import { resolveEntryRateMap } from './rates.server'
+import { sortReportEntries } from './report-sort.server'
+import type {
+  ExportSortBy,
+  ExportSortOrder,
+} from '#/lib/time-tracker/export-sort'
 
 export type MemberMonthlyReportEntry = {
   id: string
@@ -29,6 +32,7 @@ export type MemberMonthlyReportEntry = {
   endedAt: string
   projectName: string | null
   clientName: string | null
+  taskName: string | null
   tagNames: string[]
   description: string
   durationSeconds: number
@@ -67,6 +71,8 @@ export async function getMemberMonthlyReport(data: {
   memberId: string
   startDate: string // YYYY-MM-DD
   endDate: string // YYYY-MM-DD
+  sortBy?: ExportSortBy
+  sortOrder?: ExportSortOrder
 }): Promise<MemberMonthlyReport> {
   const access = await requireWorkspaceAccess()
   const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
@@ -151,10 +157,12 @@ export async function getMemberMonthlyReport(data: {
       projectName: projects.name,
       clientId: projects.clientId,
       clientName: clients.name,
+      taskName: projectTasks.name,
     })
     .from(timeEntries)
     .leftJoin(projects, eq(timeEntries.projectId, projects.id))
     .leftJoin(clients, eq(projects.clientId, clients.id))
+    .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
     .where(
       and(
         eq(timeEntries.workspaceId, access.workspace.id),
@@ -164,7 +172,7 @@ export async function getMemberMonthlyReport(data: {
         gt(timeEntries.endedAt, range.start),
       ),
     )
-    .orderBy(timeEntries.startedAt)
+    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
 
   // Fetch tags for all returned entries
   const entryIds = rawEntries.map((e) => e.id)
@@ -237,6 +245,7 @@ export async function getMemberMonthlyReport(data: {
         endedAt: clipped.endedAt.toISOString(),
         projectName: e.projectName ?? null,
         clientName: e.clientName ?? null,
+        taskName: e.taskName ?? null,
         tagNames: tagsByEntry.get(e.id) ?? [],
         description: e.description,
         durationSeconds: clipped.seconds,
@@ -246,6 +255,9 @@ export async function getMemberMonthlyReport(data: {
       },
     ]
   })
+
+  sortReportEntries(entries, data.sortBy, data.sortOrder)
+
   const workSummary = summarizeWorkIntervals(
     entries.map((entry) => ({
       memberId: data.memberId,

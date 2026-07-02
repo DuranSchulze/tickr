@@ -1,12 +1,15 @@
 import { memo, useCallback, useMemo, useState } from 'react'
-import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { Check, ChevronsUpDown, Search, X } from 'lucide-react'
 import type { TrackerState } from '#/lib/time-tracker/types'
+import { cn } from '#/lib/utils'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '#/components/ui/popover'
+import { Combobox } from '#/components/ui/combobox'
+import type { ComboboxOption } from '#/components/ui/combobox'
+import { Button } from '#/components/ui/button'
 import type { AnalyticsScopeSearch } from './analytics.utils'
 
 export type AnalyticsFilters = {
@@ -38,7 +41,7 @@ const FilterSelect = memo(function FilterSelect({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:min-w-[140px]"
+        className="h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:min-w-[200px]"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -50,7 +53,43 @@ const FilterSelect = memo(function FilterSelect({
   )
 })
 
-const MultiSelectDropdown = memo(function MultiSelectDropdown({
+const FilterCombobox = memo(function FilterCombobox({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  className = '',
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: ComboboxOption[]
+  placeholder: string
+  searchPlaceholder: string
+  className?: string
+}) {
+  return (
+    <div className={cn('min-w-0 flex flex-col gap-1', className)}>
+      <span className="text-xs font-semibold text-muted-foreground">
+        {label}
+      </span>
+      <Combobox
+        options={options}
+        value={value}
+        onValueChange={onChange}
+        placeholder={placeholder}
+        searchPlaceholder={searchPlaceholder}
+        emptyText={`No ${label.toLowerCase()} found.`}
+        className="h-9 rounded-lg sm:min-w-[200px]"
+        contentClassName="z-[60]"
+      />
+    </div>
+  )
+})
+
+const MultiSelectCombobox = memo(function MultiSelectCombobox({
   label,
   values,
   onChange,
@@ -61,6 +100,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
   onChange: (ids: string[]) => void
   options: { value: string; label: string; color?: string }[]
 }) {
+  const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
   function toggle(id: string) {
@@ -84,19 +124,32 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
 
   return (
     <div className="min-w-0 flex flex-col gap-1">
-      <label className="text-xs font-semibold text-muted-foreground">
+      <span className="text-xs font-semibold text-muted-foreground">
         {label}
-      </label>
-      <DropdownMenu
-        onOpenChange={(open) => {
-          if (!open) setQuery('')
+      </span>
+      <Popover
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen)
+          if (!nextOpen) setQuery('')
         }}
       >
-        <DropdownMenuTrigger className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent sm:min-w-[140px]">
-          <span className="truncate">{buttonLabel}</span>
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 p-0">
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-expanded={open}
+            className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent sm:min-w-[200px]"
+          >
+            <span className="truncate">{buttonLabel}</span>
+            <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          sideOffset={4}
+          collisionPadding={8}
+          className="z-[60] max-h-[min(var(--radix-popover-content-available-height),20rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-md border border-border bg-popover p-0 shadow-none"
+        >
           {/* Search input */}
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <Search className="size-3.5 shrink-0 text-muted-foreground" />
@@ -105,9 +158,9 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder={`Search ${label.toLowerCase()}…`}
+              placeholder={`Search ${label.toLowerCase()}...`}
               aria-label={`Search ${label.toLowerCase()}`}
-              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="h-8 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
             {query && (
               <button
@@ -121,7 +174,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
           </div>
 
           {/* Scrollable list */}
-          <div className="max-h-52 overflow-y-auto">
+          <div className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.5rem),16rem)] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
             {filtered.length === 0 ? (
               <div className="px-3 py-4 text-center text-sm text-muted-foreground">
                 No results
@@ -130,20 +183,19 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
               filtered.map((o) => {
                 const selected = values.includes(o.value)
                 return (
-                  <DropdownMenuItem
+                  <button
                     key={o.value}
-                    onSelect={(e) => {
-                      e.preventDefault()
-                      toggle(o.value)
-                    }}
-                    className="flex items-center gap-2 px-3 py-2"
+                    type="button"
+                    onClick={() => toggle(o.value)}
+                    className="flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
                   >
                     <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
+                      className={cn(
+                        'flex size-4 shrink-0 items-center justify-center rounded border',
                         selected
                           ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border'
-                      }`}
+                          : 'border-border',
+                      )}
                     >
                       {selected && <Check className="size-3" />}
                     </span>
@@ -154,7 +206,7 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
                       />
                     )}
                     <span className="truncate">{o.label}</span>
-                  </DropdownMenuItem>
+                  </button>
                 )
               })
             )}
@@ -175,8 +227,8 @@ const MultiSelectDropdown = memo(function MultiSelectDropdown({
               </button>
             </div>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </PopoverContent>
+      </Popover>
     </div>
   )
 })
@@ -331,21 +383,26 @@ export function AnalyticsFilterBar({
         options={billableOptions}
       />
 
-      <FilterSelect
+      <FilterCombobox
         label="Client"
         value={filters.clientId ?? ''}
         onChange={handleClientChange}
         options={clientOptions}
+        placeholder="All clients"
+        searchPlaceholder="Search clients..."
+        className="sm:min-w-[280px]"
       />
 
-      <FilterSelect
+      <FilterCombobox
         label="Project"
         value={filters.projectId ?? ''}
         onChange={handleProjectChange}
         options={projectOptions}
+        placeholder="All projects"
+        searchPlaceholder="Search projects..."
       />
 
-      <MultiSelectDropdown
+      <MultiSelectCombobox
         label="Tags"
         values={tagIdList}
         onChange={handleTagsChange}
@@ -353,7 +410,7 @@ export function AnalyticsFilterBar({
       />
 
       {showMemberFilter && (
-        <MultiSelectDropdown
+        <MultiSelectCombobox
           label="Members"
           values={memberIdList}
           onChange={handleMembersChange}
@@ -362,14 +419,15 @@ export function AnalyticsFilterBar({
       )}
 
       {hasActiveFilters && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onClear}
-          className="inline-flex h-9 w-full items-center justify-center gap-1.5 self-end rounded-lg border border-border px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:w-auto"
+          className="h-9 self-end"
         >
           <X className="size-3.5" />
           Clear filters
-        </button>
+        </Button>
       )}
 
       {/* Search / Apply button — commits draft filters to URL */}

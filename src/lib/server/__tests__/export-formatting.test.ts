@@ -89,6 +89,7 @@ describe('export formatting', () => {
               endedAt: '2026-06-19T17:00:00.000Z',
               projectName: 'Project "A"',
               clientName: 'Client, Inc.',
+              taskName: 'Payroll review',
               tagNames: ['BP', 'BH'],
               description: '=unsafe\nlong description',
               durationSeconds: 5400,
@@ -103,6 +104,7 @@ describe('export formatting', () => {
               endedAt: '2026-06-19T03:00:00.000Z',
               projectName: null,
               clientName: null,
+              taskName: null,
               tagNames: [],
               description: 'Non-billable',
               durationSeconds: 3600,
@@ -138,19 +140,39 @@ describe('export formatting', () => {
     const billableRow = rows[headerIndex + 1]
     const nonBillableRow = rows[headerIndex + 2]
 
-    expect(header).toHaveLength(15)
+    expect(rows.slice(0, 13)).toEqual([
+      ['Time & Billing Detail Report'],
+      [
+        'Report detail',
+        'Detailed time entries with project, client, task, tags, billable status, rates, and computed amounts.',
+      ],
+      ['Scope', 'All workspace activity'],
+      ['Period start', '2026-06-19'],
+      ['Period end', '2026-06-19'],
+      ['Currency', 'PHP'],
+      ['Timezone', 'Asia/Manila'],
+      ['Generated', expect.any(String)],
+      ['Breakdown', '1 member/group'],
+      [''],
+      ['Summary'],
+      ['Tracked time', '02:30:00'],
+      ['Actual time', '02:30:00'],
+    ])
+    expect(header).toHaveLength(16)
     expect(billableRow).toHaveLength(header.length)
     expect(nonBillableRow).toHaveLength(header.length)
+    expect(header.slice(6, 9)).toEqual(['Project', 'Client', 'Task'])
     expect(billableRow.slice(2, 6)).toEqual([
       '2026-06-19',
       '11:30 PM',
       '2026-06-20',
       '01:00 AM',
     ])
-    expect(billableRow[11]).toBe('1.50')
-    expect(billableRow[13]).toBe('150.50')
-    expect(billableRow[14]).toBe('225.75')
-    expect(nonBillableRow[13]).toBe('')
+    expect(billableRow[8]).toBe('Payroll review')
+    expect(billableRow[12]).toBe('1.50')
+    expect(billableRow[14]).toBe('150.50')
+    expect(billableRow[15]).toBe('225.75')
     expect(nonBillableRow[14]).toBe('')
+    expect(nonBillableRow[15]).toBe('')
   })
 })
