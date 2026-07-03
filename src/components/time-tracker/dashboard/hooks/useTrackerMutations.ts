@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import {
   invalidateTrackerState,
+  removeTrackerStateEntry,
   trackerKeys,
   upsertTrackerStateEntry,
 } from '#/lib/time-tracker/query-keys'
@@ -163,10 +164,16 @@ export function useTrackerMutations() {
     },
     deleteEntry: (id: string, options?: MutationOptions<unknown>) => {
       setDeletingEntryId(id)
-      return run(() => deleteEntryFn({ data: { id } }), {
-        successMessage: 'Entry deleted',
-        ...options,
-      }).finally(() => setDeletingEntryId(null))
+      return run(
+        async () => {
+          await deleteEntryFn({ data: { id } })
+          removeTrackerStateEntry(queryClient, id)
+        },
+        {
+          successMessage: 'Entry deleted',
+          ...options,
+        },
+      ).finally(() => setDeletingEntryId(null))
     },
     duplicateEntry: (id: string, options?: MutationOptions<unknown>) =>
       run(

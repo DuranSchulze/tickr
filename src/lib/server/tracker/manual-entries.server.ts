@@ -326,6 +326,8 @@ export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
     await enqueueTimeEntry(access.workspace.id, data.id)
     const completedDeleted = deleted.filter((entry) => entry.endedAt)
     await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
+  } else {
+    throw new Error('Time entry not found or you do not have access to it.')
   }
 
   void createAuditLog({

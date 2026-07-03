@@ -117,7 +117,14 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   // Delete/duplicate go straight through mutations (they don't read entry
   // state), so they just need to refresh the "all" list on success.
   const handleDeleteEntry = useCallback(
-    (id: string) => mutations.deleteEntry(id, { onSuccess: refreshAllEntries }),
+    (id: string) =>
+      mutations.deleteEntry(id, {
+        onSuccess: () => {
+          setAllEntries((prev) => prev.filter((entry) => entry.id !== id))
+          setAllEntriesTotalCount((prev) => Math.max(0, prev - 1))
+          refreshAllEntries()
+        },
+      }),
     [mutations, refreshAllEntries],
   )
   const handleDuplicateEntry = useCallback(
