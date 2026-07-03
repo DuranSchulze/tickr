@@ -59,6 +59,10 @@ export const entryIdSchema = z.object({
   id: z.string().min(1),
 })
 
+export const bulkEntryIdsSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(100),
+})
+
 export const stopTimerSchema = z.object({
   id: z.string().min(1),
   description: descriptionOptional.optional(),

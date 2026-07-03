@@ -16,6 +16,8 @@ export {
   updateEntry,
   updateWorkspaceMemberEntry,
   deleteEntry,
+  deleteWorkspaceMemberEntry,
+  bulkDeleteWorkspaceMemberEntries,
 } from './tracker/manual-entries.server'
 export {
   checkTimeEntryOverlap,

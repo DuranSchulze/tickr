@@ -3,6 +3,7 @@ import { z } from 'zod'
 import {
   entryIdSchema,
   entryInputSchema,
+  bulkEntryIdsSchema,
   overlapCheckSchema,
   startTimerSchema,
   stopTimerSchema,
@@ -305,6 +306,23 @@ export const deleteEntryFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { deleteEntry } = await import('./tracker.server')
     return deleteEntry(data)
+  })
+
+export const deleteWorkspaceMemberEntryFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => entryIdSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { deleteWorkspaceMemberEntry } = await import('./tracker.server')
+    return deleteWorkspaceMemberEntry(data)
+  })
+
+export const bulkDeleteWorkspaceMemberEntriesFn = createServerFn({
+  method: 'POST',
+})
+  .inputValidator((input) => bulkEntryIdsSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { bulkDeleteWorkspaceMemberEntries } =
+      await import('./tracker.server')
+    return bulkDeleteWorkspaceMemberEntries(data)
   })
 
 export const duplicateEntryFn = createServerFn({ method: 'POST' })

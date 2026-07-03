@@ -2,7 +2,7 @@ import type { z } from 'zod'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { db } from '#/db'
 import { timeEntries, timeEntryTags } from '#/db/schema'
-import { and, eq, notInArray } from 'drizzle-orm'
+import { and, eq, inArray, notInArray } from 'drizzle-orm'
 import {
   requireWorkspaceAccess,
   requireWorkspaceMembership,
@@ -19,6 +19,7 @@ import {
 import type {
   entryIdSchema,
   entryInputSchema,
+  bulkEntryIdsSchema,
   updateEntrySchema,
 } from './shared/schemas'
 
@@ -338,4 +339,111 @@ export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
     targetType: 'time_entry',
     targetId: data.id,
   })
+}
+
+export async function deleteWorkspaceMemberEntry(
+  data: z.infer<typeof entryIdSchema>,
+) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const deleted = await db
+    .delete(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.id, data.id),
+        eq(timeEntries.workspaceId, access.workspace.id),
+      ),
+    )
+    .returning({
+      id: timeEntries.id,
+      workspaceId: timeEntries.workspaceId,
+      workspaceMemberId: timeEntries.workspaceMemberId,
+      startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
+    })
+
+  if (deleted.length > 0) {
+    await enqueueTimeEntry(access.workspace.id, data.id)
+    const completedDeleted = deleted.filter((entry) => entry.endedAt)
+    await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
+  } else {
+    throw new Error('Time entry not found or you do not have access to it.')
+  }
+
+  void createAuditLog({
+    workspaceId: access.workspace.id,
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: 'ENTRY_DELETE',
+    targetType: 'time_entry',
+    targetId: data.id,
+  })
+}
+
+export async function bulkDeleteWorkspaceMemberEntries(
+  data: z.infer<typeof bulkEntryIdsSchema>,
+) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const ids = [...new Set(data.ids)]
+  const existingEntries = await db
+    .select({
+      id: timeEntries.id,
+      workspaceId: timeEntries.workspaceId,
+      workspaceMemberId: timeEntries.workspaceMemberId,
+      startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
+    })
+    .from(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.workspaceId, access.workspace.id),
+        inArray(timeEntries.id, ids),
+      ),
+    )
+
+  if (existingEntries.length !== ids.length) {
+    throw new Error('One or more time entries were not found in this workspace.')
+  }
+
+  const deleted = await db
+    .delete(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.workspaceId, access.workspace.id),
+        inArray(timeEntries.id, ids),
+      ),
+    )
+    .returning({
+      id: timeEntries.id,
+      workspaceId: timeEntries.workspaceId,
+      workspaceMemberId: timeEntries.workspaceMemberId,
+      startedAt: timeEntries.startedAt,
+      endedAt: timeEntries.endedAt,
+    })
+
+  if (deleted.length !== ids.length) {
+    throw new Error('Could not delete all selected time entries.')
+  }
+
+  await Promise.all(ids.map((id) => enqueueTimeEntry(access.workspace.id, id)))
+  const completedDeleted = deleted.filter((entry) => entry.endedAt)
+  await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
+
+  void Promise.all(
+    ids.map((id) =>
+      createAuditLog({
+        workspaceId: access.workspace.id,
+        actorId: access.user.id,
+        actorEmail: access.user.email,
+        action: 'ENTRY_DELETE',
+        targetType: 'time_entry',
+        targetId: id,
+      }),
+    ),
+  )
+
+  return { deletedIds: ids }
 }
