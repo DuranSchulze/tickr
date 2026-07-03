@@ -605,23 +605,19 @@ export const EntryRow = memo(function EntryRow({
                   Edit
                 </DropdownMenuItem>
                 {!isSubEntry && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => setShowDuplicateDialog(true)}
-                    >
-                      <Copy className="mr-2 size-4" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => setShowDeleteDialog(true)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="mr-2 size-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
+                  <DropdownMenuItem onClick={() => setShowDuplicateDialog(true)}>
+                    <Copy className="mr-2 size-4" />
+                    Duplicate
+                  </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="mr-2 size-4" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
