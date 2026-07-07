@@ -78,6 +78,7 @@ export function EntriesSection({
         | 'description'
         | 'billable'
         | 'projectId'
+        | 'taskId'
         | 'tagIds'
         | 'startedAt'
         | 'endedAt'

@@ -29,6 +29,7 @@ const ACTION_GROUPS = [
       { value: 'CLIENT_CREATE', label: 'Client added' },
       { value: 'CLIENT_EDIT', label: 'Client edited' },
       { value: 'CLIENT_ARCHIVE', label: 'Client archived' },
+      { value: 'CLIENT_SUSPEND', label: 'Client suspended' },
       { value: 'PROJECT_CREATE', label: 'Project added' },
       { value: 'PROJECT_EDIT', label: 'Project edited' },
       { value: 'PROJECT_ARCHIVE', label: 'Project archived' },

@@ -1,5 +1,6 @@
 import { db } from '#/db'
 import {
+  clients,
   workspaces,
   workspaceMembers,
   projects,
@@ -17,7 +18,7 @@ import type { AuditAction } from '../tracker/audit/audit-logger.server'
 import { extractSheetId } from './extract-sheet-id'
 import { getSheetsClient } from './auth.server'
 import { buildSyncRows, SHEET_HEADERS } from './build-rows'
-import type { SyncEntry, SyncMember } from './build-rows'
+import type { SyncEntry, SyncMember, SyncProject } from './build-rows'
 import { sanitizeTabName } from './sanitize-tab-name'
 
 const ALLOWED_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER'])
@@ -76,7 +77,16 @@ export async function syncWorkspaceById({
       .select()
       .from(workspaceMembers)
       .where(eq(workspaceMembers.workspaceId, workspace.id)),
-    db.select().from(projects).where(eq(projects.workspaceId, workspace.id)),
+    db
+      .select({
+        id: projects.id,
+        name: projects.name,
+        clientId: projects.clientId,
+        clientDefaultBillableRate: clients.defaultBillableRate,
+      })
+      .from(projects)
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .where(eq(projects.workspaceId, workspace.id)),
     db.select().from(tags).where(eq(tags.workspaceId, workspace.id)),
     db
       .select()
@@ -97,24 +107,24 @@ export async function syncWorkspaceById({
 
   const [usersData, departmentsData, entryTagsData, memberClientRateRows] =
     await Promise.all([
-    userIds.length > 0
-      ? db.select().from(users).where(inArray(users.id, userIds))
-      : Promise.resolve([]),
-    db
-      .select()
-      .from(departments)
-      .where(eq(departments.workspaceId, workspace.id)),
-    entryIds.length > 0
-      ? db
-          .select()
-          .from(timeEntryTags)
-          .where(inArray(timeEntryTags.timeEntryId, entryIds))
-      : Promise.resolve([]),
-    db
-      .select()
-      .from(memberClientBillableRates)
-      .where(eq(memberClientBillableRates.workspaceId, workspace.id)),
-  ])
+      userIds.length > 0
+        ? db.select().from(users).where(inArray(users.id, userIds))
+        : Promise.resolve([]),
+      db
+        .select()
+        .from(departments)
+        .where(eq(departments.workspaceId, workspace.id)),
+      entryIds.length > 0
+        ? db
+            .select()
+            .from(timeEntryTags)
+            .where(inArray(timeEntryTags.timeEntryId, entryIds))
+        : Promise.resolve([]),
+      db
+        .select()
+        .from(memberClientBillableRates)
+        .where(eq(memberClientBillableRates.workspaceId, workspace.id)),
+    ])
 
   const userMap = new Map(usersData.map((u) => [u.id, u]))
   const deptMap = new Map(departmentsData.map((d) => [d.id, d]))
@@ -161,11 +171,17 @@ export async function syncWorkspaceById({
       effectiveFrom: rate.effectiveFrom,
       effectiveTo: rate.effectiveTo,
     })),
-    projects: projectRows.map((p) => ({
-      id: p.id,
-      name: p.name,
-      clientId: p.clientId,
-    })),
+    projects: projectRows.map(
+      (p): SyncProject => ({
+        id: p.id,
+        name: p.name,
+        clientId: p.clientId,
+        clientDefaultBillableRate:
+          p.clientDefaultBillableRate == null
+            ? null
+            : Number(p.clientDefaultBillableRate),
+      }),
+    ),
     tags: tagRows.map((t) => ({ id: t.id, name: t.name })),
     workspace: {
       defaultBillableRate: Number(workspace.defaultBillableRate),

@@ -15,6 +15,7 @@ export function useDraftAndEdit({
   mutations,
   lookupEntries,
   onMutated,
+  onEntryPatched,
   isOnline = true,
   onOfflineCreate,
 }: {
@@ -27,6 +28,8 @@ export function useDraftAndEdit({
   // Called after a successful create/update so views backed by their own
   // local list (the paginated "all" view) can refresh.
   onMutated?: () => void
+  // Keeps locally-held entry lists in sync with optimistic updates/rollbacks.
+  onEntryPatched?: (entry: TimeEntry) => void
   isOnline?: boolean
   // Shows an offline-queued manual entry in the dashboard immediately
   // (it lands in the pending-entries store until the reconnect drain syncs it).
@@ -43,6 +46,7 @@ export function useDraftAndEdit({
   // The loader re-runs against the now-fresh cache, so no network round trip.
   function patchEntryOptimistically(updated: TimeEntry) {
     upsertTrackerStateEntry(queryClient, updated)
+    onEntryPatched?.(updated)
     void router.invalidate()
   }
   const [draft, setDraft] = useState<DraftEntry>(() => emptyDraft())

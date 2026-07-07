@@ -85,6 +85,20 @@
       "when": 1783046400000,
       "tag": "0011_member_client_billable_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783120000000,
+      "tag": "0012_client_default_billable_rates",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1783382400000,
+      "tag": "0013_add_suspended_client_status",
+      "breakpoints": true
     }
   ]
 }

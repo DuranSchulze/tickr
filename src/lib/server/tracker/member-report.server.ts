@@ -24,10 +24,10 @@ import {
 } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import {
-  clipWorkInterval,
+  splitWorkIntervalByDay,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
-import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
+import { getWorkspaceDateRange } from './shared/dates'
 import { resolveEntryRateMap } from './rates.server'
 import { sortReportEntries } from './report-sort.server'
 import type {
@@ -297,7 +297,7 @@ export async function getMemberMonthlyReport(
   let totalBillableAmount = 0
 
   const entries: MemberMonthlyReportEntry[] = rawEntries.flatMap((e) => {
-    const clipped = clipWorkInterval(
+    const slices = splitWorkIntervalByDay(
       {
         memberId: data.memberId,
         startedAt: e.startedAt,
@@ -305,35 +305,36 @@ export async function getMemberMonthlyReport(
       },
       range.start,
       range.endExclusive,
+      timezone,
     )
-    if (!clipped) return []
-    const hours = clipped.seconds / 3600
     const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
-    const billableAmount = e.billable ? hours * effectiveRate : null
 
-    totalSeconds += clipped.seconds
-    if (e.billable) {
-      billableSeconds += clipped.seconds
-      if (billableAmount) totalBillableAmount += billableAmount
-    }
+    return slices.map((slice) => {
+      const hours = slice.seconds / 3600
+      const billableAmount = e.billable ? hours * effectiveRate : null
 
-    return [
-      {
+      totalSeconds += slice.seconds
+      if (e.billable) {
+        billableSeconds += slice.seconds
+        if (billableAmount) totalBillableAmount += billableAmount
+      }
+
+      return {
         id: e.id,
-        date: formatDateInTimeZone(clipped.startedAt, timezone),
-        startedAt: clipped.startedAt.toISOString(),
-        endedAt: clipped.endedAt.toISOString(),
+        date: slice.date,
+        startedAt: slice.startedAt.toISOString(),
+        endedAt: slice.endedAt.toISOString(),
         projectName: e.projectName ?? null,
         clientName: e.clientName ?? null,
         taskName: e.taskName ?? null,
         tagNames: tagsByEntry.get(e.id) ?? [],
         description: e.description,
-        durationSeconds: clipped.seconds,
+        durationSeconds: slice.seconds,
         billable: e.billable,
         effectiveRate,
         billableAmount,
-      },
-    ]
+      }
+    })
   })
 
   sortReportEntries(entries, data.sortBy, data.sortOrder)

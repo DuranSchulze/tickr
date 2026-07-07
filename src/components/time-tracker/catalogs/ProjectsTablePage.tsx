@@ -354,7 +354,8 @@ export function ProjectsTablePage({
 
   const clientsForForm = data.clients.map((c) => ({
     ...c,
-    clientStatus: 'ACTIVE' as const,
+    clientStatus: c.clientStatus,
+    defaultBillableRate: c.defaultBillableRate,
   }))
 
   const editingForForm = editingProject

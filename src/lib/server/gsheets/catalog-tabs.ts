@@ -3,7 +3,12 @@ export const CATALOG_TAB_PROJECTS = 'Projects'
 export const CATALOG_TAB_TAGS = 'Tags'
 export const CATALOG_TAB_DEPARTMENTS = 'Departments'
 
-export const CLIENTS_HEADERS = ['Name', 'Status', 'ID'] as const
+export const CLIENTS_HEADERS = [
+  'Name',
+  'Status',
+  'Default Billable Rate',
+  'ID',
+] as const
 export const PROJECTS_HEADERS = [
   'Name',
   'Client Name',
@@ -24,9 +29,15 @@ export const DEPARTMENTS_HEADERS = [
 export function buildClientRow(c: {
   name: string
   clientStatus: string
+  defaultBillableRate?: string | number | null
   id?: string
 }): string[] {
-  return [c.name, c.clientStatus, c.id ?? '']
+  return [
+    c.name,
+    c.clientStatus,
+    c.defaultBillableRate == null ? '' : String(c.defaultBillableRate),
+    c.id ?? '',
+  ]
 }
 
 export function buildProjectRow(p: {
@@ -67,9 +78,11 @@ export function buildDepartmentRow(d: {
 
 export type ParsedClientRow = {
   name: string
-  clientStatus: 'ACTIVE' | 'INACTIVE'
+  clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  defaultBillableRate: number | null
   id: string
   sheetRow: number
+  warnings: string[]
 }
 
 export type ParsedProjectRow = {
@@ -101,6 +114,25 @@ function isValidColor(v: string): boolean {
   return /^#[0-9a-fA-F]{3,8}$/.test(v.trim())
 }
 
+function parseClientStatus(
+  raw: string | undefined,
+  sheetRow: number,
+): {
+  status: ParsedClientRow['clientStatus']
+  warning: string | null
+} {
+  const value = raw?.trim().toUpperCase() ?? ''
+  if (value === '' || value === 'ACTIVE')
+    return { status: 'ACTIVE', warning: null }
+  if (value === 'INACTIVE' || value === 'SUSPENDED') {
+    return { status: value, warning: null }
+  }
+  return {
+    status: 'ACTIVE',
+    warning: `Clients row ${sheetRow}: invalid status "${raw}" defaulted to ACTIVE.`,
+  }
+}
+
 // headerOffset is the 1-based sheet row of the first data row (default 2 = row after header).
 // Tracking rawIndex preserves the correct sheet row even when blank rows are filtered out.
 
@@ -111,13 +143,29 @@ export function parseClientRows(
   return rows
     .map((r, i) => ({ r, rawIndex: i }))
     .filter(({ r }) => r[0]?.trim())
-    .map(({ r, rawIndex }) => ({
-      name: r[0].trim(),
-      clientStatus:
-        r[1]?.trim().toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
-      id: r[2]?.trim() ?? '',
-      sheetRow: rawIndex + headerOffset,
-    }))
+    .map(({ r, rawIndex }) => {
+      const sheetRow = rawIndex + headerOffset
+      const parsedStatus = parseClientStatus(r[1], sheetRow)
+      const rateRaw = r[2]?.trim() ?? ''
+      const parsedRate = rateRaw === '' ? null : Number(rateRaw)
+      const validRate =
+        parsedRate == null || (Number.isFinite(parsedRate) && parsedRate >= 0)
+      return {
+        name: r[0].trim(),
+        clientStatus: parsedStatus.status,
+        defaultBillableRate: validRate ? parsedRate : null,
+        id: r[3]?.trim() ?? '',
+        sheetRow,
+        warnings: [
+          parsedStatus.warning,
+          ...(validRate
+            ? []
+            : [
+                `Clients row ${sheetRow}: invalid default billable rate "${rateRaw}" ignored.`,
+              ]),
+        ].filter((warning): warning is string => !!warning),
+      }
+    })
 }
 
 export function parseProjectRows(

@@ -4,6 +4,7 @@ import {
   SHEET_HEADERS,
   UNASSIGNED_TAB,
 } from '../gsheets/build-rows'
+import { parseClientRows } from '../gsheets/catalog-tabs'
 import type { SyncEntry, SyncMember } from '../gsheets/build-rows'
 
 const SYNCED_AT = '2026-04-25T10:00:00.000Z'
@@ -130,6 +131,28 @@ describe('buildSyncRows', () => {
     expect(dataRow[11]).toContain('3,000')
   })
 
+  it('uses the client default rate over the member and workspace rates', () => {
+    const result = buildSyncRows({
+      entries: [makeEntry({ workspaceMemberId: 'm1' })],
+      members,
+      projects: [
+        {
+          id: 'p1',
+          name: 'API rewrite',
+          clientId: 'c1',
+          clientDefaultBillableRate: 1250,
+        },
+      ],
+      tags,
+      workspace: baseWorkspace,
+      syncedAtIso: SYNCED_AT,
+      syncedByName: SYNCED_BY,
+    })
+    const dataRow = result.departments[0].rows[2]
+    expect(dataRow[10]).toContain('1,250')
+    expect(dataRow[11]).toContain('2,500')
+  })
+
   it('falls back to the workspace default rate when member rate is null', () => {
     const result = buildSyncRows({
       entries: [makeEntry({ workspaceMemberId: 'm2' })],
@@ -201,5 +224,36 @@ describe('buildSyncRows', () => {
       syncedByName: SYNCED_BY,
     })
     expect(result.departments[0].rows[2][4]).toBe('')
+  })
+})
+
+describe('parseClientRows', () => {
+  it('accepts suspended clients and default billable rates', () => {
+    expect(parseClientRows([['Acme', 'SUSPENDED', '1200.5', 'c1']])).toEqual([
+      {
+        name: 'Acme',
+        clientStatus: 'SUSPENDED',
+        defaultBillableRate: 1200.5,
+        id: 'c1',
+        sheetRow: 2,
+        warnings: [],
+      },
+    ])
+  })
+
+  it('warns and defaults invalid statuses to active', () => {
+    const [client] = parseClientRows([['Acme', 'paused', '', 'c1']])
+    expect(client.clientStatus).toBe('ACTIVE')
+    expect(client.warnings).toEqual([
+      'Clients row 2: invalid status "paused" defaulted to ACTIVE.',
+    ])
+  })
+
+  it('warns and ignores invalid default billable rates', () => {
+    const [client] = parseClientRows([['Acme', 'ACTIVE', '-1', 'c1']])
+    expect(client.defaultBillableRate).toBeNull()
+    expect(client.warnings).toEqual([
+      'Clients row 2: invalid default billable rate "-1" ignored.',
+    ])
   })
 })

@@ -1,7 +1,7 @@
 import { db } from '#/db'
-import { memberClientBillableRates } from '#/db/schema'
+import { clients, memberClientBillableRates } from '#/db/schema'
 import { and, eq, inArray, isNull, lte, or, gte } from 'drizzle-orm'
-import { computeEffectiveRate } from '#/lib/time-tracker/billing'
+import { computeBillableRate } from '#/lib/time-tracker/billing'
 import { toDateKey } from './shared/dates'
 
 export type RateLookupEntry = {
@@ -12,7 +12,8 @@ export type RateLookupEntry = {
 }
 
 export type EntryRateResolution = {
-  clientRate: number | null
+  memberClientRate: number | null
+  clientDefaultRate: number | null
   effectiveRate: number
 }
 
@@ -48,8 +49,14 @@ export async function resolveEntryRateMap({
     for (const entry of entries) {
       const memberRate = memberRateById.get(entry.workspaceMemberId) ?? null
       result.set(entry.id, {
-        clientRate: null,
-        effectiveRate: computeEffectiveRate(null, memberRate, defaultRate),
+        memberClientRate: null,
+        clientDefaultRate: null,
+        effectiveRate: computeBillableRate({
+          memberClientRate: null,
+          clientDefaultRate: null,
+          memberRate,
+          workspaceDefaultRate: defaultRate,
+        }),
       })
     }
     return result
@@ -58,14 +65,18 @@ export async function resolveEntryRateMap({
   const dateKeys = entriesWithClient.map((entry) => toDateKey(entry.date))
   const minDate = dateKeys.reduce((min, date) => (date < min ? date : min))
   const maxDate = dateKeys.reduce((max, date) => (date > max ? date : max))
-  const memberIds = unique(entriesWithClient.map((entry) => entry.workspaceMemberId))
+  const memberIds = unique(
+    entriesWithClient.map((entry) => entry.workspaceMemberId),
+  )
   const clientIds = unique(
-    entriesWithClient.flatMap((entry) => (entry.clientId ? [entry.clientId] : [])),
+    entriesWithClient.flatMap((entry) =>
+      entry.clientId ? [entry.clientId] : [],
+    ),
   )
 
-  const rates =
+  const [rates, clientRows] = await Promise.all([
     memberIds.length > 0 && clientIds.length > 0
-      ? await db
+      ? db
           .select({
             workspaceMemberId: memberClientBillableRates.workspaceMemberId,
             clientId: memberClientBillableRates.clientId,
@@ -86,7 +97,22 @@ export async function resolveEntryRateMap({
               ),
             ),
           )
-      : []
+      : Promise.resolve([]),
+    clientIds.length > 0
+      ? db
+          .select({
+            id: clients.id,
+            defaultBillableRate: clients.defaultBillableRate,
+          })
+          .from(clients)
+          .where(
+            and(
+              eq(clients.workspaceId, workspaceId),
+              inArray(clients.id, clientIds),
+            ),
+          )
+      : Promise.resolve([]),
+  ])
 
   const ratesByMemberClient = new Map<string, typeof rates>()
   for (const rate of rates) {
@@ -95,6 +121,14 @@ export async function resolveEntryRateMap({
     list.push(rate)
     ratesByMemberClient.set(key, list)
   }
+  const clientDefaultRateById = new Map(
+    clientRows.map((client) => [
+      client.id,
+      client.defaultBillableRate == null
+        ? null
+        : Number(client.defaultBillableRate),
+    ]),
+  )
 
   for (const entry of entries) {
     const memberRate = memberRateById.get(entry.workspaceMemberId) ?? null
@@ -103,11 +137,22 @@ export async function resolveEntryRateMap({
     const clientRateRow = (ratesByMemberClient.get(key) ?? [])
       .filter((rate) => matchesDate(rate, dateKey))
       .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
-    const clientRate = clientRateRow ? Number(clientRateRow.billableRate) : null
+    const memberClientRate = clientRateRow
+      ? Number(clientRateRow.billableRate)
+      : null
+    const clientDefaultRate = entry.clientId
+      ? (clientDefaultRateById.get(entry.clientId) ?? null)
+      : null
 
     result.set(entry.id, {
-      clientRate,
-      effectiveRate: computeEffectiveRate(clientRate, memberRate, defaultRate),
+      memberClientRate,
+      clientDefaultRate,
+      effectiveRate: computeBillableRate({
+        memberClientRate,
+        clientDefaultRate,
+        memberRate,
+        workspaceDefaultRate: defaultRate,
+      }),
     })
   }
 

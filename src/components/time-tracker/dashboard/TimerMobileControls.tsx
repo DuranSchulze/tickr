@@ -4,6 +4,7 @@ import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { Client, Project, Tag, TimeEntry } from '#/lib/time-tracker/types'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
+import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { BillableToggleButton } from './BillableToggleButton'
 import { PresetDropdown } from './PresetDropdown'
 
@@ -70,16 +71,20 @@ export function TimerMobileControls({
   onStart: () => void
   onStop: () => void
 }) {
-  const activeClients = useMemo(
-    () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
+  const selectableClients = useMemo(
+    () => clients.filter((c) => c.clientStatus !== 'INACTIVE'),
     [clients],
+  )
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === clientId),
+    [clients, clientId],
   )
 
   return (
     <div className="grid gap-2 sm:hidden">
       <div className="grid gap-2 rounded-lg border border-border bg-card p-2">
         <ClientProjectPicker
-          clients={activeClients}
+          clients={selectableClients}
           projects={projects}
           tasks={projectTasks}
           clientId={clientId}
@@ -93,6 +98,9 @@ export function TimerMobileControls({
           onCreateTask={onCreateTask}
           onDeleteTask={onDeleteTask}
         />
+        {selectedClient?.clientStatus === 'SUSPENDED' && (
+          <SuspendedClientWarning clientName={selectedClient.name} />
+        )}
         <TagPicker
           tags={tags}
           value={tagIds}

@@ -389,13 +389,15 @@ const bulkIdsSchema = z.object({ ids: z.array(z.string()).min(1) })
 
 const createClientSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  clientStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  clientStatus: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional(),
+  defaultBillableRate: z.number().finite().min(0).nullable().optional(),
 })
 
 const updateClientSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(120),
-  clientStatus: z.enum(['ACTIVE', 'INACTIVE']),
+  clientStatus: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']),
+  defaultBillableRate: z.number().finite().min(0).nullable(),
 })
 
 export const createClientFn = createServerFn({ method: 'POST' })
@@ -426,6 +428,13 @@ export const activateClientFn = createServerFn({ method: 'POST' })
     return activateClient(data)
   })
 
+export const suspendClientFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => idSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { suspendClient } = await import('./tracker.server')
+    return suspendClient(data)
+  })
+
 export const bulkArchiveClientsFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => bulkIdsSchema.parse(input))
   .handler(async ({ data }) => {
@@ -438,6 +447,13 @@ export const bulkActivateClientsFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { bulkActivateClients } = await import('./tracker.server')
     return bulkActivateClients(data)
+  })
+
+export const bulkSuspendClientsFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => bulkIdsSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { bulkSuspendClients } = await import('./tracker.server')
+    return bulkSuspendClients(data)
   })
 
 export const createProjectFn = createServerFn({ method: 'POST' })

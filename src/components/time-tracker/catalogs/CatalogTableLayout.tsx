@@ -306,6 +306,29 @@ function SelectionCheckbox({
 
 // ─── Generic Catalog Table ────────────────────────────────────────────────────
 
+export type CatalogBulkAction = {
+  value: string
+  label: string
+  icon?: ReactNode
+  className?: string
+}
+
+const DEFAULT_BULK_ACTIONS: CatalogBulkAction[] = [
+  {
+    value: 'activate',
+    label: 'Activate',
+    icon: <Check className="size-4 text-emerald-500" />,
+    className: 'border-border bg-background text-foreground hover:bg-accent',
+  },
+  {
+    value: 'archive',
+    label: 'Archive',
+    icon: <X className="size-4" />,
+    className:
+      'border-destructive/40 bg-background text-destructive hover:bg-destructive/10',
+  },
+]
+
 interface CatalogTablePageProps<TData> {
   title: string
   description: string
@@ -327,10 +350,8 @@ interface CatalogTablePageProps<TData> {
 
   // Bulk selection
   getRowId?: (row: TData) => string
-  onBulkAction?: (
-    action: 'activate' | 'archive',
-    ids: string[],
-  ) => Promise<void>
+  bulkActions?: CatalogBulkAction[]
+  onBulkAction?: (action: string, ids: string[]) => Promise<void>
 }
 
 export function CatalogTablePage<TData>({
@@ -351,6 +372,7 @@ export function CatalogTablePage<TData>({
   toolbar,
   emptyMessage = 'No records found.',
   getRowId,
+  bulkActions = DEFAULT_BULK_ACTIONS,
   onBulkAction,
 }: CatalogTablePageProps<TData>) {
   // Track selection per-page — when page changes, selection resets automatically
@@ -432,7 +454,7 @@ export function CatalogTablePage<TData>({
   const start = totalCount === 0 ? 0 : page * pageSize + 1
   const end = Math.min((page + 1) * pageSize, totalCount)
 
-  async function handleBulk(action: 'activate' | 'archive') {
+  async function handleBulk(action: string) {
     if (!onBulkAction || selectionCount === 0) return
     setBulkPending(true)
     try {
@@ -622,24 +644,18 @@ export function CatalogTablePage<TData>({
             {selectionCount} selected
           </p>
           <div className="h-5 w-px bg-border" />
-          <button
-            type="button"
-            onClick={() => handleBulk('activate')}
-            disabled={bulkPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Check className="size-4 text-emerald-500" />
-            Activate
-          </button>
-          <button
-            type="button"
-            onClick={() => handleBulk('archive')}
-            disabled={bulkPending}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-background px-3 py-1.5 text-sm font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <X className="size-4" />
-            Archive
-          </button>
+          {bulkActions.map((action) => (
+            <button
+              key={action.value}
+              type="button"
+              onClick={() => handleBulk(action.value)}
+              disabled={bulkPending}
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${action.className ?? 'border-border bg-background text-foreground hover:bg-accent'}`}
+            >
+              {action.icon}
+              {action.label}
+            </button>
+          ))}
           <button
             type="button"
             onClick={clearSelection}

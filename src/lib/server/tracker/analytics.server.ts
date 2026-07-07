@@ -12,6 +12,7 @@ import {
 } from '#/db/schema'
 import {
   clipWorkInterval,
+  splitWorkIntervalByDay,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 import { and, desc, eq, gt, inArray, isNotNull, lt, sql } from 'drizzle-orm'
@@ -21,6 +22,7 @@ import {
   buildDateKeys,
   formatDateInTimeZone,
   getWorkspaceDateRange,
+  parseDateOnly,
 } from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
 import { resolveEntryRateMap } from './rates.server'
@@ -226,12 +228,10 @@ export async function getAnalytics(
   const rangeStartIso = range.start.toISOString()
   const rangeEndExclusiveIso = range.endExclusive.toISOString()
   const clippedSecondsSql = sql<number>`GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (LEAST(${timeEntries.endedAt}, ${rangeEndExclusiveIso}::timestamptz) - GREATEST(${timeEntries.startedAt}, ${rangeStartIso}::timestamptz)))))`
-  const clippedDateSql = sql<string>`TO_CHAR(GREATEST(${timeEntries.startedAt}, ${rangeStartIso}::timestamptz) AT TIME ZONE ${timezone}, 'YYYY-MM-DD')`
 
   // ── Run all queries in parallel ───────────────────────────────────────────────
   const [
     summaryRows,
-    dailySqlRows,
     projectSqlRows,
     tagSqlRows,
     deptSqlRows,
@@ -251,17 +251,7 @@ export async function getAnalytics(
       .from(timeEntries)
       .where(whereClause),
 
-    // 2. Daily totals — one row per active date
-    db
-      .select({
-        date: clippedDateSql,
-        seconds: sql<number>`COALESCE(SUM(${clippedSecondsSql}), 0)::int`,
-      })
-      .from(timeEntries)
-      .where(whereClause)
-      .groupBy(sql`1`),
-
-    // 3. Project totals — one row per project
+    // 2. Project totals — one row per project
     db
       .select({
         projectId: sql<string>`COALESCE(${timeEntries.projectId}, 'none')`,
@@ -279,7 +269,7 @@ export async function getAnalytics(
       )
       .orderBy(sql`COALESCE(SUM(${clippedSecondsSql}), 0) DESC`),
 
-    // 4. Top tags — at most 5 rows via SQL LIMIT
+    // 3. Top tags — at most 5 rows via SQL LIMIT
     db
       .select({
         tagId: tags.id,
@@ -296,7 +286,7 @@ export async function getAnalytics(
       .orderBy(sql`SUM(${clippedSecondsSql}) DESC`)
       .limit(5),
 
-    // 5. Department totals — skipped for personal scope
+    // 4. Department totals — skipped for personal scope
     scope !== 'personal'
       ? db
           .select({
@@ -333,7 +323,7 @@ export async function getAnalytics(
           }[],
         ),
 
-    // 6. Top tasks (descriptions) — only for personal scope, at most 8 rows
+    // 5. Top tasks (descriptions) — only for personal scope, at most 8 rows
     selectedScope === 'personal'
       ? db
           .select({
@@ -356,7 +346,7 @@ export async function getAnalytics(
           }[],
         ),
 
-    // 7. Paginated entries for the table — unchanged
+    // 6. Paginated entries for the table — unchanged
     db
       .select({
         id: timeEntries.id,
@@ -389,13 +379,13 @@ export async function getAnalytics(
       .limit(pageSize)
       .offset((page - 1) * pageSize),
 
-    // 8. Total entry count for pagination
+    // 7. Total entry count for pagination
     db
       .select({ c: sql<number>`count(*)::int` })
       .from(timeEntries)
       .where(whereClause),
 
-    // 9. Active member count (admin/manager scopes only)
+    // 8. Active member count (admin/manager scopes only)
     includeActiveMemberCount
       ? db
           .select({ c: sql<number>`count(*)::int` })
@@ -451,10 +441,28 @@ export async function getAnalytics(
     : null
 
   // Daily totals: backfill zeros for dates with no entries
-  const dateKeys = buildDateKeys(range.start, range.end)
+  const dateKeys = buildDateKeys(
+    parseDateOnly(range.startDate),
+    parseDateOnly(range.endDate),
+  )
   const dailySecondsMap = new Map(dateKeys.map((d) => [d, 0]))
-  for (const row of dailySqlRows) {
-    dailySecondsMap.set(row.date, row.seconds)
+  for (const row of summaryRows) {
+    const slices = splitWorkIntervalByDay(
+      {
+        memberId: row.memberId,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+      },
+      range.start,
+      range.endExclusive,
+      timezone,
+    )
+    for (const slice of slices) {
+      dailySecondsMap.set(
+        slice.date,
+        (dailySecondsMap.get(slice.date) ?? 0) + slice.seconds,
+      )
+    }
   }
   const dailyTotals = dateKeys.map((date) => ({
     date,
@@ -495,8 +503,7 @@ export async function getAnalytics(
   })
 
   const entryRows: AnalyticsTimeEntryRow[] = rawRows.map((e) => {
-    const effectiveRate =
-      entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
+    const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
     const clipped = clipWorkInterval(
       {
         memberId: e.workspaceMemberId,

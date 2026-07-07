@@ -1,11 +1,14 @@
 import { useCallback, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
+import { Check, PauseCircle, X } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import {
   activateClientFn,
   archiveClientFn,
   bulkActivateClientsFn,
   bulkArchiveClientsFn,
+  bulkSuspendClientsFn,
+  suspendClientFn,
 } from '#/lib/server/tracker'
 import {
   ensureCatalogTabsFn,
@@ -121,6 +124,24 @@ export function ClientsTablePage({
     [router],
   )
 
+  const handleSuspend = useCallback(
+    async (client: PaginatedClient) => {
+      dispatch({ archivingId: client.id })
+      try {
+        await suspendClientFn({ data: { id: client.id } })
+        await router.invalidate()
+        gooeyToast.success(`"${client.name}" suspended`)
+      } catch (err) {
+        gooeyToast.error('Failed to suspend', {
+          description: err instanceof Error ? err.message : 'Please try again.',
+        })
+      } finally {
+        dispatch({ archivingId: null })
+      }
+    },
+    [router],
+  )
+
   const handleEdit = useCallback(
     (client: PaginatedClient) => dispatch({ editingClient: client }),
     [],
@@ -165,6 +186,7 @@ export function ClientsTablePage({
     onEdit: handleEdit,
     onArchive: handleArchive,
     onActivate: handleActivate,
+    onSuspend: handleSuspend,
   })
 
   return (
@@ -205,6 +227,7 @@ export function ClientsTablePage({
                 options: [
                   { value: '', label: 'All statuses' },
                   { value: 'ACTIVE', label: 'Active' },
+                  { value: 'SUSPENDED', label: 'Suspended' },
                   { value: 'INACTIVE', label: 'Inactive' },
                 ],
               },
@@ -226,15 +249,46 @@ export function ClientsTablePage({
             : 'No clients yet. Add your first client to get started.'
         }
         getRowId={(client) => client.id}
+        bulkActions={[
+          {
+            value: 'activate',
+            label: 'Activate',
+            icon: <Check className="size-4 text-emerald-500" />,
+            className:
+              'border-border bg-background text-foreground hover:bg-accent',
+          },
+          {
+            value: 'suspend',
+            label: 'Suspend',
+            icon: <PauseCircle className="size-4" />,
+            className:
+              'border-amber-500/40 bg-background text-amber-700 hover:bg-amber-500/10',
+          },
+          {
+            value: 'archive',
+            label: 'Inactive',
+            icon: <X className="size-4" />,
+            className:
+              'border-destructive/40 bg-background text-destructive hover:bg-destructive/10',
+          },
+        ]}
         onBulkAction={async (action, ids) => {
           if (action === 'activate') {
             await bulkActivateClientsFn({ data: { ids } })
+          } else if (action === 'suspend') {
+            await bulkSuspendClientsFn({ data: { ids } })
           } else {
             await bulkArchiveClientsFn({ data: { ids } })
           }
           await router.invalidate()
+          const label =
+            action === 'activate'
+              ? 'activated'
+              : action === 'suspend'
+                ? 'suspended'
+                : 'marked inactive'
           gooeyToast.success(
-            `${ids.length} client${ids.length === 1 ? '' : 's'} ${action === 'activate' ? 'activated' : 'archived'}`,
+            `${ids.length} client${ids.length === 1 ? '' : 's'} ${label}`,
           )
         }}
       />
@@ -245,6 +299,7 @@ export function ClientsTablePage({
         onClose={() => dispatch({ showCreate: false })}
       >
         <ClientForm
+          currency={currency}
           onSuccess={async () => {
             dispatch({ showCreate: false })
             await router.invalidate()
@@ -260,6 +315,7 @@ export function ClientsTablePage({
         {editingClient && (
           <EditClientForm
             client={editingClient}
+            currency={currency}
             onDone={async () => {
               dispatch({ editingClient: null })
               await router.invalidate()

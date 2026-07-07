@@ -192,7 +192,7 @@ export function useTrackerMutations() {
       ),
     createClient: (
       name: string,
-      clientStatus: 'ACTIVE' | 'INACTIVE' = 'ACTIVE',
+      clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' = 'ACTIVE',
     ) => run(() => createClientFn({ data: { name, clientStatus } })),
     createProject: (name: string, color: string, clientId: string) =>
       run(() => createProjectFn({ data: { name, color, clientId } })),

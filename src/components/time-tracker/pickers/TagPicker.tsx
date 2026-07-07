@@ -60,7 +60,7 @@ export function TagPicker({
         const tag = selected[0]
         return (
           <span
-            className="max-w-[140px] truncate rounded px-1.5 py-0.5 text-xs font-bold"
+            className="block max-w-full truncate rounded px-1.5 py-0.5 text-xs font-bold"
             style={{ backgroundColor: tag.color + '22', color: tag.color }}
             title={tag.name}
           >

@@ -272,14 +272,22 @@ export function createStatusColumn<
     header: 'Status',
     cell: ({ getValue }: { getValue: () => string }) => {
       const status = getValue()
+      const color =
+        status === 'ACTIVE'
+          ? 'bg-emerald-500'
+          : status === 'SUSPENDED'
+            ? 'bg-amber-500'
+            : 'bg-muted-foreground'
+      const label =
+        status === 'ACTIVE'
+          ? 'Active'
+          : status === 'SUSPENDED'
+            ? 'Suspended'
+            : 'Inactive'
       return (
         <span className="inline-flex items-center gap-1.5 text-sm">
-          <span
-            className={`size-1.5.5 rounded-full ${
-              status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-muted-foreground'
-            }`}
-          />
-          {status === 'ACTIVE' ? 'Active' : 'Inactive'}
+          <span className={`size-1.5 rounded-full ${color}`} />
+          {label}
         </span>
       )
     },

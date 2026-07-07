@@ -22,6 +22,7 @@ export type AuditAction =
   | 'CLIENT_EDIT'
   | 'CLIENT_ARCHIVE'
   | 'CLIENT_ACTIVATE'
+  | 'CLIENT_SUSPEND'
   | 'PROJECT_CREATE'
   | 'PROJECT_EDIT'
   | 'PROJECT_ARCHIVE'

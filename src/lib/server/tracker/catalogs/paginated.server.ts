@@ -34,11 +34,12 @@ async function fetchClientStats(
     .select({
       clientId: projects.clientId,
       totalSeconds: sql<number>`coalesce(sum(${timeEntries.durationSeconds}) filter (where ${timeEntries.endedAt} is not null), 0)::int`,
-      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
+      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${clients.defaultBillableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
       activeMembersCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId}) filter (where ${timeEntries.endedAt} is not null)::int`,
     })
     .from(timeEntries)
     .innerJoin(projects, eq(projects.id, timeEntries.projectId))
+    .leftJoin(clients, eq(clients.id, projects.clientId))
     .innerJoin(
       workspaceMembers,
       eq(workspaceMembers.id, timeEntries.workspaceMemberId),
@@ -75,11 +76,12 @@ async function fetchProjectStats(
     .select({
       projectId: timeEntries.projectId,
       totalSeconds: sql<number>`coalesce(sum(${timeEntries.durationSeconds}) filter (where ${timeEntries.endedAt} is not null), 0)::int`,
-      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
+      billableAmount: sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${timeEntries.durationSeconds}::numeric / 3600.0 * coalesce(${memberClientBillableRates.billableRate}::numeric, ${clients.defaultBillableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate}) else 0 end), 0)::float8`,
       activeMembersCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId}) filter (where ${timeEntries.endedAt} is not null)::int`,
     })
     .from(timeEntries)
     .innerJoin(projects, eq(projects.id, timeEntries.projectId))
+    .leftJoin(clients, eq(clients.id, projects.clientId))
     .innerJoin(
       workspaceMembers,
       eq(workspaceMembers.id, timeEntries.workspaceMemberId),
@@ -130,7 +132,8 @@ async function fetchTagStats(workspaceId: string, tagIds: string[]) {
 export type PaginatedClient = {
   id: string
   name: string
-  clientStatus: 'ACTIVE' | 'INACTIVE'
+  clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  defaultBillableRate: number | null
   totalSeconds: number
   billableAmount: number
   activeMembersCount: number
@@ -176,6 +179,7 @@ export async function getPaginatedClients({
         id: clients.id,
         name: clients.name,
         clientStatus: clients.clientStatus,
+        defaultBillableRate: clients.defaultBillableRate,
       })
       .from(clients)
       .where(whereClause)
@@ -194,6 +198,8 @@ export async function getPaginatedClients({
       const s = statsMap.get(r.id)
       return {
         ...r,
+        defaultBillableRate:
+          r.defaultBillableRate == null ? null : Number(r.defaultBillableRate),
         totalSeconds: s?.totalSeconds ?? 0,
         billableAmount: s?.billableAmount ?? 0,
         activeMembersCount: s?.activeMembersCount ?? 0,
@@ -219,7 +225,12 @@ export type PaginatedProject = {
 }
 
 export type PaginatedProjectsResult = PaginatedResult<PaginatedProject> & {
-  clients: Array<{ id: string; name: string }>
+  clients: Array<{
+    id: string
+    name: string
+    clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+    defaultBillableRate: number | null
+  }>
 }
 
 export async function getPaginatedProjects({
@@ -271,7 +282,12 @@ export async function getPaginatedProjects({
       .limit(pageSize)
       .offset(page * pageSize),
     db
-      .select({ id: clients.id, name: clients.name })
+      .select({
+        id: clients.id,
+        name: clients.name,
+        clientStatus: clients.clientStatus,
+        defaultBillableRate: clients.defaultBillableRate,
+      })
       .from(clients)
       .where(eq(clients.workspaceId, workspaceId))
       .orderBy(asc(clients.name)),
@@ -304,7 +320,13 @@ export async function getPaginatedProjects({
     }),
     totalCount,
     totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
-    clients: clientRows,
+    clients: clientRows.map((client) => ({
+      ...client,
+      defaultBillableRate:
+        client.defaultBillableRate == null
+          ? null
+          : Number(client.defaultBillableRate),
+    })),
   }
 }
 

@@ -216,9 +216,10 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CATALOG_TAB_CLIENTS}!A2:C`,
+    range: `${CATALOG_TAB_CLIENTS}!A2:D`,
   })
   const parsed = parseClientRows(res.data.values ?? [])
+  const warnings = parsed.flatMap((client) => client.warnings)
   if (parsed.length === 0) return { count: 0, warnings: [] }
 
   const knownIds = parsed.map((c) => c.id).filter((id): id is string => !!id)
@@ -242,12 +243,14 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
   type ToUpdate = {
     id: string
     name: string
-    clientStatus: 'ACTIVE' | 'INACTIVE'
+    clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+    defaultBillableRate: number | null
   }
   type ToInsert = {
     workspaceId: string
     name: string
-    clientStatus: 'ACTIVE' | 'INACTIVE'
+    clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+    defaultBillableRate: number | null
     sheetRow: number
   }
   type WritebackEntry = { row: number; id: string }
@@ -267,12 +270,16 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
       // rows are unchanged, and each update is a full DB round trip.
       if (
         existing.name !== c.name ||
-        existing.clientStatus !== c.clientStatus
+        existing.clientStatus !== c.clientStatus ||
+        (existing.defaultBillableRate == null
+          ? null
+          : Number(existing.defaultBillableRate)) !== c.defaultBillableRate
       ) {
         toUpdate.push({
           id: existing.id,
           name: c.name,
           clientStatus: c.clientStatus,
+          defaultBillableRate: c.defaultBillableRate,
         })
       }
       resolvedIds.set(sheetRow, existing.id)
@@ -281,18 +288,26 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
         workspaceId: workspace.id,
         name: c.name,
         clientStatus: c.clientStatus,
+        defaultBillableRate: c.defaultBillableRate,
         sheetRow,
       })
     }
   }
 
   // Parallel bulk updates
-  await runInBatches(toUpdate, ({ id, name, clientStatus }) =>
-    db
-      .update(clients)
-      .set({ name, clientStatus })
-      .where(eq(clients.id, id))
-      .then(() => undefined),
+  await runInBatches(
+    toUpdate,
+    ({ id, name, clientStatus, defaultBillableRate }) =>
+      db
+        .update(clients)
+        .set({
+          name,
+          clientStatus,
+          defaultBillableRate:
+            defaultBillableRate == null ? null : String(defaultBillableRate),
+        })
+        .where(eq(clients.id, id))
+        .then(() => undefined),
   )
 
   // Single bulk insert — deduplicate by name first, upsert to survive race conditions
@@ -305,15 +320,24 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
       created = await db
         .insert(clients)
         .values(
-          deduped.map(({ workspaceId, name, clientStatus }) => ({
-            workspaceId,
-            name,
-            clientStatus,
-          })),
+          deduped.map(
+            ({ workspaceId, name, clientStatus, defaultBillableRate }) => ({
+              workspaceId,
+              name,
+              clientStatus,
+              defaultBillableRate:
+                defaultBillableRate == null
+                  ? null
+                  : String(defaultBillableRate),
+            }),
+          ),
         )
         .onConflictDoUpdate({
           target: [clients.workspaceId, clients.name],
-          set: { clientStatus: sql`excluded.client_status` },
+          set: {
+            clientStatus: sql`excluded.client_status`,
+            defaultBillableRate: sql`excluded.default_billable_rate`,
+          },
         })
         .returning({ id: clients.id, name: clients.name })
     } catch (err) {
@@ -343,14 +367,14 @@ export async function importClientsFromSheet(): Promise<ImportStepResult> {
       requestBody: {
         valueInputOption: 'RAW',
         data: writebacks.map(({ row, id }) => ({
-          range: `${CATALOG_TAB_CLIENTS}!C${row}`,
+          range: `${CATALOG_TAB_CLIENTS}!D${row}`,
           values: [[id]],
         })),
       },
     })
   }
 
-  return { count: parsed.length, warnings: [] }
+  return { count: parsed.length, warnings }
 }
 
 // ── Step 2: Projects ──────────────────────────────────────────────────────────
@@ -965,7 +989,12 @@ async function getRowIndexForRecord(
 
 export async function exportClientToSheet(
   workspaceId: string,
-  client: { id: string; name: string; clientStatus: string },
+  client: {
+    id: string
+    name: string
+    clientStatus: string
+    defaultBillableRate?: string | number | null
+  },
 ): Promise<void> {
   const sheetId = await getSheetIdForWorkspace(workspaceId)
   if (!sheetId) return
@@ -978,7 +1007,7 @@ export async function exportClientToSheet(
     CATALOG_TAB_CLIENTS,
     client.id,
     client.name,
-    'C',
+    'D',
   )
 
   if (rowIndex !== null) {
@@ -991,7 +1020,7 @@ export async function exportClientToSheet(
   } else {
     await sheets.spreadsheets.values.append({
       spreadsheetId: sheetId,
-      range: `${CATALOG_TAB_CLIENTS}!A:C`,
+      range: `${CATALOG_TAB_CLIENTS}!A:D`,
       valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [row] },

@@ -40,7 +40,11 @@ export const rolePermissionEnum = pgEnum('RolePermission', [
   'EMPLOYEE',
 ])
 
-export const clientStatusEnum = pgEnum('ClientStatus', ['ACTIVE', 'INACTIVE'])
+export const clientStatusEnum = pgEnum('ClientStatus', [
+  'ACTIVE',
+  'INACTIVE',
+  'SUSPENDED',
+])
 
 export const memberStatusEnum = pgEnum('MemberStatus', [
   'INVITED',
@@ -507,6 +511,10 @@ export const clients = pgTable(
       .references(() => workspaces.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 120 }).notNull(),
     clientStatus: clientStatusEnum('client_status').notNull().default('ACTIVE'),
+    defaultBillableRate: numeric('default_billable_rate', {
+      precision: 12,
+      scale: 2,
+    }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -519,6 +527,10 @@ export const clients = pgTable(
     uniqueIndex('clients_workspace_id_name_unique').on(
       table.workspaceId,
       table.name,
+    ),
+    check(
+      'clients_default_billable_rate_nonnegative',
+      sql`${table.defaultBillableRate} is null or ${table.defaultBillableRate} >= 0`,
     ),
   ],
 )
@@ -538,8 +550,10 @@ export const memberClientBillableRates = pgTable(
     clientId: varchar('client_id', { length: 30 })
       .notNull()
       .references(() => clients.id, { onDelete: 'cascade' }),
-    billableRate: numeric('billable_rate', { precision: 12, scale: 2 })
-      .notNull(),
+    billableRate: numeric('billable_rate', {
+      precision: 12,
+      scale: 2,
+    }).notNull(),
     effectiveFrom: date('effective_from').notNull(),
     effectiveTo: date('effective_to'),
     createdAt: timestamp('created_at', { withTimezone: true })

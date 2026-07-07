@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import {
+  AlertTriangle,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -23,7 +24,11 @@ import {
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
 
-export type ClientItem = { id: string; name: string }
+export type ClientItem = {
+  id: string
+  name: string
+  clientStatus?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | string
+}
 
 export type ProjectItem = {
   id: string
@@ -99,6 +104,8 @@ export function ClientProjectPicker({
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(
     new Set(),
   )
+  const [suspendedNoticeClient, setSuspendedNoticeClient] =
+    useState<ClientItem | null>(null)
 
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<ProjectTaskItem | null>(null)
@@ -276,8 +283,12 @@ export function ClientProjectPicker({
     nextProjectId: string,
     nextTaskId?: string,
   ) {
+    const nextClient = clients.find((client) => client.id === nextClientId)
     onChange(nextClientId, nextProjectId, nextTaskId)
     setOpen(false)
+    if (nextClient?.clientStatus === 'SUSPENDED') {
+      setSuspendedNoticeClient(nextClient)
+    }
   }
 
   function handleClear(e: React.MouseEvent<HTMLButtonElement>) {
@@ -332,9 +343,14 @@ export function ClientProjectPicker({
             <button
               type="button"
               disabled={disabled}
+              title={
+                compact && hasSelection
+                  ? `${selectedClient?.name ? selectedClient.name + ' / ' : ''}${selectedTask ? selectedTask.name + ' - ' : ''}${selectedProject.name}`
+                  : undefined
+              }
               className={
                 compact
-                  ? 'flex h-9 w-full items-center justify-start rounded-md px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
+                  ? 'flex h-9 w-full min-w-0 items-center justify-start overflow-hidden rounded-md px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
                   : bare
                     ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
                     : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
@@ -348,31 +364,18 @@ export function ClientProjectPicker({
                         className="size-2 shrink-0 rounded-full"
                         style={{ backgroundColor: selectedProject.color }}
                       />
-                      <span className="flex min-w-0 items-center gap-0 text-left leading-tight">
-                        {selectedClient?.name ? (
-                          <>
-                            <span className="truncate max-w-[82px]">
-                              {selectedClient.name}
-                            </span>
-                            <span className="shrink-0 text-muted-foreground">
-                              &nbsp;/&nbsp;
-                            </span>
-                          </>
-                        ) : null}
-                        {selectedTask ? (
-                          <>
-                            <span className="shrink-0 whitespace-nowrap text-foreground">
-                              {selectedTask.name}
-                            </span>
-                            <span className="shrink-0 text-muted-foreground">
-                              &nbsp;-&nbsp;
-                            </span>
-                          </>
-                        ) : null}
-                        <span className="truncate text-foreground">
-                          {selectedProject.name}
-                        </span>
+                      <span className="block min-w-0 flex-1 truncate text-left leading-tight">
+                        {selectedClient?.name
+                          ? `${selectedClient.name} / `
+                          : ''}
+                        {selectedTask ? `${selectedTask.name} - ` : ''}
+                        {selectedProject.name}
                       </span>
+                      {selectedClient?.clientStatus === 'SUSPENDED' && (
+                        <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                          Suspended
+                        </span>
+                      )}
                     </>
                   ) : (
                     <>
@@ -389,6 +392,11 @@ export function ClientProjectPicker({
                             <span className="truncate max-w-[100px]">
                               {selectedClient.name}
                             </span>
+                            {selectedClient.clientStatus === 'SUSPENDED' && (
+                              <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                Suspended
+                              </span>
+                            )}
                             <span className="shrink-0 text-muted-foreground">
                               &nbsp;/&nbsp;
                             </span>
@@ -520,6 +528,11 @@ export function ClientProjectPicker({
                       )}
                       <Building2 className="size-3 shrink-0" />
                       <span className="truncate">{row.client.name}</span>
+                      {row.client.clientStatus === 'SUSPENDED' && (
+                        <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                          Suspended
+                        </span>
+                      )}
                     </button>
                   )
                 }
@@ -746,6 +759,35 @@ export function ClientProjectPicker({
               disabled={deletingTask}
             >
               {deletingTask ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!suspendedNoticeClient}
+        onOpenChange={(openNotice) => {
+          if (!openNotice) setSuspendedNoticeClient(null)
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-amber-600" />
+              Client suspended
+            </DialogTitle>
+            <DialogDescription>
+              <span className="font-semibold text-foreground">
+                {suspendedNoticeClient?.name}
+              </span>{' '}
+              is currently suspended. Please confirm with your head or manager
+              if you can proceed with logging work for this client. You can
+              still continue and run the task if needed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setSuspendedNoticeClient(null)}>
+              Continue
             </Button>
           </DialogFooter>
         </DialogContent>

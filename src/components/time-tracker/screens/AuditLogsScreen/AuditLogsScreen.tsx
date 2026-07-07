@@ -52,6 +52,10 @@ const ACTION_META: Record<string, ActionMeta> = {
     label: 'Client archived',
     color: 'bg-red-500/10 text-red-600 dark:text-red-400',
   },
+  CLIENT_SUSPEND: {
+    label: 'Client suspended',
+    color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  },
   // Catalogs — projects
   PROJECT_CREATE: {
     label: 'Project added',

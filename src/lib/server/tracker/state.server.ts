@@ -207,6 +207,8 @@ export async function getTrackerState(): Promise<TrackerState> {
       id: c.id,
       name: c.name,
       clientStatus: c.clientStatus,
+      defaultBillableRate:
+        c.defaultBillableRate == null ? null : Number(c.defaultBillableRate),
     })),
     tags: tagsRows.map((t) => ({
       id: t.id,

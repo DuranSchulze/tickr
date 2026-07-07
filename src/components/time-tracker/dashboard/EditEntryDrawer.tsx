@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Button } from '#/components/ui/button'
+import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { EntryDraftForm } from './EntryDraftForm'
 import type { DraftEntry } from './utils'
 import type { Client, Project, TimeEntry } from '#/lib/time-tracker/types'
@@ -156,20 +157,31 @@ export function EditEntryDrawer({
                           className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
                             selectedClient.clientStatus === 'INACTIVE'
                               ? 'text-muted-foreground line-through'
-                              : 'text-foreground'
+                              : selectedClient.clientStatus === 'SUSPENDED'
+                                ? 'text-amber-700'
+                                : 'text-foreground'
                           }`}
                         >
                           {selectedClient.name}
-                          {selectedClient.clientStatus === 'INACTIVE' && (
+                          {selectedClient.clientStatus === 'SUSPENDED' ? (
+                            <span className="rounded bg-amber-500/10 px-1 text-[10px] font-normal text-amber-700">
+                              Suspended
+                            </span>
+                          ) : selectedClient.clientStatus === 'INACTIVE' ? (
                             <span className="rounded bg-muted px-1 text-[10px] font-normal text-muted-foreground no-underline">
                               Inactive
                             </span>
-                          )}
+                          ) : null}
                         </span>
                       ) : (
                         <span className="text-sm italic text-muted-foreground">
                           None selected
                         </span>
+                      )}
+                      {selectedClient?.clientStatus === 'SUSPENDED' && (
+                        <SuspendedClientWarning
+                          clientName={selectedClient.name}
+                        />
                       )}
                     </div>
 

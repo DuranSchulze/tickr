@@ -1,5 +1,5 @@
 import {
-  computeEffectiveRate,
+  computeBillableRate,
   formatCurrency,
   normalizeCurrency,
 } from '#/lib/time-tracker/billing'
@@ -51,7 +51,12 @@ export type SyncMemberClientRate = {
   effectiveTo: string | null
 }
 
-export type SyncProject = { id: string; name: string; clientId?: string | null }
+export type SyncProject = {
+  id: string
+  name: string
+  clientId?: string | null
+  clientDefaultBillableRate?: number | null
+}
 export type SyncTag = { id: string; name: string }
 
 export type SyncWorkspace = {
@@ -142,9 +147,7 @@ export function buildSyncRows({
       const member = memberById.get(entry.workspaceMemberId)
       const memberName = member?.name ?? '—'
       const memberEmail = member?.email ?? ''
-      const project = entry.projectId
-        ? projectById.get(entry.projectId)
-        : null
+      const project = entry.projectId ? projectById.get(entry.projectId) : null
       const tagList = entry.tagIds
         .flatMap((id) => {
           const name = tagName.get(id)
@@ -162,15 +165,17 @@ export function buildSyncRows({
                   rate.workspaceMemberId === entry.workspaceMemberId &&
                   rate.clientId === (project.clientId ?? '') &&
                   rate.effectiveFrom <= entryDateKey &&
-                  (rate.effectiveTo == null || rate.effectiveTo >= entryDateKey),
+                  (rate.effectiveTo == null ||
+                    rate.effectiveTo >= entryDateKey),
               )
               .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
               ?.billableRate ?? null)
-      const effectiveRate = computeEffectiveRate(
-        clientRate,
-        member?.billableRate ?? null,
-        defaultRate,
-      )
+      const effectiveRate = computeBillableRate({
+        memberClientRate: clientRate,
+        clientDefaultRate: project?.clientDefaultBillableRate ?? null,
+        memberRate: member?.billableRate ?? null,
+        workspaceDefaultRate: defaultRate,
+      })
       const amount = entry.billable ? hours * effectiveRate : null
 
       return [

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   clipWorkInterval,
+  splitWorkIntervalByDay,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 
@@ -102,5 +103,111 @@ describe('summarizeWorkIntervals', () => {
     expect(clipped?.startedAt.toISOString()).toBe('2026-06-19T00:00:00.000Z')
     expect(clipped?.endedAt.toISOString()).toBe('2026-06-19T02:00:00.000Z')
     expect(clipped?.seconds).toBe(7200)
+  })
+})
+
+describe('splitWorkIntervalByDay', () => {
+  it('returns one slice for same-day work in the workspace timezone', () => {
+    const slices = splitWorkIntervalByDay(
+      {
+        memberId: 'a',
+        startedAt: '2026-07-06T01:00:00.000Z',
+        endedAt: '2026-07-06T03:30:00.000Z',
+      },
+      new Date('2026-07-05T16:00:00.000Z'),
+      new Date('2026-07-06T16:00:00.000Z'),
+      'Asia/Manila',
+    )
+
+    expect(slices).toHaveLength(1)
+    expect(slices[0]).toMatchObject({
+      memberId: 'a',
+      date: '2026-07-06',
+      seconds: 9_000,
+    })
+    expect(slices[0]?.startedAt.toISOString()).toBe('2026-07-06T01:00:00.000Z')
+    expect(slices[0]?.endedAt.toISOString()).toBe('2026-07-06T03:30:00.000Z')
+  })
+
+  it('splits overnight work at workspace-local midnight', () => {
+    const slices = splitWorkIntervalByDay(
+      {
+        memberId: 'a',
+        startedAt: '2026-07-06T15:00:00.000Z',
+        endedAt: '2026-07-06T18:00:00.000Z',
+      },
+      new Date('2026-07-05T16:00:00.000Z'),
+      new Date('2026-07-07T16:00:00.000Z'),
+      'Asia/Manila',
+    )
+
+    expect(
+      slices.map((slice) => ({
+        date: slice.date,
+        startedAt: slice.startedAt.toISOString(),
+        endedAt: slice.endedAt.toISOString(),
+        seconds: slice.seconds,
+      })),
+    ).toEqual([
+      {
+        date: '2026-07-06',
+        startedAt: '2026-07-06T15:00:00.000Z',
+        endedAt: '2026-07-06T16:00:00.000Z',
+        seconds: 3_600,
+      },
+      {
+        date: '2026-07-07',
+        startedAt: '2026-07-06T16:00:00.000Z',
+        endedAt: '2026-07-06T18:00:00.000Z',
+        seconds: 7_200,
+      },
+    ])
+  })
+
+  it('clips to the selected range before splitting', () => {
+    const slices = splitWorkIntervalByDay(
+      {
+        memberId: 'a',
+        startedAt: '2026-07-06T15:00:00.000Z',
+        endedAt: '2026-07-07T18:00:00.000Z',
+      },
+      new Date('2026-07-06T16:00:00.000Z'),
+      new Date('2026-07-07T16:00:00.000Z'),
+      'Asia/Manila',
+    )
+
+    expect(slices).toHaveLength(1)
+    expect(slices[0]?.date).toBe('2026-07-07')
+    expect(slices[0]?.startedAt.toISOString()).toBe('2026-07-06T16:00:00.000Z')
+    expect(slices[0]?.endedAt.toISOString()).toBe('2026-07-07T16:00:00.000Z')
+    expect(slices[0]?.seconds).toBe(86_400)
+  })
+
+  it('returns no slices for invalid or open-ended intervals', () => {
+    expect(
+      splitWorkIntervalByDay(
+        {
+          memberId: 'a',
+          startedAt: '2026-07-06T15:00:00.000Z',
+          endedAt: null,
+        },
+        new Date('2026-07-05T16:00:00.000Z'),
+        new Date('2026-07-07T16:00:00.000Z'),
+        'Asia/Manila',
+      ),
+    ).toEqual([])
+
+    expect(
+      splitWorkIntervalByDay(
+        {
+          memberId: 'a',
+          startedAt: '2026-07-06T18:00:00.000Z',
+          endedAt: '2026-07-06T15:00:00.000Z',
+        },
+        new Date('2026-07-05T16:00:00.000Z'),
+        new Date('2026-07-07T16:00:00.000Z'),
+        'Asia/Manila',
+      ),
+    ).toEqual([])
   })
 })

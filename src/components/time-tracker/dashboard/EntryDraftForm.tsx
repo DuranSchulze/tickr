@@ -2,13 +2,14 @@ import { useMemo } from 'react'
 import type { FocusEvent } from 'react'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
+import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { DraftTimeEditor } from './DraftTimeEditor'
 import type { DraftEntry } from './utils'
 
 type ClientItem = {
   id: string
   name: string
-  clientStatus: 'ACTIVE' | 'INACTIVE'
+  clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 }
 type ProjectItem = { id: string; name: string; color: string; clientId: string }
 
@@ -52,9 +53,13 @@ export function EntryDraftForm({
   compact?: boolean
   isRunning?: boolean
 }) {
-  const activeClients = useMemo(
-    () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
+  const selectableClients = useMemo(
+    () => clients.filter((c) => c.clientStatus !== 'INACTIVE'),
     [clients],
+  )
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === draft.clientId),
+    [clients, draft.clientId],
   )
 
   return (
@@ -74,7 +79,7 @@ export function EntryDraftForm({
       {/* Row 2: Client + Project (unified) + Tag */}
       <div className="grid gap-3 sm:grid-cols-2">
         <ClientProjectPicker
-          clients={activeClients}
+          clients={selectableClients}
           projects={projects}
           tasks={projectTasks}
           clientId={draft.clientId}
@@ -99,6 +104,9 @@ export function EntryDraftForm({
           canCreate={canManageCatalog}
         />
       </div>
+      {selectedClient?.clientStatus === 'SUSPENDED' && (
+        <SuspendedClientWarning clientName={selectedClient.name} />
+      )}
 
       {/* Row 3: Date range + Billable */}
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">

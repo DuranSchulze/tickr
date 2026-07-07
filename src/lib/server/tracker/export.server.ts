@@ -15,14 +15,10 @@ import { and, desc, eq, gt, inArray, isNotNull, lt } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import {
-  formatDateInTimeZone,
-  formatDateTimeInTimeZone,
-  getWorkspaceDateRange,
-} from './shared/dates'
+import { formatDateTimeInTimeZone, getWorkspaceDateRange } from './shared/dates'
 import type { analyticsRangeSchema } from './shared/schemas'
 import {
-  clipWorkInterval,
+  splitWorkIntervalByDay,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 import {
@@ -181,8 +177,8 @@ export async function exportAnalyticsCsv(
   }
 
   const fh = (s: number) => (s / 3600).toFixed(2)
-  const clippedEntries = rawEntries.flatMap((entry) => {
-    const clipped = clipWorkInterval(
+  const daySlices = rawEntries.flatMap((entry) => {
+    const slices = splitWorkIntervalByDay(
       {
         memberId: entry.workspaceMemberId,
         startedAt: entry.startedAt,
@@ -190,14 +186,15 @@ export async function exportAnalyticsCsv(
       },
       range.start,
       range.endExclusive,
+      timezone,
     )
-    return clipped ? [{ entry, clipped }] : []
+    return slices.map((slice) => ({ entry, slice }))
   })
   const workSummary = summarizeWorkIntervals(
-    clippedEntries.map(({ entry, clipped }) => ({
+    daySlices.map(({ entry, slice }) => ({
       memberId: entry.workspaceMemberId,
-      startedAt: clipped.startedAt,
-      endedAt: clipped.endedAt,
+      startedAt: slice.startedAt,
+      endedAt: slice.endedAt,
     })),
     range.start,
     range.endExclusive,
@@ -249,22 +246,22 @@ export async function exportAnalyticsCsv(
     ],
   ]
 
-  for (const { entry: e, clipped } of clippedEntries) {
+  for (const { entry: e, slice } of daySlices) {
     const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
-    const hours = fh(clipped.seconds)
+    const hours = fh(slice.seconds)
     const amount = e.billable ? Number(hours) * effectiveRate : null
 
     rows.push([
       e.memberUserName ?? e.memberEmail ?? '',
       e.memberEmail ?? '',
-      formatDateInTimeZone(clipped.startedAt, timezone),
-      formatDateTimeInTimeZone(clipped.startedAt, timezone),
-      formatDateTimeInTimeZone(clipped.endedAt, timezone),
+      slice.date,
+      formatDateTimeInTimeZone(slice.startedAt, timezone),
+      formatDateTimeInTimeZone(slice.endedAt, timezone),
       e.projectName ?? '',
       e.clientName ?? '',
       (tagsByEntry.get(e.id) ?? []).join('; '),
       e.description,
-      formatHms(clipped.seconds),
+      formatHms(slice.seconds),
       e.billable ? 'Yes' : 'No',
       e.billable ? formatDecimalRate(effectiveRate) : '',
       amount === null ? '' : amount.toFixed(2),

@@ -27,6 +27,7 @@ type InlinePatch = Partial<
     | 'description'
     | 'billable'
     | 'projectId'
+    | 'taskId'
     | 'tagIds'
     | 'startedAt'
     | 'endedAt'
@@ -87,9 +88,7 @@ function getDayDtrRow(group: DayGroup) {
   const ends = entries.map((entry) =>
     entry.endedAt ? new Date(entry.endedAt) : now,
   )
-  const firstStart = new Date(
-    Math.min(...starts.map((date) => date.getTime())),
-  )
+  const firstStart = new Date(Math.min(...starts.map((date) => date.getTime())))
   const lastEnd = new Date(Math.max(...ends.map((date) => date.getTime())))
   const totalSeconds = entries.reduce(
     (sum, entry) =>
@@ -322,8 +321,8 @@ function TaskGroupHeaderRow({
       className="cursor-pointer bg-muted/30 transition-colors hover:bg-muted/50"
       onClick={onToggle}
     >
-      {/* Description + count + expand toggle */}
-      <td className="px-4 py-3 w-[26%]">
+      {/* Task details + count + expand toggle */}
+      <td className="px-4 py-3 w-[56%]">
         <div className="flex min-w-0 items-start gap-2">
           <button
             type="button"
@@ -332,7 +331,9 @@ function TaskGroupHeaderRow({
               onToggle()
             }}
             className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-            aria-label={isExpanded ? 'Collapse task group' : 'Expand task group'}
+            aria-label={
+              isExpanded ? 'Collapse task group' : 'Expand task group'
+            }
             title={isExpanded ? 'Collapse task group' : 'Expand task group'}
           >
             {isExpanded ? (
@@ -357,49 +358,43 @@ function TaskGroupHeaderRow({
                 ×{group.entries.length}
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Grouped task · one-click resume
-            </p>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {project ? (
+                <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: project.color }}
+                  />
+                  <span className="truncate">{project.name}</span>
+                </span>
+              ) : (
+                <span>No project</span>
+              )}
+              <span className="text-muted-foreground/60">·</span>
+              <span>
+                {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
+              </span>
+              <span className="text-muted-foreground/60">·</span>
+              <span>Grouped task</span>
+            </div>
           </div>
         </div>
       </td>
 
-      {/* Project */}
-      <td className="px-4 py-3 w-[18%]">
-        {project ? (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <span
-              className="size-2 rounded-full shrink-0"
-              style={{ backgroundColor: project.color }}
-            />
-            <span className="truncate">{project.name}</span>
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">–</span>
-        )}
-      </td>
-
-      {/* Tags */}
-      <td className="px-4 py-3 w-[14%]">
-        <span className="text-xs text-muted-foreground">
-          {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
-        </span>
-      </td>
-
       {/* Billable */}
-      <td className="px-4 py-3 w-[8%] text-center">
+      <td className="px-3 py-3 w-[5%] text-center">
         {group.billable && (
           <span className="text-xs font-bold text-primary">$</span>
         )}
       </td>
 
       {/* Time (per-entry only) */}
-      <td className="px-4 py-3 w-[12%] text-center">
+      <td className="px-4 py-3 w-[22%] text-center">
         <GroupTimeSummary group={group} />
       </td>
 
       {/* Duration */}
-      <td className="px-4 py-3 w-[10%] text-right">
+      <td className="px-3 py-3 w-[7%] text-right">
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
           runningEntry={group.runningEntry}
@@ -408,7 +403,7 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Resume */}
-      <td className="px-4 py-3 w-[12%]" onClick={(e) => e.stopPropagation()}>
+      <td className="px-4 py-3 w-[10%]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <button
             type="button"
@@ -634,25 +629,19 @@ export function DayGroupsList({
                     <Table className="table-fixed">
                       <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
                         <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-                          <TableHead className="px-4 py-2.5 w-[26%] text-muted-foreground font-medium">
-                            Task
+                          <TableHead className="px-4 py-2.5 w-[56%] text-muted-foreground font-medium">
+                            Task / Client / Tags
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[18%] text-muted-foreground font-medium">
-                            Client / Project
-                          </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[14%] text-muted-foreground font-medium">
-                            Tags
-                          </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[8%] text-center text-muted-foreground font-medium">
+                          <TableHead className="px-4 py-2.5 w-[5%] text-center text-muted-foreground font-medium">
                             Billable
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[12%] text-center text-muted-foreground font-medium">
+                          <TableHead className="px-4 py-2.5 w-[22%] text-center text-muted-foreground font-medium">
                             Time
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[10%] text-right text-muted-foreground font-medium">
+                          <TableHead className="px-3 py-2.5 w-[7%] text-right text-muted-foreground font-medium">
                             Duration
                           </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[12%]" />
+                          <TableHead className="px-4 py-2.5 w-[10%]" />
                         </TableRow>
                       </TableHeader>
                       <TableBody className="[&_tr]:border-b-0">

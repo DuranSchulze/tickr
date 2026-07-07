@@ -23,6 +23,31 @@ export function computeMemberEffectiveRate(
     : toFiniteRate(memberRate, safeDefault)
 }
 
+export function computeBillableRate({
+  memberClientRate,
+  clientDefaultRate,
+  memberRate,
+  workspaceDefaultRate,
+}: {
+  memberClientRate?: number | null
+  clientDefaultRate?: number | null
+  memberRate?: number | null
+  workspaceDefaultRate: number
+}) {
+  const safeWorkspaceDefault = toFiniteRate(workspaceDefaultRate)
+  const safeMemberRate =
+    memberRate == null
+      ? safeWorkspaceDefault
+      : toFiniteRate(memberRate, safeWorkspaceDefault)
+  const safeClientRate =
+    clientDefaultRate == null
+      ? safeMemberRate
+      : toFiniteRate(clientDefaultRate, safeMemberRate)
+  return memberClientRate == null
+    ? safeClientRate
+    : toFiniteRate(memberClientRate, safeClientRate)
+}
+
 export function computeEffectiveRate(
   memberRate: number | null | undefined,
   defaultRate: number,
@@ -41,8 +66,12 @@ export function computeEffectiveRate(
     return computeMemberEffectiveRate(firstRate, secondRate ?? 0)
   }
 
-  const memberFallback = computeMemberEffectiveRate(secondRate, thirdRate)
-  return firstRate == null ? memberFallback : toFiniteRate(firstRate, memberFallback)
+  return computeBillableRate({
+    memberClientRate: firstRate,
+    clientDefaultRate: null,
+    memberRate: secondRate,
+    workspaceDefaultRate: thirdRate,
+  })
 }
 
 export function formatCurrency(

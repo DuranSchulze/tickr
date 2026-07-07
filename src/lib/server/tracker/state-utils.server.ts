@@ -242,7 +242,8 @@ interface ProjectsRow {
 interface ClientsRow {
   id: string
   name: string
-  clientStatus: 'ACTIVE' | 'INACTIVE'
+  clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  defaultBillableRate: number | string | null
 }
 
 interface TagsRow {
@@ -328,6 +329,8 @@ export function buildTrackerStateBase(
       id: c.id,
       name: c.name,
       clientStatus: c.clientStatus,
+      defaultBillableRate:
+        c.defaultBillableRate == null ? null : Number(c.defaultBillableRate),
     })),
     tags: tagsRows.map((t) => ({
       id: t.id,

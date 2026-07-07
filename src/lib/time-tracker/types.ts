@@ -49,7 +49,8 @@ export type ProjectTask = {
 export type Client = {
   id: string
   name: string
-  clientStatus: 'ACTIVE' | 'INACTIVE'
+  clientStatus: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
+  defaultBillableRate: number | null
 }
 
 export type Tag = {

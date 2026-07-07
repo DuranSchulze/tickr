@@ -6,6 +6,7 @@ import {
   FileSpreadsheet,
   Loader2,
   MoreHorizontal,
+  PauseCircle,
   Pencil,
   RefreshCw,
   Table as TableIcon,
@@ -41,6 +42,7 @@ export function useClientColumns({
   onEdit,
   onArchive,
   onActivate,
+  onSuspend,
 }: {
   canManage: boolean
   canViewBillable: boolean
@@ -49,6 +51,7 @@ export function useClientColumns({
   onEdit: (client: PaginatedClient) => void
   onArchive: (client: PaginatedClient) => void
   onActivate: (client: PaginatedClient) => void
+  onSuspend: (client: PaginatedClient) => void
 }) {
   return useMemo(
     () => [
@@ -62,14 +65,22 @@ export function useClientColumns({
         header: 'Status',
         cell: ({ getValue }) => {
           const status = getValue()
+          const color =
+            status === 'ACTIVE'
+              ? 'bg-emerald-500'
+              : status === 'SUSPENDED'
+                ? 'bg-amber-500'
+                : 'bg-muted-foreground'
+          const label =
+            status === 'ACTIVE'
+              ? 'Active'
+              : status === 'SUSPENDED'
+                ? 'Suspended'
+                : 'Inactive'
           return (
             <span className="inline-flex items-center gap-1.5 text-sm">
-              <span
-                className={`size-1.5 rounded-full ${
-                  status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-muted-foreground'
-                }`}
-              />
-              {status === 'ACTIVE' ? 'Active' : 'Inactive'}
+              <span className={`size-1.5 rounded-full ${color}`} />
+              {label}
             </span>
           )
         },
@@ -84,6 +95,19 @@ export function useClientColumns({
       }),
       ...(canViewBillable
         ? [
+            col.accessor('defaultBillableRate', {
+              header: 'Default Rate',
+              cell: ({ getValue }) => {
+                const amount = getValue()
+                return (
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {amount == null
+                      ? 'Workspace/member fallback'
+                      : formatCurrency(amount, currency)}
+                  </span>
+                )
+              },
+            }),
             col.accessor('billableAmount', {
               header: 'Billable Amount',
               cell: ({ getValue }) => {
@@ -120,15 +144,42 @@ export function useClientColumns({
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        {client.clientStatus === 'ACTIVE' ? (
-                          <DropdownMenuItem
-                            onClick={() => onArchive(client)}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <Archive className="mr-2 size-4" />
-                            Archive
-                          </DropdownMenuItem>
-                        ) : (
+                        {client.clientStatus === 'ACTIVE' && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onSuspend(client)}
+                              className="text-amber-600 focus:text-amber-600"
+                            >
+                              <PauseCircle className="mr-2 size-4" />
+                              Suspend
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onArchive(client)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Archive className="mr-2 size-4" />
+                              Archive
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {client.clientStatus === 'SUSPENDED' && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => onActivate(client)}
+                            >
+                              <CheckCircle className="mr-2 size-4" />
+                              Activate
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => onArchive(client)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Archive className="mr-2 size-4" />
+                              Archive
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {client.clientStatus === 'INACTIVE' && (
                           <DropdownMenuItem onClick={() => onActivate(client)}>
                             <CheckCircle className="mr-2 size-4" />
                             Activate
@@ -151,6 +202,7 @@ export function useClientColumns({
       onEdit,
       onArchive,
       onActivate,
+      onSuspend,
     ],
   )
 }

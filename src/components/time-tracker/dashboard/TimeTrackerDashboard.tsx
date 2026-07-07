@@ -10,7 +10,7 @@ import {
 } from '#/lib/time-tracker/store'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import {
-  computeEffectiveRate,
+  computeBillableRate,
   normalizeCurrency,
 } from '#/lib/time-tracker/billing'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
@@ -114,6 +114,12 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     }
   }, [loadAllEntries])
 
+  const patchAllEntries = useCallback((updated: TimeEntry) => {
+    setAllEntries((prev) =>
+      prev.map((entry) => (entry.id === updated.id ? updated : entry)),
+    )
+  }, [])
+
   // Delete/duplicate go straight through mutations (they don't read entry
   // state), so they just need to refresh the "all" list on success.
   const handleDeleteEntry = useCallback(
@@ -194,6 +200,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     mutations,
     lookupEntries,
     onMutated: refreshAllEntries,
+    onEntryPatched: patchAllEntries,
     isOnline,
     onOfflineCreate: upsertOptimisticStoppedEntry,
   })
@@ -411,6 +418,9 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
     const projectClient = new Map(
       state.projects.map((project) => [project.id, project.clientId]),
     )
+    const clientDefaultRate = new Map(
+      state.clients.map((client) => [client.id, client.defaultBillableRate]),
+    )
     return (memberId: string, projectId?: string, dateIso?: string) => {
       const memberRate = byMember.get(memberId) ?? null
       const clientId = projectId ? projectClient.get(projectId) : null
@@ -428,9 +438,22 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
               .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
               ?.billableRate ?? null)
           : null
-      return computeEffectiveRate(clientRate, memberRate, defaultRate)
+      return computeBillableRate({
+        memberClientRate: clientRate,
+        clientDefaultRate: clientId
+          ? (clientDefaultRate.get(clientId) ?? null)
+          : null,
+        memberRate,
+        workspaceDefaultRate: defaultRate,
+      })
     }
-  }, [defaultRate, state.memberClientBillableRates, state.members, state.projects])
+  }, [
+    defaultRate,
+    state.clients,
+    state.memberClientBillableRates,
+    state.members,
+    state.projects,
+  ])
 
   const summaryEntries = useMemo(() => {
     const byId = new Map(state.entries.map((entry) => [entry.id, entry]))

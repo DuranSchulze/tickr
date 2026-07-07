@@ -5,6 +5,7 @@ import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { assertOwnerOrAdmin } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
+import { toFiniteRate } from '#/lib/time-tracker/billing'
 import type {
   createClientSchema,
   idSchema,
@@ -13,7 +14,12 @@ import type {
 
 async function exportClient(
   workspaceId: string,
-  client: { id: string; name: string; clientStatus: string },
+  client: {
+    id: string
+    name: string
+    clientStatus: string
+    defaultBillableRate?: string | number | null
+  },
 ) {
   const { exportClientToSheet } =
     await import('#/lib/server/gsheets/catalog-sync.server')
@@ -44,6 +50,10 @@ export async function createClient(data: z.infer<typeof createClientSchema>) {
       workspaceId: access.workspace.id,
       name: data.name,
       clientStatus: data.clientStatus ?? 'ACTIVE',
+      defaultBillableRate:
+        data.defaultBillableRate == null
+          ? null
+          : String(toFiniteRate(data.defaultBillableRate)),
     })
     .returning()
 
@@ -51,6 +61,7 @@ export async function createClient(data: z.infer<typeof createClientSchema>) {
     id: created.id,
     name: data.name,
     clientStatus: data.clientStatus ?? 'ACTIVE',
+    defaultBillableRate: created.defaultBillableRate,
   })
 
   void createAuditLog({
@@ -60,7 +71,10 @@ export async function createClient(data: z.infer<typeof createClientSchema>) {
     action: 'CLIENT_CREATE',
     targetType: 'client',
     targetId: created.id,
-    details: data.name,
+    details:
+      data.defaultBillableRate == null
+        ? data.name
+        : `${data.name}: default rate ${data.defaultBillableRate}`,
   })
 }
 
@@ -70,7 +84,14 @@ export async function updateClient(data: z.infer<typeof updateClientSchema>) {
 
   await db
     .update(clients)
-    .set({ name: data.name, clientStatus: data.clientStatus })
+    .set({
+      name: data.name,
+      clientStatus: data.clientStatus,
+      defaultBillableRate:
+        data.defaultBillableRate == null
+          ? null
+          : String(toFiniteRate(data.defaultBillableRate)),
+    })
     .where(
       and(
         eq(clients.id, data.id),
@@ -82,6 +103,7 @@ export async function updateClient(data: z.infer<typeof updateClientSchema>) {
     id: data.id,
     name: data.name,
     clientStatus: data.clientStatus,
+    defaultBillableRate: data.defaultBillableRate,
   })
 
   void createAuditLog({
@@ -91,7 +113,10 @@ export async function updateClient(data: z.infer<typeof updateClientSchema>) {
     action: 'CLIENT_EDIT',
     targetType: 'client',
     targetId: data.id,
-    details: data.name,
+    details:
+      data.defaultBillableRate == null
+        ? data.name
+        : `${data.name}: default rate ${data.defaultBillableRate}`,
   })
 }
 
@@ -102,7 +127,11 @@ export async function bulkArchiveClients(data: z.infer<typeof bulkIdsSchema>) {
   assertOwnerOrAdmin(access)
 
   const rows = await db
-    .select({ id: clients.id, name: clients.name })
+    .select({
+      id: clients.id,
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
     .from(clients)
     .where(
       and(
@@ -135,6 +164,7 @@ export async function bulkArchiveClients(data: z.infer<typeof bulkIdsSchema>) {
       id: row.id,
       name: row.name,
       clientStatus: 'INACTIVE',
+      defaultBillableRate: row.defaultBillableRate,
     })
   }
 }
@@ -144,7 +174,11 @@ export async function bulkActivateClients(data: z.infer<typeof bulkIdsSchema>) {
   assertOwnerOrAdmin(access)
 
   const rows = await db
-    .select({ id: clients.id, name: clients.name })
+    .select({
+      id: clients.id,
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
     .from(clients)
     .where(
       and(
@@ -177,6 +211,54 @@ export async function bulkActivateClients(data: z.infer<typeof bulkIdsSchema>) {
       id: row.id,
       name: row.name,
       clientStatus: 'ACTIVE',
+      defaultBillableRate: row.defaultBillableRate,
+    })
+  }
+}
+
+export async function bulkSuspendClients(data: z.infer<typeof bulkIdsSchema>) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const rows = await db
+    .select({
+      id: clients.id,
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
+    .from(clients)
+    .where(
+      and(
+        inArray(clients.id, data.ids),
+        eq(clients.workspaceId, access.workspace.id),
+      ),
+    )
+
+  await db
+    .update(clients)
+    .set({ clientStatus: 'SUSPENDED' })
+    .where(
+      and(
+        inArray(clients.id, data.ids),
+        eq(clients.workspaceId, access.workspace.id),
+      ),
+    )
+
+  for (const row of rows) {
+    void createAuditLog({
+      workspaceId: access.workspace.id,
+      actorId: access.user.id,
+      actorEmail: access.user.email,
+      action: 'CLIENT_SUSPEND',
+      targetType: 'client',
+      targetId: row.id,
+      details: row.name,
+    })
+    void exportClient(access.workspace.id, {
+      id: row.id,
+      name: row.name,
+      clientStatus: 'SUSPENDED',
+      defaultBillableRate: row.defaultBillableRate,
     })
   }
 }
@@ -186,7 +268,10 @@ export async function archiveClient(data: z.infer<typeof idSchema>) {
   assertOwnerOrAdmin(access)
 
   const [client] = await db
-    .select({ name: clients.name })
+    .select({
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
     .from(clients)
     .where(
       and(
@@ -221,6 +306,7 @@ export async function archiveClient(data: z.infer<typeof idSchema>) {
       id: data.id,
       name: client.name,
       clientStatus: 'INACTIVE',
+      defaultBillableRate: client.defaultBillableRate,
     })
   }
 }
@@ -230,7 +316,10 @@ export async function activateClient(data: z.infer<typeof idSchema>) {
   assertOwnerOrAdmin(access)
 
   const [client] = await db
-    .select({ name: clients.name })
+    .select({
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
     .from(clients)
     .where(
       and(
@@ -265,6 +354,55 @@ export async function activateClient(data: z.infer<typeof idSchema>) {
       id: data.id,
       name: client.name,
       clientStatus: 'ACTIVE',
+      defaultBillableRate: client.defaultBillableRate,
+    })
+  }
+}
+
+export async function suspendClient(data: z.infer<typeof idSchema>) {
+  const access = await requireWorkspaceAccess()
+  assertOwnerOrAdmin(access)
+
+  const [client] = await db
+    .select({
+      name: clients.name,
+      defaultBillableRate: clients.defaultBillableRate,
+    })
+    .from(clients)
+    .where(
+      and(
+        eq(clients.id, data.id),
+        eq(clients.workspaceId, access.workspace.id),
+      ),
+    )
+    .limit(1)
+
+  await db
+    .update(clients)
+    .set({ clientStatus: 'SUSPENDED' })
+    .where(
+      and(
+        eq(clients.id, data.id),
+        eq(clients.workspaceId, access.workspace.id),
+      ),
+    )
+
+  void createAuditLog({
+    workspaceId: access.workspace.id,
+    actorId: access.user.id,
+    actorEmail: access.user.email,
+    action: 'CLIENT_SUSPEND',
+    targetType: 'client',
+    targetId: data.id,
+    details: client?.name ?? null,
+  })
+
+  if (client) {
+    void exportClient(access.workspace.id, {
+      id: data.id,
+      name: client.name,
+      clientStatus: 'SUSPENDED',
+      defaultBillableRate: client.defaultBillableRate,
     })
   }
 }

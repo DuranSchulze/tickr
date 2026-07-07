@@ -167,13 +167,15 @@ export const updateProjectSchema = z.object({
 
 export const createClientSchema = z.object({
   name: z.string().trim().min(1).max(120),
-  clientStatus: z.enum(['ACTIVE', 'INACTIVE']).optional(),
+  clientStatus: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional(),
+  defaultBillableRate: z.number().finite().min(0).nullable().optional(),
 })
 
 export const updateClientSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1).max(120),
-  clientStatus: z.enum(['ACTIVE', 'INACTIVE']),
+  clientStatus: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']),
+  defaultBillableRate: z.number().finite().min(0).nullable(),
 })
 
 export const createTagSchema = z.object({

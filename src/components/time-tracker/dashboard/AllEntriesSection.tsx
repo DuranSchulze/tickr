@@ -16,6 +16,7 @@ type InlinePatch = Partial<
     | 'description'
     | 'billable'
     | 'projectId'
+    | 'taskId'
     | 'tagIds'
     | 'startedAt'
     | 'endedAt'

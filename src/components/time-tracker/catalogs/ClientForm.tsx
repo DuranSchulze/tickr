@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
 import { createClientFn } from '#/lib/server/tracker'
+import type { ClientStatus } from '#/db/schema'
 import {
   BulkNamesInput,
   FormTitle,
@@ -15,16 +16,18 @@ import { parseBulkNames, runBulk } from './catalog-form.utils'
 type ClientFormState = {
   mode: 'single' | 'bulk'
   name: string
+  defaultBillableRate: string
   bulkNames: string
-  active: boolean
+  status: ClientStatus
   pending: boolean
 }
 
 const initialClientFormState: ClientFormState = {
   mode: 'single',
   name: '',
+  defaultBillableRate: '',
   bulkNames: '',
-  active: true,
+  status: 'ACTIVE',
   pending: false,
 }
 
@@ -35,24 +38,44 @@ function clientFormReducer(
   return { ...state, ...action }
 }
 
-export function ClientForm({ onSuccess }: { onSuccess?: () => void }) {
+export function ClientForm({
+  currency,
+  onSuccess,
+}: {
+  currency: string
+  onSuccess?: () => void
+}) {
   const router = useRouter()
   const [state, dispatch] = useReducer(
     clientFormReducer,
     initialClientFormState,
   )
-  const { mode, name, bulkNames, active, pending } = state
+  const { mode, name, defaultBillableRate, bulkNames, status, pending } = state
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    const rateInput = defaultBillableRate.trim()
+    const parsedRate = rateInput === '' ? null : Number(rateInput)
+    if (
+      parsedRate != null &&
+      (!Number.isFinite(parsedRate) || parsedRate < 0)
+    ) {
+      gooeyToast.error('Enter a valid default billable rate')
+      return
+    }
     dispatch({ pending: true })
     try {
-      const status = active ? 'ACTIVE' : 'INACTIVE'
       if (mode === 'single') {
-        await createClientFn({ data: { name, clientStatus: status } })
+        await createClientFn({
+          data: {
+            name,
+            clientStatus: status,
+            defaultBillableRate: parsedRate,
+          },
+        })
         await router.invalidate()
         gooeyToast.success('Client created')
-        dispatch({ name: '', active: true })
+        dispatch({ name: '', defaultBillableRate: '', status: 'ACTIVE' })
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -81,27 +104,48 @@ export function ClientForm({ onSuccess }: { onSuccess?: () => void }) {
       />
       <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
       {mode === 'single' ? (
-        <input
-          value={name}
-          onChange={(event) => dispatch({ name: event.target.value })}
-          placeholder="Client name"
-          aria-label="Client name"
-          required
-          className={inputClass}
-        />
+        <>
+          <input
+            value={name}
+            onChange={(event) => dispatch({ name: event.target.value })}
+            placeholder="Client name"
+            aria-label="Client name"
+            required
+            className={inputClass}
+          />
+          <input
+            value={defaultBillableRate}
+            onChange={(event) =>
+              dispatch({ defaultBillableRate: event.target.value })
+            }
+            placeholder={`Default billable rate (${currency})`}
+            aria-label="Default billable rate"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            type="number"
+            className={inputClass}
+          />
+        </>
       ) : (
         <BulkNamesInput
           value={bulkNames}
           onChange={(v) => dispatch({ bulkNames: v })}
         />
       )}
-      <label className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-        <input
-          type="checkbox"
-          checked={active}
-          onChange={(event) => dispatch({ active: event.target.checked })}
-        />
-        Active (visible in timer)
+      <label className="grid gap-1.5 text-sm font-semibold text-foreground">
+        Status
+        <select
+          value={status}
+          onChange={(event) =>
+            dispatch({ status: event.target.value as ClientStatus })
+          }
+          className={inputClass}
+        >
+          <option value="ACTIVE">Active</option>
+          <option value="SUSPENDED">Suspended</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
       </label>
       <SubmitButton
         pending={pending}

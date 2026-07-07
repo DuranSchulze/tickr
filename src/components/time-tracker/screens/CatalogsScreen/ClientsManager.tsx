@@ -1,10 +1,18 @@
 import { useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
-import { Building2, CheckCircle2, Plus, Trash2, X } from 'lucide-react'
+import {
+  Building2,
+  CheckCircle2,
+  PauseCircle,
+  Plus,
+  Trash2,
+  X,
+} from 'lucide-react'
 import {
   archiveClientFn,
   createClientFn,
+  suspendClientFn,
   updateClientFn,
 } from '#/lib/server/tracker'
 import type { Client, TrackerState } from '#/lib/time-tracker/types'
@@ -74,11 +82,31 @@ export function ClientsManager({
     }
   }
 
+  async function handleSuspend(id: string, clientName: string) {
+    dispatch({ busyId: id })
+    try {
+      await suspendClientFn({ data: { id } })
+      await router.invalidate()
+      gooeyToast.success(`"${clientName}" suspended`)
+    } catch (err) {
+      gooeyToast.error('Could not suspend client', {
+        description: err instanceof Error ? err.message : 'Please try again.',
+      })
+    } finally {
+      dispatch({ busyId: null })
+    }
+  }
+
   async function handleReactivate(client: Client) {
     dispatch({ busyId: client.id })
     try {
       await updateClientFn({
-        data: { id: client.id, name: client.name, clientStatus: 'ACTIVE' },
+        data: {
+          id: client.id,
+          name: client.name,
+          clientStatus: 'ACTIVE',
+          defaultBillableRate: client.defaultBillableRate,
+        },
       })
       await router.invalidate()
       gooeyToast.success(`"${client.name}" reactivated`)
@@ -125,14 +153,18 @@ export function ClientsManager({
             className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground">
-            <input
-              type="checkbox"
-              checked={status === 'ACTIVE'}
+            <span className="sr-only">Client status</span>
+            <select
+              value={status}
               onChange={(e) =>
-                dispatch({ status: e.target.checked ? 'ACTIVE' : 'INACTIVE' })
+                dispatch({ status: e.target.value as ClientStatus })
               }
-            />
-            Active
+              className="h-8 bg-transparent text-xs font-semibold outline-none"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
           </label>
           <button
             type="submit"
@@ -163,16 +195,52 @@ export function ClientsManager({
                   Inactive
                 </span>
               )}
+              {c.clientStatus === 'SUSPENDED' && (
+                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                  Suspended
+                </span>
+              )}
               {canManage && c.clientStatus === 'ACTIVE' && (
-                <IconBtn
-                  onClick={() => handleArchive(c.id, c.name)}
-                  title="Archive client"
-                  variant="danger"
-                >
-                  <Trash2
-                    className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
-                  />
-                </IconBtn>
+                <>
+                  <IconBtn
+                    onClick={() => handleSuspend(c.id, c.name)}
+                    title="Suspend client"
+                  >
+                    <PauseCircle
+                      className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    />
+                  </IconBtn>
+                  <IconBtn
+                    onClick={() => handleArchive(c.id, c.name)}
+                    title="Archive client"
+                    variant="danger"
+                  >
+                    <Trash2
+                      className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    />
+                  </IconBtn>
+                </>
+              )}
+              {canManage && c.clientStatus === 'SUSPENDED' && (
+                <>
+                  <IconBtn
+                    onClick={() => handleReactivate(c)}
+                    title="Reactivate client"
+                  >
+                    <CheckCircle2
+                      className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    />
+                  </IconBtn>
+                  <IconBtn
+                    onClick={() => handleArchive(c.id, c.name)}
+                    title="Archive client"
+                    variant="danger"
+                  >
+                    <Trash2
+                      className={`size-3 opacity-0 group-hover:opacity-100 ${busyId === c.id ? 'opacity-100' : ''}`}
+                    />
+                  </IconBtn>
+                </>
               )}
               {canManage && c.clientStatus === 'INACTIVE' && (
                 <IconBtn

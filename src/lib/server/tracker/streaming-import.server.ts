@@ -121,14 +121,14 @@ async function streamImportClients(
 
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: `${CATALOG_TAB_CLIENTS}!A2:C`,
+    range: `${CATALOG_TAB_CLIENTS}!A2:D`,
   })
   const rawValues = res.data.values ?? []
 
-  // Collect all IDs from the raw sheet data (col C, index 2) for Phase 2
+  // Collect all IDs from the raw sheet data (col D, index 3) for Phase 2
   const previousSheetIds = new Set<string>(
     rawValues.flatMap((r) => {
-      const id = r[2]?.trim()
+      const id = r[3]?.trim()
       return id ? [id] : []
     }),
   )
@@ -168,7 +168,7 @@ async function streamImportClients(
   const byIdMap = new Map(byIdRows.map((c) => [c.id, c]))
   const byNameMap = new Map(allRows.map((c) => [c.name.toLowerCase(), c]))
 
-  const warnings: string[] = []
+  const warnings: string[] = parsed.flatMap((client) => client.warnings)
   const resolvedIds = new Map<number, string>()
   const seenDbIds = new Set<string>()
   let current = 0
@@ -191,10 +191,17 @@ async function streamImportClients(
             workspaceId: workspace.id,
             name: c.name,
             clientStatus: c.clientStatus,
+            defaultBillableRate:
+              c.defaultBillableRate == null
+                ? null
+                : String(c.defaultBillableRate),
           })
           .onConflictDoUpdate({
             target: [clients.workspaceId, clients.name],
-            set: { clientStatus: sql`excluded.client_status` },
+            set: {
+              clientStatus: sql`excluded.client_status`,
+              defaultBillableRate: sql`excluded.default_billable_rate`,
+            },
           })
           .returning({ id: clients.id, name: clients.name })
         resolvedIds.set(c.sheetRow, created.id)
@@ -227,7 +234,11 @@ async function streamImportClients(
     if (c.id) {
       // Row has an ID — check if data matches DB exactly
       const fieldsMatch =
-        existing.name === c.name && existing.clientStatus === c.clientStatus
+        existing.name === c.name &&
+        existing.clientStatus === c.clientStatus &&
+        (existing.defaultBillableRate == null
+          ? null
+          : Number(existing.defaultBillableRate)) === c.defaultBillableRate
 
       if (fieldsMatch) {
         // Fully synced — no DB write needed
@@ -247,7 +258,14 @@ async function streamImportClients(
     try {
       await db
         .update(clients)
-        .set({ name: c.name, clientStatus: c.clientStatus })
+        .set({
+          name: c.name,
+          clientStatus: c.clientStatus,
+          defaultBillableRate:
+            c.defaultBillableRate == null
+              ? null
+              : String(c.defaultBillableRate),
+        })
         .where(eq(clients.id, existing.id))
       resolvedIds.set(c.sheetRow, existing.id)
       emit({
@@ -286,7 +304,7 @@ async function streamImportClients(
         requestBody: {
           valueInputOption: 'RAW',
           data: writebacks.map(({ row, id }) => ({
-            range: `${CATALOG_TAB_CLIENTS}!C${row}`,
+            range: `${CATALOG_TAB_CLIENTS}!D${row}`,
             values: [[id]],
           })),
         },
@@ -351,11 +369,12 @@ async function streamImportClients(
           const row = buildClientRow({
             name: warningName,
             clientStatus: 'ACTIVE',
+            defaultBillableRate: record.defaultBillableRate,
             id,
           })
           await sheets.spreadsheets.values.append({
             spreadsheetId: sheetId,
-            range: `${CATALOG_TAB_CLIENTS}!A:C`,
+            range: `${CATALOG_TAB_CLIENTS}!A:D`,
             valueInputOption: 'RAW',
             insertDataOption: 'INSERT_ROWS',
             requestBody: { values: [row] },
@@ -420,7 +439,7 @@ async function streamImportClients(
         const row = buildClientRow(record)
         await sheets.spreadsheets.values.append({
           spreadsheetId: sheetId,
-          range: `${CATALOG_TAB_CLIENTS}!A:C`,
+          range: `${CATALOG_TAB_CLIENTS}!A:D`,
           valueInputOption: 'RAW',
           insertDataOption: 'INSERT_ROWS',
           requestBody: { values: [row] },

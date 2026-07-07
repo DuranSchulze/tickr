@@ -38,8 +38,10 @@ export {
   updateClient,
   archiveClient,
   activateClient,
+  suspendClient,
   bulkArchiveClients,
   bulkActivateClients,
+  bulkSuspendClients,
 } from './tracker/catalogs/clients.server'
 export {
   createTag,

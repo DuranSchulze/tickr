@@ -11,16 +11,74 @@ export type ClippedWorkInterval = {
   seconds: number
 }
 
+export type WorkIntervalDaySlice = {
+  memberId: string
+  date: string
+  startedAt: Date
+  endedAt: Date
+  seconds: number
+}
+
 export type WorkTimeSummary = {
   totalSeconds: number
   actualSeconds: number
   overlapSeconds: number
 }
 
+const dateKeyFormatters = new Map<string, Intl.DateTimeFormat>()
+
 function toValidDate(value: Date | string | null): Date | null {
   if (!value) return null
   const date = value instanceof Date ? value : new Date(value)
   return Number.isNaN(date.getTime()) ? null : date
+}
+
+function getDateKeyFormatter(timeZone: string): Intl.DateTimeFormat {
+  const existing = dateKeyFormatters.get(timeZone)
+  if (existing) return existing
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  dateKeyFormatters.set(timeZone, formatter)
+  return formatter
+}
+
+function getDateKeyInTimeZone(value: Date, timeZone: string): string {
+  return getDateKeyFormatter(timeZone).format(value)
+}
+
+function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      timeZoneName: 'shortOffset',
+      hour: '2-digit',
+    }).formatToParts(date)
+    const value = parts.find((part) => part.type === 'timeZoneName')?.value
+    if (!value || value === 'GMT') return 0
+    const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
+    if (!match) return 0
+    const sign = match[1] === '-' ? -1 : 1
+    return sign * (Number(match[2]) * 60 + Number(match[3] || 0)) * 60_000
+  } catch {
+    return 0
+  }
+}
+
+function zonedDateKeyToUtc(dateKey: string, timeZone: string): Date {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const utcGuess = new Date(Date.UTC(year, month - 1, day))
+  return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, utcGuess))
+}
+
+function addDaysToDateKey(dateKey: string, days: number): string {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const next = new Date(Date.UTC(year, month - 1, day + days))
+  return next.toISOString().slice(0, 10)
 }
 
 export function clipWorkInterval(
@@ -42,6 +100,46 @@ export function clipWorkInterval(
     endedAt: new Date(clippedEndMs),
     seconds: Math.floor((clippedEndMs - clippedStartMs) / 1000),
   }
+}
+
+export function splitWorkIntervalByDay(
+  entry: WorkIntervalInput,
+  rangeStart: Date,
+  rangeEnd: Date,
+  timeZone: string,
+): WorkIntervalDaySlice[] {
+  const clipped = clipWorkInterval(entry, rangeStart, rangeEnd)
+  if (!clipped) return []
+
+  const slices: WorkIntervalDaySlice[] = []
+  const clipEndMs = clipped.endedAt.getTime()
+  let cursorMs = clipped.startedAt.getTime()
+
+  while (cursorMs < clipEndMs) {
+    const cursor = new Date(cursorMs)
+    const date = getDateKeyInTimeZone(cursor, timeZone)
+    const nextDate = addDaysToDateKey(date, 1)
+    const nextMidnightMs = zonedDateKeyToUtc(nextDate, timeZone).getTime()
+    const sliceEndMs =
+      nextMidnightMs > cursorMs
+        ? Math.min(nextMidnightMs, clipEndMs)
+        : clipEndMs
+    const seconds = Math.max(0, Math.floor((sliceEndMs - cursorMs) / 1000))
+
+    if (seconds > 0) {
+      slices.push({
+        memberId: clipped.memberId,
+        date,
+        startedAt: new Date(cursorMs),
+        endedAt: new Date(sliceEndMs),
+        seconds,
+      })
+    }
+
+    cursorMs = sliceEndMs
+  }
+
+  return slices
 }
 
 export function summarizeWorkIntervals(

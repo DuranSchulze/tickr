@@ -5,6 +5,7 @@ import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { Client, Project, TimeEntry, Tag } from '#/lib/time-tracker/types'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
+import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { BillableToggleButton } from './BillableToggleButton'
 import { DescriptionAutocomplete } from './DescriptionAutocomplete'
 import { RunningTimer } from './RunningTimer'
@@ -110,9 +111,13 @@ export function TimerPanel({
     if (updated >= new Date()) return
     onUpdateStartedAt(updated.toISOString())
   }
-  const activeClients = useMemo(
-    () => clients.filter((c) => c.clientStatus === 'ACTIVE'),
+  const selectableClients = useMemo(
+    () => clients.filter((c) => c.clientStatus !== 'INACTIVE'),
     [clients],
+  )
+  const selectedClient = useMemo(
+    () => clients.find((c) => c.id === clientId),
+    [clients, clientId],
   )
   const activeProject = useMemo(
     () =>
@@ -167,7 +172,7 @@ export function TimerPanel({
           <div className="my-2.5 hidden w-px bg-border sm:block" />
           <div className="hidden min-w-0 flex-[1] sm:flex">
             <ClientProjectPicker
-              clients={activeClients}
+              clients={selectableClients}
               projects={projects}
               tasks={projectTasks}
               clientId={clientId}
@@ -251,6 +256,12 @@ export function TimerPanel({
           </button>
         </div>
       </div>
+
+      {selectedClient?.clientStatus === 'SUSPENDED' && (
+        <div className="hidden sm:block">
+          <SuspendedClientWarning clientName={selectedClient.name} />
+        </div>
+      )}
 
       <TimerMobileControls
         workspaceId={workspaceId}
@@ -400,7 +411,6 @@ export function TimerPanel({
           </div>
         </div>
       )}
-
     </div>
   )
 }

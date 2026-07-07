@@ -26,9 +26,9 @@ import {
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
-import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
+import { getWorkspaceDateRange } from './shared/dates'
 import {
-  clipWorkInterval,
+  splitWorkIntervalByDay,
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 import { resolveEntryRateMap } from './rates.server'
@@ -458,7 +458,7 @@ export async function getBulkReport(data: {
     }
 
     const effectiveRate = entryRateMap.get(e.id)?.effectiveRate ?? defaultRate
-    const clipped = clipWorkInterval(
+    const slices = splitWorkIntervalByDay(
       {
         memberId: e.memberId,
         startedAt: e.startedAt,
@@ -466,36 +466,38 @@ export async function getBulkReport(data: {
       },
       range.start,
       range.endExclusive,
+      timezone,
     )
-    if (!clipped) continue
-    const hours = clipped.seconds / 3600
-    const amount = e.billable ? hours * effectiveRate : null
+    for (const slice of slices) {
+      const hours = slice.seconds / 3600
+      const amount = e.billable ? hours * effectiveRate : null
 
-    group.entries.push({
-      id: e.id,
-      date: formatDateInTimeZone(clipped.startedAt, timezone),
-      startedAt: clipped.startedAt.toISOString(),
-      endedAt: clipped.endedAt.toISOString(),
-      projectName: e.projectName ?? null,
-      clientName: e.clientName ?? null,
-      taskName: e.taskName ?? null,
-      tagNames: tagsByEntry.get(e.id) ?? [],
-      description: e.description,
-      durationSeconds: clipped.seconds,
-      billable: e.billable,
-      effectiveRate,
-      billableAmount: amount,
-    })
+      group.entries.push({
+        id: e.id,
+        date: slice.date,
+        startedAt: slice.startedAt.toISOString(),
+        endedAt: slice.endedAt.toISOString(),
+        projectName: e.projectName ?? null,
+        clientName: e.clientName ?? null,
+        taskName: e.taskName ?? null,
+        tagNames: tagsByEntry.get(e.id) ?? [],
+        description: e.description,
+        durationSeconds: slice.seconds,
+        billable: e.billable,
+        effectiveRate,
+        billableAmount: amount,
+      })
 
-    group.subtotal.totalSeconds += clipped.seconds
-    group.subtotal.entryCount++
-    totalSeconds += clipped.seconds
-    if (e.billable) {
-      group.subtotal.billableSeconds += clipped.seconds
-      billableSeconds += clipped.seconds
-      if (amount) {
-        group.subtotal.billableAmount += amount
-        billableAmount += amount
+      group.subtotal.totalSeconds += slice.seconds
+      group.subtotal.entryCount++
+      totalSeconds += slice.seconds
+      if (e.billable) {
+        group.subtotal.billableSeconds += slice.seconds
+        billableSeconds += slice.seconds
+        if (amount) {
+          group.subtotal.billableAmount += amount
+          billableAmount += amount
+        }
       }
     }
   }

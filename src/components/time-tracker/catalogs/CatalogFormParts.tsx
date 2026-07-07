@@ -74,7 +74,11 @@ export function ClientSelect({
             }`}
           >
             {c.name}
-            {c.clientStatus === 'INACTIVE' ? (
+            {c.clientStatus === 'SUSPENDED' ? (
+              <span className="ml-1 rounded bg-amber-500/10 px-1 text-xs font-medium text-amber-700">
+                suspended
+              </span>
+            ) : c.clientStatus === 'INACTIVE' ? (
               <span className="ml-1 text-xs text-muted-foreground">
                 (inactive)
               </span>
@@ -87,6 +91,15 @@ export function ClientSelect({
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+export function SuspendedClientWarning({ clientName }: { clientName: string }) {
+  return (
+    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
+      <span className="font-semibold">{clientName} is suspended.</span> Time
+      entries will still be saved, but this client may be on hold.
     </div>
   )
 }

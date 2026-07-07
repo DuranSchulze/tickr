@@ -33,6 +33,7 @@ import {
 } from '#/lib/server/tracker'
 import { gooeyToast } from '#/lib/toast'
 import {
+  computeBillableRate,
   computeEffectiveRate,
   formatCurrency,
 } from '#/lib/time-tracker/billing'
@@ -42,6 +43,7 @@ import type { TrackerState } from '#/lib/time-tracker/types'
 import type { MemberStat } from './MembersTable'
 import { MemberAnalyticsRow } from './MemberAnalyticsRow'
 import { useMemberRow } from './useMemberRow'
+import { SuspendedClientWarning } from './catalogs/CatalogFormParts'
 
 type Member = TrackerState['members'][number]
 
@@ -126,10 +128,15 @@ function MemberRateDialog({
   const clientRateInvalid =
     parsedClientRate !== null &&
     (!Number.isFinite(parsedClientRate) || parsedClientRate < 0)
-  const previewRate = computeEffectiveRate(
-    parsedClientRate,
-    state.workspace.defaultBillableRate,
-  )
+  const selectedClientDefaultRate =
+    clientById.get(clientId)?.defaultBillableRate ?? null
+  const selectedClient = clientById.get(clientId)
+  const previewRate = computeBillableRate({
+    memberClientRate: parsedClientRate,
+    clientDefaultRate: selectedClientDefaultRate,
+    memberRate: member.billableRate,
+    workspaceDefaultRate: state.workspace.defaultBillableRate,
+  })
 
   useEffect(() => {
     if (!open) return
@@ -284,6 +291,9 @@ function MemberRateDialog({
                   contentClassName="z-[60]"
                 />
               </label>
+              {selectedClient?.clientStatus === 'SUSPENDED' && (
+                <SuspendedClientWarning clientName={selectedClient.name} />
+              )}
               <label className="space-y-1.5 text-xs font-semibold text-foreground">
                 <span>Client hourly rate</span>
                 <Input

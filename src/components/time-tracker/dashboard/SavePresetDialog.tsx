@@ -18,6 +18,7 @@ import type { Client, Project } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
+import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 
 type SavePresetDialogProps = {
   open: boolean
@@ -127,6 +128,7 @@ export function SavePresetDialog({
 
   const canSave =
     draft.name.trim().length > 0 && draft.clientId && draft.projectId
+  const selectedClient = clients.find((client) => client.id === draft.clientId)
 
   async function handleSave() {
     if (!canSave) return
@@ -191,7 +193,7 @@ export function SavePresetDialog({
           <div className="grid gap-1.5">
             <Label>Client / Project</Label>
             <ClientProjectPicker
-              clients={clients.filter((c) => c.clientStatus === 'ACTIVE')}
+              clients={clients.filter((c) => c.clientStatus !== 'INACTIVE')}
               projects={projects}
               tasks={projectTasks}
               clientId={draft.clientId}
@@ -206,6 +208,9 @@ export function SavePresetDialog({
                 })
               }}
             />
+            {selectedClient?.clientStatus === 'SUSPENDED' && (
+              <SuspendedClientWarning clientName={selectedClient.name} />
+            )}
           </div>
 
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">

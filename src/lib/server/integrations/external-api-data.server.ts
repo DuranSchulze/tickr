@@ -130,6 +130,8 @@ export async function listExternalClients(
     id: row.id,
     name: row.name,
     status: row.clientStatus,
+    defaultBillableRate:
+      row.defaultBillableRate == null ? null : Number(row.defaultBillableRate),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   }))
