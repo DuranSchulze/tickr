@@ -10,6 +10,8 @@ import { checkAndSendSuspiciousLoginAlert } from '#/lib/server/auth-security.ser
 import { getTrustedOrigins } from '#/lib/server/trusted-origins.server'
 
 const RESET_PASSWORD_EXPIRES_IN_SECONDS = 60 * 15
+const REMEMBERED_SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30
+const REMEMBERED_SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
@@ -35,6 +37,10 @@ export const auth = betterAuth({
       })
       await sendEmail({ to: user.email, subject, html, text })
     },
+  },
+  session: {
+    expiresIn: REMEMBERED_SESSION_EXPIRES_IN_SECONDS,
+    updateAge: REMEMBERED_SESSION_UPDATE_AGE_SECONDS,
   },
   advanced: {
     database: {

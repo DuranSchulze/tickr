@@ -500,7 +500,11 @@ function SignInForm({
         </TabButton>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-6 grid gap-4">
+      <form
+        onSubmit={onSubmit}
+        className="mt-6 grid gap-4"
+        autoComplete="on"
+      >
         {isSignup && (
           <div className="grid gap-2">
             <label
@@ -511,9 +515,11 @@ function SignInForm({
             </label>
             <input
               id="auth-name"
+              name="name"
               value={name}
               onChange={(e) => onNameChange(e.target.value)}
               onBlur={onNameBlur}
+              autoComplete="name"
               aria-describedby={nameError ? 'name-error' : undefined}
               aria-invalid={!!nameError}
               className={cn(
@@ -541,11 +547,12 @@ function SignInForm({
           </label>
           <input
             id="auth-email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
             onBlur={isSignup ? onEmailBlur : undefined}
-            autoComplete="email"
+            autoComplete={isSignup ? 'email' : 'username'}
             aria-describedby={emailError ? 'email-error' : undefined}
             aria-invalid={!!emailError}
             className={cn(
@@ -582,6 +589,7 @@ function SignInForm({
           </div>
           <PasswordInput
             id="auth-password"
+            name={isSignup ? 'new-password' : 'password'}
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
             autoComplete={isSignup ? 'new-password' : 'current-password'}
@@ -593,6 +601,8 @@ function SignInForm({
         {!isSignup && (
           <label className="flex items-center gap-2 text-sm text-foreground/90 select-none">
             <input
+              id="auth-remember-me"
+              name="remember"
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => onRememberMeChange(e.target.checked)}
@@ -612,6 +622,7 @@ function SignInForm({
             </label>
             <PasswordInput
               id="auth-confirm-password"
+              name="confirm-password"
               value={confirmPassword}
               onChange={(event) => onConfirmPasswordChange(event.target.value)}
               onBlur={onConfirmPasswordBlur}
