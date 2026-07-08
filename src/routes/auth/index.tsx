@@ -500,11 +500,7 @@ function SignInForm({
         </TabButton>
       </div>
 
-      <form
-        onSubmit={onSubmit}
-        className="mt-6 grid gap-4"
-        autoComplete="on"
-      >
+      <form onSubmit={onSubmit} className="mt-6 grid gap-4" autoComplete="on">
         {isSignup && (
           <div className="grid gap-2">
             <label
@@ -595,6 +591,12 @@ function SignInForm({
             autoComplete={isSignup ? 'new-password' : 'current-password'}
             required
           />
+          {isSignup && (
+            <p className="text-xs text-muted-foreground">
+              Must be at least 8 characters with uppercase, lowercase, number,
+              and special character.
+            </p>
+          )}
           {isSignup && <PasswordStrengthChecklist password={password} />}
         </div>
 
