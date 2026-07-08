@@ -133,7 +133,7 @@ export function MemberExportDialog({
           handleOpenChange(nextOpen)
         }}
       >
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[52rem]">
+        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[68rem]">
           <DialogHeader>
             <DialogTitle>Export Time Report</DialogTitle>
             <DialogDescription>
@@ -151,14 +151,16 @@ export function MemberExportDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] md:items-start">
-            <ExportDateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              onChangeRange={setRange}
-            />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] lg:items-start">
+            <div className="min-w-0">
+              <ExportDateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                onChangeRange={setRange}
+              />
+            </div>
 
-            <div className="rounded-lg border border-border bg-background p-3">
+            <div className="min-w-0 rounded-lg border border-border bg-background p-3">
               <ExportSortControls
                 sortBy={sortBy}
                 sortOrder={sortOrder}
