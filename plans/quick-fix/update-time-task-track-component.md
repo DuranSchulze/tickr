@@ -1,10 +1,12 @@
 # Entry Task Table — Inline Time & Date Editing
 
+> **Status:** ✅ Done
+
 ## Status
 
-- [ ] Plan written and reviewed against current `EntryTimeCell` dialog implementation.
-- [ ] `EntryTimeCell` converted from Dialog-based to inline editing with Popover calendar.
-- [ ] Typecheck, lint, manual smoke test on dashboard entries table.
+- [x] Plan written and reviewed against current `EntryTimeCell` dialog implementation.
+- [x] `EntryTimeCell` converted from Dialog-based to inline editing with Popover calendar.
+- [x] Typecheck, lint, manual smoke test on dashboard entries table.
 
 ## 1. Goal
 
@@ -76,8 +78,8 @@ import {
 
 Also remove the unused `X` icon import (line 13) if it's only used in the dialog header. Keep it if used elsewhere in the file — check usages.
 
-- [ ] Replace Dialog imports with Popover imports.
-- [ ] Remove `X` from lucide-react imports if no longer used.
+- [x] Replace Dialog imports with Popover imports.
+- [x] Remove `X` from lucide-react imports if no longer used.
 
 ### 6.2 Replace `TimeEditorState.open` with `calendarOpen`
 
@@ -116,9 +118,9 @@ function getTimeEditorState(entry: TimeEntry): TimeEditorState {
 }
 ```
 
-- [ ] Rename `open` → `calendarOpen` in `TimeEditorState`.
-- [ ] Remove `open` parameter from `getTimeEditorState`.
-- [ ] Update `useState` initializer to `getTimeEditorState(entry)`.
+- [x] Rename `open` → `calendarOpen` in `TimeEditorState`.
+- [x] Remove `open` parameter from `getTimeEditorState`.
+- [x] Update `useState` initializer to `getTimeEditorState(entry)`.
 
 ### 6.3 Remove `openEditor` and Update `saveTimeChange`
 
@@ -166,10 +168,10 @@ function handleEndTimeChange(value: string) {
 }
 ```
 
-- [ ] Remove `openEditor` function.
-- [ ] Rewrite `saveTimeChange` → `commitTimeChange` (no dialog dependency, includes no-op guard).
-- [ ] Replace `updateTimeEditor` with individual `setStartTime`/`setEndTime` state hooks.
-- [ ] Extract `startTime` and `endTime` into their own `useState` hooks (decoupled from the `TimeEditorState` object).
+- [x] Remove `openEditor` function.
+- [x] Rewrite `saveTimeChange` → `commitTimeChange` (no dialog dependency, includes no-op guard).
+- [x] Replace `updateTimeEditor` with individual `setStartTime`/`setEndTime` state hooks.
+- [x] Extract `startTime` and `endTime` into their own `useState` hooks (decoupled from the `TimeEditorState` object).
 
 ### 6.4 Rewrite the JSX: Inline Time Inputs + Popover Calendar
 
@@ -370,10 +372,10 @@ function EntryTimeCell({
 > - Time inputs auto-save on blur. Calendar popover auto-saves on close (via `commitDateChange`).
 > - No-op guard in `commitTimeChange` prevents unnecessary `onUpdate` calls when nothing changed.
 
-- [ ] Add `useEffect` and `useRef` imports (already present at line 1).
-- [ ] Rewrite `EntryTimeCell` JSX as shown above.
-- [ ] Remove all old Dialog JSX (lines 217–345).
-- [ ] Remove old `openEditor`, `updateTimeEditor`, `saveTimeChange` functions.
+- [x] Add `useEffect` and `useRef` imports (already present at line 1).
+- [x] Rewrite `EntryTimeCell` JSX as shown above.
+- [x] Remove all old Dialog JSX (lines 217–345).
+- [x] Remove old `openEditor`, `updateTimeEditor`, `saveTimeChange` functions.
 
 ### 6.5 Update `EntryTimeCell` Call Site
 
@@ -393,8 +395,8 @@ function EntryTimeCell({
 
 The `key={entry.id}` is no longer needed since `useEffect` handles identity resets internally.
 
-- [ ] Add `disabled={actionsDisabled}` prop to `EntryTimeCell` usage.
-- [ ] Remove `key={entry.id}` from the call site.
+- [x] Add `disabled={actionsDisabled}` prop to `EntryTimeCell` usage.
+- [x] Remove `key={entry.id}` from the call site.
 
 ### 6.6 Clean Up Unused Code
 
@@ -408,24 +410,24 @@ After removing the dialog, the following are no longer needed and should be remo
 - `selectRangeDay` function (lines 169–181) — replaced by `handleCalendarSelect`.
 - `X` icon import (line 13) — if not used elsewhere in the file.
 
-- [ ] Remove unused types and functions.
-- [ ] Remove unused imports.
+- [x] Remove unused types and functions.
+- [x] Remove unused imports.
 
 ## 7. Validation
 
-- [ ] Run `pnpm typecheck` — zero errors.
-- [ ] Run `pnpm lint` — zero new warnings.
+- [x] Run `pnpm typecheck` — zero errors.
+- [x] Run `pnpm lint` — zero new warnings.
 
 **Manual smoke test:**
 
-- [ ] Navigate to the timer dashboard (`http://localhost:3000/app`).
-- [ ] Verify existing entries show start time and end time as inline `<input type="time">` fields.
-- [ ] Change the start time of an entry. Click away (blur). Verify the entry updates and the time is saved.
-- [ ] Change the end time. Blur. Verify save.
-- [ ] Click the calendar icon next to the time inputs. Verify a popover opens with a calendar.
-- [ ] Select a date range in the calendar. Close the popover. Verify the entry's dates update.
-- [ ] Verify running timers show the end time input as disabled with "now" placeholder.
-- [ ] Set end time before start time. Verify the inline "End must be after start" error appears.
-- [ ] Correct the error. Blur. Verify error disappears and entry saves correctly.
-- [ ] Test with a multi-day entry (overnight). Verify the date summary shows "Jul 6 → Jul 7".
-- [ ] Verify the `DraftTimeEditor` (new entry form at top) still works — it should be unaffected.
+- [x] Navigate to the timer dashboard (`http://localhost:3000/app`).
+- [x] Verify existing entries show start time and end time as inline `<input type="time">` fields.
+- [x] Change the start time of an entry. Click away (blur). Verify the entry updates and the time is saved.
+- [x] Change the end time. Blur. Verify save.
+- [x] Click the calendar icon next to the time inputs. Verify a popover opens with a calendar.
+- [x] Select a date range in the calendar. Close the popover. Verify the entry's dates update.
+- [x] Verify running timers show the end time input as disabled with "now" placeholder.
+- [x] Set end time before start time. Verify the inline "End must be after start" error appears.
+- [x] Correct the error. Blur. Verify error disappears and entry saves correctly.
+- [x] Test with a multi-day entry (overnight). Verify the date summary shows "Jul 6 → Jul 7".
+- [x] Verify the `DraftTimeEditor` (new entry form at top) still works — it should be unaffected.

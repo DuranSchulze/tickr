@@ -101,7 +101,9 @@ export function AppShell({
     performanceActive ||
     departmentAnalyticsActive ||
     activityActive
-  const calendarActive = pathname.startsWith('/app/calendar')
+  const calendarActive =
+    pathname.startsWith('/app/calendar') ||
+    pathname.startsWith('/app/department-member-calendar')
   const settingsActive =
     (pathname.startsWith('/app/workspace') &&
       !pathname.startsWith('/app/workspace/activity')) ||

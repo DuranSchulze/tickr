@@ -12,11 +12,15 @@ export function CalendarHeader({
   month,
   view,
   selectedDate,
+  eyebrow = 'Calendar',
+  description = 'Toggle month or week, click a day to review tasks, then open a task for full details.',
   onChangeCalendar,
 }: {
   month: string
   view: CalendarView
   selectedDate: string
+  eyebrow?: string
+  description?: string
   onChangeCalendar: (next: {
     month: string
     view?: CalendarView
@@ -55,14 +59,13 @@ export function CalendarHeader({
           <div className="min-w-0">
             <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
               <CalendarDays className="size-3.5" />
-              Calendar
+              {eyebrow}
             </div>
             <h1 className="m-0 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
               {title}
             </h1>
             <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Toggle month or week, click a day to review tasks, then open a
-              task for full details.
+              {description}
             </p>
           </div>
 

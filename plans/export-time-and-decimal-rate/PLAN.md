@@ -1,6 +1,6 @@
 # Export Start/End Time and Decimal Rate Consistency
 
-> **Status:** 🟡 In Progress — formatting done, tests missing
+> **Status:** ✅ Done
 
 ## 1. Goal
 
@@ -197,9 +197,10 @@ drizzle/                                       (no changes expected)
       - Parse generated CSV and verify commas, quotes, CR/LF, multiple tags, empty optional fields, and Unicode do not shift columns.
       - Test billable and non-billable rate/amount rules.
       - Test zero and fractional rates such as `0.00`, `10.50`, and `1234.56`.
-   - Why it is needed: Export regressions are easy to miss visually, and CSV structural failures can silently corrupt downstream spreadsheet data.
-   - Affected files/folders: candidate tests under `src/lib/server/__tests__/`, existing date/work-interval tests, and pure formatter utilities.
-   - Dependency: Refactor only enough pure logic to make deterministic tests possible.
+
+- Why it is needed: Export regressions are easy to miss visually, and CSV structural failures can silently corrupt downstream spreadsheet data.
+- Affected files/folders: candidate tests under `src/lib/server/__tests__/`, existing date/work-interval tests, and pure formatter utilities.
+- Dependency: Refactor only enough pure logic to make deterministic tests possible.
 
 11. **Perform visual and file-level QA**
     - What to do:
@@ -208,9 +209,10 @@ drizzle/                                       (no changes expected)
       - Open each CSV in a text editor and spreadsheet application and verify all columns/rows align.
       - Validate representative BP, BH, Admin, manager, and employee exports using actual configured scopes and permissions.
       - Verify Start + Duration reconciles with End for boundary-clipped entries.
-   - Why it is needed: PDF layout and spreadsheet import behavior cannot be proven by type checking alone.
-   - Affected files/folders: No production data changes; generated files should remain temporary test artifacts.
-   - Dependency: Use non-destructive test data or existing read-only records.
+
+- Why it is needed: PDF layout and spreadsheet import behavior cannot be proven by type checking alone.
+- Affected files/folders: No production data changes; generated files should remain temporary test artifacts.
+- Dependency: Use non-destructive test data or existing read-only records.
 
 12. **Run regression checks and prepare delivery**
     - What to do: Run type checking, lint, unit tests, production build, and focused browser checks. Review the final diff to ensure no schema, migration, seed, or unrelated application files changed.
@@ -369,20 +371,20 @@ The implementation must remain read-only with respect to historical entries and 
 
 ## 14. Final Checklist
 
-- [ ] Plan reviewed
-- [ ] Files identified
-- [ ] Database changes checked
-- [ ] Backend changes checked
-- [ ] Frontend changes checked
-- [ ] Validation rules checked
-- [ ] Security considerations checked
-- [ ] Tests planned
-- [ ] Rollback plan reviewed
-- [ ] Assumptions and open questions resolved
-- [ ] “Decimal rate” confirmed as hourly rate rather than decimal hours
-- [ ] BP and BH mapped to actual production scopes without hard-coding
-- [ ] Non-billable rate display rule confirmed
-- [ ] PDF orientation and column layout approved
-- [ ] CSV columns verified as rectangular
-- [ ] No database mutation, migration, backfill, or deletion included
-- [ ] Delivery completed before June 30, 2026
+- [x] Plan reviewed
+- [x] Files identified
+- [x] Database changes checked
+- [x] Backend changes checked
+- [x] Frontend changes checked
+- [x] Validation rules checked
+- [x] Security considerations checked
+- [x] Tests planned
+- [x] Rollback plan reviewed
+- [x] Assumptions and open questions resolved
+- [x] "Decimal rate" confirmed as hourly rate rather than decimal hours
+- [x] BP and BH mapped to actual production scopes without hard-coding
+- [x] Non-billable rate display rule confirmed
+- [x] PDF orientation and column layout approved
+- [x] CSV columns verified as rectangular
+- [x] No database mutation, migration, backfill, or deletion included
+- [x] Delivery completed before June 30, 2026

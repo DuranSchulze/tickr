@@ -1,11 +1,13 @@
 import { Plus } from 'lucide-react'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
-import type { Client, Project } from '#/lib/time-tracker/types'
+import type { Client, Project, Tag } from '#/lib/time-tracker/types'
 import { EntryDraftForm } from './EntryDraftForm'
 import { calculateManualSeconds } from './utils'
 import type { DraftEntry } from './utils'
+import { PresetDropdown } from './PresetDropdown'
 
 export function ManualEntryPanel({
+  workspaceId,
   draft,
   setDraft,
   clients,
@@ -17,10 +19,12 @@ export function ManualEntryPanel({
   onCreateTask,
   onDeleteTask,
   onCreateTag,
+  onApplyPreset,
   canManageCatalog = true,
   pending,
   onSubmit,
 }: {
+  workspaceId: string
   draft: DraftEntry
   setDraft: (draft: DraftEntry) => void
   clients: Client[]
@@ -36,6 +40,13 @@ export function ManualEntryPanel({
   onCreateTask: (projectId: string, name: string) => Promise<void>
   onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
+  onApplyPreset: (preset: {
+    clientId: string
+    projectId: string
+    taskId: string
+    tagIds: string[]
+    billable: boolean
+  }) => void
   canManageCatalog?: boolean
   pending: boolean
   onSubmit: () => void
@@ -59,8 +70,8 @@ export function ManualEntryPanel({
         onCreateTag={onCreateTag}
         canManageCatalog={canManageCatalog}
       />
-      {/* Row 5: Add entry button (full width) */}
-      <div className="pt-2">
+      {/* Row 5: Submit + Presets */}
+      <div className="flex items-center gap-2 pt-2">
         <button
           type="button"
           onClick={onSubmit}
@@ -71,11 +82,24 @@ export function ManualEntryPanel({
             !draft.projectId ||
             calculateManualSeconds(draft) <= 0
           }
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
         >
           <Plus className="size-4" />
           Add entry
         </button>
+        <PresetDropdown
+          workspaceId={workspaceId}
+          clientId={draft.clientId}
+          projectId={draft.projectId}
+          taskId={draft.taskId}
+          tagIds={draft.tagIds}
+          billable={draft.billable}
+          clients={clients}
+          projects={projects}
+          projectTasks={projectTasks}
+          tags={tags as Tag[]}
+          onApplyPreset={onApplyPreset}
+        />
       </div>
     </div>
   )

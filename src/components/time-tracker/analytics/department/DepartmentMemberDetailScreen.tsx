@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useReducer } from 'react'
 import type { SetStateAction } from 'react'
-import { ArrowLeft, PanelRightOpen, Timer } from 'lucide-react'
+import { ArrowLeft, CalendarDays, PanelRightOpen, Timer, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import type { DepartmentMemberDetail } from '#/lib/server/tracker/department-dashboard.server'
@@ -176,14 +176,21 @@ export function DepartmentMemberDetailScreen({
   state,
   canEditEntries,
   onBack,
+  onViewCalendar,
   onChangeRange,
+  onClearRange,
   onChangePage,
 }: {
   detail: DepartmentMemberDetail
   state: TrackerState
   canEditEntries: boolean
   onBack: () => void
-  onChangeRange: (startDate: string, endDate: string) => void
+  onViewCalendar: () => void
+  onChangeRange: (
+    startDate: string | undefined,
+    endDate: string | undefined,
+  ) => void
+  onClearRange: () => void
   onChangePage: (page: number) => void
 }) {
   const router = useRouter()
@@ -203,31 +210,28 @@ export function DepartmentMemberDetailScreen({
       }),
     [detail.timezone],
   )
-  const tableData = useMemo(
-    () => {
-      const entries: AnalyticsTimeEntryRow[] = []
-      let deletedVisibleCount = 0
+  const tableData = useMemo(() => {
+    const entries: AnalyticsTimeEntryRow[] = []
+    let deletedVisibleCount = 0
 
-      for (const entry of detail.entries) {
-        if (screenState.deletedEntryIds[entry.id]) {
-          deletedVisibleCount += 1
-          continue
-        }
-        entries.push(screenState.entryPatches[entry.id] ?? entry)
+    for (const entry of detail.entries) {
+      if (screenState.deletedEntryIds[entry.id]) {
+        deletedVisibleCount += 1
+        continue
       }
+      entries.push(screenState.entryPatches[entry.id] ?? entry)
+    }
 
-      return {
-        entries,
-        total: Math.max(0, detail.entriesTotal - deletedVisibleCount),
-      }
-    },
-    [
-      detail.entries,
-      detail.entriesTotal,
-      screenState.deletedEntryIds,
-      screenState.entryPatches,
-    ],
-  )
+    return {
+      entries,
+      total: Math.max(0, detail.entriesTotal - deletedVisibleCount),
+    }
+  }, [
+    detail.entries,
+    detail.entriesTotal,
+    screenState.deletedEntryIds,
+    screenState.entryPatches,
+  ])
 
   const deleteDescription =
     screenState.deleteTarget?.description.trim() ||
@@ -236,20 +240,17 @@ export function DepartmentMemberDetailScreen({
     'this task'
   const bulkDeleteCount = screenState.bulkDeleteTargets.length
 
-  const refreshAnalyticsData = useCallback(
-    async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: trackerKeys.departmentMemberDetails,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ['department-dashboard'],
-        }),
-      ])
-      await router.invalidate()
-    },
-    [queryClient, router],
-  )
+  const refreshAnalyticsData = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: trackerKeys.departmentMemberDetails,
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['department-dashboard'],
+      }),
+    ])
+    await router.invalidate()
+  }, [queryClient, router])
 
   function setEditingDraft(update: SetStateAction<DraftEntry>) {
     dispatch({ type: 'setEditingDraft', update })
@@ -381,10 +382,16 @@ export function DepartmentMemberDetailScreen({
       <MemberDetailHeader
         detail={detail}
         onBack={onBack}
-        onChangeRange={onChangeRange}
+        onViewCalendar={onViewCalendar}
       />
 
       <MemberSummaryCards summary={detail.summary} />
+
+      <MemberFilterBar
+        detail={detail}
+        onChangeRange={onChangeRange}
+        onClearRange={onClearRange}
+      />
 
       <div className="grid min-w-0 gap-3">
         <CurrentActivityPanel
@@ -464,14 +471,74 @@ export function DepartmentMemberDetailScreen({
   )
 }
 
+function MemberFilterBar({
+  detail,
+  onChangeRange,
+  onClearRange,
+}: {
+  detail: DepartmentMemberDetail
+  onChangeRange: (
+    startDate: string | undefined,
+    endDate: string | undefined,
+  ) => void
+  onClearRange: () => void
+}) {
+  const hasRange = detail.startDate && detail.endDate
+
+  function applyDefaultRange() {
+    const end = new Date()
+    const start = new Date(end)
+    start.setDate(end.getDate() - 29)
+    const toKey = (d: Date) => d.toISOString().slice(0, 10)
+    onChangeRange(toKey(start), toKey(end))
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {hasRange ? (
+        <>
+          <AnalyticsDateRange
+            range={{ startDate: detail.startDate!, endDate: detail.endDate! }}
+            onChangeRange={(range) =>
+              onChangeRange(range.startDate, range.endDate)
+            }
+          />
+          <button
+            type="button"
+            onClick={onClearRange}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <X className="size-3.5" />
+            Clear filter
+          </button>
+        </>
+      ) : (
+        <>
+          <span className="text-xs font-semibold text-muted-foreground">
+            Showing all records
+          </span>
+          <button
+            type="button"
+            onClick={applyDefaultRange}
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+          >
+            <CalendarDays className="size-3.5" />
+            Filter by date
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function MemberDetailHeader({
   detail,
   onBack,
-  onChangeRange,
+  onViewCalendar,
 }: {
   detail: DepartmentMemberDetail
   onBack: () => void
-  onChangeRange: (startDate: string, endDate: string) => void
+  onViewCalendar: () => void
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -500,19 +567,21 @@ function MemberDetailHeader({
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:items-end">
-        <AnalyticsDateRange
-          range={{ startDate: detail.startDate, endDate: detail.endDate }}
-          onChangeRange={(range) =>
-            onChangeRange(range.startDate, range.endDate)
-          }
-        />
+      <div className="flex flex-wrap items-center gap-2">
         <MemberExportButton
           memberId={detail.activity.member.id}
           memberName={detail.activity.member.name}
-          defaultStartDate={detail.startDate}
-          defaultEndDate={detail.endDate}
+          defaultStartDate={detail.startDate ?? undefined}
+          defaultEndDate={detail.endDate ?? undefined}
         />
+        <button
+          type="button"
+          onClick={onViewCalendar}
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+        >
+          <CalendarDays className="size-4" />
+          Calendar
+        </button>
       </div>
     </div>
   )

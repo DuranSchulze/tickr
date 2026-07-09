@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Play, Pencil } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
@@ -106,6 +106,26 @@ export function InputSection({
   const [mode, setMode] = useState<'timer' | 'manual'>('timer')
   const effectiveMode = activeEntry ? 'timer' : mode
 
+  const applyPresetToDraft = useCallback(
+    (preset: {
+      clientId: string
+      projectId: string
+      taskId: string
+      tagIds: string[]
+      billable: boolean
+    }) => {
+      setDraft({
+        ...draft,
+        clientId: preset.clientId,
+        projectId: preset.projectId,
+        taskId: preset.taskId || '',
+        tagIds: preset.tagIds,
+        billable: preset.billable,
+      })
+    },
+    [draft, setDraft],
+  )
+
   const modeToggle = (
     <div
       className="flex shrink-0 flex-row items-center justify-center gap-1 border-border/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
@@ -212,6 +232,7 @@ export function InputSection({
                 transition={{ duration: 0.18, ease: 'easeInOut' }}
               >
                 <ManualEntryPanel
+                  workspaceId={workspaceId}
                   draft={draft}
                   setDraft={setDraft}
                   clients={clients}
@@ -223,6 +244,7 @@ export function InputSection({
                   onCreateTask={onCreateTask}
                   onDeleteTask={onDeleteTask}
                   onCreateTag={onCreateTag}
+                  onApplyPreset={applyPresetToDraft}
                   canManageCatalog={canManageCatalog}
                   pending={pending}
                   onSubmit={onAddManual}

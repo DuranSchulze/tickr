@@ -1,9 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  getDefaultAnalyticsRange,
-  isDateKey,
-  parseDateKey,
-} from '#/components/time-tracker/analytics/analytics.utils'
+import { isDateKey } from '#/components/time-tracker/analytics/analytics.utils'
 import { DepartmentMemberDetailScreen } from '#/components/time-tracker/analytics/department/DepartmentMemberDetailScreen'
 import {
   getDepartmentMemberDetailFn,
@@ -18,25 +14,28 @@ type MemberDetailSearch = {
   page?: number
 }
 
+function getTodayKey() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function getRangeDayCount(startDate?: string | null, endDate?: string | null) {
+  if (!startDate || !endDate) return null
+  const start = new Date(`${startDate}T00:00:00.000Z`).getTime()
+  const end = new Date(`${endDate}T00:00:00.000Z`).getTime()
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return null
+  return Math.floor((end - start) / 86_400_000) + 1
+}
+
 function resolveQuery(search: MemberDetailSearch): {
-  startDate: string
-  endDate: string
+  startDate?: string
+  endDate?: string
   page?: number
 } {
-  if (isDateKey(search.startDate) && isDateKey(search.endDate)) {
-    const start = parseDateKey(search.startDate)
-    const end = parseDateKey(search.endDate)
-    if (start && end && start <= end) {
-      return {
-        startDate: search.startDate,
-        endDate: search.endDate,
-        page: search.page,
-      }
-    }
-  }
+  const hasDates = isDateKey(search.startDate) && isDateKey(search.endDate)
 
   return {
-    ...getDefaultAnalyticsRange(),
+    startDate: hasDates ? search.startDate : undefined,
+    endDate: hasDates ? search.endDate : undefined,
     page: search.page,
   }
 }
@@ -96,11 +95,30 @@ function DepartmentMemberDetailRoute() {
   const params = Route.useParams()
   const navigate = useNavigate()
 
-  function changeRange(startDate: string, endDate: string) {
+  function changeRange(
+    startDate: string | undefined,
+    endDate: string | undefined,
+  ) {
     void navigate({
       to: '/app/department-member-analytics/$memberId',
       params,
-      search: (prev) => ({ ...prev, startDate, endDate, page: undefined }),
+      search: (prev) => ({
+        ...prev,
+        startDate,
+        endDate,
+        page: undefined,
+      }),
+    })
+  }
+
+  function clearRange() {
+    void navigate({
+      to: '/app/department-member-analytics/$memberId',
+      params,
+      search: (prev) => {
+        const { startDate, endDate, ...rest } = prev as Record<string, unknown>
+        return { ...rest, page: undefined }
+      },
     })
   }
 
@@ -115,9 +133,26 @@ function DepartmentMemberDetailRoute() {
   function backToDepartment() {
     void navigate({
       to: '/app/department-analytics',
+      search:
+        detail.startDate && detail.endDate
+          ? {
+              startDate: detail.startDate,
+              endDate: detail.endDate,
+            }
+          : undefined,
+    })
+  }
+
+  function viewCalendar() {
+    const selectedDate = detail.startDate ?? getTodayKey()
+    const dayCount = getRangeDayCount(detail.startDate, detail.endDate)
+    void navigate({
+      to: '/app/department-member-calendar/$memberId',
+      params,
       search: {
-        startDate: detail.startDate,
-        endDate: detail.endDate,
+        month: selectedDate.slice(0, 7),
+        date: selectedDate,
+        view: dayCount !== null && dayCount <= 7 ? 'week' : 'month',
       },
     })
   }
@@ -131,7 +166,9 @@ function DepartmentMemberDetailRoute() {
         access.member.permissionLevel === 'ADMIN'
       }
       onBack={backToDepartment}
+      onViewCalendar={viewCalendar}
       onChangeRange={changeRange}
+      onClearRange={clearRange}
       onChangePage={changePage}
     />
   )

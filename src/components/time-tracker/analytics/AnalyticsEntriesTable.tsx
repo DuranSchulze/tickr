@@ -1,9 +1,52 @@
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Search, Trash2, X } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '#/components/ui/pagination'
 
 const pageSizeOptions = [25, 50, 100] as const
+
+/**
+ * Builds an array of page numbers and ellipsis markers for a pagination bar.
+ * Returns a compact representation like [1, '...', 4, 5, 6, '...', 10].
+ */
+function buildPageNumbers(
+  current: number,
+  total: number,
+): (number | 'ellipsis')[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  const pages: (number | 'ellipsis')[] = [1]
+
+  if (current > 3) {
+    pages.push('ellipsis')
+  }
+
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let p = start; p <= end; p++) {
+    pages.push(p)
+  }
+
+  if (current < total - 2) {
+    pages.push('ellipsis')
+  }
+
+  pages.push(total)
+
+  return pages
+}
 
 function getDisplaySeconds(entry: AnalyticsTimeEntryRow): number {
   if (!entry.endedAt) return entry.durationSeconds
@@ -69,15 +112,15 @@ function EntryMobileCard({
             />
           )}
           <div className="min-w-0 flex-1">
-          <p className="m-0 truncate text-sm font-semibold text-foreground">
-            {entry.description || 'Untitled'}
-          </p>
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-            {entry.memberName} · {entry.date}
-          </p>
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-            {formatTimeRange(entry, timezone)}
-          </p>
+            <p className="m-0 truncate text-sm font-semibold text-foreground">
+              {entry.description || 'Untitled'}
+            </p>
+            <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+              {entry.memberName} · {entry.date}
+            </p>
+            <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+              {formatTimeRange(entry, timezone)}
+            </p>
           </div>
         </div>
         <div className="shrink-0 text-right">
@@ -148,7 +191,10 @@ function EntryMobileCard({
 
 function EntriesTableHeader({
   entriesTotal,
+  filteredCount,
   pageSize,
+  searchQuery,
+  onSearchChange,
   selectedVisibleCount,
   selectedEntries,
   onBulkDeleteEntries,
@@ -156,7 +202,10 @@ function EntriesTableHeader({
   onPageSizeChange,
 }: {
   entriesTotal: number
+  filteredCount: number
   pageSize: number
+  searchQuery: string
+  onSearchChange: (query: string) => void
   selectedVisibleCount: number
   selectedEntries: AnalyticsTimeEntryRow[]
   onBulkDeleteEntries?: (entries: AnalyticsTimeEntryRow[]) => void
@@ -164,58 +213,85 @@ function EntriesTableHeader({
   onPageSizeChange?: (pageSize: number) => void
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h2 className="m-0 text-base font-bold text-foreground">
-          Time entries
-        </h2>
-        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-          {entriesTotal.toLocaleString()} entr
-          {entriesTotal === 1 ? 'y' : 'ies'} match your current filters
-        </p>
+    <div className="flex flex-col gap-3 border-b border-border px-4 py-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="m-0 text-base font-bold text-foreground">
+            Time entries
+          </h2>
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            {filteredCount !== entriesTotal
+              ? `${filteredCount.toLocaleString()} of ${entriesTotal.toLocaleString()} entries match`
+              : `${entriesTotal.toLocaleString()} entr${
+                  entriesTotal === 1 ? 'y' : 'ies'
+                }`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search…"
+              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-8 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 md:w-52"
+            />
+            {searchQuery.trim().length > 0 && (
+              <button
+                type="button"
+                onClick={() => onSearchChange('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+
+          {onPageSizeChange && (
+            <label className="flex w-fit items-center gap-2 text-xs font-semibold text-muted-foreground">
+              Rows
+              <select
+                value={pageSize}
+                onChange={(event) =>
+                  onPageSizeChange(Number(event.target.value))
+                }
+                className="h-8 rounded-md border border-border bg-background px-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {pageSizeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {onBulkDeleteEntries && selectedVisibleCount > 0 && (
-          <>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {selectedVisibleCount} selected
-            </span>
-            <button
-              type="button"
-              onClick={() => onBulkDeleteEntries(selectedEntries)}
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
-            >
-              <Trash2 className="size-3.5" />
-              Delete selected
-            </button>
-            <button
-              type="button"
-              onClick={onClearSelection}
-              className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
-            >
-              Clear
-            </button>
-          </>
-        )}
-
-        {onPageSizeChange && (
-          <label className="flex w-fit items-center gap-2 text-xs font-semibold text-muted-foreground">
-            Rows
-            <select
-              value={pageSize}
-              onChange={(event) => onPageSizeChange(Number(event.target.value))}
-              className="h-8 rounded-md border border-border bg-background px-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
-            >
-              {pageSizeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
+      {onBulkDeleteEntries && selectedVisibleCount > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold text-muted-foreground">
+            {selectedVisibleCount} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => onBulkDeleteEntries(selectedEntries)}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+          >
+            <Trash2 className="size-3.5" />
+            Delete selected
+          </button>
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+          >
+            Clear
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -478,10 +554,30 @@ export function AnalyticsEntriesTable({
   const hasActions = onEditEntry || onDeleteEntry
   const hasBulkDelete = !!onBulkDeleteEntries
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
-  const visibleIds = useMemo(() => entries.map((entry) => entry.id), [entries])
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Client-side search filtering across description, project, client, and tags
+  const filteredEntries = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    if (!q) return entries
+    return entries.filter(
+      (entry) =>
+        entry.description.toLowerCase().includes(q) ||
+        (entry.projectName?.toLowerCase().includes(q) ?? false) ||
+        (entry.clientName?.toLowerCase().includes(q) ?? false) ||
+        entry.tagNames.some((tag) => tag.toLowerCase().includes(q)),
+    )
+  }, [entries, searchQuery])
+
+  const filteredCount = filteredEntries.length
+
+  const visibleIds = useMemo(
+    () => filteredEntries.map((entry) => entry.id),
+    [filteredEntries],
+  )
   const selectedEntries = useMemo(
-    () => entries.filter((entry) => selectedIds.has(entry.id)),
-    [entries, selectedIds],
+    () => filteredEntries.filter((entry) => selectedIds.has(entry.id)),
+    [filteredEntries, selectedIds],
   )
   const selectedVisibleCount = selectedEntries.length
   const allVisibleSelected =
@@ -492,6 +588,11 @@ export function AnalyticsEntriesTable({
     entriesTotal,
     (page - 1) * pageSize + entries.length,
   )
+
+  function handleSearchChange(query: string) {
+    setSearchQuery(query)
+    setSelectedIds(new Set())
+  }
 
   function toggleEntrySelected(entry: AnalyticsTimeEntryRow) {
     setSelectedIds((current) => {
@@ -518,7 +619,10 @@ export function AnalyticsEntriesTable({
     <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
       <EntriesTableHeader
         entriesTotal={entriesTotal}
+        filteredCount={filteredCount}
         pageSize={pageSize}
+        searchQuery={searchQuery}
+        onSearchChange={handleSearchChange}
         selectedVisibleCount={selectedVisibleCount}
         selectedEntries={selectedEntries}
         onBulkDeleteEntries={onBulkDeleteEntries}
@@ -526,15 +630,17 @@ export function AnalyticsEntriesTable({
         onPageSizeChange={onPageSizeChange}
       />
 
-      {entries.length === 0 ? (
+      {filteredEntries.length === 0 ? (
         <div className="flex items-center justify-center px-4 py-12 text-sm text-muted-foreground">
-          No entries match your current filters
+          {searchQuery.trim()
+            ? `No entries match "${searchQuery.trim()}"`
+            : 'No entries match your current filters'}
         </div>
       ) : (
         <>
           {/* Mobile: stacked cards */}
           <div className="grid min-w-0 gap-3 p-3 lg:hidden">
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <EntryMobileCard
                 key={entry.id}
                 entry={entry}
@@ -551,7 +657,7 @@ export function AnalyticsEntriesTable({
           </div>
 
           <DesktopEntriesTable
-            entries={entries}
+            entries={filteredEntries}
             timezone={timezone}
             formatTime={formatTime}
             hasActions={!!hasActions}
@@ -570,26 +676,52 @@ export function AnalyticsEntriesTable({
         <div className="flex flex-col gap-3 border-t border-border px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
           <span className="text-xs text-muted-foreground">
             Showing {firstEntry.toLocaleString()}-{lastEntry.toLocaleString()}{' '}
-            of {entriesTotal.toLocaleString()} · Page {page} of {totalPages}
+            of {entriesTotal.toLocaleString()}
           </span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => onPageChange(page - 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              disabled={page >= totalPages}
-              onClick={() => onPageChange(page + 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
+          <Pagination className="w-auto">
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page > 1) onPageChange(page - 1)
+                  }}
+                  className={page <= 1 ? 'pointer-events-none opacity-40' : ''}
+                />
+              </PaginationItem>
+              {buildPageNumbers(page, totalPages).map((p, i) => (
+                <PaginationItem key={i}>
+                  {p === 'ellipsis' ? (
+                    <PaginationEllipsis />
+                  ) : (
+                    <PaginationLink
+                      href="#"
+                      isActive={p === page}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        onPageChange(p)
+                      }}
+                    >
+                      {p}
+                    </PaginationLink>
+                  )}
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (page < totalPages) onPageChange(page + 1)
+                  }}
+                  className={
+                    page >= totalPages ? 'pointer-events-none opacity-40' : ''
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
     </section>

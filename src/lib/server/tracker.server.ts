@@ -111,6 +111,7 @@ export {
 } from './tracker/analytics-overview.server'
 export {
   getCalendarEntries,
+  getDepartmentMemberCalendarEntries,
   type CalendarEntriesPayload,
   type CalendarEntry,
 } from './tracker/calendar.server'

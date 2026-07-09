@@ -303,7 +303,7 @@ export const EntryRow = memo(function EntryRow({
     () => clients.find((c) => c.id === entryProject?.clientId),
     [clients, entryProject?.clientId],
   )
-  const actionsDisabled = pending || !!isPending
+  const actionsDisabled = !!isPending || !!isDeleting
 
   // Single commit path (via blur). Enter/Escape blur the input rather than
   // committing directly, so we never fire two updates for one edit.

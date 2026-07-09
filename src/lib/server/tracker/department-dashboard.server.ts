@@ -27,6 +27,7 @@ import {
   or,
   sql,
 } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { computeEffectiveRate } from '#/lib/time-tracker/billing'
 import {
@@ -34,10 +35,7 @@ import {
   summarizeWorkIntervals,
 } from '#/lib/time-tracker/work-intervals'
 import type { AnalyticsTimeEntryRow } from './analytics.server'
-import {
-  formatDateInTimeZone,
-  getWorkspaceDateRange,
-} from './shared/dates'
+import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
 import { resolveEntryRateMap } from './rates.server'
 
 export type DepartmentMemberBreakdown = {
@@ -151,8 +149,8 @@ export type DepartmentMemberActivitySummary = {
 
 export type DepartmentMemberDetail = {
   activity: DepartmentMemberActivitySummary
-  startDate: string
-  endDate: string
+  startDate: string | null
+  endDate: string | null
   page: number
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
@@ -596,7 +594,9 @@ export async function getDepartmentDashboard(data: {
     projectPage * projectPageSize,
   )
   const topProjectIds = sortedProjectIds.slice(0, 10)
-  const projectIdsToLoad = [...new Set([...topProjectIds, ...paginatedProjectIds])]
+  const projectIdsToLoad = [
+    ...new Set([...topProjectIds, ...paginatedProjectIds]),
+  ]
   const tagIds = [...tagSeconds.keys()]
 
   const [projectRows, tagRows] = await Promise.all([
@@ -903,8 +903,8 @@ export async function getDepartmentMemberTodayActivity(data: {
 
 export async function getDepartmentMemberDetail(data: {
   memberId: string
-  startDate: string
-  endDate: string
+  startDate?: string
+  endDate?: string
   page?: number
 }): Promise<DepartmentMemberDetail> {
   const access = await requireWorkspaceAccess()
@@ -932,20 +932,56 @@ export async function getDepartmentMemberDetail(data: {
   if (!member) throw new Error('Member not found.')
 
   const timezone = access.workspace.timezone || 'UTC'
-  const range = getWorkspaceDateRange(data, timezone)
   const PAGE_SIZE = 50
   const page = Math.max(1, data.page ?? 1)
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
   const currency = access.workspace.billableCurrency ?? 'PHP'
   const memberRate = member.billableRate ? Number(member.billableRate) : null
-  const whereClause = and(
+
+  const hasDateRange = !!(data.startDate && data.endDate)
+
+  // When no date range is provided, use wide-open bounds so clipWorkInterval
+  // is effectively a no-op (entries are never clipped away).
+  let rangeStart: Date
+  let rangeEnd: Date
+  let startDate: string | null
+  let endDate: string | null
+
+  if (hasDateRange) {
+    const range = getWorkspaceDateRange(
+      { startDate: data.startDate!, endDate: data.endDate! },
+      timezone,
+    )
+    rangeStart = range.start
+    rangeEnd = range.endExclusive
+    startDate = range.startDate
+    endDate = range.endDate
+  } else {
+    // Wide-open range: include everything
+    rangeStart = new Date(0)
+    rangeEnd = new Date(8640000000000000)
+    startDate = null
+    endDate = null
+  }
+
+  // Build the WHERE clause with date filters only when a range is provided.
+  const conditions: SQL[] = [
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, member.id),
     isNotNull(timeEntries.endedAt),
-    lt(timeEntries.startedAt, range.endExclusive),
-    gt(timeEntries.endedAt, range.start),
-  )
+    gt(timeEntries.endedAt, timeEntries.startedAt),
+  ]
 
+  if (hasDateRange) {
+    conditions.push(
+      lt(timeEntries.startedAt, rangeEnd),
+      gt(timeEntries.endedAt, rangeStart),
+    )
+  }
+
+  const whereClause = and(...conditions)
+
+  // Summary cards must reflect the full result set, while rawRows stays paged.
   const [activity, rawRows, countResult, summaryRows] = await Promise.all([
     getDepartmentMemberTodayActivity({ memberId: member.id }),
     db
@@ -1016,8 +1052,8 @@ export async function getDepartmentMemberDetail(data: {
       startedAt: entry.startedAt,
       endedAt: entry.endedAt,
     })),
-    range.start,
-    range.endExclusive,
+    rangeStart,
+    rangeEnd,
   )
   const entryRateMap = await resolveEntryRateMap({
     workspaceId,
@@ -1033,8 +1069,8 @@ export async function getDepartmentMemberDetail(data: {
 
   return {
     activity,
-    startDate: range.startDate,
-    endDate: range.endDate,
+    startDate,
+    endDate,
     page,
     entriesTotal: countResult[0]?.c ?? 0,
     currency,
@@ -1047,8 +1083,8 @@ export async function getDepartmentMemberDetail(data: {
           startedAt: entry.startedAt,
           endedAt: entry.endedAt,
         },
-        range.start,
-        range.endExclusive,
+        rangeStart,
+        rangeEnd,
       )
       if (!clipped) return []
       const effectiveRate =

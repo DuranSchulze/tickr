@@ -1,14 +1,16 @@
 # Client Status — Suspended State & Selection Warning
 
+> **Status:** ✅ Done
+
 ## Status
 
-- [ ] Plan created and reviewed against current client catalog, timer, and entry code.
-- [ ] Database migration generated for `SUSPENDED` enum value.
-- [ ] Backend schemas, server functions, and pagination updated for three-state client status.
-- [ ] Catalog management UI updated: status badge, filter, edit/create forms, row actions.
-- [ ] Client selection components updated with suspended badge and warning banners.
-- [ ] Validation completed with typecheck, lint, and React Doctor diff scan.
-- [ ] Manual smoke test on client catalog `/app/catalogs?tab=clients`, timer dashboard, edit-entry drawer, and member rate dialog.
+- [x] Plan created and reviewed against current client catalog, timer, and entry code.
+- [x] Database migration generated for `SUSPENDED` enum value.
+- [x] Backend schemas, server functions, and pagination updated for three-state client status.
+- [x] Catalog management UI updated: status badge, filter, edit/create forms, row actions.
+- [x] Client selection components updated with suspended badge and warning banners.
+- [x] Validation completed with typecheck, lint, and React Doctor diff scan.
+- [x] Manual smoke test on client catalog `/app/catalogs?tab=clients`, timer dashboard, edit-entry drawer, and member rate dialog.
 
 ## 1. Goal
 
@@ -120,9 +122,9 @@ export type ClientStatus = (typeof clientStatusEnum.enumValues)[number]
 // Now resolves to: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 ```
 
-- [ ] Run `npx drizzle-kit generate` to create the migration.
-- [ ] Review the generated SQL to confirm it's `ALTER TYPE ... ADD VALUE`.
-- [ ] Run `npx drizzle-kit migrate` to apply.
+- [x] Run `npx drizzle-kit generate` to create the migration.
+- [x] Review the generated SQL to confirm it's `ALTER TYPE ... ADD VALUE`.
+- [x] Run `npx drizzle-kit migrate` to apply.
 
 ### 6.2 Backend: Zod Schemas
 
@@ -147,8 +149,8 @@ export const updateClientSchema = z.object({
 })
 ```
 
-- [ ] Update `createClientSchema.clientStatus` enum to include `'SUSPENDED'`.
-- [ ] Update `updateClientSchema.clientStatus` enum to include `'SUSPENDED'`.
+- [x] Update `createClientSchema.clientStatus` enum to include `'SUSPENDED'`.
+- [x] Update `updateClientSchema.clientStatus` enum to include `'SUSPENDED'`.
 
 ### 6.3 Backend: Server Functions
 
@@ -252,9 +254,9 @@ export async function unsuspendClient(data: z.infer<typeof idSchema>) {
 
 > **Note**: These functions reuse `idSchema` and follow the exact pattern of `archiveClient`/`activateClient`. The only difference is the target `clientStatus` value and the audit-log action strings.
 
-- [ ] Add `suspendClient` function following the `archiveClient` pattern, targeting `'SUSPENDED'`.
-- [ ] Add `unsuspendClient` function following the `activateClient` pattern, targeting `'ACTIVE'`.
-- [ ] Export both from `src/lib/server/tracker/index.ts` as server functions (`suspendClientFn`, `unsuspendClientFn`).
+- [x] Add `suspendClient` function following the `archiveClient` pattern, targeting `'SUSPENDED'`.
+- [x] Add `unsuspendClient` function following the `activateClient` pattern, targeting `'ACTIVE'`.
+- [x] Export both from `src/lib/server/tracker/index.ts` as server functions (`suspendClientFn`, `unsuspendClientFn`).
 
 ### 6.4 Frontend: Catalog Table — Status Column
 
@@ -285,9 +287,9 @@ col.accessor('clientStatus', {
 }),
 ```
 
-- [ ] Add `SUSPENDED` case with amber/orange dot color (`bg-amber-500`).
-- [ ] Add "Suspended" label for `SUSPENDED` status.
-- [ ] Keep existing ACTIVE (emerald) and INACTIVE (muted-foreground) styling.
+- [x] Add `SUSPENDED` case with amber/orange dot color (`bg-amber-500`).
+- [x] Add "Suspended" label for `SUSPENDED` status.
+- [x] Keep existing ACTIVE (emerald) and INACTIVE (muted-foreground) styling.
 
 ### 6.5 Frontend: Catalog Table — Status Filter
 
@@ -304,7 +306,7 @@ options: [
 ],
 ```
 
-- [ ] Add `{ value: 'SUSPENDED', label: 'Suspended' }` option between Active and Inactive.
+- [x] Add `{ value: 'SUSPENDED', label: 'Suspended' }` option between Active and Inactive.
 
 ### 6.6 Frontend: Catalog Table — Row Actions
 
@@ -365,9 +367,9 @@ Replace the binary ACTIVE/INACTIVE toggle with a three-state menu:
 
 > Requires importing `PauseCircle` from `lucide-react` and adding `onSuspend` to the `useClientColumns` props.
 
-- [ ] Add `onSuspend` prop to `useClientColumns` parameters.
-- [ ] Import `PauseCircle` from `lucide-react`.
-- [ ] Replace binary ACTIVE/INACTIVE menu with the three-state menu above.
+- [x] Add `onSuspend` prop to `useClientColumns` parameters.
+- [x] Import `PauseCircle` from `lucide-react`.
+- [x] Replace binary ACTIVE/INACTIVE menu with the three-state menu above.
 
 ### 6.7 Frontend: ClientsTablePage — Suspend Handlers
 
@@ -415,9 +417,9 @@ const handleUnsuspend = useCallback(
 )
 ```
 
-- [ ] Import `suspendClientFn` and `unsuspendClientFn` from `#/lib/server/tracker`.
-- [ ] Add `handleSuspend` and `handleUnsuspend` callbacks.
-- [ ] Pass `onSuspend: handleSuspend`, `onActivate: handleUnsuspend` to `useClientColumns`.
+- [x] Import `suspendClientFn` and `unsuspendClientFn` from `#/lib/server/tracker`.
+- [x] Add `handleSuspend` and `handleUnsuspend` callbacks.
+- [x] Pass `onSuspend: handleSuspend`, `onActivate: handleUnsuspend` to `useClientColumns`.
 
 ### 6.8 Frontend: EditClientForm — Three-Way Status Selector
 
@@ -451,10 +453,10 @@ Replace the checkbox (lines 82–90) with a select dropdown or styled radio grou
 </label>
 ```
 
-- [ ] Replace `const [active, setActive] = useState(...)` with `const [status, setStatus] = useState<ClientStatus>(...)`.
-- [ ] Update `handleSubmit` to use `clientStatus: status` directly.
-- [ ] Replace checkbox with a `<select>` dropdown containing all three options.
-- [ ] Import `ClientStatus` type from `#/db/schema`.
+- [x] Replace `const [active, setActive] = useState(...)` with `const [status, setStatus] = useState<ClientStatus>(...)`.
+- [x] Update `handleSubmit` to use `clientStatus: status` directly.
+- [x] Replace checkbox with a `<select>` dropdown containing all three options.
+- [x] Import `ClientStatus` type from `#/db/schema`.
 
 ### 6.9 Frontend: ClientForm (Create) — Status Selector
 
@@ -466,10 +468,10 @@ Replace the boolean `active` in state (line 20) with `status: ClientStatus` defa
 
 Replace the checkbox (lines 136–143) with the same select dropdown used in EditClientForm.
 
-- [ ] Replace `active: boolean` with `status: ClientStatus` in `ClientFormState`, defaulting to `'ACTIVE'`.
-- [ ] Update reducer and `handleSubmit` to use `status` directly.
-- [ ] Replace the "Active (visible in timer)" checkbox with the `<select>` dropdown.
-- [ ] Import `ClientStatus` type from `#/db/schema`.
+- [x] Replace `active: boolean` with `status: ClientStatus` in `ClientFormState`, defaulting to `'ACTIVE'`.
+- [x] Update reducer and `handleSubmit` to use `status` directly.
+- [x] Replace the "Active (visible in timer)" checkbox with the `<select>` dropdown.
+- [x] Import `ClientStatus` type from `#/db/schema`.
 
 ### 6.10 Frontend: Legacy ClientsManager Screen
 
@@ -481,8 +483,8 @@ Update the legacy catalog manager for consistency.
 - Add suspend/reactivate actions where INACTIVE badge currently controls row actions.
 - For `SUSPENDED` clients, show "Activate" and "Archive" actions (same options as INACTIVE).
 
-- [ ] Add amber "Suspended" badge for `clientStatus === 'SUSPENDED'`.
-- [ ] Ensure row actions handle three states correctly (SUSPENDED clients get Activate + Archive options, same pattern as INACTIVE).
+- [x] Add amber "Suspended" badge for `clientStatus === 'SUSPENDED'`.
+- [x] Ensure row actions handle three states correctly (SUSPENDED clients get Activate + Archive options, same pattern as INACTIVE).
 
 ### 6.11 Frontend: ClientSelect Component — Suspended Badge
 
@@ -502,7 +504,7 @@ Update the existing INACTIVE badge to also show a visually distinct suspended ba
 }
 ```
 
-- [ ] Add `SUSPENDED` case with amber-colored badge before the existing `INACTIVE` case.
+- [x] Add `SUSPENDED` case with amber-colored badge before the existing `INACTIVE` case.
 
 ### 6.12 Frontend: Entry Forms — Suspended Client Warning (Phase 2)
 
@@ -535,11 +537,11 @@ function SuspendedClientWarning({ clientName }: { clientName: string }) {
 
 > **Note**: These components currently filter clients with `.filter(c => c.clientStatus === 'ACTIVE')`, which means suspended clients are already excluded from the active picker dropdowns. The warning is only needed when a client that was active gets suspended while a user already has it selected (e.g., an entry references a now-suspended client, or a draft/timer was set up before suspension).
 
-- [ ] Create a shared `SuspendedClientWarning` component.
-- [ ] Add the warning in `EditEntryDrawer` below the client name display (already shows INACTIVE styling at line ~156).
-- [ ] Add the warning in `EntryDraftForm`, `EntryRow`, `TimerPanel`, `TimerMobileControls`, `SavePresetDialog`.
-- [ ] Add the warning in `MemberRateDialog` (MemberRow).
-- [ ] Update the INACTIVE strikethrough logic in `EditEntryDrawer` to also apply to `SUSPENDED` (or use amber styling instead of strikethrough for suspended).
+- [x] Create a shared `SuspendedClientWarning` component.
+- [x] Add the warning in `EditEntryDrawer` below the client name display (already shows INACTIVE styling at line ~156).
+- [x] Add the warning in `EntryDraftForm`, `EntryRow`, `TimerPanel`, `TimerMobileControls`, `SavePresetDialog`.
+- [x] Add the warning in `MemberRateDialog` (MemberRow).
+- [x] Update the INACTIVE strikethrough logic in `EditEntryDrawer` to also apply to `SUSPENDED` (or use amber styling instead of strikethrough for suspended).
 
 ### 6.13 Frontend: `catalog-utils.tsx` — Status Column Helper
 
@@ -547,7 +549,7 @@ function SuspendedClientWarning({ clientName }: { clientName: string }) {
 
 Update `createStatusColumn` to handle the three-state logic (mirroring the `ClientsTableParts` change in 6.4).
 
-- [ ] Add `SUSPENDED` case to `createStatusColumn` with amber dot and "Suspended" label.
+- [x] Add `SUSPENDED` case to `createStatusColumn` with amber dot and "Suspended" label.
 
 ### 6.14 Frontend: `ProjectsTablePage` — Client Pass-Through
 
@@ -555,26 +557,26 @@ Update `createStatusColumn` to handle the three-state logic (mirroring the `Clie
 
 The `clientsForForm` map currently forces `clientStatus: 'ACTIVE'`. This should be updated to pass through the actual status so the `ClientSelect` can show suspended badges.
 
-- [ ] Change `clientStatus: 'ACTIVE' as const` to `clientStatus: c.clientStatus`.
+- [x] Change `clientStatus: 'ACTIVE' as const` to `clientStatus: c.clientStatus`.
 
 ### 6.15 Export & Type Safety Pass
 
-- [ ] Run `pnpm typecheck` to catch any TypeScript errors from the new enum value.
-- [ ] Verify all `clientStatus === 'ACTIVE'` filters still behave correctly (they exclude `SUSPENDED` and `INACTIVE`).
-- [ ] Verify no `clientStatus !== 'ACTIVE'` logic accidentally treats SUSPENDED same as INACTIVE where it shouldn't.
+- [x] Run `pnpm typecheck` to catch any TypeScript errors from the new enum value.
+- [x] Verify all `clientStatus === 'ACTIVE'` filters still behave correctly (they exclude `SUSPENDED` and `INACTIVE`).
+- [x] Verify no `clientStatus !== 'ACTIVE'` logic accidentally treats SUSPENDED same as INACTIVE where it shouldn't.
 
 ## 7. Validation
 
-- [ ] Run `pnpm typecheck` — zero errors.
-- [ ] Run `pnpm lint` — zero new warnings.
-- [ ] Create a client in the catalog. Verify it defaults to ACTIVE.
-- [ ] Edit the client, change status to SUSPENDED. Verify amber dot appears in table.
-- [ ] Filter by "Suspended" status. Verify only suspended clients appear.
-- [ ] Suspend a client via row action. Verify toast confirms and status updates.
-- [ ] Unsuspend a client. Verify status returns to ACTIVE.
-- [ ] Navigate to timer dashboard. Verify suspended client does NOT appear in the active client picker.
-- [ ] Navigate to entries or edit drawer for a time entry that references a now-suspended client. Verify the warning banner appears.
-- [ ] Verify the legacy CatalogsScreen (`/app/catalogs?tab=...`) shows the suspended badge correctly.
+- [x] Run `pnpm typecheck` — zero errors.
+- [x] Run `pnpm lint` — zero new warnings.
+- [x] Create a client in the catalog. Verify it defaults to ACTIVE.
+- [x] Edit the client, change status to SUSPENDED. Verify amber dot appears in table.
+- [x] Filter by "Suspended" status. Verify only suspended clients appear.
+- [x] Suspend a client via row action. Verify toast confirms and status updates.
+- [x] Unsuspend a client. Verify status returns to ACTIVE.
+- [x] Navigate to timer dashboard. Verify suspended client does NOT appear in the active client picker.
+- [x] Navigate to entries or edit drawer for a time entry that references a now-suspended client. Verify the warning banner appears.
+- [x] Verify the legacy CatalogsScreen (`/app/catalogs?tab=...`) shows the suspended badge correctly.
 
 ## 8. Rollback Plan
 
@@ -587,4 +589,4 @@ UPDATE clients SET client_status = 'ACTIVE' WHERE client_status = 'SUSPENDED';
 
 > PostgreSQL does **not** support `ALTER TYPE ... DROP VALUE`. If full rollback is needed, a new migration would need to rename the old type, create a new one without `SUSPENDED`, and alter the column. This is unlikely to be necessary since no data loss occurs from adding an enum value.
 
-- [ ] Document rollback SQL in the migration file as a comment.
+- [x] Document rollback SQL in the migration file as a comment.

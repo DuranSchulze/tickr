@@ -8,11 +8,15 @@ export function CalendarScreen({
   calendar,
   view,
   selectedDate,
+  eyebrow,
+  description,
   onChangeCalendar,
 }: {
   calendar: CalendarEntriesPayload
   view: CalendarView
   selectedDate: string
+  eyebrow?: string
+  description?: string
   onChangeCalendar: (next: {
     month: string
     view?: CalendarView
@@ -27,6 +31,8 @@ export function CalendarScreen({
         month={calendar.month}
         view={view}
         selectedDate={selectedDate}
+        eyebrow={eyebrow}
+        description={description}
         onChangeCalendar={onChangeCalendar}
       />
       <CalendarGrid

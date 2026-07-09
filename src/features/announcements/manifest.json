@@ -1,6 +1,59 @@
 {
-  "appVersion": "1.11.0",
+  "appVersion": "1.12.0",
   "updates": [
+    {
+      "version": "1.12.0",
+      "publishedAt": "2026-07-09",
+      "title": "Member Analytics, Table Search, Page Numbers, Presets in Manual Entry & Export Consistency",
+      "body": "Department member analytics now shows all records by default with full pagination, search, and date filtering right on the table. The manual entry form got the Presets button it was missing. Exports are now consistent across every path with decimal rates and Rate/hr columns. Plus: client suspended status, inline time editing, and a member calendar from analytics.",
+      "features": [
+        {
+          "title": "All Records View for Member Analytics",
+          "description": "The department member analytics page no longer requires a date range — it shows all time entries for the selected member by default with pagination. A 'Filter by date' button lets you optionally narrow the view, and a Clear button resets back to all records.",
+          "image": null
+        },
+        {
+          "title": "Full Pagination with Page Numbers",
+          "description": "Analytics tables now show numbered page buttons with ellipsis for large datasets, Previous/Next navigation, and a 'Showing X–Y of Z' summary. No more guessing how many pages of entries exist behind bare arrow buttons.",
+          "image": null
+        },
+        {
+          "title": "Search Filter on Entries Table",
+          "description": "A search input sits right next to the table title — type a task description, project name, client name, or tag to instantly filter the visible entries. The count updates to show how many match, and clearing the search restores the full list.",
+          "image": null
+        },
+        {
+          "title": "Date Filter Bar Moved Near the Table",
+          "description": "Date range controls have moved from the page header into a filter bar just above the entries table, keeping filters close to the data they affect. The header is now cleaner with just the member name, Export, and Calendar buttons.",
+          "image": null
+        },
+        {
+          "title": "Presets Now Available in Manual Entry",
+          "description": "The manual time entry form now includes the same Presets button found on the timer. Save your common project + task + tag combinations and apply them with one click when adding entries manually — no more re-selecting everything from scratch.",
+          "image": null
+        },
+        {
+          "title": "Export Rate & Time Consistency",
+          "description": "All export paths — member, bulk, and analytics CSV/PDF — now use the same two-decimal rate format (e.g. 150.00), include Start and End times in the workspace timezone, and display a Rate/hr column in both PDF and CSV outputs. Duration is also available as decimal hours for spreadsheet calculations.",
+          "image": null
+        },
+        {
+          "title": "Client Suspended Status with Warning Badges",
+          "description": "Client status now supports three states: Active, Suspended, and Inactive. Suspended clients show an amber warning badge and remain selectable with a caution prompt — perfect for accounts on hold without fully archiving them.",
+          "image": null
+        },
+        {
+          "title": "Inline Time & Date Editing on Entry Table",
+          "description": "Editing an entry's start or end time no longer opens a dialog. Click the time cell, type the new value, and click away — it saves instantly. A calendar popover is available for date changes. The form validates that end is after start and shows inline errors.",
+          "image": null
+        },
+        {
+          "title": "Member Calendar from Analytics",
+          "description": "A Calendar button on the department member analytics page opens a calendar view scoped to that specific member. Managers and admins can review a team member's tracked tasks in month or week view, reusing the same calendar UI.",
+          "image": null
+        }
+      ]
+    },
     {
       "version": "1.11.0",
       "publishedAt": "2026-06-26",

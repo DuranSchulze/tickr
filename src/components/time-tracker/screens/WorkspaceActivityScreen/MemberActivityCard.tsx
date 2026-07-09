@@ -1,5 +1,6 @@
 import { Briefcase, Clock } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Link } from '@tanstack/react-router'
 import { useNowTick } from '#/components/time-tracker/dashboard/hooks/useNowTick'
 import { formatDuration } from '#/lib/time-tracker/store'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
@@ -59,7 +60,13 @@ export function MemberActivityCard({
 
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 transition-colors">
-      <div className="relative">
+      <Link
+        to="/app/workspace/members/$memberId"
+        params={{ memberId: member.memberId }}
+        className="group relative shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+        aria-label={`Open ${member.name}'s member details`}
+        title={`Open ${member.name}'s member details`}
+      >
         <MemberAvatar name={member.name} avatarUrl={member.avatarUrl} />
         <span
           aria-hidden="true"
@@ -67,13 +74,18 @@ export function MemberActivityCard({
             isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'
           }`}
         />
-      </div>
+      </Link>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-foreground">
+          <Link
+            to="/app/workspace/members/$memberId"
+            params={{ memberId: member.memberId }}
+            className="truncate text-sm font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            title={`Open ${member.name}'s member details`}
+          >
             {member.name}
-          </p>
+          </Link>
           <span
             aria-label={isOnline ? 'Online' : 'Offline'}
             className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${

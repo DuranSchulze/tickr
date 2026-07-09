@@ -1,9 +1,13 @@
 # Manual Editing Timer Format
 
+> **Status:** ✅ Done
+
 ## 1. Goal
+
 Update the manual time entry and edit time entry experiences so their form layout visually matches the existing timer bar format on the Time Tracker page, while preserving the current create, edit, offline queue, running timer update, catalog picker, validation, and responsive behaviors.
 
 ## 2. Context Summary
+
 The user concern says: "manual editing - pwede kaya na same lang sya ng format ng timer sa pag edit?" The likely meaning is that manual entry and edit entry should use the same compact format as the timer edit/start bar.
 
 Confirmed repository facts:
@@ -32,6 +36,7 @@ Missing information:
 - Whether mobile should match the timer mobile layout exactly or simply keep a consistent stacked mobile variant.
 
 ## 3. Scope
+
 - Redesign the manual entry form layout to visually align with `TimerPanel`.
 - Redesign the edit entry form layout to use the same compact draft layout where practical.
 - Preserve current shared draft state shape and server mutation contracts.
@@ -44,6 +49,7 @@ Missing information:
 - Update documentation if the Time Tracker page docs need a note about the shared manual/edit draft layout.
 
 ## 4. Out of Scope
+
 - No database schema changes.
 - No changes to time entry server functions, authorization, tenant access, audit logging, Google Sheets sync, or external API behavior.
 - No redesign of the entries table inline editing UI, except verifying it still works with shared components.
@@ -53,6 +59,7 @@ Missing information:
 - No broad visual redesign beyond the manual/edit form surfaces.
 
 ## 5. Affected Files and Folders
+
 ```txt
 src/
   components/
@@ -102,6 +109,7 @@ Important paths:
 - `drizzle/`: No changes expected; listed only to confirm database is unaffected.
 
 ## 6. Step-by-Step Implementation Plan
+
 1. Confirm product interpretation and desired exact surfaces.
    - What to do: Confirm whether the change applies to manual create, edit dialog, or both; decide whether notes stay visible, become collapsible, or remain stacked below the bar.
    - Why it is needed: The phrase "manual editing" could mean manual entry creation, existing entry editing, or both.
@@ -187,9 +195,11 @@ Important paths:
     - Dependencies or sequencing constraints: Do after final implementation choices are known.
 
 ## 7. Database Changes
+
 No database changes required.
 
 ## 8. Backend Changes
+
 No backend behavior changes are expected.
 
 The implementation should continue using existing server functions and mutation paths:
@@ -207,6 +217,7 @@ Backend files should be reviewed only to confirm contracts if needed:
 - `src/lib/server/tracker/shared/schemas.ts`
 
 ## 9. Frontend Changes
+
 Primary frontend work is in the Time Tracker dashboard.
 
 - `EntryDraftForm.tsx`: Convert the current stacked layout into a timer-format draft layout. Keep the same props where possible. Add a variant only if manual create and edit dialog require materially different density or action placement.
@@ -232,6 +243,7 @@ Loading and error states:
 - Existing offline manual entry behavior should remain intact.
 
 ## 10. Validation Rules
+
 - Description is required for manual entry creation and editing.
 - Client and project are required before creating a manual entry.
 - Tags should continue following current behavior, including `singleTagIds` for manual payloads unless product changes that separately.
@@ -244,6 +256,7 @@ Loading and error states:
 - Client, project, task, and tags must remain limited to the current workspace data already provided by dashboard state.
 
 ## 11. Security Considerations
+
 - No new authentication or authorization paths are introduced.
 - Tenant boundaries remain enforced by existing server tracker functions and workspace access checks.
 - Do not trust client-side validation alone; keep server validation unchanged.
@@ -254,6 +267,7 @@ Loading and error states:
 - No upload, file, secret, token, or rate-limit changes are involved.
 
 ## 12. Testing Plan
+
 - Happy paths:
   - Create a manual entry from desktop manual mode using the new timer-format layout.
   - Create a manual entry from mobile full-screen Time Tracker dialog.
@@ -290,6 +304,7 @@ Loading and error states:
   - `pnpm typecheck`, `pnpm lint`, and relevant `pnpm test` pass.
 
 ## 13. Rollback Plan
+
 - Revert changes to `EntryDraftForm.tsx`, `ManualEntryPanel.tsx`, `EditEntryDrawer.tsx`, and any small supporting component changes.
 - If documentation was updated, revert the corresponding `docs/time-tracker-page.md` changes.
 - No database rollback is required because no migrations or data changes are planned.
@@ -297,13 +312,14 @@ Loading and error states:
 - If the new compact layout causes UX issues after release, restore the previous stacked `EntryDraftForm` layout while keeping any harmless accessibility label improvements only if they are independently verified.
 
 ## 14. Final Checklist
-- [ ] Plan reviewed
-- [ ] Files identified
-- [ ] Database changes checked
-- [ ] Backend changes checked
-- [ ] Frontend changes checked
-- [ ] Validation rules checked
-- [ ] Security considerations checked
-- [ ] Tests planned
-- [ ] Rollback plan reviewed
-- [ ] Assumptions and open questions resolved
+
+- [x] Plan reviewed
+- [x] Files identified
+- [x] Database changes checked
+- [x] Backend changes checked
+- [x] Frontend changes checked
+- [x] Validation rules checked
+- [x] Security considerations checked
+- [x] Tests planned
+- [x] Rollback plan reviewed
+- [x] Assumptions and open questions resolved

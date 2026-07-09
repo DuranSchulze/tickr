@@ -93,7 +93,7 @@ export const EntryCard = memo(function EntryCard({
     () => tags.filter((t) => entry.tagIds.includes(t.id)),
     [tags, entry.tagIds],
   )
-  const actionsDisabled = pending || !!isPending
+  const actionsDisabled = !!isPending || !!isDeleting
 
   const start = new Date(entry.startedAt)
   const end = entry.endedAt ? new Date(entry.endedAt) : null
