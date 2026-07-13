@@ -46,6 +46,7 @@ import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
 import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
+import { FeedbackFloatingPanel } from './FeedbackForm'
 
 export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const router = useRouter()
@@ -725,6 +726,9 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Floating feedback form — accessible anywhere on the dashboard */}
+      <FeedbackFloatingPanel />
     </div>
   )
 }
