@@ -11,6 +11,9 @@ import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query
 import { getContext } from './integrations/tanstack-query/root-provider'
 import * as Sentry from '@sentry/react'
 import './sentry.client.config'
+import { installPreloadErrorRecovery } from '#/lib/preload-error-recovery'
+
+installPreloadErrorRecovery()
 
 // oxlint-disable-next-line react/only-export-components
 function DefaultNotFoundComponent() {
