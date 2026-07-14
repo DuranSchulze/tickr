@@ -29,7 +29,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/95">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
         <Link
           to="/"
@@ -50,7 +50,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
             <a
               key={link.href}
               href={link.href}
-              className="inline-flex min-h-10 items-center rounded-lg px-3.5 text-sm font-semibold text-muted-foreground no-underline transition-colors hover:bg-muted hover:text-foreground"
+              className="inline-flex min-h-10 items-center border-x border-transparent px-3.5 text-sm font-semibold text-muted-foreground no-underline transition-colors hover:border-border hover:bg-muted hover:text-foreground"
             >
               {link.label}
             </a>
@@ -58,7 +58,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle className="size-10" />
+          <ThemeToggle className="size-10 rounded-none" />
           {!isLoggedIn && (
             <Link
               to="/auth"
@@ -69,7 +69,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
           )}
           <Link
             to={isLoggedIn ? '/app/time-tracker' : '/auth'}
-            className={`hidden min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground no-underline shadow-sm transition-all sm:inline-flex ${pastHeroIntro ? 'shadow-lg shadow-primary/20' : ''}`}
+            className={`hidden min-h-10 items-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline transition-all sm:inline-flex ${pastHeroIntro ? 'shadow-[3px_3px_0_color-mix(in_oklab,var(--primary)_22%,transparent)]' : ''}`}
           >
             {isLoggedIn
               ? 'Dashboard'
@@ -86,7 +86,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
             onClick={() => setMenuOpen((open) => !open)}
-            className="flex size-10 items-center justify-center rounded-lg border border-border bg-card text-foreground lg:hidden"
+            className="flex size-10 items-center justify-center border border-border bg-card text-foreground lg:hidden"
           >
             {menuOpen ? (
               <X className="size-5" aria-hidden="true" />
@@ -109,7 +109,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="flex min-h-12 items-center rounded-lg px-3 text-sm font-bold text-foreground no-underline hover:bg-muted"
+                className="flex min-h-12 items-center border-b border-border px-3 text-sm font-bold text-foreground no-underline hover:bg-muted"
               >
                 {link.label}
               </a>
@@ -117,7 +117,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
             <Link
               to={isLoggedIn ? '/app/time-tracker' : '/auth'}
               onClick={() => setMenuOpen(false)}
-              className="mt-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground no-underline"
+              className="mt-2 inline-flex min-h-12 items-center justify-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline"
             >
               {isLoggedIn ? 'Open dashboard' : 'Create workspace'}{' '}
               <ArrowRight className="size-4" aria-hidden="true" />

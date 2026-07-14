@@ -9,12 +9,12 @@ export function CtaBand({ isLoggedIn }: { isLoggedIn: boolean }) {
       <CurvedLoop
         marqueeText="Your next clear workday • "
         speed={1.2}
-        curveAmount={380}
+        curveAmount={120}
         direction="left"
         interactive={true}
         height="clamp(18rem, 32vw, 31rem)"
-        className="py-3 sm:py-6"
-        textClassName="text-[3rem] sm:text-[4.5rem] lg:text-[6.5rem] font-black text-primary/10 dark:text-primary/15"
+        className="border-y border-border bg-muted/25 py-3 sm:py-6"
+        textClassName="text-[3rem] sm:text-[4.5rem] lg:text-[6.5rem] font-mono font-black uppercase tracking-tight text-primary/10 dark:text-primary/15"
       />
 
       {/* ── CTA ── */}
@@ -32,14 +32,14 @@ export function CtaBand({ isLoggedIn }: { isLoggedIn: boolean }) {
           <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
             <Link
               to={isLoggedIn ? '/app/time-tracker' : '/auth'}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-7 text-sm font-bold text-primary-foreground no-underline shadow-lg shadow-primary/20 transition-all hover:brightness-110 hover:shadow-xl"
+              className="inline-flex min-h-12 items-center justify-center gap-2 border border-primary bg-primary px-7 text-sm font-bold text-primary-foreground no-underline shadow-[4px_4px_0_color-mix(in_oklab,var(--primary)_22%,transparent)] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5"
             >
               {isLoggedIn ? 'Open your workspace' : 'Create your workspace'}
               <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
             <a
               href="#features"
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-card px-7 text-sm font-bold text-foreground no-underline transition-colors hover:bg-muted"
+              className="inline-flex min-h-12 items-center justify-center border border-border bg-card px-7 text-sm font-bold text-foreground no-underline transition-colors hover:border-primary/50 hover:bg-muted"
             >
               See what's inside
             </a>

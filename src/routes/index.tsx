@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { CtaBand } from '#/components/marketing/CtaBand'
 import { FaqSection } from '#/components/marketing/FaqSection'
 import { FeaturesSection } from '#/components/marketing/FeaturesSection'
@@ -12,6 +13,7 @@ import { TestimonialsSection } from '#/components/marketing/TestimonialsSection'
 import { WorkspacePreviewSection } from '#/components/marketing/WorkspacePreviewSection'
 import { BRAND } from '#/lib/brand'
 import { getSessionFn } from '#/lib/server/session'
+import { useInView } from '#/hooks/useInView'
 
 const title = `${BRAND.name} — Time tracking your team will actually use`
 const description =
@@ -54,27 +56,74 @@ function HomePage() {
   const isLoggedIn = !!session?.user
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="landing-page relative isolate min-h-screen overflow-clip bg-background text-foreground">
       <a
         href="#main-content"
-        className="fixed left-4 top-3 z-50 -translate-y-20 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-transform focus:translate-y-0"
+        className="fixed left-4 top-3 z-50 -translate-y-20 border border-primary bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-transform focus:translate-y-0"
       >
         Skip to content
       </a>
+      <div className="landing-scroll-progress" aria-hidden="true" />
+      <div className="landing-ambient-layer" aria-hidden="true">
+        <span className="landing-ambient-dot landing-ambient-dot-one" />
+        <span className="landing-ambient-dot landing-ambient-dot-two" />
+        <span className="landing-ambient-dot landing-ambient-dot-three" />
+      </div>
       <script type="application/ld+json">{softwareSchema}</script>
       <MarketingNavbar session={session} />
-        <main id="main-content">
+      <main id="main-content">
+        <div className="landing-hero-stage">
           <HeroSection isLoggedIn={isLoggedIn} />
+        </div>
+        <LandingReveal direction="up" className="landing-stats-stage">
           <StatsBanner />
+        </LandingReveal>
+        <LandingReveal direction="left">
           <WorkspacePreviewSection />
+        </LandingReveal>
+        <LandingReveal direction="right">
           <FeaturesSection />
+        </LandingReveal>
+        <LandingReveal direction="up">
           <HowItWorksSection />
+        </LandingReveal>
+        <LandingReveal direction="left">
           <TestimonialsSection />
+        </LandingReveal>
+        <LandingReveal direction="right">
           <PricingPreview isLoggedIn={isLoggedIn} />
+        </LandingReveal>
+        <LandingReveal direction="up">
           <FaqSection />
+        </LandingReveal>
+        <LandingReveal direction="up" className="landing-cta-stage">
           <CtaBand isLoggedIn={isLoggedIn} />
-        </main>
+        </LandingReveal>
+      </main>
       <Footer isLoggedIn={isLoggedIn} />
+    </div>
+  )
+}
+
+function LandingReveal({
+  children,
+  direction,
+  className = '',
+}: {
+  children: ReactNode
+  direction: 'up' | 'left' | 'right'
+  className?: string
+}) {
+  const { ref, inView } = useInView()
+
+  return (
+    <div
+      ref={ref}
+      data-visible={inView}
+      data-direction={direction}
+      className={`landing-reveal ${className}`}
+    >
+      {children}
     </div>
   )
 }

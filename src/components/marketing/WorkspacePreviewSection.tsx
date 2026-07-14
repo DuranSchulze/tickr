@@ -34,8 +34,8 @@ export function WorkspacePreviewSection() {
           </div>
         </div>
 
-        <div className="rounded-[1.75rem] border border-border bg-muted/35 p-4 sm:p-6">
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+        <div className="border border-border bg-muted/35 p-3 shadow-[8px_8px_0_color-mix(in_oklab,var(--foreground)_7%,transparent)] sm:p-5">
+          <div className="border border-border bg-card p-5 sm:p-7">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
@@ -45,7 +45,7 @@ export function WorkspacePreviewSection() {
                   Today at a glance
                 </h3>
               </div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex items-center gap-2 border border-border bg-background px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 <Activity
                   className="size-3.5 text-primary"
                   aria-hidden="true"
@@ -58,7 +58,7 @@ export function WorkspacePreviewSection() {
               <Metric value="14" label="Entries logged" />
               <Metric value="3" label="Teams active" />
             </div>
-            <div className="mt-4 rounded-2xl border border-border bg-background p-5">
+            <div className="mt-4 border border-border bg-background p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="font-bold text-foreground">Website launch</p>
@@ -66,12 +66,12 @@ export function WorkspacePreviewSection() {
                     Product team
                   </p>
                 </div>
-                <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                <span className="border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-primary">
                   On track
                 </span>
               </div>
-              <div className="mt-6 h-2 rounded-full bg-muted">
-                <div className="h-full w-[72%] rounded-full bg-primary" />
+              <div className="mt-6 h-2 border border-border bg-muted">
+                <div className="h-full w-[72%] bg-primary" />
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                 <span className="text-muted-foreground">
@@ -105,8 +105,8 @@ function ValueRow({
   body: string
 }) {
   return (
-    <div className="flex gap-4 rounded-2xl border border-border/70 bg-card p-4">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="flex gap-4 border border-border bg-card p-4 transition-colors hover:border-primary/40">
+      <span className="flex size-10 shrink-0 items-center justify-center border border-primary/25 bg-primary/10 text-primary">
         <Icon className="size-5" aria-hidden="true" />
       </span>
       <div>
@@ -119,7 +119,7 @@ function ValueRow({
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-xl bg-muted/60 p-4">
+    <div className="border border-border bg-muted/60 p-4">
       <p className="text-2xl font-black text-foreground">{value}</p>
       <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>

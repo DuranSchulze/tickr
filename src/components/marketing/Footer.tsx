@@ -5,7 +5,7 @@ import { BRAND } from '#/lib/brand'
 const productLinks = [
   { href: '#features', label: 'Features' },
   { href: '#how-it-works', label: 'How it works' },
-  { href: '#pricing', label: 'Pricing preview' },
+  { href: '#pricing', label: 'Pricing' },
   { href: '#faq', label: 'FAQ' },
 ]
 
@@ -74,7 +74,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
           <p>
             © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
           </p>
-          <p>Pricing, legal, and social links will be added when published.</p>
+          <p>Legal and social links will be added when published.</p>
         </div>
       </div>
     </footer>

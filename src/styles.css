@@ -21,6 +21,165 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Landing motion identity: corporate, calm, and purposeful. */
+.landing-page {
+  --landing-ease: cubic-bezier(0.2, 0, 0, 1);
+  --landing-quick: 140ms;
+  --landing-standard: 360ms;
+  --landing-slow: 620ms;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--border) 18%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 96px 100%;
+}
+
+.landing-page > header {
+  animation: landing-nav-enter 440ms var(--landing-ease) both;
+}
+
+.landing-hero-stage {
+  animation: landing-hero-enter 720ms var(--landing-ease) 80ms both;
+  transform-origin: 50% 20%;
+}
+
+.landing-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  pointer-events: none;
+  background: var(--primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@supports (animation-timeline: scroll()) {
+  .landing-scroll-progress {
+    animation: landing-scroll-progress linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+.landing-reveal {
+  opacity: 0;
+  transition:
+    opacity var(--landing-standard) var(--landing-ease),
+    transform var(--landing-slow) var(--landing-ease);
+  will-change: opacity, transform;
+}
+
+.landing-reveal[data-direction='up'] {
+  transform: translate3d(0, 24px, 0) scale(0.995);
+}
+
+.landing-reveal[data-direction='left'] {
+  transform: translate3d(-18px, 18px, 0) scale(0.995);
+}
+
+.landing-reveal[data-direction='right'] {
+  transform: translate3d(18px, 18px, 0) scale(0.995);
+}
+
+.landing-reveal[data-visible='true'] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: auto;
+}
+
+.landing-stats-stage {
+  transition-delay: 100ms;
+}
+
+.landing-ambient-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing-ambient-dot {
+  position: absolute;
+  display: block;
+  border: 1px solid color-mix(in oklab, var(--primary) 50%, transparent);
+  background: color-mix(in oklab, var(--primary) 16%, transparent);
+  opacity: 0.7;
+  animation: landing-ambient-drift 11s ease-in-out infinite alternate;
+}
+
+.landing-ambient-dot-one {
+  top: 18%;
+  right: 4%;
+  width: 14px;
+  height: 14px;
+}
+
+.landing-ambient-dot-two {
+  top: 46%;
+  left: 3%;
+  width: 10px;
+  height: 10px;
+  animation-duration: 14s;
+  animation-delay: -4s;
+}
+
+.landing-ambient-dot-three {
+  top: 72%;
+  right: 7%;
+  width: 18px;
+  height: 18px;
+  animation-duration: 16s;
+  animation-delay: -8s;
+}
+
+.landing-page :where(a, button) {
+  transition-duration: var(--landing-quick);
+  transition-timing-function: var(--landing-ease);
+}
+
+.landing-page :where(a, button):active {
+  transform: scale(0.98);
+}
+
+@keyframes landing-nav-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landing-hero-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes landing-scroll-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes landing-ambient-drift {
+  from {
+    transform: translate3d(-4px, -8px, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(8px, 10px, 0) scale(1.02);
+  }
+}
+
 .landing-grid {
   background-image:
     linear-gradient(
@@ -206,6 +365,17 @@ code {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .landing-reveal,
+  .landing-reveal[data-direction] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing-scroll-progress,
+  .landing-ambient-layer {
+    display: none;
   }
 }
 

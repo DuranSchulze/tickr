@@ -36,6 +36,7 @@ const CurvedLoop: FC<CurvedLoopProps> = ({
   const measureRef = useRef<SVGTextElement | null>(null)
   const textPathRef = useRef<SVGTextPathElement | null>(null)
   const [spacing, setSpacing] = useState(0)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const uid = useId()
   const pathId = `curve-${uid}`
   const pathD = `M-100,40 Q500,${40 + curveAmount} 1540,40`
@@ -53,24 +54,23 @@ const CurvedLoop: FC<CurvedLoopProps> = ({
     : text
   const ready = spacing > 0
 
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setPrefersReducedMotion(media.matches)
+    updatePreference()
+    media.addEventListener('change', updatePreference)
+    return () => media.removeEventListener('change', updatePreference)
+  }, [])
+
   // Measure text width to calculate spacing
   useEffect(() => {
     if (measureRef.current)
       setSpacing(measureRef.current.getComputedTextLength())
   }, [text, textClassName])
 
-  // Set initial startOffset once spacing is known
-  useEffect(() => {
-    if (!spacing) return
-    if (textPathRef.current) {
-      const initial = -spacing
-      textPathRef.current.setAttribute('startOffset', initial + 'px')
-    }
-  }, [spacing])
-
   // Animation loop
   useEffect(() => {
-    if (!spacing || !ready) return
+    if (!spacing || !ready || prefersReducedMotion) return
     let frame = 0
     const step = () => {
       if (!dragRef.current && textPathRef.current) {
@@ -88,7 +88,7 @@ const CurvedLoop: FC<CurvedLoopProps> = ({
     }
     frame = requestAnimationFrame(step)
     return () => cancelAnimationFrame(frame)
-  }, [spacing, speed, ready])
+  }, [spacing, speed, ready, prefersReducedMotion])
 
   const onPointerDown = (e: PointerEvent) => {
     if (!interactive) return

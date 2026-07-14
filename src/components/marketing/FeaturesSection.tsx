@@ -45,10 +45,10 @@ export function FeaturesSection() {
             return (
               <article
                 key={feature.title}
-                className="group rounded-2xl border border-border bg-card p-6 shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg"
+                className="group border border-border bg-card p-6 transition-[transform,box-shadow,border-color] duration-200 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[5px_5px_0_color-mix(in_oklab,var(--primary)_15%,transparent)]"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <span className="flex size-11 items-center justify-center border border-primary/25 bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                     <Icon className="size-5" aria-hidden="true" />
                   </span>
                   <span className="text-xs font-bold text-muted-foreground/60">

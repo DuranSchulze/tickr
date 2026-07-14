@@ -67,56 +67,34 @@ export const WORKFLOW_STEPS = [
   },
 ] as const
 
-export const PREVIEW_STORIES = [
-  {
-    quote:
-      'See delivery hours by client and project before the month-end billing rush.',
-    initials: 'OP',
-    role: 'Operations teams',
-    company: 'Agency workflow',
-  },
-  {
-    quote:
-      'Keep one reliable source of truth instead of reconciling multiple timers.',
-    initials: 'EN',
-    role: 'Engineering teams',
-    company: 'Product workflow',
-  },
-  {
-    quote:
-      'Give managers a clean pulse while teammates stay focused on today’s work.',
-    initials: 'CR',
-    role: 'Creative teams',
-    company: 'Studio workflow',
-  },
-] as const
-
 export const PLAN_PREVIEWS = [
   {
-    name: 'Starter',
-    tagline: 'For small teams building a reliable time habit.',
-    features: ['Core timer', 'Projects and tags', 'Day-to-month reports'],
+    name: 'Team',
+    price: 20,
+    tagline: 'Everything a growing team needs to track and report its work.',
+    features: [
+      'Live timers and manual time entries',
+      'Projects, clients, tasks, and tags',
+      'Daily, weekly, and monthly reports',
+      'Report exports',
+      'Team invitations',
+    ],
     featured: false,
   },
   {
-    name: 'Team',
-    tagline: 'For growing workspaces that need structure and oversight.',
-    features: [
-      'Everything in Starter',
-      'Departments and roles',
-      'Team analytics',
-    ],
-    featured: true,
-  },
-  {
-    name: 'Scale',
-    tagline: 'For larger operations with advanced reporting needs.',
+    name: 'Business',
+    price: 50,
+    tagline:
+      'More structure, oversight, and integrations for established teams.',
     features: [
       'Everything in Team',
-      'Workspace integrations',
-      'Priority support',
+      'Departments and cohorts',
+      'Role-based workspace access',
+      'Team and member analytics',
+      'Google Sheets integration',
+      'Audit logs and API access',
     ],
-    featured: false,
+    featured: true,
   },
 ] as const
 
@@ -147,8 +125,8 @@ export const FAQ_ITEMS = [
       'Yes. Reports can be exported for further analysis, billing workflows, or sharing, and workspaces can also connect to Google Sheets.',
   },
   {
-    question: 'Is pricing available yet?',
+    question: 'How much does Trackly cost?',
     answer:
-      'Plan packaging is still being finalized. You can create a workspace now; final pricing details will be published before paid subscriptions launch.',
+      'Trackly offers two monthly plans in USD: Team at $20 per month and Business at $50 per month. The Business plan adds workspace structure, advanced analytics, integrations, audit logs, and API access.',
   },
 ] as const

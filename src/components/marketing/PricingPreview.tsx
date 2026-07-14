@@ -10,31 +10,31 @@ export function PricingPreview({ isLoggedIn }: { isLoggedIn: boolean }) {
     >
       <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-24">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-primary">
-            Pricing preview
+          <span className="inline-flex border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+            Monthly plans
           </span>
           <h2 className="mt-5 text-balance font-heading text-4xl font-black tracking-[-0.04em] text-foreground sm:text-5xl">
-            Start simple. Scale when you need to.
+            Straightforward pricing for focused teams.
           </h2>
           <p className="mt-5 text-lg leading-8 text-muted-foreground">
-            Plan packaging is being finalized. Create your workspace now and
-            explore the product while pricing is prepared.
+            Choose the workspace tools your team needs today, with room to add
+            more structure when your operation grows.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 lg:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-5xl gap-5 lg:grid-cols-2">
           {PLAN_PREVIEWS.map((plan) => (
             <article
               key={plan.name}
-              className={`relative flex flex-col rounded-2xl border p-6 ${plan.featured ? 'border-primary bg-primary/[0.045] shadow-xl shadow-primary/10' : 'border-border bg-card shadow-sm'}`}
+              className={`relative flex flex-col border p-6 ${plan.featured ? 'border-primary bg-primary/[0.045] shadow-[7px_7px_0_color-mix(in_oklab,var(--primary)_18%,transparent)]' : 'border-border bg-card'}`}
             >
               {plan.featured ? (
-                <span className="absolute right-5 top-5 rounded-full bg-primary px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary-foreground">
-                  Most flexible
+                <span className="absolute right-0 top-0 border-b border-l border-primary bg-primary px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary-foreground">
+                  Most complete
                 </span>
               ) : null}
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                Coming soon
+                Monthly workspace plan
               </p>
               <h3 className="mt-3 text-2xl font-black tracking-tight text-foreground">
                 {plan.name}
@@ -42,8 +42,16 @@ export function PricingPreview({ isLoggedIn }: { isLoggedIn: boolean }) {
               <p className="mt-3 min-h-12 text-sm leading-6 text-muted-foreground">
                 {plan.tagline}
               </p>
-              <p className="mt-7 text-3xl font-black tracking-tight text-foreground">
-                Pricing TBA
+              <p
+                className="mt-7 flex items-end gap-2 text-foreground"
+                aria-label={`$${plan.price} per month`}
+              >
+                <span className="text-4xl font-black tracking-[-0.04em]">
+                  ${plan.price}
+                </span>
+                <span className="pb-1 text-sm font-semibold text-muted-foreground">
+                  / month
+                </span>
               </p>
               <ul className="mt-7 grid flex-1 gap-3 p-0 text-sm text-foreground">
                 {plan.features.map((feature) => (
@@ -58,14 +66,17 @@ export function PricingPreview({ isLoggedIn }: { isLoggedIn: boolean }) {
               </ul>
               <Link
                 to={isLoggedIn ? '/app/time-tracker' : '/auth'}
-                className={`mt-8 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold no-underline ${plan.featured ? 'bg-primary text-primary-foreground' : 'border border-border bg-background text-foreground hover:bg-muted'}`}
+                className={`mt-8 inline-flex min-h-11 items-center justify-center gap-2 border px-5 text-sm font-bold no-underline ${plan.featured ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-foreground hover:bg-muted'}`}
               >
-                {isLoggedIn ? 'Open workspace' : 'Create workspace'}{' '}
+                {isLoggedIn ? 'Open workspace' : `Choose ${plan.name}`}{' '}
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </article>
           ))}
         </div>
+        <p className="mx-auto mt-7 max-w-2xl text-center text-xs leading-5 text-muted-foreground">
+          Prices are shown in USD and billed monthly.
+        </p>
       </div>
     </section>
   )

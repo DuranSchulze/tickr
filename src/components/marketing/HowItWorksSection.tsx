@@ -32,10 +32,10 @@ export function HowItWorksSection() {
             return (
               <li
                 key={step.number}
-                className="relative rounded-2xl border border-border bg-card p-6 shadow-sm"
+                className="relative border border-border bg-card p-6"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <span className="relative z-10 flex size-16 items-center justify-center rounded-2xl border border-primary/20 bg-background text-primary shadow-sm">
+                  <span className="relative z-10 flex size-16 items-center justify-center border border-primary/30 bg-background text-primary shadow-[4px_4px_0_color-mix(in_oklab,var(--primary)_12%,transparent)]">
                     <Icon className="size-6" aria-hidden="true" />
                   </span>
                   <span className="font-mono text-sm font-bold text-primary">
