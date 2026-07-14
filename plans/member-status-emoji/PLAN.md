@@ -1,5 +1,15 @@
 # Member Status Emoji
 
+> **Status:** 📋 Planned
+
+## Status
+
+- [ ] Plan created, reviewed, and aligned with existing member and activity infrastructure.
+- [ ] Database migration generated: `statusEmoji` column on `workspaceMembers`.
+- [ ] Backend: Zod schema, update function, server function wrapper.
+- [ ] Frontend: Emoji selector component, Team Activity card integration.
+- [ ] Validation: typecheck, lint, manual smoke test on activity page.
+
 ## 1. Goal
 Add a database-backed member status emoji feature so each workspace member can select an emoji that represents their current mood, availability, or work state, and managers/admins can see that emoji on the Team Activity member cards. The feature should store the value on the member record rather than in local storage so it is visible across devices and to authorized teammates.
 

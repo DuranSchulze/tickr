@@ -1,5 +1,7 @@
 # Export Button Logic Unification
 
+> **Status:** ✅ Done
+
 ## Status
 
 - [x] Plan created and reviewed against current export code.

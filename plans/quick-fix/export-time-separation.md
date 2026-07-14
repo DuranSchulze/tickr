@@ -1,5 +1,7 @@
 # Export — Overnight Entry Day Separation
 
+> **Status:** 📋 Planned
+
 ## Status
 
 - [ ] Investigation complete — confirmed no day-splitting exists in any export path.

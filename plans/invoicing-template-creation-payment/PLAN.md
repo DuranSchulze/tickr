@@ -1,5 +1,7 @@
 # Invoicing — Template Creation, Invoice Generation & Payment Tracking
 
+> **Status:** 📋 Planned
+
 ## Status
 
 - [ ] Plan created and reviewed against existing billing infrastructure.
