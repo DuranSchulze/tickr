@@ -10,6 +10,7 @@ import {
   workspaces,
 } from '#/db/schema'
 import { deriveWorkspaceSubscriptionAccess } from '#/lib/subscriptions/access'
+import { buildXenditReturnUrls } from '#/lib/subscriptions/xendit-return-urls'
 import { assertTrustedOrigin } from './csrf.server'
 import { requireWorkspaceAccess } from './workspace-access.server'
 
@@ -162,15 +163,9 @@ function cleanName(value: string, fallback: string) {
   return cleaned.slice(0, 50) || fallback
 }
 
-function getPublicAppUrl() {
+function getAppUrl() {
   const configured = process.env.APP_URL || process.env.BETTER_AUTH_URL
-  const origin = configured || new URL(getRequest().url).origin
-  if (!origin.startsWith('https://')) {
-    throw new Error(
-      'Xendit checkout requires a public HTTPS APP_URL. Set APP_URL to your deployed site or HTTPS development tunnel.',
-    )
-  }
-  return origin.replace(/\/$/, '')
+  return configured || new URL(getRequest().url).origin
 }
 
 type XenditSessionResponse = {
@@ -197,7 +192,7 @@ async function createXenditSession(input: {
     )
   }
 
-  const appUrl = getPublicAppUrl()
+  const returnUrls = buildXenditReturnUrls(getAppUrl())
   const [given, ...surnameParts] = cleanName(
     input.name,
     'Workspace Owner',
@@ -246,8 +241,7 @@ async function createXenditSession(input: {
         },
         failed_cycle_action: 'RESUME',
       },
-      success_return_url: `${appUrl}/app/workspace/billing?checkout=success`,
-      cancel_return_url: `${appUrl}/app/workspace/billing?checkout=canceled`,
+      ...returnUrls,
       metadata: {
         workspace_id: input.workspaceId,
         subscription_id: input.subscriptionId,

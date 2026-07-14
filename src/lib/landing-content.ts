@@ -67,9 +67,6 @@ export const WORKFLOW_STEPS = [
   },
 ] as const
 
-// ── Pricing plans currently under review ──
-// Uncomment when pricing is finalized.
-//
 // export const PLAN_PREVIEWS = [
 //   {
 //     slug: 'team' as const,
