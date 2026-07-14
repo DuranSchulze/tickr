@@ -41,6 +41,7 @@ export async function createWorkspaceForCurrentUser(input: {
   name: string
   timezone?: string
   slug?: string
+  planSlug?: 'team' | 'business'
 }) {
   const session = await getAuthSession()
   if (!session?.user) {
@@ -87,6 +88,9 @@ export async function createWorkspaceForCurrentUser(input: {
       status: 'ACTIVE',
     })
     .returning()
+
+  const { createTrialSubscription } = await import('./subscriptions.server')
+  await createTrialSubscription(workspace.id, input.planSlug ?? 'team')
 
   const result = { workspace, member }
 

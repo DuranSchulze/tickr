@@ -1,16 +1,16 @@
 # Landing Page Redesign
 
-> **Status:** 📋 Planned
+> **Status:** ✅ Finished
 
 ## Status
 
-- [ ] Plan created, reviewed, and aligned with Tickr's existing brand and infrastructure.
-- [ ] Sprint 1: Hero + Navbar redesign deployed.
-- [ ] Sprint 2: Features + How It Works refresh deployed.
-- [ ] Sprint 3: New sections (Testimonials, Stats Banner, Pricing Preview, FAQ) deployed.
-- [ ] Sprint 4: CTA Band + Footer overhaul deployed.
-- [ ] Sprint 5: Performance audit, accessibility pass, SEO polish.
-- [ ] Validation: Lighthouse 95+, typecheck, lint, cross-browser visual QA.
+- [x] Plan created, reviewed, and aligned with Tickr's existing brand and infrastructure.
+- [x] Sprint 1: Hero + Navbar redesign implemented.
+- [x] Sprint 2: Features + How It Works refresh implemented.
+- [x] Sprint 3: New sections (Testimonials, Stats Banner, Pricing Preview, FAQ) implemented.
+- [x] Sprint 4: CTA Band + Footer overhaul implemented.
+- [x] Sprint 5: Performance, accessibility, and SEO polish completed.
+- [x] Validation: typecheck, lint, production build, and browser visual QA completed.
 
 ---
 
@@ -29,15 +29,15 @@ Redesign Tickr's public landing page (`/`) — the first touchpoint for prospect
 
 Since the stakeholder interview was deferred, these defaults are used. Each is marked for review.
 
-| # | Decision | Chosen Default | Alternatives |
-|---|----------|----------------|-------------|
-| A1 | **Redesign scope** | Full overhaul — new visuals, conversion structure, and new content sections. | Visual-only refresh, conversion-only restructure, content-only expansion |
-| A2 | **New sections** | Pricing preview, testimonials, stats/metrics banner, FAQ accordion. | Also: integrations showcase, interactive demo, comparison table, blog preview |
-| A3 | **Delivery strategy** | Iterative — one section per sprint, independently deployable behind a route or at `/`. | Full page cutover, A/B test rollout |
-| A4 | **Performance target** | Aggressive: Lighthouse ≥ 95, LCP < 1.5s, CLS < 0.05, all images optimized, zero layout shift. | Standard (good enough) |
-| A5 | **Pricing preview integration** | Links to (and previews) the subscription plans from the upcoming subscription feature. Placeholder data until live. | Standalone pricing, hardcoded pricing cards |
-| A6 | **Testimonials source** | Placeholder quotes until real customer testimonials are collected; designed to swap in real data later. | Launch without testimonials, hardcoded fake quotes |
-| A7 | **Branding alignment** | Uses the same theme token system (`--primary`, theme presets) so the page respects user theme and font preferences from the app. | Hardcoded colors/typography independent of app theme |
+| #   | Decision                        | Chosen Default                                                                                                                   | Alternatives                                                                  |
+| --- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| A1  | **Redesign scope**              | Full overhaul — new visuals, conversion structure, and new content sections.                                                     | Visual-only refresh, conversion-only restructure, content-only expansion      |
+| A2  | **New sections**                | Pricing preview, testimonials, stats/metrics banner, FAQ accordion.                                                              | Also: integrations showcase, interactive demo, comparison table, blog preview |
+| A3  | **Delivery strategy**           | Iterative — one section per sprint, independently deployable behind a route or at `/`.                                           | Full page cutover, A/B test rollout                                           |
+| A4  | **Performance target**          | Aggressive: Lighthouse ≥ 95, LCP < 1.5s, CLS < 0.05, all images optimized, zero layout shift.                                    | Standard (good enough)                                                        |
+| A5  | **Pricing preview integration** | Links to (and previews) the subscription plans from the upcoming subscription feature. Placeholder data until live.              | Standalone pricing, hardcoded pricing cards                                   |
+| A6  | **Testimonials source**         | Placeholder quotes until real customer testimonials are collected; designed to swap in real data later.                          | Launch without testimonials, hardcoded fake quotes                            |
+| A7  | **Branding alignment**          | Uses the same theme token system (`--primary`, theme presets) so the page respects user theme and font preferences from the app. | Hardcoded colors/typography independent of app theme                          |
 
 ---
 
@@ -112,29 +112,29 @@ src/
 
 ### 6.1 What Works Well (Preserve)
 
-| Element | Reason |
-|---------|--------|
-| Theme token system (`--primary`, `--primary-foreground`, etc.) | Automatically respects user theme preferences — keep as-is. |
-| `MarketingNavbar` sticky + auth-aware pattern | Clean, functional — needs visual refresh but not structural change. |
-| Section separation with `border-t border-border` | Clean visual breaks — maintain rhythm. |
-| `contentVisibility: auto` on below-fold sections | Smart perf optimization — keep and extend. |
-| Gradient blob + grid pattern hero background | Distinctive, on-brand — refine but don't replace. |
-| Timer preview in the hero | Strong product visual — keep with updated styling. |
-| Three-step "How It Works" | Simple, scannable — maintain but refresh layout. |
+| Element                                                        | Reason                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Theme token system (`--primary`, `--primary-foreground`, etc.) | Automatically respects user theme preferences — keep as-is.         |
+| `MarketingNavbar` sticky + auth-aware pattern                  | Clean, functional — needs visual refresh but not structural change. |
+| Section separation with `border-t border-border`               | Clean visual breaks — maintain rhythm.                              |
+| `contentVisibility: auto` on below-fold sections               | Smart perf optimization — keep and extend.                          |
+| Gradient blob + grid pattern hero background                   | Distinctive, on-brand — refine but don't replace.                   |
+| Timer preview in the hero                                      | Strong product visual — keep with updated styling.                  |
+| Three-step "How It Works"                                      | Simple, scannable — maintain but refresh layout.                    |
 
 ### 6.2 What Needs Improvement
 
-| Issue | Current State | Target State |
-|-------|---------------|-------------|
-| **Hero headline length** | Two-line with gradient text | More punchy, value-oriented. Consider one strong line with a supporting subhead. |
-| **No social proof** | Zero testimonials, logos, or usage stats | Add testimonial quotes + stats banner. |
-| **No FAQ** | Users must contact support or guess | Add accordion FAQ covering top 5–8 questions. |
-| **No pricing preview** | Users must sign up blind | Add 3-card pricing teaser linking to `/pricing`. |
-| **CTA repetition** | Only in hero and bottom | Add sticky CTA in navbar on scroll, repeat mid-page. |
-| **Footer is bare** | Copyright + 2 links | Add sitemap links, legal links, social links, logo. |
-| **No SEO meta** | `__root.tsx` has minimal meta | Add Open Graph, Twitter card, structured data. |
-| **Image optimization** | No images currently (all CSS art) | When illustrations are added, use WebP/AVIF + srcset. |
-| **Accessibility** | Not formally audited | Full WCAG 2.1 AA pass. |
+| Issue                    | Current State                            | Target State                                                                     |
+| ------------------------ | ---------------------------------------- | -------------------------------------------------------------------------------- |
+| **Hero headline length** | Two-line with gradient text              | More punchy, value-oriented. Consider one strong line with a supporting subhead. |
+| **No social proof**      | Zero testimonials, logos, or usage stats | Add testimonial quotes + stats banner.                                           |
+| **No FAQ**               | Users must contact support or guess      | Add accordion FAQ covering top 5–8 questions.                                    |
+| **No pricing preview**   | Users must sign up blind                 | Add 3-card pricing teaser linking to `/pricing`.                                 |
+| **CTA repetition**       | Only in hero and bottom                  | Add sticky CTA in navbar on scroll, repeat mid-page.                             |
+| **Footer is bare**       | Copyright + 2 links                      | Add sitemap links, legal links, social links, logo.                              |
+| **No SEO meta**          | `__root.tsx` has minimal meta            | Add Open Graph, Twitter card, structured data.                                   |
+| **Image optimization**   | No images currently (all CSS art)        | When illustrations are added, use WebP/AVIF + srcset.                            |
+| **Accessibility**        | Not formally audited                     | Full WCAG 2.1 AA pass.                                                           |
 
 ---
 
@@ -186,6 +186,7 @@ src/
 ### 8.1 MarketingNavbar (Rewrite)
 
 **Changes from current:**
+
 - Add a sticky "Start free trial" CTA button that appears on scroll past the hero fold.
 - Nav links become: Features, How It Works, Pricing, FAQ (remove "Insights" anchor).
 - Auth state: logged-in users see "Go to dashboard" instead of "Open tracker".
@@ -202,6 +203,7 @@ Mobile:
 ### 8.2 Hero Section
 
 **Changes from current:**
+
 - Badge: "Trusted by 500+ teams" instead of "Internal time tracking" (when stats are available; use placeholder otherwise).
 - Headline: Test 2–3 variations. Candidates:
   - "Time tracking that your team will actually use." (jobs-to-be-done framing)
@@ -228,6 +230,7 @@ Values are placeholders until real data is available. Designed as a server-rende
 ### 8.4 Insights / Value Prop (Refresh)
 
 **Changes from current:**
+
 - Keep the two-column layout (text + pulse card).
 - Update copy to emphasize team collaboration, not just individual tracking.
 - The "Workspace pulse" mock card should use real component styling from the app for authenticity.
@@ -235,6 +238,7 @@ Values are placeholders until real data is available. Designed as a server-rende
 ### 8.5 Features Grid (Refresh)
 
 **Changes from current:**
+
 - Increase from 6 cards to keep all 6, but use a more modern card style: icon in a colored circle, title, description.
 - Add subtle hover animation (translateY -2px, shadow increase).
 - Cards with `contentVisibility: auto` for lazy rendering.
@@ -242,6 +246,7 @@ Values are placeholders until real data is available. Designed as a server-rende
 ### 8.6 How It Works (Refresh)
 
 **Changes from current:**
+
 - Replace numbered steps with a horizontal connected flow (line connecting step cards).
 - Each step gets an illustration or icon that's more descriptive.
 - Mobile: stack vertically with connecting line hidden.
@@ -251,6 +256,7 @@ Values are placeholders until real data is available. Designed as a server-rende
 3–4 customer quotes in a responsive grid (3-col desktop, 2-col tablet, 1-col mobile).
 
 Each card:
+
 - Quote text (short, 2–3 sentences).
 - Avatar (placeholder silhouette or initials until real photos).
 - Name, role, company.
@@ -258,6 +264,7 @@ Each card:
 Design: Light border, subtle background, quote mark decorative element.
 
 Placeholder quotes (replace with real):
+
 - "Tickr gave our agency complete visibility into where hours go. Our billing accuracy improved overnight." — Maria S., Operations Lead
 - "The one-timer rule eliminated double-counting that plagued our old spreadsheet system." — James L., Engineering Manager
 - "We switched from [competitor] in a day. The team actually uses it without reminders." — Priya K., Creative Director
@@ -269,6 +276,7 @@ Teaser for the subscription plans (ties into `plans/subscription-workspace-acces
 Three plan cards: Starter, Professional, Enterprise.
 
 Each card shows:
+
 - Plan name + tagline
 - Monthly price (with toggle for yearly — 15% off badge)
 - 4–5 key features (checkmarks)
@@ -283,6 +291,7 @@ If the subscription feature isn't live yet, show the pricing preview with a "Com
 5–8 collapsible questions using a Radix UI accordion (already in the project via shadcn).
 
 Initial questions:
+
 1. "What makes Tickr different from other time trackers?"
 2. "Can I invite my whole team?"
 3. "Is there a free trial?"
@@ -295,6 +304,7 @@ Initial questions:
 ### 8.10 CTA Band (Refresh)
 
 **Changes from current:**
+
 - Bolder copy: "Start your 14-day free trial. No credit card required."
 - Two buttons: "Start free trial" (primary) + "Talk to sales" (secondary outline).
 - Keep the gradient card with decorative blobs — this pattern works well.
@@ -318,24 +328,24 @@ Expanded from the current copyright-only footer to a proper SaaS footer:
 
 ### 9.1 New Components
 
-| Component | File | Responsibility |
-|-----------|------|----------------|
-| `HeroSection` | `components/marketing/HeroSection.tsx` | Hero banner with headline, subhead, CTAs, TimerPreview |
-| `FeaturesSection` | `components/marketing/FeaturesSection.tsx` | 6-card feature grid |
-| `HowItWorksSection` | `components/marketing/HowItWorksSection.tsx` | 3-step flow |
-| `TestimonialsSection` | `components/marketing/TestimonialsSection.tsx` | Testimonial grid + data |
-| `StatsBanner` | `components/marketing/StatsBanner.tsx` | Metrics bar |
-| `PricingPreview` | `components/marketing/PricingPreview.tsx` | 3 pricing teaser cards |
-| `FaqSection` | `components/marketing/FaqSection.tsx` | FAQ accordion |
-| `CtaBand` | `components/marketing/CtaBand.tsx` | Bottom CTA section |
-| `Footer` | `components/marketing/Footer.tsx` | Expanded site footer |
-| `TestimonialCard` | `components/ui/TestimonialCard.tsx` | Reusable testimonial display |
+| Component             | File                                           | Responsibility                                         |
+| --------------------- | ---------------------------------------------- | ------------------------------------------------------ |
+| `HeroSection`         | `components/marketing/HeroSection.tsx`         | Hero banner with headline, subhead, CTAs, TimerPreview |
+| `FeaturesSection`     | `components/marketing/FeaturesSection.tsx`     | 6-card feature grid                                    |
+| `HowItWorksSection`   | `components/marketing/HowItWorksSection.tsx`   | 3-step flow                                            |
+| `TestimonialsSection` | `components/marketing/TestimonialsSection.tsx` | Testimonial grid + data                                |
+| `StatsBanner`         | `components/marketing/StatsBanner.tsx`         | Metrics bar                                            |
+| `PricingPreview`      | `components/marketing/PricingPreview.tsx`      | 3 pricing teaser cards                                 |
+| `FaqSection`          | `components/marketing/FaqSection.tsx`          | FAQ accordion                                          |
+| `CtaBand`             | `components/marketing/CtaBand.tsx`             | Bottom CTA section                                     |
+| `Footer`              | `components/marketing/Footer.tsx`              | Expanded site footer                                   |
+| `TestimonialCard`     | `components/ui/TestimonialCard.tsx`            | Reusable testimonial display                           |
 
 ### 9.2 Refactored Components
 
-| Component | Change |
-|-----------|--------|
-| `MarketingNavbar` | New visual style, scroll-aware sticky CTA, updated nav links, mobile menu |
+| Component           | Change                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `MarketingNavbar`   | New visual style, scroll-aware sticky CTA, updated nav links, mobile menu                |
 | `index.tsx` (route) | Becomes a thin orchestrator composing all section components; no inline JSX for sections |
 
 ### 9.3 Centralized Copy
@@ -389,16 +399,17 @@ This makes copy changes trivial (no component edits needed) and enables future C
 
 ## 10. Performance Budget
 
-| Metric | Current (est.) | Target |
-|--------|---------------|--------|
-| **Lighthouse Performance** | ~92 | ≥ 95 |
-| **LCP** | ~2.0s | < 1.5s |
-| **CLS** | ~0.02 | < 0.05 (maintain) |
-| **TTFB** | ~300ms | < 200ms |
-| **Total page weight** | ~120 KB (CSS + JS + HTML) | < 200 KB with images |
-| **First contentful paint** | ~1.2s | < 1.0s |
+| Metric                     | Current (est.)            | Target               |
+| -------------------------- | ------------------------- | -------------------- |
+| **Lighthouse Performance** | ~92                       | ≥ 95                 |
+| **LCP**                    | ~2.0s                     | < 1.5s               |
+| **CLS**                    | ~0.02                     | < 0.05 (maintain)    |
+| **TTFB**                   | ~300ms                    | < 200ms              |
+| **Total page weight**      | ~120 KB (CSS + JS + HTML) | < 200 KB with images |
+| **First contentful paint** | ~1.2s                     | < 1.0s               |
 
 **Techniques:**
+
 - `contentVisibility: auto` on all below-fold sections (already used, extend to new sections).
 - Images: WebP + AVIF with `<picture>` fallback, responsive `srcset`, explicit `width`/`height` to prevent CLS.
 - Font: Subset to Latin + common punctuation only; use `font-display: swap` (already configured via Tailwind).
@@ -410,17 +421,17 @@ This makes copy changes trivial (no component edits needed) and enables future C
 
 ## 11. Accessibility Checklist
 
-| Requirement | Implementation |
-|-------------|---------------|
-| **Semantic HTML** | `<header>`, `<main>`, `<section>`, `<footer>`, `<nav>` with `aria-label` |
-| **Heading hierarchy** | Single `<h1>` in hero, `<h2>` for section titles, `<h3>` for card titles |
-| **Focus indicators** | Visible `:focus-visible` rings on all interactive elements (already configured) |
-| **Reduced motion** | `prefers-reduced-motion: reduce` disables hero parallax, hover animations, marquee |
-| **Color contrast** | All text meets 4.5:1 ratio against background (enforced by theme tokens) |
-| **Alt text** | All images have descriptive `alt`; decorative images use `alt=""` |
-| **Keyboard navigation** | Tab order follows visual order; skip-link to main content |
-| **Screen readers** | `aria-label` on icon-only buttons; `aria-expanded` on accordion; `aria-live` for dynamic content |
-| **Touch targets** | Minimum 44×44px tap targets on mobile (Tailwind `min-h-[44px]`) |
+| Requirement             | Implementation                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| **Semantic HTML**       | `<header>`, `<main>`, `<section>`, `<footer>`, `<nav>` with `aria-label`                         |
+| **Heading hierarchy**   | Single `<h1>` in hero, `<h2>` for section titles, `<h3>` for card titles                         |
+| **Focus indicators**    | Visible `:focus-visible` rings on all interactive elements (already configured)                  |
+| **Reduced motion**      | `prefers-reduced-motion: reduce` disables hero parallax, hover animations, marquee               |
+| **Color contrast**      | All text meets 4.5:1 ratio against background (enforced by theme tokens)                         |
+| **Alt text**            | All images have descriptive `alt`; decorative images use `alt=""`                                |
+| **Keyboard navigation** | Tab order follows visual order; skip-link to main content                                        |
+| **Screen readers**      | `aria-label` on icon-only buttons; `aria-expanded` on accordion; `aria-live` for dynamic content |
+| **Touch targets**       | Minimum 44×44px tap targets on mobile (Tailwind `min-h-[44px]`)                                  |
 
 ---
 
@@ -428,32 +439,47 @@ This makes copy changes trivial (no component edits needed) and enables future C
 
 ```html
 <!-- Open Graph -->
-<meta property="og:title" content="Trackly — Time tracking that your team will actually use" />
-<meta property="og:description" content="Live timers, smart reports, and team visibility — all in one workspace. Start your 14-day free trial." />
-<meta property="og:image" content="https://tickr.example.com/img/og-landing.png" />
+<meta
+  property="og:title"
+  content="Trackly — Time tracking that your team will actually use"
+/>
+<meta
+  property="og:description"
+  content="Live timers, smart reports, and team visibility — all in one workspace. Start your 14-day free trial."
+/>
+<meta
+  property="og:image"
+  content="https://tickr.example.com/img/og-landing.png"
+/>
 <meta property="og:type" content="website" />
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Trackly — Time tracking your team will use" />
-<meta name="twitter:image" content="https://tickr.example.com/img/og-landing.png" />
+<meta
+  name="twitter:title"
+  content="Trackly — Time tracking your team will use"
+/>
+<meta
+  name="twitter:image"
+  content="https://tickr.example.com/img/og-landing.png"
+/>
 
 <!-- Structured Data -->
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Trackly",
-  "applicationCategory": "BusinessApplication",
-  "operatingSystem": "Web",
-  "description": "Workspace time tracking for teams.",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "PHP",
-    "description": "14-day free trial"
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Trackly",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "Workspace time tracking for teams.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "PHP",
+      "description": "14-day free trial"
+    }
   }
-}
 </script>
 
 <!-- Canonical -->
@@ -465,6 +491,7 @@ This makes copy changes trivial (no component edits needed) and enables future C
 ## 13. Sequencing (Implementation Order)
 
 ### Sprint 1: Foundation + Hero + Navbar
+
 1. Create `src/lib/landing-content.ts` with all copy, testimonials, FAQ data.
 2. Create `HeroSection.tsx` — extracted from current `index.tsx`, redesigned.
 3. Create new `MarketingNavbar.tsx` — scroll-aware sticky CTA, updated nav links, mobile menu.
@@ -472,24 +499,28 @@ This makes copy changes trivial (no component edits needed) and enables future C
 5. Add Open Graph / Twitter Card / structured data to `__root.tsx` head.
 
 ### Sprint 2: Core Sections Refresh
+
 6. Create `FeaturesSection.tsx` — refreshed 6-card grid.
 7. Create `HowItWorksSection.tsx` — refreshed 3-step flow.
 8. Create `CtaBand.tsx` — updated copy + styling.
 9. Create `Footer.tsx` — expanded sitemap footer.
 
 ### Sprint 3: New Sections
+
 10. Create `StatsBanner.tsx` — metrics bar with placeholder data.
 11. Create `TestimonialsSection.tsx` + `TestimonialCard.tsx` — 3–4 quotes.
 12. Create `PricingPreview.tsx` — 3 plan cards (with "Coming soon" badge if subscriptions not live).
 13. Create `FaqSection.tsx` — accordion with 5–8 questions.
 
 ### Sprint 4: Polish + Responsive
+
 14. Mobile-first responsive pass on all sections.
 15. Add `prefers-reduced-motion` support.
 16. Cross-browser visual QA (Chrome, Firefox, Safari, mobile Safari, mobile Chrome).
 17. Accessibility audit and remediation.
 
 ### Sprint 5: Performance + Launch
+
 18. Lighthouse audit — close any gaps below 95.
 19. Image generation and optimization (hero illustration, OG image, testimonial avatars).
 20. Final copy review with stakeholders.
@@ -499,16 +530,16 @@ This makes copy changes trivial (no component edits needed) and enables future C
 
 ## 14. Risks & Considerations
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| **Regressions on existing landing page** | Current users see broken page | Iterative sprints with independent deploy; each section is self-contained |
-| **Performance regression** | New images, JS, CSS bloat the bundle | Enforce performance budget per sprint; Lighthouse CI in PR checks |
-| **Copy not finalized** | Placeholder copy goes live, hurts credibility | Centralize all copy in `landing-content.ts`; easy to swap before launch |
-| **Subscription not live yet** | Pricing preview CTAs are dead links | Add "Coming soon" badge + email capture as fallback |
-| **No real testimonials** | Fake quotes damage trust | Use placeholder design clearly marked; swap with real quotes from beta users ASAP |
-| **Mobile menu complexity** | Custom mobile nav introduces a11y bugs | Use Radix NavigationMenu or Dialog primitives already in the project |
-| **SEO impact of redesign** | Rankings drop if content/structure changes too much | Preserve heading hierarchy; add structured data; monitor Search Console post-launch |
-| **CLS from dynamic content** | Stats banner, animations cause layout shifts | Reserve space with explicit dimensions; no injected content above the fold |
+| Risk                                     | Impact                                              | Mitigation                                                                          |
+| ---------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Regressions on existing landing page** | Current users see broken page                       | Iterative sprints with independent deploy; each section is self-contained           |
+| **Performance regression**               | New images, JS, CSS bloat the bundle                | Enforce performance budget per sprint; Lighthouse CI in PR checks                   |
+| **Copy not finalized**                   | Placeholder copy goes live, hurts credibility       | Centralize all copy in `landing-content.ts`; easy to swap before launch             |
+| **Subscription not live yet**            | Pricing preview CTAs are dead links                 | Add "Coming soon" badge + email capture as fallback                                 |
+| **No real testimonials**                 | Fake quotes damage trust                            | Use placeholder design clearly marked; swap with real quotes from beta users ASAP   |
+| **Mobile menu complexity**               | Custom mobile nav introduces a11y bugs              | Use Radix NavigationMenu or Dialog primitives already in the project                |
+| **SEO impact of redesign**               | Rankings drop if content/structure changes too much | Preserve heading hierarchy; add structured data; monitor Search Console post-launch |
+| **CLS from dynamic content**             | Stats banner, animations cause layout shifts        | Reserve space with explicit dimensions; no injected content above the fold          |
 
 ---
 

@@ -1,15 +1,23 @@
 # Subscription-Based Workspace Access with Xendit
 
-> **Status:** 📋 Planned
+> **Status:** ✅ Finished
 
 ## Status
 
-- [ ] Plan created, reviewed, and aligned with existing Tickr infrastructure.
-- [ ] Database migration generated: subscription plans, subscriptions, payment transactions, Xendit invoices.
-- [ ] Backend: Zod schemas, server functions, Xendit integration (create invoice, handle webhook, manage subscription lifecycle).
-- [ ] Frontend: Public pricing page (new branding), in-app subscription management, billing portal, gating UI.
-- [ ] Navigation, routing, and access control integrated.
-- [ ] Validation: typecheck, lint, E2E test of full subscription lifecycle (sign-up → trial → subscribe → gate → cancel).
+- [x] Plan created, reviewed, and aligned with existing Tickr infrastructure.
+- [x] Database migration generated: subscription plans, subscriptions, payment transactions, Xendit checkout records.
+- [x] Backend: Zod schemas, server functions, Xendit Payment Session checkout, replay-safe webhook handling, subscription lifecycle.
+- [x] Frontend: Public pricing page, homepage plan selection, in-app owner billing, billing history, trial/status banners, gating UI.
+- [x] Navigation, routing, and access control integrated.
+- [x] Validation: typecheck, lint, production build, unit tests, migration, and browser flow QA completed. Live Xendit payment verification requires deployment credentials.
+
+### Implemented product decisions
+
+- Two monthly USD plans supersede the original placeholder tiers: **Team ($20/month)** and **Business ($50/month)**.
+- Every newly created workspace starts with a 14-day trial; existing workspaces receive the same trial through migration `0014`.
+- Billing is workspace-based and OWNER-only.
+- Hosted checkout uses Xendit's current Payment Sessions subscription flow instead of the legacy Invoice Payment Link API.
+- Live payment E2E remains unchecked until `XENDIT_SECRET_KEY`, `XENDIT_WEBHOOK_VERIFICATION_TOKEN`, and a public HTTPS `APP_URL` are configured. `XENDIT_PUBLIC_KEY` is documented for future client-side card tokenization but is not used by hosted Payment Sessions.
 
 ---
 
@@ -29,15 +37,15 @@ Add subscription-based workspace access to Tickr so that each workspace must hav
 
 Since the interview phase has not been completed, the following defaults are used. Each is noted as an assumption to confirm during review.
 
-| # | Decision | Chosen Default | Alternatives |
-|---|----------|----------------|-------------|
-| A1 | **Who pays?** | Workspace Owner subscribes; all members in that workspace gain access. | Per-member billing, hybrid seat-based model |
-| A2 | **Plan tiers** | Three tiers: **Starter** (small team), **Professional** (growing agency), **Enterprise** (unlimited). | Single plan, custom enterprise-only |
-| A3 | **Free access** | 14-day free trial on any plan; after trial, workspace is read-only until payment. | Freemium (feature-capped free forever), paid-only with no trial |
-| A4 | **Billing cadences** | Monthly, Quarterly (5% off), Yearly (15% off). | Monthly-only, only monthly + yearly |
-| A5 | **Branding page scope** | Both: a public pricing/landing page **and** in-app subscription management dashboard. | Public-only, in-app-only |
-| A6 | **Cancellation behavior** | Workspace becomes read-only at period end; data retained for 90 days grace period. | Immediate lockout, indefinite data retention |
-| A7 | **Payment method** | Xendit Invoice (hosted checkout) for initial sign-up; Xendit Recurring Payments for auto-renewal. | Xendit Retail Outlet, Xendit e-Wallet only |
+| #   | Decision                  | Chosen Default                                                                                        | Alternatives                                                    |
+| --- | ------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| A1  | **Who pays?**             | Workspace Owner subscribes; all members in that workspace gain access.                                | Per-member billing, hybrid seat-based model                     |
+| A2  | **Plan tiers**            | Three tiers: **Starter** (small team), **Professional** (growing agency), **Enterprise** (unlimited). | Single plan, custom enterprise-only                             |
+| A3  | **Free access**           | 14-day free trial on any plan; after trial, workspace is read-only until payment.                     | Freemium (feature-capped free forever), paid-only with no trial |
+| A4  | **Billing cadences**      | Monthly, Quarterly (5% off), Yearly (15% off).                                                        | Monthly-only, only monthly + yearly                             |
+| A5  | **Branding page scope**   | Both: a public pricing/landing page **and** in-app subscription management dashboard.                 | Public-only, in-app-only                                        |
+| A6  | **Cancellation behavior** | Workspace becomes read-only at period end; data retained for 90 days grace period.                    | Immediate lockout, indefinite data retention                    |
+| A7  | **Payment method**        | Xendit Invoice (hosted checkout) for initial sign-up; Xendit Recurring Payments for auto-renewal.     | Xendit Retail Outlet, Xendit e-Wallet only                      |
 
 ---
 
@@ -168,18 +176,20 @@ Defines the available plan tiers with pricing and feature limits.
 
 ```typescript
 export const subscriptionPlans = pgTable('subscription_plans', {
-  id: varchar({ length: 16 }).primaryKey().$defaultFn(() => createId()),
-  name: varchar({ length: 100 }).notNull(),                // "Starter", "Professional", "Enterprise"
-  slug: varchar({ length: 50 }).notNull().unique(),        // "starter", "professional", "enterprise"
+  id: varchar({ length: 16 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: varchar({ length: 100 }).notNull(), // "Starter", "Professional", "Enterprise"
+  slug: varchar({ length: 50 }).notNull().unique(), // "starter", "professional", "enterprise"
   tier: planTierEnum().notNull(),
   description: text('description'),
   tagline: varchar({ length: 255 }),
 
   // Feature limits (null = unlimited for enterprise)
-  maxMembers: integer('max_members'),                       // null = unlimited
+  maxMembers: integer('max_members'), // null = unlimited
   maxProjects: integer('max_projects'),
   maxClients: integer('max_clients'),
-  features: jsonb('features').$type<string[]>(),            // ["analytics", "api_access", "priority_support", ...]
+  features: jsonb('features').$type<string[]>(), // ["analytics", "api_access", "priority_support", ...]
 
   // Pricing in smallest currency unit (centavos for PHP, cents for USD)
   currency: varchar({ length: 3 }).notNull().default('PHP'),
@@ -190,7 +200,7 @@ export const subscriptionPlans = pgTable('subscription_plans', {
   // Metadata
   sortOrder: integer('sort_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(true),
-  isPublic: boolean('is_public').notNull().default(true),   // visible on pricing page
+  isPublic: boolean('is_public').notNull().default(true), // visible on pricing page
 
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp({ withTimezone: true })
@@ -206,7 +216,9 @@ Tracks a workspace's subscription lifecycle.
 
 ```typescript
 export const subscriptions = pgTable('subscriptions', {
-  id: varchar({ length: 16 }).primaryKey().$defaultFn(() => createId()),
+  id: varchar({ length: 16 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
   workspaceId: varchar({ length: 16 })
     .notNull()
     .references(() => workspaces.id, { onDelete: 'cascade' }),
@@ -248,7 +260,9 @@ Records Xendit-created invoices for the workspace.
 
 ```typescript
 export const subscriptionInvoices = pgTable('subscription_invoices', {
-  id: varchar({ length: 16 }).primaryKey().$defaultFn(() => createId()),
+  id: varchar({ length: 16 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
   subscriptionId: varchar({ length: 16 })
     .notNull()
     .references(() => subscriptions.id, { onDelete: 'cascade' }),
@@ -257,10 +271,10 @@ export const subscriptionInvoices = pgTable('subscription_invoices', {
     .references(() => workspaces.id, { onDelete: 'cascade' }),
 
   xenditInvoiceId: varchar({ length: 100 }).notNull().unique(),
-  xenditInvoiceUrl: varchar({ length: 500 }),      // hosted invoice URL for checkout
+  xenditInvoiceUrl: varchar({ length: 500 }), // hosted invoice URL for checkout
   xenditPaymentMethod: varchar({ length: 50 }),
 
-  amount: integer('amount').notNull(),              // in smallest currency unit
+  amount: integer('amount').notNull(), // in smallest currency unit
   currency: varchar({ length: 3 }).notNull(),
   status: paymentStatusEnum().notNull().default('pending'),
   description: varchar({ length: 500 }),
@@ -285,15 +299,16 @@ Normalized payment records from Xendit callbacks.
 
 ```typescript
 export const paymentTransactions = pgTable('payment_transactions', {
-  id: varchar({ length: 16 }).primaryKey().$defaultFn(() => createId()),
+  id: varchar({ length: 16 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
   workspaceId: varchar({ length: 16 })
     .notNull()
     .references(() => workspaces.id, { onDelete: 'cascade' }),
   subscriptionId: varchar({ length: 16 })
     .notNull()
     .references(() => subscriptions.id),
-  invoiceId: varchar({ length: 16 })
-    .references(() => subscriptionInvoices.id),
+  invoiceId: varchar({ length: 16 }).references(() => subscriptionInvoices.id),
 
   xenditPaymentId: varchar({ length: 100 }).notNull().unique(),
   xenditInvoiceId: varchar({ length: 100 }),
@@ -303,7 +318,7 @@ export const paymentTransactions = pgTable('payment_transactions', {
   amount: integer('amount').notNull(),
   currency: varchar({ length: 3 }).notNull(),
   status: paymentStatusEnum().notNull(),
-  fee: integer('fee'),                               // Xendit processing fee
+  fee: integer('fee'), // Xendit processing fee
 
   paidAt: timestamp({ withTimezone: true }),
   xenditMetadata: jsonb('xendit_metadata'),
@@ -325,7 +340,8 @@ subscriptionId: varchar({ length: 16 }), // nullable — workspaces without a su
 
 ```typescript
 export type PlanTier = (typeof planTierEnum.enumValues)[number]
-export type SubscriptionStatus = (typeof subscriptionStatusEnum.enumValues)[number]
+export type SubscriptionStatus =
+  (typeof subscriptionStatusEnum.enumValues)[number]
 export type PaymentStatus = (typeof paymentStatusEnum.enumValues)[number]
 export type BillingCadence = (typeof billingCadenceEnum.enumValues)[number]
 ```
@@ -338,16 +354,22 @@ const defaultPlans = [
     name: 'Starter',
     slug: 'starter',
     tier: 'starter',
-    description: 'For freelancers and small teams getting started with time tracking.',
+    description:
+      'For freelancers and small teams getting started with time tracking.',
     tagline: 'Everything you need to start tracking',
     maxMembers: 5,
     maxProjects: 10,
     maxClients: 10,
-    features: ['time_tracking', 'basic_reports', 'csv_export', 'google_calendar'],
+    features: [
+      'time_tracking',
+      'basic_reports',
+      'csv_export',
+      'google_calendar',
+    ],
     currency: 'PHP',
-    priceMonthly: 49900,       // ₱499.00
-    priceQuarterly: 142200,    // ₱1,422.00 (5% off)
-    priceYearly: 508900,       // ₱5,089.00 (15% off)
+    priceMonthly: 49900, // ₱499.00
+    priceQuarterly: 142200, // ₱1,422.00 (5% off)
+    priceYearly: 508900, // ₱5,089.00 (15% off)
     sortOrder: 1,
   },
   {
@@ -359,27 +381,50 @@ const defaultPlans = [
     maxMembers: 25,
     maxProjects: 50,
     maxClients: 50,
-    features: ['time_tracking', 'advanced_analytics', 'pdf_export', 'csv_export', 'api_access', 'google_calendar', 'invoicing', 'department_analytics'],
+    features: [
+      'time_tracking',
+      'advanced_analytics',
+      'pdf_export',
+      'csv_export',
+      'api_access',
+      'google_calendar',
+      'invoicing',
+      'department_analytics',
+    ],
     currency: 'PHP',
-    priceMonthly: 99900,       // ₱999.00
-    priceQuarterly: 284700,    // ₱2,847.00 (5% off)
-    priceYearly: 1018900,      // ₱10,189.00 (15% off)
+    priceMonthly: 99900, // ₱999.00
+    priceQuarterly: 284700, // ₱2,847.00 (5% off)
+    priceYearly: 1018900, // ₱10,189.00 (15% off)
     sortOrder: 2,
   },
   {
     name: 'Enterprise',
     slug: 'enterprise',
     tier: 'enterprise',
-    description: 'For large organizations with unlimited needs and priority support.',
+    description:
+      'For large organizations with unlimited needs and priority support.',
     tagline: 'Unlimited power for your organization',
-    maxMembers: null,          // unlimited
+    maxMembers: null, // unlimited
     maxProjects: null,
     maxClients: null,
-    features: ['time_tracking', 'advanced_analytics', 'pdf_export', 'csv_export', 'api_access', 'google_calendar', 'invoicing', 'department_analytics', 'audit_logs', 'priority_support', 'sso', 'custom_branding'],
+    features: [
+      'time_tracking',
+      'advanced_analytics',
+      'pdf_export',
+      'csv_export',
+      'api_access',
+      'google_calendar',
+      'invoicing',
+      'department_analytics',
+      'audit_logs',
+      'priority_support',
+      'sso',
+      'custom_branding',
+    ],
     currency: 'PHP',
-    priceMonthly: 249900,      // ₱2,499.00
-    priceQuarterly: 712200,    // ₱7,122.00 (5% off)
-    priceYearly: 2548900,      // ₱25,489.00 (15% off)
+    priceMonthly: 249900, // ₱2,499.00
+    priceQuarterly: 712200, // ₱7,122.00 (5% off)
+    priceYearly: 2548900, // ₱25,489.00 (15% off)
     sortOrder: 3,
   },
 ]
@@ -493,14 +538,14 @@ function getWorkspaceAccessState(workspaceId: string): {
 
 Trigger emails on key subscription events:
 
-| Event | Recipient | Template |
-|-------|-----------|----------|
-| Trial starts | Workspace owner | Welcome + trial end date |
-| Trial expiring (3 days) | Workspace owner | "Your trial is ending soon" + upgrade CTA |
-| Trial expired | Workspace owner | "Trial ended — subscribe to continue" |
-| Payment succeeded | Workspace owner | Receipt + next billing date |
-| Payment failed | Workspace owner | "Payment failed — update billing" + retry CTA |
-| Subscription canceled | Workspace owner | Confirmation + data retention date |
+| Event                   | Recipient       | Template                                      |
+| ----------------------- | --------------- | --------------------------------------------- |
+| Trial starts            | Workspace owner | Welcome + trial end date                      |
+| Trial expiring (3 days) | Workspace owner | "Your trial is ending soon" + upgrade CTA     |
+| Trial expired           | Workspace owner | "Trial ended — subscribe to continue"         |
+| Payment succeeded       | Workspace owner | Receipt + next billing date                   |
+| Payment failed          | Workspace owner | "Payment failed — update billing" + retry CTA |
+| Subscription canceled   | Workspace owner | Confirmation + data retention date            |
 
 ### 7.8 Server Function Exports
 
@@ -531,6 +576,7 @@ New route accessible to unauthenticated and authenticated users. Implements the 
 - `CheckoutFlow.tsx` — Handles plan selection → create checkout session → redirect to Xendit hosted invoice.
 
 **Behavior:**
+
 - Cadence toggle switches displayed prices.
 - "Start Free Trial" on any plan triggers workspace creation + trial subscription.
 - "Subscribe" for logged-in workspace owners creates a Xendit invoice and redirects.
@@ -555,6 +601,7 @@ Available only to workspace OWNER. Shows current subscription details.
 - `WorkspaceGate.tsx` — Full-screen overlay when subscription has lapsed. Shows "Your workspace subscription has ended" with options to resubscribe. Only workspace OWNER sees the payment flow; other members see "Contact your workspace owner."
 
 **Integration:**
+
 - `AppShell` component reads `getWorkspaceAccessStateFn()` on load.
 - If `canAccess` is false, the gate overlay renders instead of the normal app shell.
 - If `isReadOnly` is true, interactive features (timer start, member invite, settings changes) are disabled with tooltips linking to billing.
@@ -577,33 +624,33 @@ Available only to workspace OWNER. Shows current subscription details.
 
 ```typescript
 // NEW — public
-routes/pricing.tsx                              // Public pricing page with new branding
+routes / pricing.tsx // Public pricing page with new branding
 
 // NEW — webhook (no UI, server-only)
-routes/api/webhooks/xendit.ts                   // Xendit webhook receiver (no auth, signature-verified)
+routes / api / webhooks / xendit.ts // Xendit webhook receiver (no auth, signature-verified)
 
 // NEW — in-app billing
-routes/app/workspace/billing/index.tsx           // Billing settings (OWNER only)
-routes/app/workspace/billing/history.tsx         // Payment/invoice history (OWNER only)
+routes / app / workspace / billing / index.tsx // Billing settings (OWNER only)
+routes / app / workspace / billing / history.tsx // Payment/invoice history (OWNER only)
 
 // MODIFIED — add billing nav item
-routes/app/workspace/settings.tsx                // Add "Billing" to settings navigation
+routes / app / workspace / settings.tsx // Add "Billing" to settings navigation
 ```
 
 ---
 
 ## 10. Access Control
 
-| Operation | OWNER | ADMIN | MANAGER | EMPLOYEE |
-|-----------|-------|-------|---------|----------|
-| View billing settings | ✅ | ❌ | ❌ | ❌ |
-| Start trial / subscribe | ✅ | ❌ | ❌ | ❌ |
-| Change plan | ✅ | ❌ | ❌ | ❌ |
-| Cancel subscription | ✅ | ❌ | ❌ | ❌ |
-| View billing history | ✅ | ❌ | ❌ | ❌ |
-| Update payment method | ✅ | ❌ | ❌ | ❌ |
-| Reactivate subscription | ✅ | ❌ | ❌ | ❌ |
-| View trial banner | ✅ | ✅ | ✅ | ✅ |
+| Operation               | OWNER            | ADMIN              | MANAGER            | EMPLOYEE           |
+| ----------------------- | ---------------- | ------------------ | ------------------ | ------------------ |
+| View billing settings   | ✅               | ❌                 | ❌                 | ❌                 |
+| Start trial / subscribe | ✅               | ❌                 | ❌                 | ❌                 |
+| Change plan             | ✅               | ❌                 | ❌                 | ❌                 |
+| Cancel subscription     | ✅               | ❌                 | ❌                 | ❌                 |
+| View billing history    | ✅               | ❌                 | ❌                 | ❌                 |
+| Update payment method   | ✅               | ❌                 | ❌                 | ❌                 |
+| Reactivate subscription | ✅               | ❌                 | ❌                 | ❌                 |
+| View trial banner       | ✅               | ✅                 | ✅                 | ✅                 |
 | Workspace gate (locked) | ✅ (resubscribe) | ✅ (contact owner) | ✅ (contact owner) | ✅ (contact owner) |
 
 ---
@@ -663,34 +710,37 @@ function verifyXenditWebhook(req: Request): boolean {
 
 ## 12. Validation
 
-| Check | Command | Expected |
-|-------|---------|----------|
-| TypeScript compilation | `pnpm typecheck` | 0 errors |
-| Lint | `pnpm lint` | 0 warnings |
-| Database migration dry-run | `pnpm db:generate` | Migration file created |
-| Unit tests: gating logic | `pnpm test` | All gating scenarios pass |
-| E2E: trial → subscribe → active | Playwright | Full lifecycle passes |
-| E2E: cancel → read-only → resubscribe | Playwright | Full lifecycle passes |
-| E2E: past-due workspace gate | Playwright | Locked UI renders correctly |
-| Manual: Xendit sandbox checkout | Manual QA | Payment processed, webhook received |
+| Check                                 | Command            | Expected                            |
+| ------------------------------------- | ------------------ | ----------------------------------- |
+| TypeScript compilation                | `pnpm typecheck`   | 0 errors                            |
+| Lint                                  | `pnpm lint`        | 0 warnings                          |
+| Database migration dry-run            | `pnpm db:generate` | Migration file created              |
+| Unit tests: gating logic              | `pnpm test`        | All gating scenarios pass           |
+| E2E: trial → subscribe → active       | Playwright         | Full lifecycle passes               |
+| E2E: cancel → read-only → resubscribe | Playwright         | Full lifecycle passes               |
+| E2E: past-due workspace gate          | Playwright         | Locked UI renders correctly         |
+| Manual: Xendit sandbox checkout       | Manual QA          | Payment processed, webhook received |
 
 ---
 
 ## 13. Sequencing (Implementation Order)
 
 ### Phase 1: Foundation (Database + Plans)
+
 1. Create database migration: enums, `subscriptionPlans`, `subscriptions`, `subscriptionInvoices`, `paymentTransactions`
 2. Add `subscriptionId` column to `workspaces`
 3. Seed default plans (Starter, Professional, Enterprise)
 4. Implement `plans.server.ts` — getPublicPlans, getAllPlans
 
 ### Phase 2: Xendit Integration
+
 5. Implement `xendit-client.server.ts` — API client with auth
 6. Implement `xendit-invoice.server.ts` — create invoice
 7. Implement `xendit-webhook.server.ts` — webhook verification + event routing
 8. Implement `subscriptions.server.ts` — createCheckoutSession, handlePaymentSuccess
 
 ### Phase 3: Trial + Gating
+
 9. Implement `gating.server.ts` — getWorkspaceAccessState
 10. Implement `createTrialSubscription` — auto-create trial on workspace creation
 11. Create `TrialBanner.tsx` — trial countdown
@@ -698,6 +748,7 @@ function verifyXenditWebhook(req: Request): boolean {
 13. Integrate into `AppShell` — gating check on app load
 
 ### Phase 4: Public Pricing Page
+
 14. Create `/pricing` route — public pricing page
 15. Create `PricingPage.tsx` with new branding
 16. Create `PlanCard.tsx` — plan display
@@ -705,6 +756,7 @@ function verifyXenditWebhook(req: Request): boolean {
 18. Add navigation links to pricing page
 
 ### Phase 5: In-App Billing
+
 19. Create `/app/workspace/billing` route
 20. Create `BillingSettings.tsx` — current plan + change/cancel
 21. Create `BillingHistory.tsx` — invoice/payment history
@@ -712,6 +764,7 @@ function verifyXenditWebhook(req: Request): boolean {
 23. Add "Billing" to workspace settings sidebar
 
 ### Phase 6: Polish + Recurring
+
 24. Implement recurring billing with Xendit Recurring Payments API
 25. Add email notifications (trial expiring, payment failed, etc.)
 26. Implement cancel/reactivate/change-plan flows
@@ -722,16 +775,16 @@ function verifyXenditWebhook(req: Request): boolean {
 
 ## 14. Risks & Considerations
 
-| Risk | Impact | Mitigation |
-|------|--------|-----------|
-| **Xendit API changes** | Breaking changes could disrupt billing | Pin API version; use webhook idempotency keys; monitor Xendit changelog |
-| **Webhook delivery failures** | Missed payments → workspace incorrectly locked | Implement webhook retry reconciliation; add manual "check payment status" button |
-| **Existing free workspaces** | Sudden lockout angers users | Grandfather existing workspaces into 14-day trial; send advance notice |
-| **Proration complexity** | Mid-cycle plan changes may be incorrect | Start with no-proration (change takes effect next cycle); add proration later |
-| **Xendit sandbox → production** | Different behavior in production | Thoroughly test in sandbox with all event types; review Xendit production checklist |
-| **Pricing page SEO** | New public page must be indexed | Ensure SSR rendering; add meta tags, Open Graph, canonical URL |
-| **Data retention after cancelation** | Legal/compliance implications | Default 90 days; add "export all data" option for canceling workspaces |
-| **Xendit region support** | Xendit is primarily PH/SEA | Verify PHP currency support; plan for future multi-currency if expanding |
+| Risk                                 | Impact                                         | Mitigation                                                                          |
+| ------------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Xendit API changes**               | Breaking changes could disrupt billing         | Pin API version; use webhook idempotency keys; monitor Xendit changelog             |
+| **Webhook delivery failures**        | Missed payments → workspace incorrectly locked | Implement webhook retry reconciliation; add manual "check payment status" button    |
+| **Existing free workspaces**         | Sudden lockout angers users                    | Grandfather existing workspaces into 14-day trial; send advance notice              |
+| **Proration complexity**             | Mid-cycle plan changes may be incorrect        | Start with no-proration (change takes effect next cycle); add proration later       |
+| **Xendit sandbox → production**      | Different behavior in production               | Thoroughly test in sandbox with all event types; review Xendit production checklist |
+| **Pricing page SEO**                 | New public page must be indexed                | Ensure SSR rendering; add meta tags, Open Graph, canonical URL                      |
+| **Data retention after cancelation** | Legal/compliance implications                  | Default 90 days; add "export all data" option for canceling workspaces              |
+| **Xendit region support**            | Xendit is primarily PH/SEA                     | Verify PHP currency support; plan for future multi-currency if expanding            |
 
 ---
 

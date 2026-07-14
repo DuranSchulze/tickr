@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoungeRouteImport } from './routes/lounge'
 import { Route as AppRouteImport } from './routes/app'
@@ -33,6 +34,7 @@ import { Route as AppTimeTrackerIndexRouteImport } from './routes/app/time-track
 import { Route as AppWorkspaceSettingsRouteImport } from './routes/app/workspace/settings'
 import { Route as AppWorkspaceMembersRouteImport } from './routes/app/workspace/members'
 import { Route as AppWorkspaceCatalogsRouteImport } from './routes/app/workspace/catalogs'
+import { Route as AppWorkspaceBillingRouteImport } from './routes/app/workspace/billing'
 import { Route as AppWorkspaceActivityRouteImport } from './routes/app/workspace/activity'
 import { Route as AppTimeTrackerWeekRouteImport } from './routes/app/time-tracker/week'
 import { Route as AppTimeTrackerMonthRouteImport } from './routes/app/time-tracker/month'
@@ -40,6 +42,7 @@ import { Route as AppTimeTrackerDayRouteImport } from './routes/app/time-tracker
 import { Route as AppDepartmentMemberCalendarMemberIdRouteImport } from './routes/app/department-member-calendar.$memberId'
 import { Route as AppDepartmentMemberAnalyticsMemberIdRouteImport } from './routes/app/department-member-analytics.$memberId'
 import { Route as AppAnalyticsOverviewRouteImport } from './routes/app/analytics_.overview'
+import { Route as ApiWebhooksXenditRouteImport } from './routes/api/webhooks/xendit'
 import { Route as ApiV1WorkspaceRouteImport } from './routes/api/v1/workspace'
 import { Route as ApiV1TimeEntriesRouteImport } from './routes/api/v1/time-entries'
 import { Route as ApiV1TasksRouteImport } from './routes/api/v1/tasks'
@@ -49,6 +52,7 @@ import { Route as ApiV1MembersRouteImport } from './routes/api/v1/members'
 import { Route as ApiV1MemberDayActivityRouteImport } from './routes/api/v1/member-day-activity'
 import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
 import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
+import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
 import { Route as ApiImportStreamRouteImport } from './routes/api/import/stream'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
 import { Route as ApiCronSyncGsheetsRouteImport } from './routes/api/cron/sync-gsheets'
@@ -61,6 +65,11 @@ import { Route as AppWorkspaceCatalogsDepartmentsRouteImport } from './routes/ap
 import { Route as AppWorkspaceCatalogsCohortsRouteImport } from './routes/app/workspace/catalogs.cohorts'
 import { Route as AppWorkspaceCatalogsClientsRouteImport } from './routes/app/workspace/catalogs.clients'
 
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -181,6 +190,11 @@ const AppWorkspaceCatalogsRoute = AppWorkspaceCatalogsRouteImport.update({
   path: '/workspace/catalogs',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWorkspaceBillingRoute = AppWorkspaceBillingRouteImport.update({
+  id: '/workspace/billing',
+  path: '/workspace/billing',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppWorkspaceActivityRoute = AppWorkspaceActivityRouteImport.update({
   id: '/workspace/activity',
   path: '/workspace/activity',
@@ -217,6 +231,11 @@ const AppAnalyticsOverviewRoute = AppAnalyticsOverviewRouteImport.update({
   id: '/analytics_/overview',
   path: '/analytics/overview',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiWebhooksXenditRoute = ApiWebhooksXenditRouteImport.update({
+  id: '/api/webhooks/xendit',
+  path: '/api/webhooks/xendit',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1WorkspaceRoute = ApiV1WorkspaceRouteImport.update({
   id: '/api/v1/workspace',
@@ -261,6 +280,11 @@ const ApiV1DepartmentsRoute = ApiV1DepartmentsRouteImport.update({
 const ApiV1ClientsRoute = ApiV1ClientsRouteImport.update({
   id: '/api/v1/clients',
   path: '/api/v1/clients',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNewsletterSubscribeRoute = ApiNewsletterSubscribeRouteImport.update({
+  id: '/api/newsletter/subscribe',
+  path: '/api/newsletter/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiImportStreamRoute = ApiImportStreamRouteImport.update({
@@ -331,6 +355,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
@@ -351,6 +376,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
@@ -360,6 +386,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/tasks': typeof ApiV1TasksRoute
   '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
   '/api/v1/workspace': typeof ApiV1WorkspaceRoute
+  '/api/webhooks/xendit': typeof ApiWebhooksXenditRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/department-member-calendar/$memberId': typeof AppDepartmentMemberCalendarMemberIdRoute
@@ -367,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
   '/app/time-tracker/week': typeof AppTimeTrackerWeekRoute
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
+  '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
@@ -384,6 +412,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
@@ -404,6 +433,7 @@ export interface FileRoutesByTo {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
@@ -413,6 +443,7 @@ export interface FileRoutesByTo {
   '/api/v1/tasks': typeof ApiV1TasksRoute
   '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
   '/api/v1/workspace': typeof ApiV1WorkspaceRoute
+  '/api/webhooks/xendit': typeof ApiWebhooksXenditRoute
   '/app/analytics/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/department-member-calendar/$memberId': typeof AppDepartmentMemberCalendarMemberIdRoute
@@ -420,6 +451,7 @@ export interface FileRoutesByTo {
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
   '/app/time-tracker/week': typeof AppTimeTrackerWeekRoute
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
+  '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
@@ -438,6 +470,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
+  '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
@@ -458,6 +491,7 @@ export interface FileRoutesById {
   '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/import/stream': typeof ApiImportStreamRoute
+  '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
@@ -467,6 +501,7 @@ export interface FileRoutesById {
   '/api/v1/tasks': typeof ApiV1TasksRoute
   '/api/v1/time-entries': typeof ApiV1TimeEntriesRoute
   '/api/v1/workspace': typeof ApiV1WorkspaceRoute
+  '/api/webhooks/xendit': typeof ApiWebhooksXenditRoute
   '/app/analytics_/overview': typeof AppAnalyticsOverviewRoute
   '/app/department-member-analytics/$memberId': typeof AppDepartmentMemberAnalyticsMemberIdRoute
   '/app/department-member-calendar/$memberId': typeof AppDepartmentMemberCalendarMemberIdRoute
@@ -474,6 +509,7 @@ export interface FileRoutesById {
   '/app/time-tracker/month': typeof AppTimeTrackerMonthRoute
   '/app/time-tracker/week': typeof AppTimeTrackerWeekRoute
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
+  '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
@@ -493,6 +529,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/pricing'
     | '/api/docs'
     | '/api/health'
     | '/api/openapi.json'
@@ -513,6 +550,7 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/member-day-activity'
@@ -522,6 +560,7 @@ export interface FileRouteTypes {
     | '/api/v1/tasks'
     | '/api/v1/time-entries'
     | '/api/v1/workspace'
+    | '/api/webhooks/xendit'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/department-member-calendar/$memberId'
@@ -529,6 +568,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker/month'
     | '/app/time-tracker/week'
     | '/app/workspace/activity'
+    | '/app/workspace/billing'
     | '/app/workspace/catalogs'
     | '/app/workspace/members'
     | '/app/workspace/settings'
@@ -546,6 +586,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/pricing'
     | '/api/docs'
     | '/api/health'
     | '/api/openapi.json'
@@ -566,6 +607,7 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/member-day-activity'
@@ -575,6 +617,7 @@ export interface FileRouteTypes {
     | '/api/v1/tasks'
     | '/api/v1/time-entries'
     | '/api/v1/workspace'
+    | '/api/webhooks/xendit'
     | '/app/analytics/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/department-member-calendar/$memberId'
@@ -582,6 +625,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker/month'
     | '/app/time-tracker/week'
     | '/app/workspace/activity'
+    | '/app/workspace/billing'
     | '/app/workspace/catalogs'
     | '/app/workspace/members'
     | '/app/workspace/settings'
@@ -599,6 +643,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/lounge'
     | '/onboarding'
+    | '/pricing'
     | '/api/docs'
     | '/api/health'
     | '/api/openapi.json'
@@ -619,6 +664,7 @@ export interface FileRouteTypes {
     | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
     | '/api/import/stream'
+    | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/member-day-activity'
@@ -628,6 +674,7 @@ export interface FileRouteTypes {
     | '/api/v1/tasks'
     | '/api/v1/time-entries'
     | '/api/v1/workspace'
+    | '/api/webhooks/xendit'
     | '/app/analytics_/overview'
     | '/app/department-member-analytics/$memberId'
     | '/app/department-member-calendar/$memberId'
@@ -635,6 +682,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker/month'
     | '/app/time-tracker/week'
     | '/app/workspace/activity'
+    | '/app/workspace/billing'
     | '/app/workspace/catalogs'
     | '/app/workspace/members'
     | '/app/workspace/settings'
@@ -653,6 +701,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoungeRoute: typeof LoungeRoute
   OnboardingRoute: typeof OnboardingRoute
+  PricingRoute: typeof PricingRoute
   ApiDocsRoute: typeof ApiDocsRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiOpenapiDotjsonRoute: typeof ApiOpenapiDotjsonRoute
@@ -665,6 +714,7 @@ export interface RootRouteChildren {
   ApiCronSyncGsheetsRoute: typeof ApiCronSyncGsheetsRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
   ApiImportStreamRoute: typeof ApiImportStreamRoute
+  ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
   ApiV1ClientsRoute: typeof ApiV1ClientsRoute
   ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
   ApiV1MemberDayActivityRoute: typeof ApiV1MemberDayActivityRoute
@@ -674,10 +724,18 @@ export interface RootRouteChildren {
   ApiV1TasksRoute: typeof ApiV1TasksRoute
   ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
+  ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -846,6 +904,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkspaceCatalogsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/workspace/billing': {
+      id: '/app/workspace/billing'
+      path: '/workspace/billing'
+      fullPath: '/app/workspace/billing'
+      preLoaderRoute: typeof AppWorkspaceBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/workspace/activity': {
       id: '/app/workspace/activity'
       path: '/workspace/activity'
@@ -894,6 +959,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/analytics/overview'
       preLoaderRoute: typeof AppAnalyticsOverviewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/webhooks/xendit': {
+      id: '/api/webhooks/xendit'
+      path: '/api/webhooks/xendit'
+      fullPath: '/api/webhooks/xendit'
+      preLoaderRoute: typeof ApiWebhooksXenditRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/v1/workspace': {
       id: '/api/v1/workspace'
@@ -956,6 +1028,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/clients'
       fullPath: '/api/v1/clients'
       preLoaderRoute: typeof ApiV1ClientsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/newsletter/subscribe': {
+      id: '/api/newsletter/subscribe'
+      path: '/api/newsletter/subscribe'
+      fullPath: '/api/newsletter/subscribe'
+      preLoaderRoute: typeof ApiNewsletterSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/import/stream': {
@@ -1086,6 +1165,7 @@ interface AppRouteChildren {
   AppTimeTrackerMonthRoute: typeof AppTimeTrackerMonthRoute
   AppTimeTrackerWeekRoute: typeof AppTimeTrackerWeekRoute
   AppWorkspaceActivityRoute: typeof AppWorkspaceActivityRoute
+  AppWorkspaceBillingRoute: typeof AppWorkspaceBillingRoute
   AppWorkspaceCatalogsRoute: typeof AppWorkspaceCatalogsRouteWithChildren
   AppWorkspaceMembersRoute: typeof AppWorkspaceMembersRouteWithChildren
   AppWorkspaceSettingsRoute: typeof AppWorkspaceSettingsRoute
@@ -1110,6 +1190,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTimeTrackerMonthRoute: AppTimeTrackerMonthRoute,
   AppTimeTrackerWeekRoute: AppTimeTrackerWeekRoute,
   AppWorkspaceActivityRoute: AppWorkspaceActivityRoute,
+  AppWorkspaceBillingRoute: AppWorkspaceBillingRoute,
   AppWorkspaceCatalogsRoute: AppWorkspaceCatalogsRouteWithChildren,
   AppWorkspaceMembersRoute: AppWorkspaceMembersRouteWithChildren,
   AppWorkspaceSettingsRoute: AppWorkspaceSettingsRoute,
@@ -1123,6 +1204,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoungeRoute: LoungeRoute,
   OnboardingRoute: OnboardingRoute,
+  PricingRoute: PricingRoute,
   ApiDocsRoute: ApiDocsRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiOpenapiDotjsonRoute: ApiOpenapiDotjsonRoute,
@@ -1135,6 +1217,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronSyncGsheetsRoute: ApiCronSyncGsheetsRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
   ApiImportStreamRoute: ApiImportStreamRoute,
+  ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
   ApiV1ClientsRoute: ApiV1ClientsRoute,
   ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
   ApiV1MemberDayActivityRoute: ApiV1MemberDayActivityRoute,
@@ -1144,6 +1227,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1TasksRoute: ApiV1TasksRoute,
   ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
+  ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

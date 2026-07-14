@@ -12,6 +12,7 @@ import {
 import { getSessionFn } from '#/lib/server/session'
 import { getSelfProfileFn } from '#/lib/server/tracker'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { getWorkspaceSubscriptionFn } from '#/lib/server/subscriptions'
 import { ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 
 export const Route = createFileRoute('/app')({
@@ -28,7 +29,7 @@ export const Route = createFileRoute('/app')({
   },
   loader: async ({ context }) => {
     try {
-      const [access, selfProfile] = await Promise.all([
+      const [access, selfProfile, subscription] = await Promise.all([
         context.queryClient.ensureQueryData({
           queryKey: ['workspace-access'],
           queryFn: () => getWorkspaceAccessFn(),
@@ -38,6 +39,11 @@ export const Route = createFileRoute('/app')({
           queryKey: ['self-profile'],
           queryFn: () => getSelfProfileFn(),
           staleTime: 5 * 60 * 1000,
+        }),
+        context.queryClient.ensureQueryData({
+          queryKey: ['workspace-subscription'],
+          queryFn: () => getWorkspaceSubscriptionFn(),
+          staleTime: 60 * 1000,
         }),
       ])
       return {
@@ -54,9 +60,17 @@ export const Route = createFileRoute('/app')({
           birthDate: selfProfile.profile?.birthDate ?? '',
         },
         permissionLevel: access.member.permissionLevel,
+        subscription: {
+          access: subscription.access,
+          plan: {
+            name: subscription.plan.name,
+            slug: subscription.plan.slug,
+          },
+          permissionLevel: access.member.permissionLevel,
+        },
       }
     } catch {
-      throw redirect({ to: '/onboarding' })
+      throw redirect({ to: '/onboarding', search: { plan: undefined } })
     }
   },
   staleTime: 5 * 60 * 1000,
@@ -88,6 +102,7 @@ function AppRoute() {
       workspace={data.workspace}
       user={data.user}
       permissionLevel={data.permissionLevel}
+      subscription={data.subscription}
     />
   )
 }

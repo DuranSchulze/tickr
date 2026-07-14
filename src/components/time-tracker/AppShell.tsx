@@ -6,6 +6,7 @@ import {
   Building2,
   ClipboardList,
   Cog,
+  CreditCard,
   ExternalLink,
   Tags,
   TrendingUp,
@@ -18,6 +19,9 @@ import { Navbar } from './Navbar'
 import { fireSideCannons } from '#/components/ui/confetti'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
+import { SubscriptionStatusBanner } from '#/components/subscription/SubscriptionStatusBanner'
+import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
+import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSubscriptionGate'
 
 type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
 
@@ -41,6 +45,7 @@ export function AppShell({
   workspace,
   user,
   permissionLevel,
+  subscription,
 }: {
   workspace: AppShellWorkspace
   user: {
@@ -51,6 +56,7 @@ export function AppShell({
     birthDate?: string | null
   }
   permissionLevel: string
+  subscription: SubscriptionSummary
 }) {
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') {
@@ -108,6 +114,7 @@ export function AppShell({
     (pathname.startsWith('/app/workspace') &&
       !pathname.startsWith('/app/workspace/activity')) ||
     pathname.startsWith('/app/audit-logs')
+  const billingActive = pathname.startsWith('/app/workspace/billing')
 
   const [analyticsOpen, setAnalyticsOpen] = useState(analyticsGroupActive)
   const [settingsOpen, setSettingsOpen] = useState(settingsActive)
@@ -186,8 +193,15 @@ export function AppShell({
         icon: ClipboardList,
       })
     }
+    if (permissionLevel === 'OWNER') {
+      items.push({
+        to: '/app/workspace/billing' as const,
+        label: 'Billing',
+        icon: CreditCard,
+      })
+    }
     return items
-  }, [canAccessSettings, isOwnerOrAdmin])
+  }, [canAccessSettings, isOwnerOrAdmin, permissionLevel])
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
@@ -224,35 +238,41 @@ export function AppShell({
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {!isEmbed && (
-          <div className="print:hidden">
-            <AppSidebar
-              collapsed={collapsed}
-              onToggleCollapsed={() => setCollapsed((c) => !c)}
-              workspaceName={workspace.name}
-              userEmail={user.email}
-              timerActive={timerActive}
-              analyticsGroupActive={analyticsGroupActive}
-              analyticsOpen={analyticsOpen}
-              onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
-              analyticsChildren={analyticsChildren}
-              calendarActive={calendarActive}
-              settingsActive={settingsActive}
-              settingsOpen={settingsOpen}
-              onToggleSettings={() => setSettingsOpen((open) => !open)}
-              settingsChildren={settingsChildren}
-            />
-          </div>
-        )}
+      {!isEmbed && <SubscriptionStatusBanner summary={subscription} />}
 
-        <main
-          className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
-        >
-          <Outlet />
-          {isEmbed && <EmbedFooter />}
-        </main>
-      </div>
+      {!subscription.access.canAccess && !billingActive ? (
+        <WorkspaceSubscriptionGate summary={subscription} />
+      ) : (
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {!isEmbed && (
+            <div className="print:hidden">
+              <AppSidebar
+                collapsed={collapsed}
+                onToggleCollapsed={() => setCollapsed((c) => !c)}
+                workspaceName={workspace.name}
+                userEmail={user.email}
+                timerActive={timerActive}
+                analyticsGroupActive={analyticsGroupActive}
+                analyticsOpen={analyticsOpen}
+                onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                analyticsChildren={analyticsChildren}
+                calendarActive={calendarActive}
+                settingsActive={settingsActive}
+                settingsOpen={settingsOpen}
+                onToggleSettings={() => setSettingsOpen((open) => !open)}
+                settingsChildren={settingsChildren}
+              />
+            </div>
+          )}
+
+          <main
+            className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
+          >
+            <Outlet />
+            {isEmbed && <EmbedFooter />}
+          </main>
+        </div>
+      )}
     </div>
   )
 }

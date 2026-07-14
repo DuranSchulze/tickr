@@ -7,10 +7,12 @@ import { Footer } from '#/components/marketing/Footer'
 import { HeroSection } from '#/components/marketing/HeroSection'
 import { HowItWorksSection } from '#/components/marketing/HowItWorksSection'
 import { MarketingNavbar } from '#/components/marketing/MarketingNavbar'
+import { NewsletterSection } from '#/components/marketing/NewsletterSection'
 import { PricingPreview } from '#/components/marketing/PricingPreview'
 import { StatsBanner } from '#/components/marketing/StatsBanner'
 import { TestimonialsSection } from '#/components/marketing/TestimonialsSection'
 import { WorkspacePreviewSection } from '#/components/marketing/WorkspacePreviewSection'
+import { CONTACT } from '#/lib/landing-content'
 import { BRAND } from '#/lib/brand'
 import { getSessionFn } from '#/lib/server/session'
 import { useInView } from '#/hooks/useInView'
@@ -98,6 +100,9 @@ function HomePage() {
         </LandingReveal>
         <LandingReveal direction="up" className="landing-cta-stage">
           <CtaBand isLoggedIn={isLoggedIn} />
+        </LandingReveal>
+        <LandingReveal direction="up">
+          <NewsletterSection contactEmail={CONTACT.email} />
         </LandingReveal>
       </main>
       <Footer isLoggedIn={isLoggedIn} />

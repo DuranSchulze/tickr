@@ -25,14 +25,29 @@ import { redeemInviteByCodeFn } from '#/lib/server/workspace-invites'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { TimezoneSelect } from '#/components/ui/TimezoneSelect'
 
+type OnboardingSearch = { plan?: 'team' | 'business' }
+
 export const Route = createFileRoute('/onboarding')({
-  loader: async () => {
+  validateSearch: (search: Record<string, unknown>): OnboardingSearch => ({
+    plan:
+      search.plan === 'team' || search.plan === 'business'
+        ? search.plan
+        : undefined,
+  }),
+  loaderDeps: ({ search }) => ({ plan: search.plan }),
+  loader: async ({ deps }) => {
     const session = await getSessionFn()
     if (!session?.user) {
       throw redirect({ to: '/auth' })
     }
     const workspaces = await listUserWorkspacesFn()
     if (workspaces.length > 0) {
+      if (deps.plan) {
+        throw redirect({
+          to: '/app/workspace/billing',
+          search: { plan: deps.plan },
+        })
+      }
       throw redirect({ to: '/app/time-tracker' })
     }
     return {
@@ -46,11 +61,12 @@ export const Route = createFileRoute('/onboarding')({
 // oxlint-disable-next-line react/only-export-components
 function OnboardingPage() {
   const { email, name } = Route.useLoaderData()
+  const search = Route.useSearch()
   const navigate = useNavigate()
   const [mode, setMode] = useState<'choose' | 'create'>('choose')
   const [wsName, setWsName] = useState('')
   const [timezone, setTimezone] = useState(
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila',
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Manila',
   )
   const [loading, setLoading] = useState(false)
   const [joinCode, setJoinCode] = useState('')
@@ -68,13 +84,26 @@ function OnboardingPage() {
     }
     setLoading(true)
     try {
-      await createWorkspaceFn({ data: { name: wsName.trim(), timezone } })
+      await createWorkspaceFn({
+        data: {
+          name: wsName.trim(),
+          timezone,
+          planSlug: search.plan,
+        },
+      })
       gooeyToast.success('Workspace created', {
         description: 'Welcome aboard!',
       })
       // Invalidate cached queries so the /app route picks up the new workspace
       await router.invalidate()
-      await navigate({ to: '/app/time-tracker' })
+      if (search.plan) {
+        await navigate({
+          to: '/app/workspace/billing',
+          search: { plan: search.plan },
+        })
+      } else {
+        await navigate({ to: '/app/time-tracker' })
+      }
     } catch (err) {
       // TanStack Router redirects (from route guards) are not real errors
       const isRedirect = err && typeof err === 'object' && 'code' in err

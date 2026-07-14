@@ -18,16 +18,28 @@ export const leaveWorkspaceFn = createServerFn({ method: 'POST' })
 export const createWorkspaceFn = createServerFn({ method: 'POST' })
   .inputValidator(
     (
-      input: { name?: unknown; timezone?: unknown; slug?: unknown } | undefined,
+      input:
+        | {
+            name?: unknown
+            timezone?: unknown
+            slug?: unknown
+            planSlug?: unknown
+          }
+        | undefined,
     ) => {
       if (!input || typeof input.name !== 'string') {
         throw new Error('Workspace name is required.')
       }
+      const planSlug: 'team' | 'business' | undefined =
+        input.planSlug === 'team' || input.planSlug === 'business'
+          ? input.planSlug
+          : undefined
       return {
         name: input.name,
         timezone:
           typeof input.timezone === 'string' ? input.timezone : undefined,
         slug: typeof input.slug === 'string' ? input.slug : undefined,
+        planSlug,
       }
     },
   )

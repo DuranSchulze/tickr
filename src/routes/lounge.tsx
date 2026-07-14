@@ -7,6 +7,6 @@ export const Route = createFileRoute('/lounge')({
     if (!session?.user) {
       throw redirect({ to: '/auth' })
     }
-    throw redirect({ to: '/onboarding' })
+    throw redirect({ to: '/onboarding', search: { plan: undefined } })
   },
 })

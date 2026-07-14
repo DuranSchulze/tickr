@@ -12,6 +12,7 @@ import {
   uniqueIndex,
   primaryKey,
   check,
+  jsonb,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
@@ -66,6 +67,24 @@ export const employmentStatusEnum = pgEnum('EmploymentStatus', [
   'RESIGNED',
   'TERMINATED',
 ])
+
+export const subscriptionPlanTierEnum = pgEnum('SubscriptionPlanTier', [
+  'TEAM',
+  'BUSINESS',
+])
+
+export const subscriptionStatusEnum = pgEnum('SubscriptionStatus', [
+  'TRIALING',
+  'ACTIVE',
+  'PAST_DUE',
+  'CANCELED',
+  'EXPIRED',
+])
+
+export const subscriptionPaymentStatusEnum = pgEnum(
+  'SubscriptionPaymentStatus',
+  ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+)
 
 // ── Auth tables ───────────────────────────────────────────────────────────────
 
@@ -229,6 +248,7 @@ export const workspaces = pgTable('workspaces', {
   billableCurrency: varchar('billable_currency', { length: 8 })
     .notNull()
     .default('PHP'),
+  billingExempt: boolean('billing_exempt').notNull().default(false),
   googleSheetUrl: varchar('google_sheet_url', { length: 500 }),
   googleSheetSyncedAt: timestamp('google_sheet_synced_at', {
     withTimezone: true,
@@ -351,6 +371,172 @@ export const workspaceMembers = pgTable(
     index('workspace_members_user_id_idx').on(table.userId),
     index('workspace_members_department_id_idx').on(table.departmentId),
     index('workspace_members_invited_by_idx').on(table.invitedById),
+  ],
+)
+
+// ── Subscription tables ──────────────────────────────────────────────────────
+
+export const subscriptionPlans = pgTable(
+  'subscription_plans',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    slug: varchar('slug', { length: 40 }).notNull().unique(),
+    name: varchar('name', { length: 80 }).notNull(),
+    tier: subscriptionPlanTierEnum('tier').notNull(),
+    tagline: text('tagline').notNull(),
+    features: jsonb('features').$type<string[]>().notNull().default([]),
+    currency: varchar('currency', { length: 3 }).notNull().default('USD'),
+    monthlyPriceCents: integer('monthly_price_cents').notNull(),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isActive: boolean('is_active').notNull().default(true),
+    isPublic: boolean('is_public').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('subscription_plans_public_sort_idx').on(
+      table.isPublic,
+      table.sortOrder,
+    ),
+  ],
+)
+
+export const subscriptions = pgTable(
+  'subscriptions',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    planId: varchar('plan_id', { length: 30 })
+      .notNull()
+      .references(() => subscriptionPlans.id, { onDelete: 'restrict' }),
+    status: subscriptionStatusEnum('status').notNull().default('TRIALING'),
+    trialStartedAt: timestamp('trial_started_at', { withTimezone: true }),
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
+    currentPeriodStartedAt: timestamp('current_period_started_at', {
+      withTimezone: true,
+    }).notNull(),
+    currentPeriodEndsAt: timestamp('current_period_ends_at', {
+      withTimezone: true,
+    }).notNull(),
+    xenditPaymentSessionId: varchar('xendit_payment_session_id', {
+      length: 120,
+    }),
+    xenditCustomerId: varchar('xendit_customer_id', { length: 120 }),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    canceledAt: timestamp('canceled_at', { withTimezone: true }),
+    dataRetentionUntil: timestamp('data_retention_until', {
+      withTimezone: true,
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('subscriptions_workspace_unique').on(table.workspaceId),
+    uniqueIndex('subscriptions_xendit_session_unique').on(
+      table.xenditPaymentSessionId,
+    ),
+    index('subscriptions_status_period_idx').on(
+      table.status,
+      table.currentPeriodEndsAt,
+    ),
+  ],
+)
+
+export const subscriptionInvoices = pgTable(
+  'subscription_invoices',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    subscriptionId: varchar('subscription_id', { length: 30 })
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    xenditPaymentSessionId: varchar('xendit_payment_session_id', {
+      length: 120,
+    })
+      .notNull()
+      .unique(),
+    xenditReferenceId: varchar('xendit_reference_id', { length: 120 })
+      .notNull()
+      .unique(),
+    paymentLinkUrl: text('payment_link_url').notNull(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: varchar('currency', { length: 3 }).notNull(),
+    status: subscriptionPaymentStatusEnum('status')
+      .notNull()
+      .default('PENDING'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('subscription_invoices_workspace_created_idx').on(
+      table.workspaceId,
+      table.createdAt,
+    ),
+  ],
+)
+
+export const subscriptionPayments = pgTable(
+  'subscription_payments',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    subscriptionId: varchar('subscription_id', { length: 30 })
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
+    invoiceId: varchar('invoice_id', { length: 30 }).references(
+      () => subscriptionInvoices.id,
+      { onDelete: 'set null' },
+    ),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    xenditPaymentId: varchar('xendit_payment_id', { length: 120 })
+      .notNull()
+      .unique(),
+    amountCents: integer('amount_cents').notNull(),
+    currency: varchar('currency', { length: 3 }).notNull(),
+    status: subscriptionPaymentStatusEnum('status').notNull(),
+    paymentMethod: varchar('payment_method', { length: 80 }),
+    paidAt: timestamp('paid_at', { withTimezone: true }),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('subscription_payments_workspace_created_idx').on(
+      table.workspaceId,
+      table.createdAt,
+    ),
   ],
 )
 
@@ -1053,6 +1239,17 @@ export const pendingGsheetsSyncs = pgTable('pending_gsheets_syncs', {
     .defaultNow(),
 })
 
+// ── Newsletter subscribers ──────────────────────────────────────────────────
+
+export const newsletterSubscribers = pgTable('newsletter_subscribers', {
+  id: varchar({ length: 16 })
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  email: varchar({ length: 255 }).notNull().unique(),
+  status: varchar({ length: 20 }).notNull().default('active'),
+  subscribedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+})
+
 // ── Exported types ────────────────────────────────────────────────────────────
 
 export type RolePermission = (typeof rolePermissionEnum.enumValues)[number]
@@ -1062,3 +1259,9 @@ export type EmploymentType = (typeof employmentTypeEnum.enumValues)[number]
 export type EmploymentStatus = (typeof employmentStatusEnum.enumValues)[number]
 export type Gender = (typeof genderEnum.enumValues)[number]
 export type MaritalStatus = (typeof maritalStatusEnum.enumValues)[number]
+export type SubscriptionPlanTier =
+  (typeof subscriptionPlanTierEnum.enumValues)[number]
+export type SubscriptionStatus =
+  (typeof subscriptionStatusEnum.enumValues)[number]
+export type SubscriptionPaymentStatus =
+  (typeof subscriptionPaymentStatusEnum.enumValues)[number]

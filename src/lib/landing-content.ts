@@ -67,36 +67,56 @@ export const WORKFLOW_STEPS = [
   },
 ] as const
 
-export const PLAN_PREVIEWS = [
-  {
-    name: 'Team',
-    price: 20,
-    tagline: 'Everything a growing team needs to track and report its work.',
-    features: [
-      'Live timers and manual time entries',
-      'Projects, clients, tasks, and tags',
-      'Daily, weekly, and monthly reports',
-      'Report exports',
-      'Team invitations',
-    ],
-    featured: false,
-  },
-  {
-    name: 'Business',
-    price: 50,
-    tagline:
-      'More structure, oversight, and integrations for established teams.',
-    features: [
-      'Everything in Team',
-      'Departments and cohorts',
-      'Role-based workspace access',
-      'Team and member analytics',
-      'Google Sheets integration',
-      'Audit logs and API access',
-    ],
-    featured: true,
-  },
-] as const
+// ── Pricing plans currently under review ──
+// Uncomment when pricing is finalized.
+//
+// export const PLAN_PREVIEWS = [
+//   {
+//     slug: 'team' as const,
+//     name: 'Team',
+//     price: 20,
+//     tagline: 'Everything a growing team needs to track and report its work.',
+//     features: [
+//       'Live timers and manual time entries',
+//       'Projects, clients, tasks, and tags',
+//       'Daily, weekly, and monthly reports',
+//       'Report exports',
+//       'Team invitations',
+//     ],
+//     highlighted: false,
+//   },
+//   {
+//     slug: 'business' as const,
+//     name: 'Business',
+//     price: 50,
+//     tagline:
+//       'More structure, oversight, and integrations for established teams.',
+//     features: [
+//       'Everything in Team',
+//       'Departments and cohorts',
+//       'Role-based workspace access',
+//       'Team and member analytics',
+//       'Google Sheets integration',
+//       'Audit logs and API access',
+//     ],
+//     highlighted: true,
+//   },
+// ] as const
+
+export type LandingPricingPlan = {
+  slug: 'team' | 'business'
+  name: string
+  price: number
+  tagline: string
+  features: readonly string[]
+  highlighted: boolean
+}
+
+export const PLAN_PREVIEWS: readonly LandingPricingPlan[] = []
+
+export const CONTACT = {
+  email: 'info@filepino.com',
+} as const
 
 export const FAQ_ITEMS = [
   {
@@ -127,6 +147,6 @@ export const FAQ_ITEMS = [
   {
     question: 'How much does Trackly cost?',
     answer:
-      'Trackly offers two monthly plans in USD: Team at $20 per month and Business at $50 per month. The Business plan adds workspace structure, advanced analytics, integrations, audit logs, and API access.',
+      'Trackly currently offers a free public beta. Plans and pricing will be announced soon. Stay tuned.',
   },
 ] as const

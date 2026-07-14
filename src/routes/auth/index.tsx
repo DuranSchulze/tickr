@@ -20,14 +20,22 @@ import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { getSessionFn } from '#/lib/server/session'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
-type AuthSearch = { invite?: string; email?: string }
+type AuthSearch = {
+  invite?: string
+  email?: string
+  plan?: 'team' | 'business'
+}
 
 export const Route = createFileRoute('/auth/')({
   validateSearch: (search: Record<string, unknown>): AuthSearch => ({
     invite: typeof search.invite === 'string' ? search.invite : undefined,
     email: typeof search.email === 'string' ? search.email : undefined,
+    plan:
+      search.plan === 'team' || search.plan === 'business'
+        ? search.plan
+        : undefined,
   }),
-  loaderDeps: ({ search }) => ({ invite: search.invite }),
+  loaderDeps: ({ search }) => ({ invite: search.invite, plan: search.plan }),
   loader: async ({ deps }) => {
     const session = await getSessionFn()
     if (session?.user) {
@@ -46,6 +54,12 @@ export const Route = createFileRoute('/auth/')({
       }
 
       if (hasWorkspaceAccess) {
+        if (deps.plan) {
+          throw redirect({
+            to: '/app/workspace/billing',
+            search: { plan: deps.plan },
+          })
+        }
         throw redirect({ to: '/app/time-tracker' })
       }
 
@@ -182,7 +196,10 @@ function AuthPage() {
         })
       } else {
         await router.invalidate()
-        await navigate({ to: '/onboarding' })
+        await navigate({
+          to: '/onboarding',
+          search: { plan: search.plan },
+        })
       }
     } catch {
       gooeyToast.error('Something went wrong', {
@@ -282,7 +299,12 @@ function AuthPage() {
                 name={name}
                 email={email}
                 onSignOut={handleSignOut}
-                onCheckAccess={() => void navigate({ to: '/onboarding' })}
+                onCheckAccess={() =>
+                  void navigate({
+                    to: '/onboarding',
+                    search: { plan: search.plan },
+                  })
+                }
               />
             ) : (
               <SignInForm

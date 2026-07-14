@@ -287,12 +287,20 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
 }
 
 export async function requireWorkspaceMembership(): Promise<WorkspaceMembership> {
-  return _fetchWorkspaceMembership()
+  const membership = await _fetchWorkspaceMembership()
+  const { assertWorkspaceWriteAccess } =
+    await import('./subscription-gate.server')
+  await assertWorkspaceWriteAccess(membership.workspace.id)
+  return membership
 }
 
 // ── Full workspace access (route loaders) ──────────────────────────────────────
 
-async function _fetchWorkspaceAccess(slug?: string | null, skipCsrf = false) {
+async function _fetchWorkspaceAccess(
+  slug?: string | null,
+  skipCsrf = false,
+  skipSubscriptionGate = false,
+) {
   if (!skipCsrf) assertTrustedOrigin()
   const session = await getAuthSession()
 
@@ -350,6 +358,18 @@ async function _fetchWorkspaceAccess(slug?: string | null, skipCsrf = false) {
     chosen = refreshed[0]
   }
 
+  const method = getRequest().method.toUpperCase()
+  if (
+    !skipSubscriptionGate &&
+    !skipCsrf &&
+    method !== 'GET' &&
+    method !== 'HEAD'
+  ) {
+    const { assertWorkspaceWriteAccess } =
+      await import('./subscription-gate.server')
+    await assertWorkspaceWriteAccess(chosen.workspace.id)
+  }
+
   return {
     session,
     user: session.user,
@@ -365,16 +385,17 @@ const _requestCache = new WeakMap<object, Promise<WorkspaceAccess>>()
 
 export async function requireWorkspaceAccess(
   slug?: string | null,
-  options?: { skipCsrf?: boolean },
+  options?: { skipCsrf?: boolean; skipSubscriptionGate?: boolean },
 ): Promise<WorkspaceAccess> {
   const skipCsrf = options?.skipCsrf ?? false
+  const skipSubscriptionGate = options?.skipSubscriptionGate ?? false
 
   if (slug != null) {
-    return _fetchWorkspaceAccess(slug, skipCsrf)
+    return _fetchWorkspaceAccess(slug, skipCsrf, skipSubscriptionGate)
   }
 
   // Only cache when not skipping CSRF — different security context
-  if (!skipCsrf) {
+  if (!skipCsrf && !skipSubscriptionGate) {
     const request = getRequest()
     const cached = _requestCache.get(request)
     if (cached) return cached
@@ -384,5 +405,5 @@ export async function requireWorkspaceAccess(
     return promise
   }
 
-  return _fetchWorkspaceAccess(undefined, true)
+  return _fetchWorkspaceAccess(undefined, skipCsrf, skipSubscriptionGate)
 }
