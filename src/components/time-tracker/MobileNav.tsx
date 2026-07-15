@@ -19,6 +19,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '#/components/ui/drawer'
+import { AppLogo } from '#/components/ui/AppLogo'
 
 type NavItem = {
   to: string
@@ -95,7 +96,13 @@ export const MobileNav = memo(function ({
                   {userEmail}
                 </p>
               </div>
-              <BriefcaseBusiness className="size-4 shrink-0 text-primary" />
+              <div className="flex shrink-0 items-center gap-2">
+                <AppLogo
+                  size="sm"
+                  customSrc="/favicon/web-app-manifest-192x192.png"
+                />
+                <BriefcaseBusiness className="size-4 text-primary" />
+              </div>
             </div>
           </div>
 

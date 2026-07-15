@@ -2,7 +2,15 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { Check, LogOut, Moon, Settings, Sparkles, Sun, UserCircle } from 'lucide-react'
+import {
+  Check,
+  LogOut,
+  Moon,
+  Settings,
+  Sparkles,
+  Sun,
+  UserCircle,
+} from 'lucide-react'
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { authClient } from '#/lib/auth-client'
@@ -103,7 +111,11 @@ export function Navbar({
           to="/app/time-tracker"
           className="flex items-center gap-3 no-underline"
         >
-          <AppLogo size="md" />
+          <AppLogo
+            size="md"
+            customSrc="/favicon/web-app-manifest-192x192.png"
+            imgClassName="dark:invert"
+          />
           <div className="hidden sm:block">
             <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-foreground">
               {BRAND.name}
