@@ -100,6 +100,7 @@ export const MobileNav = memo(function ({
                 <AppLogo
                   size="sm"
                   customSrc="/favicon/web-app-manifest-192x192.png"
+                  imgClassName="dark:invert"
                 />
                 <BriefcaseBusiness className="size-4 text-primary" />
               </div>

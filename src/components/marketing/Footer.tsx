@@ -19,7 +19,11 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
               to="/"
               className="inline-flex items-center gap-3 no-underline"
             >
-              <AppLogo size="md" />
+              <AppLogo
+                size="md"
+                customSrc="/favicon/icon1.png"
+                imgClassName="dark:invert"
+              />
               <span className="font-heading text-lg font-black uppercase tracking-[0.16em] text-foreground">
                 {BRAND.name}
               </span>
