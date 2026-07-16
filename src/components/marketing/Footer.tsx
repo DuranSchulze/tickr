@@ -21,7 +21,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
             >
               <AppLogo
                 size="md"
-                customSrc="/favicon/icon1.png"
+                customSrc="/logo.svg"
                 imgClassName="dark:invert"
               />
               <span className="font-heading text-lg font-black uppercase tracking-[0.16em] text-foreground">
