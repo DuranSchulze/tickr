@@ -28,6 +28,23 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
     return () => window.removeEventListener('scroll', update)
   }, [])
 
+  useEffect(() => {
+    if (!menuOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [menuOpen])
+
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
@@ -66,14 +83,14 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
           {!isLoggedIn && (
             <Link
               to="/auth"
-              className="hidden min-h-10 items-center px-3 text-sm font-bold text-foreground no-underline sm:inline-flex"
+              className="hidden min-h-10 items-center px-3 text-sm font-bold text-foreground no-underline lg:inline-flex"
             >
               Sign in
             </Link>
           )}
           <Link
             to={isLoggedIn ? '/app/time-tracker' : '/auth'}
-            className={`hidden min-h-10 items-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline transition-all sm:inline-flex ${pastHeroIntro ? 'shadow-[3px_3px_0_color-mix(in_oklab,var(--primary)_22%,transparent)]' : ''}`}
+            className={`hidden min-h-10 items-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline transition-all lg:inline-flex ${pastHeroIntro ? 'shadow-[3px_3px_0_color-mix(in_oklab,var(--primary)_22%,transparent)]' : ''}`}
           >
             {isLoggedIn
               ? 'Dashboard'
@@ -105,27 +122,47 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
         <nav
           id="mobile-navigation"
           aria-label="Mobile navigation"
-          className="border-t border-border bg-background px-5 py-4 lg:hidden"
+          className="absolute inset-x-0 top-full z-50 flex h-[calc(100dvh-4rem)] overflow-y-auto bg-background lg:hidden"
         >
-          <div className="mx-auto grid max-w-7xl gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
+          <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-6 sm:px-8 sm:pt-10">
+            <div className="border-t border-border">
+              {navLinks.map((link, index) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMenuOpen(false)}
+                  className="group flex min-h-16 items-center justify-between border-b border-border px-1 font-heading text-2xl font-black text-foreground no-underline transition-colors hover:bg-muted sm:min-h-20 sm:text-3xl"
+                >
+                  <span>{link.label}</span>
+                  <span
+                    className="font-sans text-xs font-bold tabular-nums text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    0{index + 1}
+                  </span>
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-auto grid gap-3 pt-8 sm:grid-cols-2">
+              {!isLoggedIn && (
+                <Link
+                  to="/auth"
+                  onClick={() => setMenuOpen(false)}
+                  className="inline-flex min-h-12 items-center justify-center border border-border bg-card px-4 text-sm font-bold text-foreground no-underline transition-colors hover:bg-muted"
+                >
+                  Sign in
+                </Link>
+              )}
+              <Link
+                to={isLoggedIn ? '/app/time-tracker' : '/auth'}
                 onClick={() => setMenuOpen(false)}
-                className="flex min-h-12 items-center border-b border-border px-3 text-sm font-bold text-foreground no-underline hover:bg-muted"
+                className={`inline-flex min-h-12 items-center justify-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline ${isLoggedIn ? 'sm:col-span-2' : ''}`}
               >
-                {link.label}
-              </a>
-            ))}
-            <Link
-              to={isLoggedIn ? '/app/time-tracker' : '/auth'}
-              onClick={() => setMenuOpen(false)}
-              className="mt-2 inline-flex min-h-12 items-center justify-center gap-2 border border-primary bg-primary px-4 text-sm font-bold text-primary-foreground no-underline"
-            >
-              {isLoggedIn ? 'Open dashboard' : 'Create workspace'}{' '}
-              <ArrowRight className="size-4" aria-hidden="true" />
-            </Link>
+                {isLoggedIn ? 'Open dashboard' : 'Create workspace'}
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
         </nav>
       ) : null}
