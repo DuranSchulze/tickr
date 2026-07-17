@@ -111,7 +111,7 @@ export function Navbar({
           to="/app/time-tracker"
           className="flex items-center gap-3 no-underline"
         >
-          <AppLogo size="md" customSrc="/logo.svg" imgClassName="dark:invert" />
+          <AppLogo size="md" imgClassName="dark:invert" />
           <div className="hidden sm:block">
             <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-foreground">
               {BRAND.name}

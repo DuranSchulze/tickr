@@ -53,7 +53,7 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
           className="flex items-center gap-3 no-underline"
           aria-label={`${BRAND.name} home`}
         >
-          <AppLogo size="md" customSrc="/logo.svg" imgClassName="dark:invert" />
+          <AppLogo size="md" imgClassName="dark:invert" />
           <span className="font-heading text-sm font-black uppercase tracking-[0.18em] text-foreground">
             {BRAND.name}
           </span>
