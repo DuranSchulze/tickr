@@ -6,6 +6,8 @@ import { updateDepartmentFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
   CancelButton,
+  catalogFormActionsClass,
+  catalogFormClass,
   ColorInput,
   inputClass,
   SubmitButton,
@@ -49,7 +51,7 @@ export function EditDepartmentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -66,7 +68,7 @@ export function EditDepartmentForm({
         className={inputClass}
       />
       <ColorInput value={color} onChange={setColor} />
-      <div className="flex gap-2">
+      <div className={catalogFormActionsClass}>
         <SubmitButton
           pending={pending}
           label="Save changes"

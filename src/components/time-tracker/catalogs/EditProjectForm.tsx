@@ -6,6 +6,8 @@ import { updateProjectFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
   CancelButton,
+  catalogFormActionsClass,
+  catalogFormClass,
   ClientSelect,
   ColorInput,
   inputClass,
@@ -45,7 +47,7 @@ export function EditProjectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <ClientSelect
         clients={clients}
         value={clientId}
@@ -60,7 +62,7 @@ export function EditProjectForm({
         className={inputClass}
       />
       <ColorInput value={color} onChange={setColor} />
-      <div className="flex gap-2">
+      <div className={catalogFormActionsClass}>
         <SubmitButton
           pending={pending}
           label="Save changes"

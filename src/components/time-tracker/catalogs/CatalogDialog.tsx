@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { CatalogFormDialog } from './CatalogFormDialog'
 
 export type CatalogAccent = {
   bg: string
@@ -133,31 +134,14 @@ export function CatalogDialog({
       </section>
 
       {/* Form dialog */}
-      {canManage && formOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setFormOpen(false)}
-            aria-label="Close"
-          />
-          <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <h3 className="text-base font-semibold text-foreground">
-                Add new
-              </h3>
-              <button
-                type="button"
-                onClick={() => setFormOpen(false)}
-                className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label="Close form"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            <div className="p-5">{createForm(() => setFormOpen(false))}</div>
-          </div>
-        </div>
+      {canManage && (
+        <CatalogFormDialog
+          title={`Add to ${title}`}
+          open={formOpen}
+          onClose={() => setFormOpen(false)}
+        >
+          {createForm(() => setFormOpen(false))}
+        </CatalogFormDialog>
       )}
     </div>
   )

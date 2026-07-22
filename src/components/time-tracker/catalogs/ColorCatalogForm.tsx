@@ -4,6 +4,7 @@ import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
 import {
   BulkNamesInput,
+  catalogFormClass,
   ColorInput,
   FormTitle,
   inputClass,
@@ -80,7 +81,7 @@ export function ColorCatalogForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <FormTitle
         title={
           mode === 'single'

@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table'
 
 import type { ColumnDef } from '@tanstack/react-table'
+import { Combobox } from '#/components/ui/combobox'
 import {
   Pagination,
   PaginationContent,
@@ -26,45 +27,7 @@ import {
   TableRow,
 } from '#/components/ui/table'
 
-// ─── Form Dialog ──────────────────────────────────────────────────────────────
-
-export function CatalogFormDialog({
-  title,
-  open,
-  onClose,
-  children,
-}: {
-  title: string
-  open: boolean
-  onClose: () => void
-  children: ReactNode
-}) {
-  if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-        aria-label="Close"
-      />
-      <div className="relative w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h3 className="text-base font-semibold text-foreground">{title}</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  )
-}
+export { CatalogFormDialog } from './CatalogFormDialog'
 
 // ─── Search Bar ───────────────────────────────────────────────────────────────
 
@@ -126,6 +89,10 @@ export type CatalogFilterField = {
   /** Value treated as "no filter" — not emitted to the URL and not counted as active. */
   defaultValue?: string
   options: Array<{ value: string; label: string }>
+  /** Enables text filtering for catalog-backed option lists. */
+  searchable?: boolean
+  searchPlaceholder?: string
+  emptyText?: string
 }
 
 /**
@@ -231,21 +198,43 @@ export function CatalogFilterBar({
       </div>
 
       {/* Filter dropdowns */}
-      {filters.map((f) => (
-        <select
-          key={f.key}
-          value={draft[f.key] || f.defaultValue || ''}
-          onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
-          aria-label={f.label}
-          className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-        >
-          {f.options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      ))}
+      {filters.map((f) => {
+        const value = draft[f.key] || f.defaultValue || ''
+
+        return f.searchable ? (
+          <Combobox
+            key={f.key}
+            options={f.options}
+            value={value}
+            onValueChange={(nextValue) =>
+              setDraft((d) => ({ ...d, [f.key]: nextValue }))
+            }
+            placeholder={f.options[0]?.label ?? `Select ${f.label}`}
+            searchPlaceholder={
+              f.searchPlaceholder ?? `Search ${f.label.toLowerCase()}…`
+            }
+            emptyText={f.emptyText ?? `No ${f.label.toLowerCase()} found.`}
+            className="h-9 w-auto min-w-40 rounded-lg"
+            contentClassName="z-[60]"
+          />
+        ) : (
+          <select
+            key={f.key}
+            value={value}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, [f.key]: e.target.value }))
+            }
+            aria-label={f.label}
+            className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            {f.options.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )
+      })}
 
       {/* Apply / Clear */}
       <button

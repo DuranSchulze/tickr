@@ -326,6 +326,8 @@ export function ProjectsTablePage({
         {
           key: 'clientId',
           label: 'Client',
+          searchable: true,
+          searchPlaceholder: 'Search clients…',
           options: [
             { value: '', label: 'All clients' },
             ...data.clients.map((c) => ({ value: c.id, label: c.name })),

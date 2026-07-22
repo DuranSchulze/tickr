@@ -7,6 +7,7 @@ import { createClientFn, createProjectFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
   BulkNamesInput,
+  catalogFormClass,
   ClientSelect,
   ColorInput,
   FormTitle,
@@ -142,7 +143,7 @@ export function ProjectForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <FormTitle
         title={mode === 'single' ? 'Create project' : 'Bulk create projects'}
       />
@@ -169,14 +170,14 @@ export function ProjectForm({
             />
           )}
           {addingClient ? (
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
               <input
                 value={newClientName}
                 onChange={(e) => dispatch({ newClientName: e.target.value })}
                 placeholder="New client name"
                 aria-label="New client name"
                 required
-                className={`${inputClass} flex-1`}
+                className={`${inputClass} col-span-2 sm:col-span-1`}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -191,7 +192,7 @@ export function ProjectForm({
                 type="button"
                 disabled={newClientPending}
                 onClick={() => void handleCreateClient()}
-                className="h-10 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                className="h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
               >
                 {newClientPending ? '…' : 'Add'}
               </button>
@@ -200,7 +201,7 @@ export function ProjectForm({
                 onClick={() =>
                   dispatch({ addingClient: false, newClientName: '' })
                 }
-                className="h-10 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-accent"
+                className="h-11 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-muted-foreground hover:bg-accent"
               >
                 Cancel
               </button>
@@ -209,7 +210,7 @@ export function ProjectForm({
             <button
               type="button"
               onClick={() => dispatch({ addingClient: true })}
-              className="flex items-center gap-1.5 self-start text-xs font-semibold text-primary hover:underline"
+              className="flex items-center gap-1.5 justify-self-start text-xs font-semibold text-primary hover:underline"
             >
               <Plus className="size-3" />
               New client

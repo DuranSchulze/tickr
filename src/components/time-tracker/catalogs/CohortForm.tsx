@@ -4,8 +4,10 @@ import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
 import { createCohortFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
+import { Combobox } from '#/components/ui/combobox'
 import {
   BulkNamesInput,
+  catalogFormClass,
   FormTitle,
   inputClass,
   ModeToggle,
@@ -76,26 +78,26 @@ export function CohortForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <FormTitle
         title={
           mode === 'single' ? 'Create group / cohort' : 'Bulk create cohorts'
         }
       />
       <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
-      <select
+      <Combobox
+        options={departments.map((department) => ({
+          value: department.id,
+          label: department.name,
+        }))}
         value={departmentId}
-        onChange={(event) => dispatch({ departmentId: event.target.value })}
-        required
-        className={inputClass}
-      >
-        <option value="">Choose department</option>
-        {departments.map((department) => (
-          <option key={department.id} value={department.id}>
-            {department.name}
-          </option>
-        ))}
-      </select>
+        onValueChange={(value) => dispatch({ departmentId: value })}
+        placeholder="Choose a department"
+        searchPlaceholder="Search departments…"
+        emptyText="No departments match."
+        className="h-11 rounded-lg bg-background"
+        contentClassName="z-[60]"
+      />
       {mode === 'single' ? (
         <input
           value={name}

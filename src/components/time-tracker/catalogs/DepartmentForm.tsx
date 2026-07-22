@@ -5,6 +5,7 @@ import { gooeyToast } from '#/lib/toast'
 import { createDepartmentFn } from '#/lib/server/tracker'
 import {
   BulkNamesInput,
+  catalogFormClass,
   ColorInput,
   FormTitle,
   inputClass,
@@ -75,7 +76,7 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <FormTitle
         title={
           mode === 'single' ? 'Create department' : 'Bulk create departments'

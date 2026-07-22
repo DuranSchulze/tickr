@@ -6,6 +6,7 @@ import { createClientFn } from '#/lib/server/tracker'
 import type { ClientStatus } from '#/db/schema'
 import {
   BulkNamesInput,
+  catalogFormClass,
   FormTitle,
   inputClass,
   ModeToggle,
@@ -98,7 +99,7 @@ export function ClientForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <FormTitle
         title={mode === 'single' ? 'Create client' : 'Bulk create clients'}
       />

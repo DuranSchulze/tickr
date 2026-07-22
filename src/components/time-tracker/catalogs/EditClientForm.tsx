@@ -5,7 +5,13 @@ import { gooeyToast } from '#/lib/toast'
 import { updateClientFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import type { ClientStatus } from '#/db/schema'
-import { CancelButton, inputClass, SubmitButton } from './CatalogFormParts'
+import {
+  CancelButton,
+  catalogFormActionsClass,
+  catalogFormClass,
+  inputClass,
+  SubmitButton,
+} from './CatalogFormParts'
 
 export function EditClientForm({
   client,
@@ -60,7 +66,7 @@ export function EditClientForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-3">
+    <form onSubmit={handleSubmit} className={catalogFormClass}>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -92,7 +98,7 @@ export function EditClientForm({
           <option value="INACTIVE">Inactive</option>
         </select>
       </label>
-      <div className="flex gap-2">
+      <div className={catalogFormActionsClass}>
         <SubmitButton
           pending={pending}
           label="Save changes"

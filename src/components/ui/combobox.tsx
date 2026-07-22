@@ -23,6 +23,25 @@ type ComboboxProps = {
   maxVisibleOptions?: number
 }
 
+export function filterComboboxOptions(
+  options: ComboboxOption[],
+  search: string,
+  maxVisibleOptions: number,
+) {
+  const query = search.trim().toLowerCase()
+  const matches = query
+    ? options.filter((option) => {
+        const haystack = `${option.label} ${option.description ?? ''}`
+        return haystack.toLowerCase().includes(query)
+      })
+    : options
+
+  return {
+    filteredOptions: matches.slice(0, maxVisibleOptions),
+    truncated: matches.length > maxVisibleOptions,
+  }
+}
+
 export function Combobox({
   options,
   value,
@@ -46,18 +65,7 @@ export function Combobox({
       return { filteredOptions: [] as ComboboxOption[], truncated: false }
     }
 
-    const query = search.trim().toLowerCase()
-    const matches = query
-      ? options.filter((option) => {
-          const haystack = `${option.label} ${option.description ?? ''}`
-          return haystack.toLowerCase().includes(query)
-        })
-      : options
-
-    return {
-      filteredOptions: matches.slice(0, maxVisibleOptions),
-      truncated: matches.length > maxVisibleOptions,
-    }
+    return filterComboboxOptions(options, search, maxVisibleOptions)
   }, [maxVisibleOptions, open, options, search])
 
   function handleOpenChange(nextOpen: boolean) {

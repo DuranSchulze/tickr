@@ -140,6 +140,8 @@ export function CohortsTablePage({
         {
           key: 'departmentId',
           label: 'Department',
+          searchable: true,
+          searchPlaceholder: 'Search departments…',
           options: [
             { value: '', label: 'All departments' },
             ...data.departments.map((d) => ({ value: d.id, label: d.name })),
