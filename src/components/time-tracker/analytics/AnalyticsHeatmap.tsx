@@ -147,11 +147,9 @@ function RankingPanel({
   className?: string
 }) {
   return (
-    <section
-      className={`min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm ${className ?? ''}`}
-    >
+    <section className={`min-w-0 rounded-lg bg-card p-4 ${className ?? ''}`}>
       <div className="mb-4">
-        <h2 className="m-0 text-base font-black text-foreground">{title}</h2>
+        <h2 className="m-0 text-base font-semibold text-foreground">{title}</h2>
         <p className="m-0 mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
       <RankingRows emptyLabel={emptyLabel} items={items} />
@@ -168,7 +166,7 @@ function RankingRows({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border bg-background p-6 text-center text-sm font-semibold text-muted-foreground">
+      <div className="rounded-lg bg-background p-6 text-center text-sm font-medium text-muted-foreground">
         {emptyLabel}
       </div>
     )
@@ -181,7 +179,7 @@ function RankingRows({
       {items.map((item, index) => (
         <div
           key={item.id}
-          className="grid min-w-0 gap-1.5 rounded-lg border border-border bg-background px-3 py-2.5"
+          className="grid min-w-0 gap-2 rounded-lg bg-background px-4 py-3"
         >
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
@@ -193,7 +191,7 @@ function RankingRows({
                 }}
               />
               <p
-                className="m-0 truncate text-sm font-bold text-foreground"
+                className="m-0 truncate text-sm font-medium text-foreground"
                 title={item.name}
               >
                 {item.name}
@@ -202,11 +200,11 @@ function RankingRows({
                 {item.meta}
               </p>
             </div>
-            <span className="shrink-0 text-right text-sm font-black text-primary">
+            <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
               {formatHours(item.seconds)}
             </span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div className="h-3 overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-primary"
               style={{

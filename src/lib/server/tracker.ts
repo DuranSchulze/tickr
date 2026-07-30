@@ -45,6 +45,22 @@ const analyticsOverviewSchema = z.object({
   asOfDate: z.string().date().optional(),
 })
 
+const reportsRangeSchema = z.object({
+  startDate: z.string().date(),
+  endDate: z.string().date(),
+  departmentId: z.string().optional(),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  taskId: z.string().optional(),
+  tagIds: z.string().optional(),
+  memberIds: z.string().optional(),
+  status: z.enum(['all', 'completed', 'running']).optional().default('all'),
+  description: z.string().optional(),
+  billable: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
+})
+
 const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
@@ -176,6 +192,13 @@ export const getAnalyticsOverviewFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getAnalyticsOverview } = await import('./tracker.server')
     return getAnalyticsOverview(data)
+  })
+
+export const getReportsFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => reportsRangeSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getReports } = await import('./tracker.server')
+    return getReports(data)
   })
 
 export const getCalendarEntriesFn = createServerFn({ method: 'GET' })

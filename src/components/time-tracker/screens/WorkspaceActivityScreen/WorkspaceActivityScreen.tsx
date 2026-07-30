@@ -211,9 +211,9 @@ export function WorkspaceActivityScreen({
               member={member}
               viewDataAction={
                 <Link
-                  to="/app/department-analytics"
+                  to="/app/reports"
                   search={{
-                    q: member.email || member.name,
+                    memberIds: member.memberId,
                     departmentId: canFilterDepartments
                       ? (member.departmentId ?? undefined)
                       : undefined,

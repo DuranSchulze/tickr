@@ -8,6 +8,7 @@ import {
   Cog,
   CreditCard,
   ExternalLink,
+  FileText,
   Tags,
   TrendingUp,
   Users,
@@ -97,6 +98,7 @@ export function AppShell({
 
   const timerActive = pathname.startsWith('/app/time-tracker')
   const analyticsActive = pathname.startsWith('/app/analytics')
+  const reportsActive = pathname.startsWith('/app/reports')
   const performanceActive = pathname.startsWith('/app/my-performance')
   const departmentAnalyticsActive =
     pathname.startsWith('/app/department-analytics') ||
@@ -104,6 +106,7 @@ export function AppShell({
   const activityActive = pathname.startsWith('/app/workspace/activity')
   const analyticsGroupActive =
     analyticsActive ||
+    reportsActive ||
     performanceActive ||
     departmentAnalyticsActive ||
     activityActive
@@ -146,6 +149,11 @@ export function AppShell({
       to: '/app/analytics' as const,
       label: 'Analytics',
       icon: BarChart3,
+    })
+    items.push({
+      to: '/app/reports' as const,
+      label: 'Reports',
+      icon: FileText,
     })
     items.push({
       to: '/app/my-performance' as const,

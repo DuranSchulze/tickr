@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Search, Trash2, X } from 'lucide-react'
+import { Hash, Pencil, Search, Trash2, X } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import {
@@ -454,7 +454,9 @@ function DesktopEntryRow({
             )}
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">-</span>
+          <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+            <Hash className="size-2.5" />
+          </span>
         )}
       </td>
       <td className="px-4 py-2.5">
@@ -470,7 +472,9 @@ function DesktopEntryRow({
             ))}
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">-</span>
+          <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+            <Hash className="size-2.5" />
+          </span>
         )}
       </td>
       <td className="px-4 py-2.5 text-xs text-foreground">

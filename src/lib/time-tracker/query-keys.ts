@@ -11,6 +11,8 @@ export const trackerKeys = {
   stateLite: ['tracker-state-lite'] as const,
   /** Analytics dashboard, keyed by the resolved query (date range + filters). */
   analytics: (deps: unknown) => ['analytics', deps] as const,
+  /** Reports dashboard, keyed by the resolved query (date range + filters). */
+  reports: (deps: unknown) => ['reports', deps] as const,
   /** Simplified analytics overview, keyed by scope/date. */
   analyticsOverview: (deps: unknown) => ['analytics-overview', deps] as const,
   /** Department dashboard, keyed by the resolved date range. */

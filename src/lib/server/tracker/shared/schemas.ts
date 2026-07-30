@@ -114,6 +114,22 @@ export const analyticsOverviewSchema = z.object({
   asOfDate: z.string().date().optional(),
 })
 
+export const reportsRangeSchema = z.object({
+  startDate: z.string().date(),
+  endDate: z.string().date(),
+  departmentId: z.string().optional(),
+  clientId: z.string().optional(),
+  projectId: z.string().optional(),
+  taskId: z.string().optional(),
+  tagIds: z.string().optional(), // comma-separated tag IDs
+  memberIds: z.string().optional(), // comma-separated member IDs
+  status: z.enum(['all', 'completed', 'running']).optional().default('all'),
+  description: z.string().optional(), // ILIKE search
+  billable: z.enum(['true', 'false']).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
+})
+
 export const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
