@@ -38,6 +38,7 @@ import type {
   ExportSortOrder,
 } from '#/lib/time-tracker/export-sort'
 import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing-tasks'
+import type { TimeEntrySource } from '#/lib/time-tracker/entry-source'
 
 export type BulkReportScopeType = 'all' | 'client' | 'department' | 'tag'
 
@@ -52,6 +53,7 @@ export type BulkReportEntry = {
   tagNames: string[]
   description: string
   durationSeconds: number
+  entrySource: TimeEntrySource | null
   billable: boolean
   effectiveRate: number
   billableAmount: number | null
@@ -370,6 +372,7 @@ export async function getBulkReport(data: {
       startedAt: timeEntries.startedAt,
       endedAt: timeEntries.endedAt,
       durationSeconds: timeEntries.durationSeconds,
+      entrySource: timeEntries.entrySource,
       billable: timeEntries.billable,
       projectName: projects.name,
       clientId: projects.clientId,
@@ -483,6 +486,7 @@ export async function getBulkReport(data: {
         tagNames: tagsByEntry.get(e.id) ?? [],
         description: e.description,
         durationSeconds: slice.seconds,
+        entrySource: e.entrySource,
         billable: e.billable,
         effectiveRate,
         billableAmount: amount,

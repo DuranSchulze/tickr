@@ -86,6 +86,11 @@ export const subscriptionPaymentStatusEnum = pgEnum(
   ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
 )
 
+export const timeEntrySourceEnum = pgEnum('TimeEntrySource', [
+  'TIMER',
+  'MANUAL',
+])
+
 // ── Auth tables ───────────────────────────────────────────────────────────────
 
 export const users = pgTable('users', {
@@ -963,6 +968,7 @@ export const timeEntries = pgTable(
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
     endedAt: timestamp('ended_at', { withTimezone: true }),
     durationSeconds: integer('duration_seconds').notNull().default(0),
+    entrySource: timeEntrySourceEnum('entry_source'),
     notes: text('notes'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

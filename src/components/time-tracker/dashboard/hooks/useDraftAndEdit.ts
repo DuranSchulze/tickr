@@ -105,6 +105,7 @@ export function useDraftAndEdit({
         endedAt: payload.endedAt,
         durationSeconds: payload.durationSeconds,
         notes: payload.notes,
+        entrySource: 'MANUAL',
       })
       gooeyToast.success('Entry saved offline', {
         description: 'It will sync when you reconnect.',

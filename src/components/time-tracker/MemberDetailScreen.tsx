@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
-import { ArrowLeft, DollarSign, IdCard, UserRound } from 'lucide-react'
+import { DollarSign, IdCard, UserRound } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { Input } from '#/components/ui/input'
@@ -189,9 +189,8 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
         <div>
           <Link
             to="/app/workspace/members"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground no-underline hover:text-foreground"
+            className="inline-flex items-center rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground no-underline hover:bg-secondary/80"
           >
-            <ArrowLeft className="size-4" />
             Back to members
           </Link>
           <h1 className="m-0 mt-2 text-2xl font-bold tracking-tight text-foreground">

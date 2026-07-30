@@ -37,6 +37,7 @@ function serializeTimeEntry(
     endedAt: Date | null
     durationSeconds: number
     notes: string | null
+    entrySource: 'TIMER' | 'MANUAL' | null
   },
   tags: Array<{ tagId: string }>,
 ): TimeEntry {
@@ -52,6 +53,7 @@ function serializeTimeEntry(
     endedAt: toIso(entry.endedAt),
     durationSeconds: entry.durationSeconds,
     notes: entry.notes ?? '',
+    entrySource: entry.entrySource,
   }
 }
 
@@ -107,6 +109,7 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       startedAt,
       endedAt: null,
       durationSeconds: 0,
+      entrySource: 'TIMER',
       notes: '',
     })
     .returning()
@@ -289,6 +292,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
         ...(data.taskId !== undefined ? { taskId: effectiveTaskId } : {}),
         endedAt,
         durationSeconds: calculateDuration(entry.startedAt, endedAt),
+        entrySource: 'TIMER',
       })
       .where(eq(timeEntries.id, entry.id))
       .returning()
@@ -332,6 +336,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
       .set({
         endedAt,
         durationSeconds: calculateDuration(entry.startedAt, endedAt),
+        entrySource: 'TIMER',
       })
       .where(eq(timeEntries.id, entry.id))
       .returning()
@@ -379,6 +384,7 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
       startedAt,
       endedAt,
       durationSeconds,
+      entrySource: 'MANUAL',
       notes: entry.notes,
     })
     .returning()

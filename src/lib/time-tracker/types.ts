@@ -2,6 +2,8 @@ export type RolePermission = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 
 export type ViewMode = 'day' | 'week' | 'month' | 'all'
 
+export type TimeEntrySource = 'TIMER' | 'MANUAL'
+
 export type Workspace = {
   id: string
   name: string
@@ -93,6 +95,7 @@ export type TimeEntry = {
   endedAt: string | null
   durationSeconds: number
   notes: string
+  entrySource: TimeEntrySource | null
 }
 
 export type TrackerState = {

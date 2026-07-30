@@ -2,8 +2,9 @@ import { useEffect } from 'react'
 
 // Client-only performance monitoring. Renders nothing.
 //
-//  • react-scan (dev only): overlays which components re-render and how
-//    expensive each render is — the fastest way to find render hotspots.
+//  • react-grab (dev only): click any component in the page to select it,
+//    then copy its source location + context to clipboard for AI coding agents
+//    (Cursor, Claude Code, etc.).
 //  • web-vitals: logs Core Web Vitals (LCP / INP / CLS / TTFB / FCP). Logged to
 //    the console for now; swap the reporter for a POST to your own endpoint or a
 //    provider (PostHog, Vercel) when you want a dashboard.
@@ -12,8 +13,8 @@ import { useEffect } from 'react'
 export function Monitoring() {
   useEffect(() => {
     if (import.meta.env.DEV) {
-      void import('react-scan').then(({ scan }) => {
-        scan({ enabled: true })
+      void import('react-grab').then(({ init }) => {
+        init({ enabled: true })
       })
     }
 

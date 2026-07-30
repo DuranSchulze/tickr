@@ -272,6 +272,7 @@ export function DepartmentMemberDetailScreen({
         endedAt: entry.endedAt,
         durationSeconds: entry.durationSeconds,
         notes: entry.notes,
+        entrySource: null,
       },
       draft: {
         description: entry.description,

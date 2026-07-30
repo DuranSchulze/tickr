@@ -107,8 +107,8 @@ export function AnalyticsCharts({
   return (
     <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.9fr)]">
       <ChartShell
-        title="Daily trend"
-        subtitle="Hours tracked per day in the selected range."
+        title="Overall trend"
+        subtitle="Hours tracked across the selected range."
         className="md:col-span-2 xl:col-span-1"
       >
         {analytics.summary.totalSeconds === 0 ? (

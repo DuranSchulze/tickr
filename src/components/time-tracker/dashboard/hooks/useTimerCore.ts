@@ -584,6 +584,7 @@ export function useTimerCore({
       endedAt: null,
       durationSeconds: 0,
       notes: '',
+      entrySource: 'TIMER',
     }
     setOptimisticActiveEntry(optimisticEntry)
     setTimerOperation({

@@ -35,6 +35,7 @@ function serializeManualTimeEntry(
     endedAt: Date | null
     durationSeconds: number
     notes: string | null
+    entrySource: 'TIMER' | 'MANUAL' | null
   },
   tagIds: string[],
 ): TimeEntry {
@@ -50,6 +51,7 @@ function serializeManualTimeEntry(
     endedAt: toIso(entry.endedAt),
     durationSeconds: entry.durationSeconds,
     notes: entry.notes ?? '',
+    entrySource: entry.entrySource,
   }
 }
 
@@ -96,6 +98,7 @@ export async function createManualEntry(
       startedAt,
       endedAt,
       durationSeconds: calculateDuration(startedAt, endedAt),
+      entrySource: 'MANUAL',
       notes: data.notes,
     })
     .returning()

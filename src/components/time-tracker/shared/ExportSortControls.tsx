@@ -25,11 +25,6 @@ const sortByOptions: SegmentedOption<ExportSortBy>[] = [
   { value: 'billable', label: 'Billable', icon: DollarSign },
 ]
 
-const sortOrderOptions: SegmentedOption<ExportSortOrder>[] = [
-  { value: 'asc', label: 'Ascending', icon: SortAsc },
-  { value: 'desc', label: 'Descending', icon: SortDesc },
-]
-
 export function ExportSortControls({
   sortBy,
   sortOrder,
@@ -49,12 +44,35 @@ export function ExportSortControls({
         value={sortBy}
         onChange={onSortByChange}
       />
-      <SegmentedButtonGroup
-        label="Direction"
-        options={sortOrderOptions}
-        value={sortOrder}
-        onChange={onSortOrderChange}
-      />
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold text-foreground">Direction</span>
+        <div className="flex rounded-lg border border-border bg-background p-0.5">
+          <button
+            type="button"
+            onClick={() => onSortOrderChange('asc')}
+            className={`inline-flex size-9 items-center justify-center rounded-md transition-colors ${
+              sortOrder === 'asc'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+            aria-label="Ascending"
+          >
+            <SortAsc className="size-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onSortOrderChange('desc')}
+            className={`inline-flex size-9 items-center justify-center rounded-md transition-colors ${
+              sortOrder === 'desc'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+            }`}
+            aria-label="Descending"
+          >
+            <SortDesc className="size-4" />
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

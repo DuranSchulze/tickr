@@ -7,6 +7,7 @@ import {
   formatHms,
   formatMoney,
 } from './export-utils'
+import { formatManualEntryIndicator } from './entry-source'
 
 type GroupedReportExportOptions = {
   title?: string
@@ -202,6 +203,7 @@ export async function downloadGroupedTimeReportPdf(
           'Start Time',
           'End Date',
           'End Time',
+          'Manual',
           'Project',
           'Client',
           'Task',
@@ -219,6 +221,7 @@ export async function downloadGroupedTimeReportPdf(
         formatReportTime(e.startedAt, report.timezone),
         formatReportDate(e.endedAt, report.timezone),
         formatReportTime(e.endedAt, report.timezone),
+        formatManualEntryIndicator(e.entrySource),
         e.projectName ?? '',
         e.clientName ?? '',
         e.taskName ?? '',
@@ -247,16 +250,17 @@ export async function downloadGroupedTimeReportPdf(
         1: { cellWidth: 44 },
         2: { cellWidth: 48 },
         3: { cellWidth: 44 },
-        4: { cellWidth: 60 },
+        4: { cellWidth: 38, halign: 'center' },
         5: { cellWidth: 60 },
-        6: { cellWidth: 55 },
-        7: { cellWidth: 45 },
-        8: { cellWidth: 'auto' },
-        9: { cellWidth: 48, halign: 'right' },
-        10: { cellWidth: 45, halign: 'right' },
-        11: { cellWidth: 36, halign: 'center' },
-        12: { cellWidth: 42, halign: 'right' },
-        13: { cellWidth: 58, halign: 'right' },
+        6: { cellWidth: 60 },
+        7: { cellWidth: 55 },
+        8: { cellWidth: 45 },
+        9: { cellWidth: 'auto' },
+        10: { cellWidth: 48, halign: 'right' },
+        11: { cellWidth: 45, halign: 'right' },
+        12: { cellWidth: 36, halign: 'center' },
+        13: { cellWidth: 42, halign: 'right' },
+        14: { cellWidth: 58, halign: 'right' },
       },
       showHead: 'everyPage',
       rowPageBreak: 'avoid',
@@ -303,6 +307,7 @@ export function buildGroupedTimeReportCsv(
       'Start Time',
       'End Date',
       'End Time',
+      'Manual',
       'Project',
       'Client',
       'Task',
@@ -325,6 +330,7 @@ export function buildGroupedTimeReportCsv(
         formatReportTime(e.startedAt, report.timezone),
         formatReportDate(e.endedAt, report.timezone),
         formatReportTime(e.endedAt, report.timezone),
+        formatManualEntryIndicator(e.entrySource),
         e.projectName ?? '',
         e.clientName ?? '',
         e.taskName ?? '',
@@ -346,12 +352,12 @@ export function buildGroupedTimeReportCsv(
     description = '',
     amount = '',
   ): string[] => {
-    const row = Array<string>(16).fill('')
+    const row = Array<string>(17).fill('')
     row[0] = label
-    row[10] = description
-    row[11] = formatHms(seconds)
-    row[12] = formatDecimalHours(seconds)
-    row[15] = amount
+    row[11] = description
+    row[12] = formatHms(seconds)
+    row[13] = formatDecimalHours(seconds)
+    row[16] = amount
     return row
   }
   rows.push(

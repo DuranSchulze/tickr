@@ -253,6 +253,7 @@ export async function getTrackerState(): Promise<TrackerState> {
       endedAt: toIso(entry.endedAt),
       durationSeconds: entry.durationSeconds,
       notes: entry.notes ?? '',
+      entrySource: entry.entrySource,
     })),
   }
 }

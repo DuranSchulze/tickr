@@ -93,6 +93,7 @@ describe('export formatting', () => {
               tagNames: ['BP', 'BH'],
               description: '=unsafe\nlong description',
               durationSeconds: 5400,
+              entrySource: 'MANUAL',
               billable: true,
               effectiveRate: 150.5,
               billableAmount: 225.75,
@@ -108,6 +109,7 @@ describe('export formatting', () => {
               tagNames: [],
               description: 'Non-billable',
               durationSeconds: 3600,
+              entrySource: null,
               billable: false,
               effectiveRate: 999,
               billableAmount: null,
@@ -158,21 +160,28 @@ describe('export formatting', () => {
       ['Tracked time', '02:30:00'],
       ['Actual time', '02:30:00'],
     ])
-    expect(header).toHaveLength(16)
+    expect(header).toHaveLength(17)
     expect(billableRow).toHaveLength(header.length)
     expect(nonBillableRow).toHaveLength(header.length)
-    expect(header.slice(6, 9)).toEqual(['Project', 'Client', 'Task'])
+    expect(header.slice(6, 10)).toEqual([
+      'Manual',
+      'Project',
+      'Client',
+      'Task',
+    ])
     expect(billableRow.slice(2, 6)).toEqual([
       '2026-06-19',
       '11:30 PM',
       '2026-06-20',
       '01:00 AM',
     ])
-    expect(billableRow[8]).toBe('Payroll review')
-    expect(billableRow[12]).toBe('1.50')
-    expect(billableRow[14]).toBe('150.50')
-    expect(billableRow[15]).toBe('225.75')
-    expect(nonBillableRow[14]).toBe('')
+    expect(billableRow[6]).toBe('X')
+    expect(nonBillableRow[6]).toBe('')
+    expect(billableRow[9]).toBe('Payroll review')
+    expect(billableRow[13]).toBe('1.50')
+    expect(billableRow[15]).toBe('150.50')
+    expect(billableRow[16]).toBe('225.75')
     expect(nonBillableRow[15]).toBe('')
+    expect(nonBillableRow[16]).toBe('')
   })
 })

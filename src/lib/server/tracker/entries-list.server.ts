@@ -89,6 +89,7 @@ export async function getPaginatedEntries(data: {
     endedAt: toIso(entry.endedAt),
     durationSeconds: entry.durationSeconds,
     notes: entry.notes ?? '',
+    entrySource: entry.entrySource,
   }))
 
   return {
