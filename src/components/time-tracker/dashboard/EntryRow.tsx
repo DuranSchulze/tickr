@@ -167,8 +167,8 @@ function EntryTimeCell({
   }
 
   return (
-    <div className="flex min-w-[12.75rem] flex-col items-center gap-1">
-      <div className="inline-flex items-center justify-center gap-1">
+    <div className="flex min-w-[17rem] flex-col items-center gap-1.5">
+      <div className="inline-flex items-center justify-center gap-2">
         <input
           type="time"
           value={startTime}
@@ -176,9 +176,11 @@ function EntryTimeCell({
           onBlur={commitTimeChange}
           disabled={disabled}
           aria-label="Start time"
-          className="h-7 w-[5.5rem] rounded border border-border bg-background px-1.5 text-xs tabular-nums text-foreground outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-10 w-[7rem] rounded-lg border-2 border-border bg-muted/30 px-3 text-sm font-semibold tabular-nums text-foreground outline-none transition-all placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
-        <span className="text-xs text-muted-foreground">-</span>
+        <span className="text-base font-bold text-muted-foreground select-none">
+          —
+        </span>
         <input
           type="time"
           value={isRunning ? '' : endTime}
@@ -187,7 +189,7 @@ function EntryTimeCell({
           disabled={disabled || isRunning}
           placeholder={isRunning ? 'now' : undefined}
           aria-label="End time"
-          className="h-7 w-[5.5rem] rounded border border-border bg-background px-1.5 text-xs tabular-nums text-foreground outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-10 w-[7rem] rounded-lg border-2 border-border bg-muted/30 px-3 text-sm font-semibold tabular-nums text-foreground outline-none transition-all placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         <Popover
@@ -203,9 +205,9 @@ function EntryTimeCell({
               disabled={disabled}
               aria-label="Pick dates"
               title="Pick dates"
-              className="inline-flex size-7 shrink-0 items-center justify-center rounded border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border-2 border-border bg-muted/30 text-muted-foreground transition-all hover:border-border/80 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <CalendarDays className="size-3.5" />
+              <CalendarDays className="size-4" />
             </button>
           </PopoverTrigger>
           <PopoverContent align="end" sideOffset={4} className="w-auto p-2">
@@ -225,7 +227,7 @@ function EntryTimeCell({
       </div>
 
       {hasTimeError && (
-        <p className="m-0 text-[10px] font-semibold leading-tight text-destructive">
+        <p className="m-0 text-[11px] font-semibold leading-tight text-destructive">
           End must be after start
         </p>
       )}
@@ -484,7 +486,7 @@ export const EntryRow = memo(function EntryRow({
             <DropdownMenu>
               <DropdownMenuTrigger
                 disabled={actionsDisabled}
-                className="inline-flex h-8 w-7 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="More actions"
                 title="More actions"
               >
