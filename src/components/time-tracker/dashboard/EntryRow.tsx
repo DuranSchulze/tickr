@@ -167,8 +167,8 @@ function EntryTimeCell({
   }
 
   return (
-    <div className="flex min-w-[17rem] flex-col items-center gap-1.5">
-      <div className="inline-flex items-center justify-center gap-2">
+    <div className="flex min-w-[14.5rem] flex-col items-center gap-1.5">
+      <div className="inline-flex items-center justify-center gap-1.5">
         <input
           type="time"
           value={startTime}
@@ -176,7 +176,7 @@ function EntryTimeCell({
           onBlur={commitTimeChange}
           disabled={disabled}
           aria-label="Start time"
-          className="h-10 w-[7rem] rounded-lg border-2 border-border bg-muted/30 px-3 text-sm font-semibold tabular-nums text-foreground outline-none transition-all placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[5.5rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
         <span className="text-base font-bold text-muted-foreground select-none">
           —
@@ -189,7 +189,7 @@ function EntryTimeCell({
           disabled={disabled || isRunning}
           placeholder={isRunning ? 'now' : undefined}
           aria-label="End time"
-          className="h-10 w-[7rem] rounded-lg border-2 border-border bg-muted/30 px-3 text-sm font-semibold tabular-nums text-foreground outline-none transition-all placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[5.5rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         <Popover
@@ -205,7 +205,7 @@ function EntryTimeCell({
               disabled={disabled}
               aria-label="Pick dates"
               title="Pick dates"
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border-2 border-border bg-muted/30 text-muted-foreground transition-all hover:border-border/80 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-border bg-muted/30 text-muted-foreground transition-colors hover:border-border/80 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               <CalendarDays className="size-4" />
             </button>

@@ -168,7 +168,7 @@ function DayGroupHeaderRow({
 
   if (view === 'day') {
     return (
-      <div className="flex w-full min-w-0 items-center justify-between gap-3 bg-muted/30 px-3 py-3 sm:px-4">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-muted/30 px-3 py-3 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="min-w-0 truncate text-sm font-bold text-foreground">
             {group.label}
@@ -177,7 +177,7 @@ function DayGroupHeaderRow({
             {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
           </span>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex min-w-0 items-center justify-between gap-2 min-[520px]:justify-end">
           {copyButton}
           <LiveGroupTotal
             completedSeconds={group.completedSeconds}
@@ -190,7 +190,7 @@ function DayGroupHeaderRow({
   }
 
   return (
-    <div className="flex w-full min-w-0 items-center justify-between gap-2 bg-muted/30 px-3 py-3 transition-colors hover:bg-muted/50 sm:px-4">
+    <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-muted/30 px-3 py-3 transition-colors hover:bg-muted/50 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
       <button
         type="button"
         onClick={onToggle}
@@ -215,7 +215,7 @@ function DayGroupHeaderRow({
           )}
         </span>
       </button>
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex min-w-0 items-center justify-between gap-2 min-[520px]:justify-end">
         {copyButton}
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
@@ -586,7 +586,7 @@ export function DayGroupsList({
 }) {
   // Mount only the layout that's actually visible — rendering both the table
   // and the card list (one hidden by CSS) doubled the rows held in the DOM.
-  const isDesktop = useIsDesktop()
+  const { containerRef, isDesktop } = useIsDesktop<HTMLDivElement>()
 
   // Stable identities so the memoized rows/cards skip re-rendering when an
   // unrelated piece of dashboard state (timer inputs, pickers) changes —
@@ -598,7 +598,10 @@ export function DayGroupsList({
   const handleDelete = useStableCallback(onDelete)
 
   return (
-    <div className="grid min-w-0 gap-3 bg-transparent sm:gap-4">
+    <div
+      ref={containerRef}
+      className="grid min-w-0 gap-3 bg-transparent sm:gap-4"
+    >
       {groups.map((group) => {
         const dayCollapsed = isDayCollapsed(group.dateKey)
         const entryCount = group.taskGroups.reduce(
@@ -625,7 +628,7 @@ export function DayGroupsList({
               <>
                 {/* Desktop table */}
                 {isDesktop && (
-                  <div className="hidden min-w-0 sm:block">
+                  <div className="min-w-0">
                     <Table className="table-fixed">
                       <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
                         <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
@@ -725,7 +728,7 @@ export function DayGroupsList({
 
                 {/* Mobile cards */}
                 {!isDesktop && (
-                  <div className="grid min-w-0 gap-2 p-2.5 sm:hidden">
+                  <div className="grid min-w-0 gap-2 p-2.5">
                     {group.taskGroups.map((taskGroup) => {
                       const isGrouped = taskGroup.entries.length > 1
                       const expanded = isTaskGroupExpanded(

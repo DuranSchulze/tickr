@@ -1,30 +1,35 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-// Matches Tailwind's `sm:` breakpoint — the cutoff between the mobile card
-// list and the desktop table in the entries views.
-const QUERY = '(min-width: 640px)'
+// The entry table needs room for its editable task, time, duration, and action
+// columns. Measuring the list itself (instead of the viewport) also accounts
+// for the expanded app sidebar.
+const MIN_TABLE_WIDTH = 1120
 
-function subscribe(onChange: () => void) {
-  const mql = window.matchMedia(QUERY)
-  mql.addEventListener('change', onChange)
-  return () => mql.removeEventListener('change', onChange)
-}
-
-function getSnapshot() {
-  return window.matchMedia(QUERY).matches
-}
-
-// SSR renders the desktop layout; the client corrects itself right after
-// hydration if it's actually a phone.
-function getServerSnapshot() {
-  return true
-}
-
-/**
- * True at or above the `sm` breakpoint. Used to mount only one of the two
- * entry-list layouts instead of rendering both and hiding one with CSS —
- * halving the rendered rows and the DOM kept in memory.
+/** Uses the table only when its actual container is wide enough for every
+ * editable column. Only one layout is mounted, keeping row DOM and timers
+ * from being duplicated.
  */
-export function useIsDesktop() {
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+export function useIsDesktop<T extends HTMLElement>() {
+  const containerRef = useRef<T>(null)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const updateLayout = (width: number) => {
+      setIsDesktop(width >= MIN_TABLE_WIDTH)
+    }
+
+    updateLayout(container.getBoundingClientRect().width)
+
+    const observer = new ResizeObserver(([entry]) => {
+      updateLayout(entry.contentRect.width)
+    })
+    observer.observe(container)
+
+    return () => observer.disconnect()
+  }, [])
+
+  return { containerRef, isDesktop }
 }
