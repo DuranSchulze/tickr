@@ -16,3 +16,20 @@ services:
       - key: NODE_VERSION
         value: '20'
         scope: BUILD_TIME
+      # Primary domain — becomes the Better Auth base URL and trusted origin.
+      # The dashboard must still define the secrets (BETTER_AUTH_SECRET, DB, etc.).
+      - key: BETTER_AUTH_URL
+        value: https://trackly.ph
+        scope: RUN_AND_BUILD_TIME
+      - key: APP_URL
+        value: https://trackly.ph
+        scope: RUN_AND_BUILD_TIME
+      # Extra domains the same deployment should trust (comma-separated).
+      # Appending a domain here is all that's needed when a new one is added.
+      - key: ADDITIONAL_TRUSTED_ORIGINS
+        value: https://time-track.buildvault.live
+        scope: RUN_AND_BUILD_TIME
+      # Native Better Auth env var — same list, read directly by better-auth.
+      - key: BETTER_AUTH_TRUSTED_ORIGINS
+        value: https://trackly.ph,https://time-track.buildvault.live
+        scope: RUN_AND_BUILD_TIME

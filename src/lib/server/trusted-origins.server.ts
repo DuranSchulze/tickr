@@ -11,7 +11,7 @@ import '@tanstack/react-start/server-only'
  * - `CHROME_EXTENSION_ORIGIN` – Chrome extension origin
  * - Vercel system env vars   – set automatically on Vercel
  */
-export function getTrustedOrigins(): string[] {
+export function getTrustedOrigins(request?: Request): string[] {
   const origins: string[] = ['http://localhost:3000', 'http://localhost:3001']
 
   // Explicit origins
@@ -25,11 +25,13 @@ export function getTrustedOrigins(): string[] {
     origins.push(process.env.BETTER_AUTH_URL)
   }
 
-  // Comma-separated list for custom domains & DigitalOcean droplets
+  // Comma-separated list for custom domains & DigitalOcean droplets.
+  // Entries are normalized so bare hosts (e.g. "app.example.com") are accepted
+  // even though the browser's Origin header always includes the scheme.
   if (process.env.ADDITIONAL_TRUSTED_ORIGINS) {
     for (const origin of process.env.ADDITIONAL_TRUSTED_ORIGINS.split(',')) {
-      const trimmed = origin.trim()
-      if (trimmed) origins.push(trimmed)
+      const normalized = normalizeOrigin(origin)
+      if (normalized) origins.push(normalized)
     }
   }
 
@@ -44,5 +46,31 @@ export function getTrustedOrigins(): string[] {
     origins.push(`https://${process.env.VERCEL_BRANCH_URL}`)
   }
 
-  return origins
+  // The domain currently serving the request is implicitly trusted. This lets
+  // the same deployment work across multiple domains (custom domains, previews,
+  // tunnels) without redeploying when a domain is added. It doesn't weaken CSRF:
+  // an attacker's page sends its own Origin, which never matches the server's Host.
+  if (request) {
+    try {
+      origins.push(new URL(request.url).origin)
+    } catch {
+      // Malformed request URL — nothing to trust
+    }
+  }
+
+  return [...new Set(origins)]
+}
+
+/**
+ * Normalize a user-supplied origin: trim whitespace, default a missing scheme
+ * to https, and strip trailing slashes so it can be compared against the
+ * browser's `Origin` header (which is always `scheme://host`).
+ */
+function normalizeOrigin(origin: string): string | null {
+  const trimmed = origin.trim()
+  if (!trimmed) return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`
+  return withScheme.replace(/\/+$/, '')
 }

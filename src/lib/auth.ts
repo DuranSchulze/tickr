@@ -16,7 +16,7 @@ const REMEMBERED_SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_URL,
-  trustedOrigins: getTrustedOrigins(),
+  trustedOrigins: getTrustedOrigins,
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: {

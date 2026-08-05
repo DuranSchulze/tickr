@@ -15,7 +15,7 @@ export function assertTrustedOrigin(): void {
   const origin = request.headers.get('origin')
   if (!origin) return
 
-  const trusted = getTrustedOrigins()
+  const trusted = getTrustedOrigins(request)
   if (!trusted.includes(origin)) {
     throw new Error('Forbidden: request origin not trusted.')
   }
