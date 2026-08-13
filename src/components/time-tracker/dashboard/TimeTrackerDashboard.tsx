@@ -47,11 +47,15 @@ import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { FeedbackFloatingPanel } from './FeedbackForm'
+import {
+  publishTaskDataChange,
+  subscribeToTaskSyncCompleted,
+} from '#/lib/time-tracker/task-sync'
 
 export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const mutations = useTrackerMutations()
+  const mutations = useTrackerMutations(state.workspace.id)
   const { isOnline } = useNetworkStatus()
   const { formatTime } = useTimeFormat()
 
@@ -114,6 +118,19 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
       void loadAllEntries(true)
     }
   }, [loadAllEntries])
+
+  useEffect(
+    () =>
+      subscribeToTaskSyncCompleted((event) => {
+        if (
+          event.workspaceId === state.workspace.id &&
+          allEntriesInitialized.current
+        ) {
+          void loadAllEntries(true)
+        }
+      }),
+    [loadAllEntries, state.workspace.id],
+  )
 
   const patchAllEntries = useCallback((updated: TimeEntry) => {
     setAllEntries((prev) =>
@@ -316,6 +333,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
 
       drainingRef.current = false
       if (replayedAny) {
+        publishTaskDataChange(state.workspace.id)
         void invalidateTrackerState(queryClient)
         void router.invalidate()
       }

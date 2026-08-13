@@ -12,6 +12,7 @@ import {
   inputClass,
   SubmitButton,
 } from './CatalogFormParts'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 export function EditTagForm({
   tag,
@@ -21,6 +22,7 @@ export function EditTagForm({
   onDone: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [name, setName] = useState(tag.name)
   const [color, setColor] = useState(tag.color)
   const [pending, setPending] = useState(false)
@@ -31,6 +33,7 @@ export function EditTagForm({
     try {
       await updateTagFn({ data: { id: tag.id, name, color } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success('Tag updated')
       onDone()
     } catch (err) {

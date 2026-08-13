@@ -12,6 +12,7 @@ import {
   SubmitButton,
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 type ColorCatalogFormState = {
   mode: 'single' | 'bulk'
@@ -35,6 +36,7 @@ export function ColorCatalogForm({
   onSuccess?: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [state, dispatch] = useReducer(
     (s: ColorCatalogFormState, a: Partial<ColorCatalogFormState>) => ({
       ...s,
@@ -59,6 +61,7 @@ export function ColorCatalogForm({
         await router.invalidate()
         gooeyToast.success(`${title} created`)
         dispatch({ name: '', color: defaultColor })
+        publishTaskChange()
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -67,7 +70,10 @@ export function ColorCatalogForm({
           (n) => onCreate({ name: n, color }),
           title.toLowerCase(),
           router,
-          onSuccess,
+          () => {
+            publishTaskChange()
+            onSuccess?.()
+          },
         )
         dispatch({ bulkNames: '' })
       }

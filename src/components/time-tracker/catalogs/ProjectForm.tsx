@@ -16,6 +16,7 @@ import {
   SubmitButton,
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 type ProjectFormState = {
   mode: 'single' | 'bulk'
@@ -38,6 +39,7 @@ export function ProjectForm({
   onSuccess?: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const activeClients = clients.filter((c) => c.clientStatus === 'ACTIVE')
   const [state, dispatch] = useReducer(
     (s: ProjectFormState, a: Partial<ProjectFormState>) => ({ ...s, ...a }),
@@ -89,6 +91,7 @@ export function ProjectForm({
         data: { name: newClientName, clientStatus: 'ACTIVE' },
       })
       await router.invalidate()
+      publishTaskChange()
       dispatch({
         pendingSelectName: newClientName.trim(),
         newClientName: '',
@@ -118,6 +121,7 @@ export function ProjectForm({
         await router.invalidate()
         gooeyToast.success('Project created')
         dispatch({ name: '', color: '#2563eb' })
+        publishTaskChange()
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -129,7 +133,10 @@ export function ProjectForm({
             }),
           'project',
           router,
-          onSuccess,
+          () => {
+            publishTaskChange()
+            onSuccess?.()
+          },
         )
         dispatch({ bulkNames: '' })
       }

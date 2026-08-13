@@ -31,6 +31,7 @@ import { ConfirmDialog } from '../dashboard/ConfirmDialog'
 import { EditEntryDrawer } from '../dashboard/EditEntryDrawer'
 import type { DraftEntry } from '../dashboard/utils'
 import { emptyDraft, toEntryPayload } from '../dashboard/utils'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 export type ReportsQuery = {
   startDate: string
@@ -433,6 +434,7 @@ function MemberDetailView({
 
   const router = useRouter()
   const queryClient = useQueryClient()
+  const publishTaskChange = useTaskSyncPublisher()
   const [screenState, dispatch] = useReducer(
     screenReducer,
     undefined,
@@ -534,6 +536,7 @@ function MemberDetailView({
           ...toEntryPayload(editingDraft),
         },
       })
+      publishTaskChange()
       const currentEntry = tableData.entries.find(
         (entry) => entry.id === editingEntry.id,
       )
@@ -568,6 +571,7 @@ function MemberDetailView({
     dispatch({ type: 'setDeletePending', pending: true })
     try {
       await deleteWorkspaceMemberEntryFn({ data: { id: target.id } })
+      publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: [target.id] })
       await refreshAnalyticsData()
       gooeyToast.success('Entry deleted')
@@ -589,6 +593,7 @@ function MemberDetailView({
     dispatch({ type: 'setDeletePending', pending: true })
     try {
       await bulkDeleteWorkspaceMemberEntriesFn({ data: { ids } })
+      publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: ids })
       await refreshAnalyticsData()
       gooeyToast.success(`${ids.length} entries deleted`)

@@ -38,6 +38,7 @@ import {
 import { TagForm } from './TagForm'
 import { EditTagForm } from './EditTagForm'
 import { SyncSheetDialog } from './SyncSheetDialog'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 function formatSeconds(seconds: number): string {
   if (seconds === 0) return '—'
@@ -82,6 +83,7 @@ export function TagsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [local, dispatch] = useReducer(
     (
       s: {
@@ -109,6 +111,7 @@ export function TagsTablePage({
     try {
       await archiveTagFn({ data: { id: tag.id } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(`"${tag.name}" archived`)
     } catch (err) {
       gooeyToast.error('Failed to archive', {
@@ -124,6 +127,7 @@ export function TagsTablePage({
     try {
       await activateTagFn({ data: { id: tag.id } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(`"${tag.name}" activated`)
     } catch (err) {
       gooeyToast.error('Failed to activate', {
@@ -139,6 +143,7 @@ export function TagsTablePage({
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(
         `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
       )
@@ -362,6 +367,7 @@ export function TagsTablePage({
             await bulkArchiveTagsFn({ data: { ids } })
           }
           await router.invalidate()
+          publishTaskChange()
           gooeyToast.success(
             `${ids.length} tag${ids.length === 1 ? '' : 's'} ${action === 'activate' ? 'activated' : 'archived'}`,
           )
@@ -399,6 +405,7 @@ export function TagsTablePage({
 
       <SyncSheetDialog
         open={showSyncDialog}
+        onComplete={publishTaskChange}
         onClose={async () => {
           dispatch({ showSyncDialog: false })
           await router.invalidate()

@@ -12,6 +12,7 @@ import {
   inputClass,
   SubmitButton,
 } from './CatalogFormParts'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 export function EditClientForm({
   client,
@@ -23,6 +24,7 @@ export function EditClientForm({
   onDone: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [name, setName] = useState(client.name)
   const [defaultBillableRate, setDefaultBillableRate] = useState(
     client.defaultBillableRate == null
@@ -54,6 +56,7 @@ export function EditClientForm({
         },
       })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success('Client updated')
       onDone()
     } catch (err) {

@@ -24,6 +24,7 @@ import { ClientForm } from './ClientForm'
 import { EditClientForm } from './EditClientForm'
 import { SyncSheetDialog } from './SyncSheetDialog'
 import { ClientSheetMenu, useClientColumns } from './ClientsTableParts'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 interface Props {
   data: {
@@ -61,6 +62,7 @@ export function ClientsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [local, dispatch] = useReducer(
     (
       s: {
@@ -94,6 +96,7 @@ export function ClientsTablePage({
       try {
         await archiveClientFn({ data: { id: client.id } })
         await router.invalidate()
+        publishTaskChange()
         gooeyToast.success(`"${client.name}" archived`)
       } catch (err) {
         gooeyToast.error('Failed to archive', {
@@ -103,7 +106,7 @@ export function ClientsTablePage({
         dispatch({ archivingId: null })
       }
     },
-    [router],
+    [publishTaskChange, router],
   )
 
   const handleActivate = useCallback(
@@ -112,6 +115,7 @@ export function ClientsTablePage({
       try {
         await activateClientFn({ data: { id: client.id } })
         await router.invalidate()
+        publishTaskChange()
         gooeyToast.success(`"${client.name}" activated`)
       } catch (err) {
         gooeyToast.error('Failed to activate', {
@@ -121,7 +125,7 @@ export function ClientsTablePage({
         dispatch({ archivingId: null })
       }
     },
-    [router],
+    [publishTaskChange, router],
   )
 
   const handleSuspend = useCallback(
@@ -130,6 +134,7 @@ export function ClientsTablePage({
       try {
         await suspendClientFn({ data: { id: client.id } })
         await router.invalidate()
+        publishTaskChange()
         gooeyToast.success(`"${client.name}" suspended`)
       } catch (err) {
         gooeyToast.error('Failed to suspend', {
@@ -139,7 +144,7 @@ export function ClientsTablePage({
         dispatch({ archivingId: null })
       }
     },
-    [router],
+    [publishTaskChange, router],
   )
 
   const handleEdit = useCallback(
@@ -152,6 +157,7 @@ export function ClientsTablePage({
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(
         `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
       )
@@ -281,6 +287,7 @@ export function ClientsTablePage({
             await bulkArchiveClientsFn({ data: { ids } })
           }
           await router.invalidate()
+          publishTaskChange()
           const label =
             action === 'activate'
               ? 'activated'
@@ -326,6 +333,7 @@ export function ClientsTablePage({
 
       <SyncSheetDialog
         open={showSyncDialog}
+        onComplete={publishTaskChange}
         onClose={async () => {
           dispatch({ showSyncDialog: false })
           await router.invalidate()

@@ -1,5 +1,38 @@
+import { useId, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { FAQ_ITEMS } from '#/lib/landing-content'
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false)
+  const panelId = useId()
+
+  return (
+    <div
+      className="t-acc border-b border-dashed border-border"
+      data-open={open}
+    >
+      <button
+        type="button"
+        className="t-acc-head flex min-h-14 w-full cursor-pointer items-center justify-between gap-6 py-5 text-left text-sm font-bold text-foreground transition-colors hover:text-primary sm:text-base"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {question}
+        <span className="t-acc-chevron shrink-0" aria-hidden="true">
+          <ChevronDown className="size-4 text-muted-foreground" />
+        </span>
+      </button>
+      <div id={panelId} className="t-acc-panel" aria-hidden={!open}>
+        <div className="t-acc-panel-inner">
+          <p className="max-w-2xl pb-5 pr-10 text-sm leading-7 text-muted-foreground">
+            {answer}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function FaqSection() {
   return (
@@ -36,21 +69,11 @@ export function FaqSection() {
 
         <div className="mt-12 border-t border-dashed border-border sm:mt-14">
           {FAQ_ITEMS.map((item) => (
-            <details
+            <FaqItem
               key={item.question}
-              className="group border-b border-dashed border-border"
-            >
-              <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 py-5 text-left text-sm font-bold text-foreground transition-colors marker:content-none hover:text-primary sm:text-base">
-                {item.question}
-                <ChevronDown
-                  className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180 group-open:text-primary"
-                  aria-hidden="true"
-                />
-              </summary>
-              <p className="max-w-2xl pb-5 pr-10 text-sm leading-7 text-muted-foreground">
-                {item.answer}
-              </p>
-            </details>
+              question={item.question}
+              answer={item.answer}
+            />
           ))}
         </div>
 

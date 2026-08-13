@@ -23,6 +23,7 @@ import { MemberExportButton } from '../../shared/MemberExportDialog'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { AnalyticsEntriesTable } from '../AnalyticsEntriesTable'
 import { DepartmentMemberActivitySheet } from './DepartmentMemberActivitySheet'
+import { useTaskSyncPublisher } from '../../TaskSyncCoordinator'
 
 function buildUpdatedAnalyticsEntry(
   entry: AnalyticsTimeEntryRow,
@@ -195,6 +196,7 @@ export function DepartmentMemberDetailScreen({
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const publishTaskChange = useTaskSyncPublisher()
   const [screenState, dispatch] = useReducer(
     screenReducer,
     undefined,
@@ -307,6 +309,7 @@ export function DepartmentMemberDetailScreen({
           ...toEntryPayload(editingDraft),
         },
       })
+      publishTaskChange()
       const currentEntry = tableData.entries.find(
         (entry) => entry.id === editingEntry.id,
       )
@@ -344,6 +347,7 @@ export function DepartmentMemberDetailScreen({
     dispatch({ type: 'setDeletePending', pending: true })
     try {
       await deleteWorkspaceMemberEntryFn({ data: { id: target.id } })
+      publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: [target.id] })
       await refreshAnalyticsData()
       gooeyToast.success('Entry deleted')
@@ -365,6 +369,7 @@ export function DepartmentMemberDetailScreen({
     dispatch({ type: 'setDeletePending', pending: true })
     try {
       await bulkDeleteWorkspaceMemberEntriesFn({ data: { ids } })
+      publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: ids })
       await refreshAnalyticsData()
       gooeyToast.success(`${ids.length} entries deleted`)
