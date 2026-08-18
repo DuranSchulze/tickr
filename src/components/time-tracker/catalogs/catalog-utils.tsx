@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 // ---------------------------------------------------------------------------
 // Shared utility: formatSeconds
@@ -47,6 +48,7 @@ function formatSeconds(seconds: number): string {
 
 export function useCatalogSheetSync() {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [sheetLoading, setSheetLoading] = useState(false)
   const [showSyncDialog, setShowSyncDialog] = useState(false)
 
@@ -55,6 +57,7 @@ export function useCatalogSheetSync() {
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(
         `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
       )
@@ -179,6 +182,7 @@ export function useArchiveActivate<
   onSuccess?: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [archivingId, setArchivingId] = useState<string | null>(null)
 
   async function handleArchive(item: T) {
@@ -186,6 +190,7 @@ export function useArchiveActivate<
     try {
       await opts.archiveFn({ data: { id: item.id } })
       await router.invalidate()
+      publishTaskChange()
       opts.onSuccess?.()
       gooeyToast.success(`"${item.name}" archived`)
     } catch (err) {
@@ -202,6 +207,7 @@ export function useArchiveActivate<
     try {
       await opts.activateFn({ data: { id: item.id } })
       await router.invalidate()
+      publishTaskChange()
       opts.onSuccess?.()
       gooeyToast.success(`"${item.name}" activated`)
     } catch (err) {

@@ -23,6 +23,7 @@ import type { Workspace } from '#/lib/time-tracker/types'
 import { SubscriptionStatusBanner } from '#/components/subscription/SubscriptionStatusBanner'
 import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
 import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSubscriptionGate'
+import { TaskSyncCoordinator } from './TaskSyncCoordinator'
 
 type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
 
@@ -212,75 +213,77 @@ export function AppShell({
   }, [canAccessSettings, isOwnerOrAdmin, permissionLevel])
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-      {!isEmbed && (
-        <div className="print:hidden">
-          <Navbar
-            workspace={workspace}
-            user={user}
-            permissionLevel={permissionLevel}
-            birthdayCelebration={
-              <BirthdayCelebration
-                birthDate={user.birthDate}
-                userId={user.id}
-                userName={user.name}
-              />
-            }
-            mobileMenuButton={
-              <MobileNav
-                workspaceName={workspace.name}
-                userEmail={user.email}
-                timerActive={timerActive}
-                analyticsGroupActive={analyticsGroupActive}
-                analyticsOpen={analyticsOpen}
-                onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
-                analyticsChildren={analyticsChildren}
-                calendarActive={calendarActive}
-                settingsActive={settingsActive}
-                settingsOpen={settingsOpen}
-                onToggleSettings={() => setSettingsOpen((open) => !open)}
-                settingsChildren={settingsChildren}
-              />
-            }
-          />
-        </div>
-      )}
+    <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
+      <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+        {!isEmbed && (
+          <div className="print:hidden">
+            <Navbar
+              workspace={workspace}
+              user={user}
+              permissionLevel={permissionLevel}
+              birthdayCelebration={
+                <BirthdayCelebration
+                  birthDate={user.birthDate}
+                  userId={user.id}
+                  userName={user.name}
+                />
+              }
+              mobileMenuButton={
+                <MobileNav
+                  workspaceName={workspace.name}
+                  userEmail={user.email}
+                  timerActive={timerActive}
+                  analyticsGroupActive={analyticsGroupActive}
+                  analyticsOpen={analyticsOpen}
+                  onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                  analyticsChildren={analyticsChildren}
+                  calendarActive={calendarActive}
+                  settingsActive={settingsActive}
+                  settingsOpen={settingsOpen}
+                  onToggleSettings={() => setSettingsOpen((open) => !open)}
+                  settingsChildren={settingsChildren}
+                />
+              }
+            />
+          </div>
+        )}
 
-      {!isEmbed && <SubscriptionStatusBanner summary={subscription} />}
+        {!isEmbed && <SubscriptionStatusBanner summary={subscription} />}
 
-      {!subscription.access.canAccess && !billingActive ? (
-        <WorkspaceSubscriptionGate summary={subscription} />
-      ) : (
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          {!isEmbed && (
-            <div className="print:hidden">
-              <AppSidebar
-                collapsed={collapsed}
-                onToggleCollapsed={() => setCollapsed((c) => !c)}
-                workspaceName={workspace.name}
-                userEmail={user.email}
-                timerActive={timerActive}
-                analyticsGroupActive={analyticsGroupActive}
-                analyticsOpen={analyticsOpen}
-                onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
-                analyticsChildren={analyticsChildren}
-                calendarActive={calendarActive}
-                settingsActive={settingsActive}
-                settingsOpen={settingsOpen}
-                onToggleSettings={() => setSettingsOpen((open) => !open)}
-                settingsChildren={settingsChildren}
-              />
-            </div>
-          )}
+        {!subscription.access.canAccess && !billingActive ? (
+          <WorkspaceSubscriptionGate summary={subscription} />
+        ) : (
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            {!isEmbed && (
+              <div className="print:hidden">
+                <AppSidebar
+                  collapsed={collapsed}
+                  onToggleCollapsed={() => setCollapsed((c) => !c)}
+                  workspaceName={workspace.name}
+                  userEmail={user.email}
+                  timerActive={timerActive}
+                  analyticsGroupActive={analyticsGroupActive}
+                  analyticsOpen={analyticsOpen}
+                  onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                  analyticsChildren={analyticsChildren}
+                  calendarActive={calendarActive}
+                  settingsActive={settingsActive}
+                  settingsOpen={settingsOpen}
+                  onToggleSettings={() => setSettingsOpen((open) => !open)}
+                  settingsChildren={settingsChildren}
+                />
+              </div>
+            )}
 
-          <main
-            className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
-          >
-            <Outlet />
-            {isEmbed && <EmbedFooter />}
-          </main>
-        </div>
-      )}
-    </div>
+            <main
+              className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
+            >
+              <Outlet />
+              {isEmbed && <EmbedFooter />}
+            </main>
+          </div>
+        )}
+      </div>
+    </TaskSyncCoordinator>
   )
 }

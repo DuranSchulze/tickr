@@ -35,11 +35,14 @@ export function ThemeToggle({ className }: { className?: string }) {
         className,
       )}
     >
-      {theme === 'dark' ? (
-        <Sun className="size-4" />
-      ) : (
-        <Moon className="size-4" />
-      )}
+      <span
+        className="t-icon-swap"
+        data-state={theme === 'dark' ? 'b' : 'a'}
+        aria-hidden="true"
+      >
+        <Moon className="t-icon size-4" data-icon="a" />
+        <Sun className="t-icon size-4" data-icon="b" />
+      </span>
     </button>
   )
 }

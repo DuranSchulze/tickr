@@ -23,6 +23,7 @@ import {
 import type { useTrackerMutations } from './useTrackerMutations'
 import { useDescriptionSuggestions } from './useDescriptionSuggestions'
 import { singleTagIds } from '../utils'
+import { publishTaskDataChange } from '#/lib/time-tracker/task-sync'
 
 type TimerOperation =
   | { kind: 'idle' }
@@ -508,6 +509,7 @@ export function useTimerCore({
 
     void stopTimerFn({ data: { id: entryToStop.id, ...fields } })
       .then((confirmedEntry) => {
+        publishTaskDataChange(state.workspace.id)
         const op = timerOperationRef.current
         if (
           op.kind !== 'stopping' ||
@@ -619,12 +621,14 @@ export function useTimerCore({
 
         if (op.kind === 'discarding') {
           setOptimisticActiveEntry(null)
-          void deleteEntryFn({ data: { id: newEntry.id } }).finally(() => {
-            if (operationHasToken(timerOperationRef.current, token)) {
-              setTimerOperation({ kind: 'idle' })
-            }
-            invalidateDashboard()
-          })
+          void deleteEntryFn({ data: { id: newEntry.id } })
+            .then(() => publishTaskDataChange(state.workspace.id))
+            .finally(() => {
+              if (operationHasToken(timerOperationRef.current, token)) {
+                setTimerOperation({ kind: 'idle' })
+              }
+              invalidateDashboard()
+            })
           return
         }
 
@@ -696,6 +700,7 @@ export function useTimerCore({
           },
         })
         if (!stoppedEntry) return
+        publishTaskDataChange(state.workspace.id)
         upsertOptimisticStoppedEntry(stoppedEntry)
         upsertTrackerStateEntry(queryClient, stoppedEntry)
       } catch (err) {
@@ -766,6 +771,7 @@ export function useTimerCore({
 
     void deleteEntryFn({ data: { id: entryToDiscard.id } })
       .then(() => {
+        publishTaskDataChange(state.workspace.id)
         const op = timerOperationRef.current
         if (
           op.kind !== 'discarding' ||

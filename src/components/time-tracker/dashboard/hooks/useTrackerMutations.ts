@@ -24,6 +24,7 @@ import {
   deleteTaskFn,
 } from '#/lib/server/tracker'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
+import { publishTaskDataChange } from '#/lib/time-tracker/task-sync'
 
 type StartTimerInput = {
   description: string
@@ -57,7 +58,7 @@ type MutationOptions<T> = {
   onError?: () => void
 }
 
-export function useTrackerMutations() {
+export function useTrackerMutations(workspaceId: string) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
@@ -72,6 +73,7 @@ export function useTrackerMutations() {
     setPending(true)
     try {
       const result = await action()
+      publishTaskDataChange(workspaceId)
       options.onSuccess?.(result)
       if (options.invalidate !== false) {
         void invalidateTrackerState(queryClient)

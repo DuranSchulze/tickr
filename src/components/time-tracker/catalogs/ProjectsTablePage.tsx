@@ -42,6 +42,7 @@ import {
 import { ProjectForm } from './ProjectForm'
 import { EditProjectForm } from './EditProjectForm'
 import { SyncSheetDialog } from './SyncSheetDialog'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 function formatSeconds(seconds: number): string {
   if (seconds === 0) return '—'
@@ -87,6 +88,7 @@ export function ProjectsTablePage({
   onPageChange,
 }: Props) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [local, dispatch] = useReducer(
     (
       s: {
@@ -119,6 +121,7 @@ export function ProjectsTablePage({
     try {
       await archiveProjectFn({ data: { id: project.id } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(`"${project.name}" archived`)
     } catch (err) {
       gooeyToast.error('Failed to archive', {
@@ -134,6 +137,7 @@ export function ProjectsTablePage({
     try {
       await activateProjectFn({ data: { id: project.id } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(`"${project.name}" activated`)
     } catch (err) {
       gooeyToast.error('Failed to activate', {
@@ -149,6 +153,7 @@ export function ProjectsTablePage({
     try {
       const result = await syncCatalogsWithSheetFn()
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success(
         `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
       )
@@ -401,6 +406,7 @@ export function ProjectsTablePage({
             await bulkArchiveProjectsFn({ data: { ids } })
           }
           await router.invalidate()
+          publishTaskChange()
           gooeyToast.success(
             `${ids.length} project${ids.length === 1 ? '' : 's'} ${action === 'activate' ? 'activated' : 'archived'}`,
           )
@@ -440,6 +446,7 @@ export function ProjectsTablePage({
 
       <SyncSheetDialog
         open={showSyncDialog}
+        onComplete={publishTaskChange}
         onClose={async () => {
           dispatch({ showSyncDialog: false })
           await router.invalidate()

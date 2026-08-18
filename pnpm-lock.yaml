@@ -107,6 +107,9 @@ importers:
       jspdf-autotable:
         specifier: ^5.0.8
         version: 5.0.8(jspdf@4.2.1)
+      liquid-gooey:
+        specifier: ^0.1.0
+        version: 0.1.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.5)
@@ -4904,6 +4907,12 @@ packages:
     resolution: {integrity: sha512-lBWt8hujh/Cjysw5GYVmZpFHXDCgZzhrOm8vbcUdobADZNOK/bRshr2kM3DfgrrtR1DQhfupW9gnIXOfiFi+bw==}
     engines: {node: '>=20.17'}
     hasBin: true
+
+  liquid-gooey@0.1.0:
+    resolution: {integrity: sha512-iFG1/RaI9Qntvpv6tzxOQGesTJSmctd3gb1pNYH9Tn8elnolknDI2WeYpr5IenClNe/6hWonS/zPvOCJm+9uaQ==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
 
   listr2@9.0.5:
     resolution: {integrity: sha512-ME4Fb83LgEgwNw96RKNvKV4VTLuXfoKudAmm2lP8Kk87KaMK0/Xrx/aAkMWmT8mDb+3MlFDspfbCs7adjRxA2g==}
@@ -10934,6 +10943,11 @@ snapshots:
       string-argv: 0.3.2
       tinyexec: 1.1.1
       yaml: 2.8.3
+
+  liquid-gooey@0.1.0(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   listr2@9.0.5:
     dependencies:

@@ -13,6 +13,7 @@ import {
   inputClass,
   SubmitButton,
 } from './CatalogFormParts'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 export function EditProjectForm({
   project,
@@ -24,6 +25,7 @@ export function EditProjectForm({
   onDone: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [name, setName] = useState(project.name)
   const [color, setColor] = useState(project.color)
   const [clientId, setClientId] = useState(project.clientId)
@@ -35,6 +37,7 @@ export function EditProjectForm({
     try {
       await updateProjectFn({ data: { id: project.id, name, color, clientId } })
       await router.invalidate()
+      publishTaskChange()
       gooeyToast.success('Project updated')
       onDone()
     } catch (err) {

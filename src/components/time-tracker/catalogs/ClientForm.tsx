@@ -13,6 +13,7 @@ import {
   SubmitButton,
 } from './CatalogFormParts'
 import { parseBulkNames, runBulk } from './catalog-form.utils'
+import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 type ClientFormState = {
   mode: 'single' | 'bulk'
@@ -47,6 +48,7 @@ export function ClientForm({
   onSuccess?: () => void
 }) {
   const router = useRouter()
+  const publishTaskChange = useTaskSyncPublisher()
   const [state, dispatch] = useReducer(
     clientFormReducer,
     initialClientFormState,
@@ -77,6 +79,7 @@ export function ClientForm({
         await router.invalidate()
         gooeyToast.success('Client created')
         dispatch({ name: '', defaultBillableRate: '', status: 'ACTIVE' })
+        publishTaskChange()
         onSuccess?.()
       } else {
         const names = parseBulkNames(bulkNames)
@@ -85,7 +88,10 @@ export function ClientForm({
           (n) => createClientFn({ data: { name: n, clientStatus: status } }),
           'client',
           router,
-          onSuccess,
+          () => {
+            publishTaskChange()
+            onSuccess?.()
+          },
         )
         dispatch({ bulkNames: '' })
       }
