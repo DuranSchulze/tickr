@@ -1,8 +1,9 @@
 import '@tanstack/react-start/server-only'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { workspaceApiKeys, workspaces } from '#/db/schema'
 import { hashApiKey } from './api-keys.server'
+import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
 
 export type ExternalApiContext = {
   keyId: string
@@ -29,7 +30,7 @@ export class ExternalApiError extends Error {
   }
 }
 
-function readPresentedApiKey(request: Request): string | null {
+function readPresentedCredential(request: Request): string | null {
   const authorization = request.headers.get('authorization')
   if (authorization?.toLowerCase().startsWith('bearer ')) {
     const token = authorization.slice('bearer '.length).trim()
@@ -50,26 +51,14 @@ function readClientIp(request: Request): string | null {
   )
 }
 
-export async function requireExternalApiKey(
-  request: Request,
-): Promise<ExternalApiContext> {
-  const apiKey = readPresentedApiKey(request)
-  if (!apiKey) {
-    throw new ExternalApiError(401, 'missing_api_key', 'API key is required.')
-  }
-
-  const tokenHash = hashApiKey(apiKey)
-  const [row] = await db
-    .select({ key: workspaceApiKeys, workspace: workspaces })
-    .from(workspaceApiKeys)
-    .innerJoin(workspaces, eq(workspaceApiKeys.workspaceId, workspaces.id))
-    .where(and(eq(workspaceApiKeys.tokenHash, tokenHash)))
-    .limit(1)
-
-  if (!row) {
-    throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
-  }
-
+async function buildContextFromKeyRow(
+  row: {
+    key: typeof workspaceApiKeys.$inferSelect
+    workspace: typeof workspaces.$inferSelect
+  },
+  expectedWorkspaceId: string | null,
+  request?: Request,
+) {
   const now = new Date()
   if (row.key.revokedAt) {
     throw new ExternalApiError(401, 'revoked_api_key', 'API key was revoked.')
@@ -77,10 +66,16 @@ export async function requireExternalApiKey(
   if (row.key.expiresAt && row.key.expiresAt.getTime() <= now.getTime()) {
     throw new ExternalApiError(401, 'expired_api_key', 'API key is expired.')
   }
+  if (expectedWorkspaceId && row.workspace.id !== expectedWorkspaceId) {
+    throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+  }
 
   await db
     .update(workspaceApiKeys)
-    .set({ lastUsedAt: now, lastUsedIp: readClientIp(request) })
+    .set({
+      lastUsedAt: now,
+      lastUsedIp: request ? readClientIp(request) : null,
+    })
     .where(eq(workspaceApiKeys.id, row.key.id))
 
   return {
@@ -94,7 +89,60 @@ export async function requireExternalApiKey(
       billableCurrency: row.workspace.billableCurrency,
     },
     createdByUserId: row.key.createdByUserId,
+  } satisfies ExternalApiContext
+}
+
+/**
+ * Validates a presented credential (raw workspace API key or a JWT issued by
+ * POST /api/v1/auth/sign-in) and resolves the workspace-scoped context.
+ * Every request re-checks the key row, so revoking or expiring a key takes
+ * effect immediately even if a previously issued JWT is still unexpired.
+ */
+export async function authenticateApiKeyCredential(
+  credential: string,
+  request?: Request,
+): Promise<ExternalApiContext> {
+  if (looksLikeJwt(credential)) {
+    const payload = await verifyExternalApiJwt(credential)
+    if (!payload) {
+      throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+    }
+
+    const [row] = await db
+      .select({ key: workspaceApiKeys, workspace: workspaces })
+      .from(workspaceApiKeys)
+      .innerJoin(workspaces, eq(workspaceApiKeys.workspaceId, workspaces.id))
+      .where(eq(workspaceApiKeys.id, payload.keyId))
+      .limit(1)
+
+    if (!row) {
+      throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+    }
+    return buildContextFromKeyRow(row, payload.workspaceId, request)
   }
+
+  const tokenHash = hashApiKey(credential)
+  const [row] = await db
+    .select({ key: workspaceApiKeys, workspace: workspaces })
+    .from(workspaceApiKeys)
+    .innerJoin(workspaces, eq(workspaceApiKeys.workspaceId, workspaces.id))
+    .where(eq(workspaceApiKeys.tokenHash, tokenHash))
+    .limit(1)
+
+  if (!row) {
+    throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+  }
+  return buildContextFromKeyRow(row, null, request)
+}
+
+export async function requireExternalApiKey(
+  request: Request,
+): Promise<ExternalApiContext> {
+  const credential = readPresentedCredential(request)
+  if (!credential) {
+    throw new ExternalApiError(401, 'missing_api_key', 'API key is required.')
+  }
+  return authenticateApiKeyCredential(credential, request)
 }
 
 export function jsonResponse(body: unknown, init?: ResponseInit): Response {

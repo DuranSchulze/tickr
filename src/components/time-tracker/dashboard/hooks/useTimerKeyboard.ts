@@ -1,17 +1,34 @@
 import { useEffect } from 'react'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 
-function isInputFocused() {
-  const el = document.activeElement
-  if (!el) return false
-  if (el instanceof HTMLInputElement) return true
-  if (el instanceof HTMLTextAreaElement) return true
-  if (el instanceof HTMLElement && el.isContentEditable) return true
-  if (el instanceof HTMLElement && el.getAttribute('role') === 'combobox')
-    return true
-  if (el instanceof HTMLElement && el.getAttribute('role') === 'listbox')
-    return true
-  return false
+const INTERACTIVE_SELECTOR = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[role="button"]',
+  '[role="combobox"]',
+  '[role="listbox"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="switch"]',
+  '[role="tab"]',
+].join(',')
+
+function isInteractiveElement(target: EventTarget | null): boolean {
+  return target instanceof Element && target.matches(INTERACTIVE_SELECTOR)
+}
+
+function shouldIgnoreTimerShortcut(event: KeyboardEvent): boolean {
+  // Respect component-level keyboard handling first. Checking the event target
+  // and composed path is important because a discrete React update can unmount
+  // an editor before this window listener runs, making document.activeElement
+  // fall back to the body while the same key event is still bubbling.
+  if (event.defaultPrevented) return true
+  if (event.composedPath().some(isInteractiveElement)) return true
+  return isInteractiveElement(document.activeElement)
 }
 
 export function useTimerKeyboard({
@@ -29,7 +46,7 @@ export function useTimerKeyboard({
 }) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (isInputFocused()) return
+      if (shouldIgnoreTimerShortcut(e)) return
 
       if (e.key === 'Enter') {
         e.preventDefault()

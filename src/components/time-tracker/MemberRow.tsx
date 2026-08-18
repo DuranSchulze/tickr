@@ -10,10 +10,10 @@ import {
 } from 'lucide-react'
 import { Input } from '#/components/ui/input'
 import { Button } from '#/components/ui/button'
-import { Combobox } from '#/components/ui/combobox'
 import { TableCell, TableRow } from '#/components/ui/table'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -30,6 +30,7 @@ import {
 import {
   setMemberClientBillableRateFn,
   unsetMemberClientBillableRateFn,
+  updateMemberBillableRateFn,
 } from '#/lib/server/tracker'
 import { gooeyToast } from '#/lib/toast'
 import {
@@ -43,7 +44,6 @@ import type { TrackerState } from '#/lib/time-tracker/types'
 import type { MemberStat } from './MembersTable'
 import { MemberAnalyticsRow } from './MemberAnalyticsRow'
 import { useMemberRow } from './useMemberRow'
-import { SuspendedClientWarning } from './catalogs/CatalogFormParts'
 
 type Member = TrackerState['members'][number]
 
@@ -64,6 +64,61 @@ function todayKey(timeZone?: string) {
   }).format(new Date())
 }
 
+type Client = TrackerState['clients'][number]
+
+type RateSource = 'override' | 'client' | 'member' | 'workspace'
+
+const RATE_SOURCE_LABELS: Record<RateSource, string> = {
+  override: 'Override',
+  client: 'Client default',
+  member: 'Member default',
+  workspace: 'Workspace default',
+}
+
+const CLIENT_STATUS_BADGES: Record<string, string> = {
+  SUSPENDED:
+    'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+  INACTIVE: 'bg-muted text-muted-foreground',
+}
+
+const RATE_INPUT_CLASS =
+  'text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+
+function isRate(value: number | null) {
+  return value != null && Number.isFinite(value) && value >= 0
+}
+
+function parseRateInput(value: string) {
+  const trimmed = value.trim()
+  if (trimmed === '') return { parsed: null as number | null, invalid: false }
+  const parsed = Number(trimmed)
+  return { parsed, invalid: !Number.isFinite(parsed) || parsed < 0 }
+}
+
+function listBillableClients(
+  clients: Client[],
+  clientRates: Partial<Record<string, number>>,
+) {
+  const overridden = new Set(Object.keys(clientRates))
+  return clients
+    .filter(
+      (client) => client.clientStatus === 'ACTIVE' || overridden.has(client.id),
+    )
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function buildClientDrafts(
+  clients: Client[],
+  clientRates: Partial<Record<string, number>>,
+) {
+  const drafts: Record<string, string> = {}
+  for (const client of clients) {
+    const rate = clientRates[client.id]
+    drafts[client.id] = rate == null ? '' : String(rate)
+  }
+  return drafts
+}
+
 function MemberRateDialog({
   open,
   onOpenChange,
@@ -77,18 +132,9 @@ function MemberRateDialog({
 }) {
   const router = useRouter()
   const timezone = state.workspace.timezone
-  const activeClients = state.clients.filter(
-    (client) => client.clientStatus === 'ACTIVE',
-  )
-  const clientById = useMemo(
-    () => new Map(state.clients.map((client) => [client.id, client])),
-    [state.clients],
-  )
-  const clientOptions = activeClients.map((client) => ({
-    value: client.id,
-    label: client.name,
-  }))
-  const [clientId, setClientId] = useState(activeClients[0]?.id ?? '')
+  const currency = state.workspace.billableCurrency
+  const workspaceDefaultRate = state.workspace.defaultBillableRate
+
   const initialClientRates = useCallback(() => {
     return Object.fromEntries(
       state.memberClientBillableRates
@@ -99,118 +145,120 @@ function MemberRateDialog({
         .map((rate) => [rate.clientId, rate.billableRate]),
     )
   }, [member.id, state.memberClientBillableRates])
+
   const [clientRates, setClientRates] =
     useState<Partial<Record<string, number>>>(initialClientRates)
-  const [clientRate, setClientRate] = useState('')
+  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [defaultRate, setDefaultRate] = useState('')
   const [pending, setPending] = useState(false)
-
-  const savedClientRates = useMemo(() => {
-    return Object.entries(clientRates)
-      .map(([savedClientId, billableRate]) => ({
-        clientId: savedClientId,
-        clientName: clientById.get(savedClientId)?.name ?? 'Unknown client',
-        billableRate,
-      }))
-      .sort((a, b) => a.clientName.localeCompare(b.clientName))
-  }, [clientById, clientRates])
-
-  const syncClientDraft = useCallback(
-    (nextClientId: string, rates: Partial<Record<string, number>>) => {
-      const rate = rates[nextClientId]
-      setClientRate(rate == null ? '' : String(rate))
-    },
-    [],
-  )
-
-  const clientRateInput = clientRate.trim()
-  const parsedClientRate =
-    clientRateInput === '' ? null : Number(clientRateInput)
-  const clientRateInvalid =
-    parsedClientRate !== null &&
-    (!Number.isFinite(parsedClientRate) || parsedClientRate < 0)
-  const selectedClientDefaultRate =
-    clientById.get(clientId)?.defaultBillableRate ?? null
-  const selectedClient = clientById.get(clientId)
-  const previewRate = computeBillableRate({
-    memberClientRate: parsedClientRate,
-    clientDefaultRate: selectedClientDefaultRate,
-    memberRate: member.billableRate,
-    workspaceDefaultRate: state.workspace.defaultBillableRate,
-  })
 
   useEffect(() => {
     if (!open) return
     const rates = initialClientRates()
     setClientRates(rates)
-  }, [initialClientRates, open])
+    setDrafts(
+      buildClientDrafts(listBillableClients(state.clients, rates), rates),
+    )
+    setDefaultRate(
+      member.billableRate == null ? '' : String(member.billableRate),
+    )
+  }, [initialClientRates, member.billableRate, open, state.clients])
 
-  useEffect(() => {
-    if (!open) return
-    syncClientDraft(clientId, clientRates)
-  }, [clientId, clientRates, open, syncClientDraft])
+  const clientList = useMemo(
+    () => listBillableClients(state.clients, clientRates),
+    [clientRates, state.clients],
+  )
 
-  function selectClient(nextClientId: string) {
-    setClientId(nextClientId)
-    syncClientDraft(nextClientId, clientRates)
+  const { parsed: parsedDefaultRate, invalid: defaultRateInvalid } =
+    parseRateInput(defaultRate)
+
+  const rows = useMemo(() => {
+    return clientList.map((client) => {
+      const { parsed, invalid } = parseRateInput(drafts[client.id] ?? '')
+      const effectiveRate = computeBillableRate({
+        memberClientRate: parsed,
+        clientDefaultRate: client.defaultBillableRate,
+        memberRate: parsedDefaultRate,
+        workspaceDefaultRate,
+      })
+      const source: RateSource = isRate(parsed)
+        ? 'override'
+        : isRate(client.defaultBillableRate)
+          ? 'client'
+          : isRate(parsedDefaultRate)
+            ? 'member'
+            : 'workspace'
+      return {
+        client,
+        savedRate: clientRates[client.id] ?? null,
+        draft: drafts[client.id] ?? '',
+        parsedDraft: parsed,
+        invalid,
+        effectiveRate,
+        source,
+      }
+    })
+  }, [clientList, clientRates, drafts, parsedDefaultRate, workspaceDefaultRate])
+
+  const changedRows = rows.filter((row) => row.parsedDraft !== row.savedRate)
+  const overrideCount = rows.filter((row) => row.parsedDraft != null).length
+  const anyInvalid = defaultRateInvalid || rows.some((row) => row.invalid)
+  const dirty =
+    parsedDefaultRate !== member.billableRate || changedRows.length > 0
+  const effectiveDefaultRate = computeEffectiveRate(
+    parsedDefaultRate,
+    workspaceDefaultRate,
+  )
+
+  function setClientDraft(clientId: string, value: string) {
+    setDrafts((current) => ({ ...current, [clientId]: value }))
   }
 
-  async function saveClientRate() {
-    if (!clientId) {
-      gooeyToast.error('Select a client')
-      return
-    }
-    if (parsedClientRate === null || clientRateInvalid) {
-      gooeyToast.error('Enter a valid client rate', {
-        description: 'Use a positive number before saving an override.',
-      })
-      return
-    }
+  async function saveAll() {
+    if (!dirty || anyInvalid || pending) return
     setPending(true)
     try {
-      await setMemberClientBillableRateFn({
-        data: {
-          memberId: member.id,
-          clientId,
-          billableRate: parsedClientRate,
-          effectiveFrom: todayKey(timezone),
-        },
-      })
-      setClientRates((current) => ({
-        ...current,
-        [clientId]: parsedClientRate,
-      }))
+      let changes = 0
+      if (parsedDefaultRate !== member.billableRate) {
+        await updateMemberBillableRateFn({
+          data: { memberId: member.id, billableRate: parsedDefaultRate },
+        })
+        changes += 1
+      }
+      const nextRates = { ...clientRates }
+      for (const row of changedRows) {
+        if (row.parsedDraft == null) {
+          await unsetMemberClientBillableRateFn({
+            data: {
+              memberId: member.id,
+              clientId: row.client.id,
+              effectiveFrom: todayKey(timezone),
+            },
+          })
+          delete nextRates[row.client.id]
+        } else {
+          await setMemberClientBillableRateFn({
+            data: {
+              memberId: member.id,
+              clientId: row.client.id,
+              billableRate: row.parsedDraft,
+              effectiveFrom: todayKey(timezone),
+            },
+          })
+          nextRates[row.client.id] = row.parsedDraft
+        }
+        changes += 1
+      }
+      setClientRates(nextRates)
+      setDefaultRate(parsedDefaultRate == null ? '' : String(parsedDefaultRate))
+      setDrafts(buildClientDrafts(clientList, nextRates))
       void router.invalidate()
-      gooeyToast.success('Client rate updated')
+      gooeyToast.success('Billing rates updated', {
+        description:
+          changes === 1 ? '1 change saved.' : `${changes} changes saved.`,
+      })
     } catch (err) {
-      gooeyToast.error('Could not update client rate', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      setPending(false)
-    }
-  }
-
-  async function clearClientRate() {
-    if (!clientId) return
-    setPending(true)
-    try {
-      await unsetMemberClientBillableRateFn({
-        data: {
-          memberId: member.id,
-          clientId,
-          effectiveFrom: todayKey(timezone),
-        },
-      })
-      setClientRate('')
-      setClientRates((current) => {
-        const next = { ...current }
-        delete next[clientId]
-        return next
-      })
-      void router.invalidate()
-      gooeyToast.success('Client rate cleared')
-    } catch (err) {
-      gooeyToast.error('Could not clear client rate', {
+      gooeyToast.error('Could not save billing rates', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -220,123 +268,141 @@ function MemberRateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-visible sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Client billing rates for {member.name}</DialogTitle>
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col overflow-visible sm:max-w-lg">
+        <DialogHeader className="pr-8">
+          <DialogTitle>Billing rates for {member.name}</DialogTitle>
           <DialogDescription>
-            Manage the client-specific hourly rates for this member.
+            Set this member's default hourly rate and optional per-client rates.
+            Clients without a specific rate use the default.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid max-h-[calc(100dvh-12rem)] gap-4 overflow-y-auto pr-1 lg:grid-cols-[minmax(16rem,0.9fr)_minmax(0,1.2fr)]">
-          <section className="rounded-lg border border-border">
-            <div className="border-b border-border px-4 py-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
+          <section className="shrink-0 rounded-lg border border-border bg-muted/40 p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <h3 className="m-0 text-sm font-bold text-foreground">
-                Saved client rates
+                Default rate
               </h3>
-              <p className="m-0 mt-1 text-xs text-muted-foreground">
-                {savedClientRates.length} configured
+              <p className="m-0 text-xs text-muted-foreground">
+                Effective{' '}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatCurrency(effectiveDefaultRate, currency)}/hr
+                </span>
               </p>
             </div>
-            <div className="max-h-[22rem] overflow-y-auto p-2">
-              {savedClientRates.length === 0 ? (
-                <p className="m-0 px-2 py-6 text-sm text-muted-foreground">
-                  No client-specific rates yet.
-                </p>
-              ) : (
-                <div className="grid gap-1.5">
-                  {savedClientRates.map((rate) => (
-                    <button
-                      key={rate.clientId}
-                      type="button"
-                      onClick={() => selectClient(rate.clientId)}
-                      className={`rounded-md border px-3 py-2 text-left transition-colors ${
-                        rate.clientId === clientId
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:bg-muted'
-                      }`}
-                    >
-                      <span className="block truncate text-sm font-semibold text-foreground">
-                        {rate.clientName}
-                      </span>
-                      <span className="mt-1 block text-sm tabular-nums text-muted-foreground">
-                        {formatCurrency(
-                          rate.billableRate,
-                          state.workspace.billableCurrency,
-                        )}
-                        /hr
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-border p-4">
-            <h3 className="m-0 text-sm font-bold text-foreground">
-              Add or edit rate
-            </h3>
-            <div className="grid gap-3">
-              <label className="mt-3 space-y-1.5 text-xs font-semibold text-foreground">
-                <span>Client</span>
-                <Combobox
-                  options={clientOptions}
-                  value={clientId}
-                  onValueChange={selectClient}
-                  placeholder="Select client"
-                  searchPlaceholder="Search clients..."
-                  emptyText="No clients found."
-                  disabled={activeClients.length === 0}
-                  contentClassName="z-[60]"
-                />
-              </label>
-              {selectedClient?.clientStatus === 'SUSPENDED' && (
-                <SuspendedClientWarning clientName={selectedClient.name} />
-              )}
-              <label className="space-y-1.5 text-xs font-semibold text-foreground">
-                <span>Client hourly rate</span>
+            <label className="mt-3 block text-xs font-semibold text-foreground">
+              Default hourly rate
+              <span className="relative mt-1.5 block w-full sm:max-w-44">
                 <Input
                   type="number"
                   min="0"
                   step="0.01"
-                  value={clientRate}
-                  onChange={(event) => setClientRate(event.target.value)}
-                  placeholder="Uses member/workspace fallback"
-                  aria-invalid={clientRateInvalid}
+                  inputMode="decimal"
+                  value={defaultRate}
+                  onChange={(event) => setDefaultRate(event.target.value)}
+                  placeholder="Workspace default"
+                  aria-invalid={defaultRateInvalid}
+                  className={`${RATE_INPUT_CLASS} pr-11`}
                 />
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  disabled={pending || !clientId || clientRateInvalid}
-                  onClick={() => void saveClientRate()}
-                >
-                  Save client rate
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={
-                    pending || !clientId || clientRates[clientId] == null
-                  }
-                  onClick={() => void clearClientRate()}
-                >
-                  Use fallback
-                </Button>
-              </div>
-            </div>
-            <p className="m-0 mt-3 text-sm text-muted-foreground">
-              Effective rate preview:{' '}
-              <span className="font-semibold text-foreground">
-                {formatCurrency(previewRate, state.workspace.billableCurrency)}
-                /hr
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-muted-foreground">
+                  /hr
+                </span>
               </span>
+            </label>
+            <p className="m-0 mt-2 text-xs text-muted-foreground">
+              Applies to clients without a specific rate. Leave empty to use the
+              workspace default (
+              {formatCurrency(workspaceDefaultRate, currency)}/hr).
             </p>
+          </section>
+
+          <section className="shrink-0 overflow-hidden rounded-lg border border-border">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border px-4 py-3">
+              <h3 className="m-0 text-sm font-bold text-foreground">
+                Client rates
+              </h3>
+              {rows.length > 0 && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                  {overrideCount} of {rows.length} overridden
+                </span>
+              )}
+            </div>
+            {rows.length === 0 ? (
+              <p className="m-0 px-4 py-6 text-sm text-muted-foreground">
+                No clients yet. Client-specific rates will appear here once
+                clients are added.
+              </p>
+            ) : (
+              <ul className="m-0 list-none divide-y divide-border">
+                {rows.map((row) => (
+                  <li
+                    key={row.client.id}
+                    className={`flex items-center gap-3 px-4 py-2.5 ${
+                      row.parsedDraft != null ? 'bg-primary/5' : ''
+                    }`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-semibold text-foreground">
+                          {row.client.name}
+                        </span>
+                        {row.client.clientStatus !== 'ACTIVE' && (
+                          <span
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
+                              CLIENT_STATUS_BADGES[row.client.clientStatus] ??
+                              'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {row.client.clientStatus}
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className={`m-0 mt-0.5 truncate text-xs tabular-nums ${
+                          row.source === 'override'
+                            ? 'text-primary'
+                            : 'text-muted-foreground'
+                        }`}
+                      >
+                        {formatCurrency(row.effectiveRate, currency)}/hr ·{' '}
+                        {RATE_SOURCE_LABELS[row.source]}
+                      </p>
+                    </div>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={row.draft}
+                      onChange={(event) =>
+                        setClientDraft(row.client.id, event.target.value)
+                      }
+                      placeholder="Default"
+                      aria-label={`Hourly rate for ${row.client.name}`}
+                      aria-invalid={row.invalid}
+                      className={`${RATE_INPUT_CLASS} w-24 shrink-0 sm:w-28`}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
 
-        <DialogFooter showCloseButton />
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline" disabled={pending}>
+              Close
+            </Button>
+          </DialogClose>
+          <Button
+            type="button"
+            disabled={pending || !dirty || anyInvalid}
+            onClick={() => void saveAll()}
+          >
+            {pending ? 'Saving…' : 'Save changes'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -402,7 +468,7 @@ export const MemberRow = memo(function MemberRow({
     <>
       <TableRow className="border-t border-border">
         {/* Member — links to detail page */}
-        <TableCell className="overflow-hidden px-5 py-4 align-top">
+        <TableCell className="overflow-hidden px-5 py-4 align-middle">
           <Link
             to="/app/workspace/members/$memberId"
             params={{ memberId: member.id }}
@@ -416,7 +482,7 @@ export const MemberRow = memo(function MemberRow({
         </TableCell>
 
         {/* Role — inline editable for canManage */}
-        <TableCell className="overflow-hidden px-5 py-4 align-top">
+        <TableCell className="overflow-hidden px-5 py-4 align-middle">
           {editingField === 'role' && canManage ? (
             <select
               value={roleId}
@@ -461,7 +527,7 @@ export const MemberRow = memo(function MemberRow({
         </TableCell>
 
         {/* Department — inline editable for canManage */}
-        <TableCell className="overflow-hidden px-5 py-4 align-top">
+        <TableCell className="overflow-hidden px-5 py-4 align-middle">
           {editingField === 'dept' && canManage ? (
             <select
               value={deptId}
@@ -509,7 +575,7 @@ export const MemberRow = memo(function MemberRow({
         </TableCell>
 
         {/* Groups / Cohorts — inline editable for canManage */}
-        <TableCell className="overflow-hidden px-5 py-4 align-top">
+        <TableCell className="overflow-hidden px-5 py-4 align-middle">
           {editingField === 'cohorts' && canManage ? (
             <div className="grid gap-2">
               {assignableCohorts.length === 0 ? (
@@ -577,7 +643,7 @@ export const MemberRow = memo(function MemberRow({
         </TableCell>
 
         {/* Status — display-only badge; toggle lives in the actions dropdown */}
-        <TableCell className="whitespace-nowrap px-5 py-4 align-top">
+        <TableCell className="whitespace-nowrap px-5 py-4 align-middle">
           <span
             className={`rounded-lg px-2 py-1 text-xs font-bold ${STATUS_STYLES[member.status] ?? 'bg-muted text-foreground'}`}
           >
@@ -588,65 +654,67 @@ export const MemberRow = memo(function MemberRow({
         {canManage && (
           <>
             {/* Billable Rate */}
-            <TableCell className="overflow-hidden px-5 py-4 align-top">
+            <TableCell className="overflow-hidden px-5 py-4 align-middle">
               <button
                 type="button"
                 onClick={() => !pending && setRateDialogOpen(true)}
                 title="Click to edit billing rates"
-                className="group flex w-full cursor-pointer items-start justify-end gap-1 rounded px-1 -mx-1 text-right hover:bg-accent"
+                className={`group flex w-full cursor-pointer items-center justify-end gap-2 rounded-lg border px-3 py-1.5 text-right transition-colors ${
+                  memberClientRateCount > 0
+                    ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15'
+                    : 'border-border bg-muted/60 text-foreground hover:bg-accent'
+                }`}
               >
                 <span className="min-w-0">
-                  <span className="block text-sm tabular-nums text-foreground">
+                  <span className="block text-sm font-bold tabular-nums">
                     {formatCurrency(
                       effectiveRate,
                       state.workspace.billableCurrency,
                     )}
                   </span>
-                  <span
-                    className={`mt-1 inline-flex max-w-full rounded-md border px-1.5 py-0.5 text-[11px] font-semibold leading-none ${
-                      memberClientRateCount > 0
-                        ? 'border-primary/30 bg-primary/10 text-primary'
-                        : 'border-border bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    <span className="truncate">{rateStatusLabel}</span>
+                  <span className="block text-[11px] font-semibold leading-tight opacity-70">
+                    {rateStatusLabel}
                   </span>
                 </span>
-                <Pencil className="mt-0.5 size-3 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-60" />
+                <Pencil className="size-3.5 shrink-0 opacity-40 transition-opacity group-hover:opacity-100" />
               </button>
             </TableCell>
 
             {/* Stats */}
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-top text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
               {formatHours(stats?.thisWeekSeconds ?? 0)}
             </TableCell>
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-top text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
               {formatHours(stats?.totalSeconds ?? 0)}
             </TableCell>
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-top text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
               {formatHours(stats?.billableSeconds ?? 0)}
             </TableCell>
 
             {/* Actions — MoreHorizontal dropdown matching the catalog pattern */}
-            <TableCell className="px-5 py-4 align-top">
+            <TableCell className="px-5 py-4 align-middle">
               <div className="flex justify-end">
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     disabled={pending}
-                    className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    className="grid size-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     aria-label="Member actions"
                   >
-                    <MoreHorizontal className="size-4" />
+                    <MoreHorizontal className="size-5" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="min-w-44 p-1.5">
                     <DropdownMenuItem
                       onClick={() => setShowAnalytics((v) => !v)}
+                      className="gap-2.5 px-3 py-2"
                     >
-                      <BarChart2 className="mr-2 size-4" />
+                      <BarChart2 className="size-5" />
                       {showAnalytics ? 'Hide analytics' : 'View analytics'}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setExportDialogOpen(true)}>
-                      <FileText className="mr-2 size-4" />
+                    <DropdownMenuItem
+                      onClick={() => setExportDialogOpen(true)}
+                      className="gap-2.5 px-3 py-2"
+                    >
+                      <FileText className="size-5" />
                       Export report
                     </DropdownMenuItem>
                     {!isSelf && (
@@ -655,20 +723,20 @@ export const MemberRow = memo(function MemberRow({
                         <DropdownMenuItem
                           onClick={handleToggleStatus}
                           disabled={pending}
-                          className={
+                          className={`gap-2.5 px-3 py-2 ${
                             member.status !== 'DISABLED'
                               ? 'text-destructive focus:text-destructive'
                               : ''
-                          }
+                          }`}
                         >
                           {member.status === 'DISABLED' ? (
                             <>
-                              <CheckCircle className="mr-2 size-4" />
+                              <CheckCircle className="size-5" />
                               Enable member
                             </>
                           ) : (
                             <>
-                              <UserX className="mr-2 size-4" />
+                              <UserX className="size-5" />
                               Disable member
                             </>
                           )}
