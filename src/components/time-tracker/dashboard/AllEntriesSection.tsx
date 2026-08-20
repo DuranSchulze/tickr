@@ -32,7 +32,6 @@ function taskGroupCollapseKey(dateKey: string, groupKey: string) {
 export function AllEntriesSection({
   entries,
   activeEntry,
-  totalCount,
   hasMore,
   loadingMore,
   onLoadMore,
@@ -59,7 +58,6 @@ export function AllEntriesSection({
 }: {
   entries: TimeEntry[]
   activeEntry: TimeEntry | undefined
-  totalCount: number
   hasMore: boolean
   loadingMore: boolean
   onLoadMore: () => void
@@ -153,10 +151,6 @@ export function AllEntriesSection({
             <h2 className="m-0 text-base font-bold text-foreground sm:text-lg">
               Entries
             </h2>
-            <span className="min-w-0 truncate text-sm text-muted-foreground">
-              {totalCount.toLocaleString()} total entr
-              {totalCount === 1 ? 'y' : 'ies'}
-            </span>
             {activeFilterCount > 0 && (
               <>
                 <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">

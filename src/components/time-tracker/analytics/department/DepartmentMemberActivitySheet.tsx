@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import {
   Activity,
   BriefcaseBusiness,
@@ -23,6 +23,29 @@ import type {
   DepartmentMemberActivitySummary,
 } from '#/lib/server/tracker/department-dashboard.server'
 
+// Match the shared motion tokens in styles.css:
+// open --duration-slow (400ms) / close --duration-medium (350ms),
+// backdrop --modal-open-dur / --modal-close-dur (250ms / 150ms),
+// --ease-smooth-out, --blur-small (2px).
+const SHEET_OPEN_MS = 400
+const SHEET_CLOSE_MS = 350
+const BACKDROP_OPEN_MS = 250
+const BACKDROP_CLOSE_MS = 150
+const SHEET_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1]
+const SHEET_BLUR = 2
+
+function useMatchMedia(query: string): boolean {
+  const [matches, setMatches] = useState(false)
+  useEffect(() => {
+    const mql = window.matchMedia(query)
+    setMatches(mql.matches)
+    const onChange = (event: MediaQueryListEvent) => setMatches(event.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [query])
+  return matches
+}
+
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -31,9 +54,10 @@ function formatDuration(seconds: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
-function formatTime(value: string | null): string {
+function formatTime(value: string | null, timezone?: string): string {
   if (!value) return 'Now'
   return new Date(value).toLocaleTimeString([], {
+    timeZone: timezone,
     hour: '2-digit',
     minute: '2-digit',
   })
@@ -42,9 +66,11 @@ function formatTime(value: string | null): string {
 function TaskCard({
   title,
   entry,
+  timezone,
 }: {
   title: string
   entry: DepartmentMemberActivityEntry | null
+  timezone?: string
 }) {
   return (
     <div className="min-w-0 rounded-lg border border-border bg-background p-3">
@@ -77,7 +103,8 @@ function TaskCard({
           </p>
           <p className="m-0 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
-            {formatTime(entry.startedAt)} - {formatTime(entry.endedAt)} ·{' '}
+            {formatTime(entry.startedAt, timezone)} -{' '}
+            {formatTime(entry.endedAt, timezone)} ·{' '}
             {formatDuration(entry.durationSeconds)}
           </p>
         </div>
@@ -102,7 +129,7 @@ function HourlyChart({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h3 className="m-0 text-sm font-bold text-foreground">
-            Today by hour
+            Activity by hour
           </h3>
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
             Started tasks grouped by hour
@@ -140,21 +167,23 @@ function TimelineEntry({
   entry,
   isFirst,
   isLast,
+  timezone,
   onSelect,
 }: {
   entry: DepartmentMemberActivityEntry
   isFirst: boolean
   isLast: boolean
+  timezone?: string
   onSelect: (entry: DepartmentMemberActivityEntry) => void
 }) {
   return (
     <div className="grid min-w-0 grid-cols-[72px_20px_minmax(0,1fr)] gap-3 px-3 py-4 min-[460px]:grid-cols-[96px_24px_minmax(0,1fr)]">
       <div className="pt-0.5">
         <div className="rounded-md bg-foreground px-2 py-1 text-center text-[11px] font-black tabular-nums text-background shadow-sm min-[460px]:text-xs">
-          {formatTime(entry.startedAt)}
+          {formatTime(entry.startedAt, timezone)}
         </div>
         <div className="mt-1 text-center text-[10px] font-mono text-muted-foreground min-[460px]:text-[11px]">
-          to {entry.endedAt ? formatTime(entry.endedAt) : 'Now'}
+          to {entry.endedAt ? formatTime(entry.endedAt, timezone) : 'Now'}
         </div>
       </div>
 
@@ -218,9 +247,11 @@ function TimelineEntry({
 
 function ActivityEntryDetailsDialog({
   entry,
+  timezone,
   onOpenChange,
 }: {
   entry: DepartmentMemberActivityEntry | null
+  timezone?: string
   onOpenChange: (open: boolean) => void
 }) {
   const title = entry?.taskName ?? entry?.description.trim() ?? 'Task details'
@@ -264,12 +295,16 @@ function ActivityEntryDetailsDialog({
                 <DetailItem
                   icon={<Clock className="size-4" />}
                   label="Started"
-                  value={formatTime(entry.startedAt)}
+                  value={formatTime(entry.startedAt, timezone)}
                 />
                 <DetailItem
                   icon={<Clock className="size-4" />}
                   label={entry.endedAt ? 'Ended' : 'Current'}
-                  value={entry.endedAt ? formatTime(entry.endedAt) : 'Running'}
+                  value={
+                    entry.endedAt
+                      ? formatTime(entry.endedAt, timezone)
+                      : 'Running'
+                  }
                 />
                 <DetailItem
                   icon={<Clock className="size-4" />}
@@ -326,6 +361,7 @@ export function DepartmentMemberActivitySheet({
   dateLabel?: string
 }) {
   const open = Boolean(memberId) || Boolean(activity)
+  const isDesktop = useMatchMedia('(min-width: 640px)')
   const { data, isLoading, error } = useQuery({
     queryKey: ['department-member-today-activity', memberId],
     queryFn: () =>
@@ -335,65 +371,91 @@ export function DepartmentMemberActivitySheet({
   })
   const displayData = activity ?? data
 
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 1 }}
-        >
-          <motion.button
-            type="button"
-            className="absolute inset-0 bg-black/45"
-            onClick={onClose}
-            aria-label="Close member activity"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-          />
-          <motion.aside
-            className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-r-0"
-            initial={{ y: '100%', opacity: 0.98 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0.98 }}
-            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <header className="flex min-w-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-5">
-              <div className="min-w-0">
-                <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
-                  {dateLabel}
-                </p>
-                <h2 className="m-0 mt-1 truncate text-lg font-black text-foreground sm:text-xl">
-                  {displayData?.member.name ?? 'Loading member'}
-                </h2>
-                <p className="m-0 mt-0.5 truncate text-sm text-muted-foreground">
-                  {displayData?.member.email ?? 'Fetching current activity'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close member activity"
-                className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
-                <X className="size-4" />
-              </button>
-            </header>
+  // Bottom sheet on mobile, side panel on desktop — slide in from that edge
+  // with a fade + cross-blur (panel reveal), open slower than close.
+  const closedPosition = isDesktop ? { x: '100%', y: 0 } : { x: 0, y: '100%' }
 
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5">
-              <DepartmentMemberActivityPanel
-                data={displayData}
-                isLoading={!activity && isLoading}
-                error={error}
-              />
-            </div>
-          </motion.aside>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  return (
+    <MotionConfig reducedMotion="user">
+      <AnimatePresence>
+        {open && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-stretch sm:justify-end">
+            <motion.button
+              type="button"
+              className="absolute inset-0 bg-black/45"
+              onClick={onClose}
+              aria-label="Close member activity"
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: 1,
+                transition: { duration: BACKDROP_OPEN_MS / 1000 },
+              }}
+              exit={{
+                opacity: 0,
+                transition: { duration: BACKDROP_CLOSE_MS / 1000 },
+              }}
+            />
+            <motion.aside
+              className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-r-0"
+              initial={{
+                ...closedPosition,
+                opacity: 0,
+                filter: `blur(${SHEET_BLUR}px)`,
+              }}
+              animate={{
+                x: 0,
+                y: 0,
+                opacity: 1,
+                filter: 'blur(0px)',
+                transition: {
+                  duration: SHEET_OPEN_MS / 1000,
+                  ease: SHEET_EASE,
+                },
+              }}
+              exit={{
+                ...closedPosition,
+                opacity: 0,
+                filter: `blur(${SHEET_BLUR}px)`,
+                transition: {
+                  duration: SHEET_CLOSE_MS / 1000,
+                  ease: SHEET_EASE,
+                },
+              }}
+            >
+              <header className="flex min-w-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-5">
+                <div className="min-w-0">
+                  <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
+                    {dateLabel}
+                  </p>
+                  <h2 className="m-0 mt-1 truncate text-lg font-black text-foreground sm:text-xl">
+                    {displayData?.member.name ?? 'Loading member'}
+                  </h2>
+                  <p className="m-0 mt-0.5 truncate text-sm text-muted-foreground">
+                    {displayData?.member.email ?? 'Fetching current activity'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Close member activity"
+                  className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                >
+                  <X className="size-4" />
+                </button>
+              </header>
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5">
+                <DepartmentMemberActivityPanel
+                  data={displayData}
+                  isLoading={!activity && isLoading}
+                  error={error}
+                />
+              </div>
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+    </MotionConfig>
   )
 }
 
@@ -430,6 +492,8 @@ export function DepartmentMemberActivityPanel({
 
   if (!data) return null
 
+  const timezone = data.timezone
+
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-2">
@@ -460,8 +524,16 @@ export function DepartmentMemberActivityPanel({
         </div>
       </div>
 
-      <TaskCard title="Current task" entry={data.activeEntry} />
-      <TaskCard title="Latest ended task" entry={data.latestCompletedEntry} />
+      <TaskCard
+        title="Current task"
+        entry={data.activeEntry}
+        timezone={timezone}
+      />
+      <TaskCard
+        title="Latest ended task"
+        entry={data.latestCompletedEntry}
+        timezone={timezone}
+      />
       <HourlyChart summary={data.today} />
 
       <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-background">
@@ -485,6 +557,7 @@ export function DepartmentMemberActivityPanel({
                 entry={entry}
                 isFirst={index === 0}
                 isLast={index === data.entriesToday.length - 1}
+                timezone={timezone}
                 onSelect={setSelectedEntry}
               />
             ))}
@@ -493,6 +566,7 @@ export function DepartmentMemberActivityPanel({
       </section>
       <ActivityEntryDetailsDialog
         entry={selectedEntry}
+        timezone={timezone}
         onOpenChange={(open) => {
           if (!open) setSelectedEntry(null)
         }}

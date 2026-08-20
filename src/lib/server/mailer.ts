@@ -184,6 +184,7 @@ export async function sendTimerReminderEmail(params: {
   memberName: string
   workspaceName: string
   taskDescription: string
+  milestoneHours: number
   startedAtLabel: string
   runningDuration: string
   projectName?: string | null

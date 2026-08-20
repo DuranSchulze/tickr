@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { sendLateTimerReminders } from '#/lib/server/tracker/timer-reminders.server'
+import { sendTimerReminders } from '#/lib/server/tracker/timer-reminders.server'
 
 async function handleTimerRemindersCron(request: Request) {
   const cronSecret = process.env.CRON_SECRET
@@ -8,9 +8,9 @@ async function handleTimerRemindersCron(request: Request) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const result = await sendLateTimerReminders()
+  const result = await sendTimerReminders()
   console.log(
-    `[cron/timer-reminders] Done. checked=${result.checked} due=${result.due} sent=${result.sent} skipped=${result.skippedAlreadySent} failures=${result.failureCount} duration=${result.durationMs}ms`,
+    `[cron/timer-reminders] Done. checked=${result.checked} due=${result.due} sent=${result.sent} skippedAlreadySent=${result.skippedAlreadySent} failures=${result.failureCount} duration=${result.durationMs}ms`,
   )
 
   return new Response(JSON.stringify(result), {

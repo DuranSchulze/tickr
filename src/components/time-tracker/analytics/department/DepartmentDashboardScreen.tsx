@@ -1,5 +1,6 @@
 import type { DepartmentDashboard } from '#/lib/server/tracker/department-dashboard.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
+import { formatDuration } from '#/lib/time-tracker/store'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { MemberBreakdownTable } from './MemberBreakdownTable'
 import { DepartmentDailyChart } from './DepartmentDailyChart'
@@ -8,13 +9,6 @@ import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
-
-function formatHours(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
 
 function KpiCard({
   label,
@@ -191,25 +185,25 @@ export function DepartmentDashboardScreen({
       {/* KPI cards */}
       <DepartmentSectionFrame
         title="Summary"
-        subtitle={`${formatHours(summary.totalSeconds)} tracked · ${activeMembers} active members`}
+        subtitle={`${formatDuration(summary.totalSeconds)} tracked · ${activeMembers} active members`}
       >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <KpiCard
             label="Tracked hours"
-            value={formatHours(summary.totalSeconds)}
+            value={formatDuration(summary.totalSeconds)}
           />
           <KpiCard
             label="Actual hours"
-            value={formatHours(summary.actualSeconds)}
+            value={formatDuration(summary.actualSeconds)}
             sub={
               summary.overlapSeconds > 0
-                ? `${formatHours(summary.overlapSeconds)} overlap`
+                ? `${formatDuration(summary.overlapSeconds)} overlap`
                 : 'No overlap'
             }
           />
           <KpiCard
             label="Billable hours"
-            value={formatHours(summary.billableSeconds)}
+            value={formatDuration(summary.billableSeconds)}
           />
           <KpiCard
             label="Billable amount"

@@ -13,7 +13,10 @@ import {
 import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { sendTimerReminderEmail } from '../mailer'
 
-const DEFAULT_REMINDER_HOUR = 22
+/** Remind users whose running timer has crossed these hour thresholds. */
+export const REMINDER_MILESTONE_HOURS = [4, 6, 8] as const
+export type ReminderKind = '4h' | '6h' | '8h'
+
 const FALLBACK_TIMEZONE = 'Asia/Manila'
 
 type ReminderCandidate = {
@@ -33,7 +36,6 @@ type ReminderCandidate = {
 
 type LocalParts = {
   dateKey: string
-  hour: number
   label: string
 }
 
@@ -48,13 +50,8 @@ export type TimerReminderResult = {
   errors: Array<{ entryId: string; email: string; error: string }>
 }
 
-function getReminderHour(): number {
-  const value = Number(
-    process.env.LATE_TIMER_REMINDER_HOUR ?? DEFAULT_REMINDER_HOUR,
-  )
-  return Number.isInteger(value) && value >= 0 && value <= 23
-    ? value
-    : DEFAULT_REMINDER_HOUR
+function kindForHours(hours: number): ReminderKind {
+  return `${hours}h` as ReminderKind
 }
 
 function getAppUrl(): string {
@@ -82,7 +79,6 @@ function getLocalParts(date: Date, timezone: string): LocalParts {
   const dateKey = `${parts.year}-${parts.month}-${parts.day}`
   return {
     dateKey,
-    hour: Number(parts.hour ?? 0),
     label: `${dateKey} ${parts.hour}:${parts.minute}:${parts.second} ${timezone}`,
   }
 }
@@ -132,84 +128,94 @@ async function getRunningTimers(): Promise<ReminderCandidate[]> {
     .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
     .leftJoin(clients, eq(projects.clientId, clients.id))
     .where(
-      and(
-        isNull(timeEntries.endedAt),
-        eq(workspaceMembers.status, 'ACTIVE'),
-      ),
+      and(isNull(timeEntries.endedAt), eq(workspaceMembers.status, 'ACTIVE')),
     )
 
   return rows
 }
 
-export async function sendLateTimerReminders(
+/**
+ * Sends a reminder email for every running timer that has crossed one of the
+ * milestone thresholds (4h, 6h, 8h) and hasn't been reminded for it yet.
+ * One email per milestone per timer — if several milestones were crossed since
+ * the last run, only the lowest outstanding one is sent so users never get a
+ * burst of duplicate emails.
+ */
+export async function sendTimerReminders(
   now = new Date(),
 ): Promise<TimerReminderResult> {
   const startedAt = Date.now()
-  const reminderHour = getReminderHour()
   const runningTimers = await getRunningTimers()
-  const dueTimers = runningTimers
-    .map((timer) => ({
-      timer,
-      localNow: safeLocalParts(now, timer.timezone),
-      localStart: safeLocalParts(timer.startedAt, timer.timezone),
-    }))
-    .filter(({ localNow }) => localNow.hour >= reminderHour)
 
-  const reminderKeys = new Map<string, string>()
-  for (const due of dueTimers) {
-    reminderKeys.set(due.timer.entryId, due.localNow.dateKey)
-  }
+  const candidates = runningTimers
+    .map((timer) => {
+      const elapsedSeconds = Math.floor(
+        (now.getTime() - timer.startedAt.getTime()) / 1000,
+      )
+      const elapsedHours = elapsedSeconds / 3600
+      const reached = REMINDER_MILESTONE_HOURS.filter(
+        (hours) => elapsedHours >= hours,
+      )
+      return { timer, elapsedSeconds, reached }
+    })
+    .filter((candidate) => candidate.reached.length > 0)
 
   const existingReminders =
-    dueTimers.length > 0
+    candidates.length > 0
       ? await db
           .select({
             timeEntryId: timerReminderEmails.timeEntryId,
-            reminderDate: timerReminderEmails.reminderDate,
+            kind: timerReminderEmails.kind,
           })
           .from(timerReminderEmails)
           .where(
             inArray(
               timerReminderEmails.timeEntryId,
-              dueTimers.map(({ timer }) => timer.entryId),
+              candidates.map(({ timer }) => timer.entryId),
             ),
           )
       : []
 
-  const sentKeys = new Set(
-    existingReminders.map(
-      (row) => `${row.timeEntryId}:${row.reminderDate}`,
-    ),
-  )
+  const sentKinds = new Map<string, Set<string>>()
+  for (const row of existingReminders) {
+    const set = sentKinds.get(row.timeEntryId) ?? new Set<string>()
+    set.add(row.kind)
+    sentKinds.set(row.timeEntryId, set)
+  }
+
+  let due = 0
   let sent = 0
   let skippedAlreadySent = 0
   let failureCount = 0
   const errors: TimerReminderResult['errors'] = []
 
-  for (const { timer, localNow, localStart } of dueTimers) {
-    const reminderDate = reminderKeys.get(timer.entryId) ?? localNow.dateKey
-    const reminderKey = `${timer.entryId}:${reminderDate}`
-    if (sentKeys.has(reminderKey)) {
+  for (const { timer, elapsedSeconds, reached } of candidates) {
+    const alreadySent = sentKinds.get(timer.entryId) ?? new Set<string>()
+    const dueKinds = reached.filter(
+      (hours) => !alreadySent.has(kindForHours(hours)),
+    )
+    if (dueKinds.length === 0) {
       skippedAlreadySent++
       continue
     }
 
+    due++
+    const milestoneHours = dueKinds[0]
+
     try {
-      const durationSeconds = Math.floor(
-        (now.getTime() - timer.startedAt.getTime()) / 1000,
-      )
       await sendTimerReminderEmail({
         to: timer.memberEmail,
         memberName: timer.memberName ?? timer.memberEmail,
         workspaceName: timer.workspaceName,
         taskDescription: timer.description,
-        startedAtLabel: localStart.label,
-        runningDuration: formatHms(durationSeconds),
+        milestoneHours,
+        startedAtLabel: safeLocalParts(timer.startedAt, timer.timezone).label,
+        runningDuration: formatHms(elapsedSeconds),
         projectName:
           [timer.clientName, timer.projectName].filter(Boolean).join(' / ') ||
           null,
         taskName: timer.taskName,
-        timerUrl: `${getAppUrl()}/app/time-tracker`,
+        timerUrl: `${getAppUrl()}/app/time-tracker?focus=timer`,
       })
       await db
         .insert(timerReminderEmails)
@@ -217,16 +223,14 @@ export async function sendLateTimerReminders(
           timeEntryId: timer.entryId,
           workspaceId: timer.workspaceId,
           workspaceMemberId: timer.workspaceMemberId,
-          reminderDate,
+          reminderDate: safeLocalParts(now, timer.timezone).dateKey,
+          kind: kindForHours(milestoneHours),
           sentAt: now,
         })
         .onConflictDoNothing({
-          target: [
-            timerReminderEmails.timeEntryId,
-            timerReminderEmails.reminderDate,
-          ],
+          target: [timerReminderEmails.timeEntryId, timerReminderEmails.kind],
         })
-      sentKeys.add(reminderKey)
+      alreadySent.add(kindForHours(milestoneHours))
       sent++
     } catch (err) {
       failureCount++
@@ -241,7 +245,7 @@ export async function sendLateTimerReminders(
   return {
     ok: true,
     checked: runningTimers.length,
-    due: dueTimers.length,
+    due,
     sent,
     skippedAlreadySent,
     failureCount,

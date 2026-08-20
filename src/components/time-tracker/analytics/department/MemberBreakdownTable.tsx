@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import type { DepartmentMemberBreakdown } from '#/lib/server/tracker/department-dashboard.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
+import { formatDuration } from '#/lib/time-tracker/store'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 
 const PAGE_SIZE = 10
@@ -16,14 +17,6 @@ type SortKey = keyof Pick<
   DepartmentMemberBreakdown,
   'totalSeconds' | 'billableSeconds' | 'billableAmount' | 'entryCount'
 >
-
-function formatHours(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h === 0 && m === 0) return '—'
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
 
 function SortButton({
   label,
@@ -177,10 +170,10 @@ export function MemberBreakdownTable({
                       </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
-                      {formatHours(member.totalSeconds)}
+                      {formatDuration(member.totalSeconds)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-foreground">
-                      {formatHours(member.billableSeconds)}
+                      {formatDuration(member.billableSeconds)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-muted-foreground">
                       {member.effectiveRate > 0

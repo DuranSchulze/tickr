@@ -1,6 +1,6 @@
 import type { DepartmentProjectBreakdown as ProjectRow } from '#/lib/server/tracker/department-dashboard.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
-import { EmptyChart, formatHours } from './DepartmentChartUtils'
+import { EmptyChart, formatDuration } from './DepartmentChartUtils'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
@@ -49,7 +49,7 @@ export function DepartmentProjectBreakdown({
                   <div
                     key={project.projectId}
                     className="grid min-w-0 gap-2 lg:grid-cols-[220px_minmax(0,1fr)_96px] lg:items-center"
-                    title={`${project.name} · ${project.clientName}: ${formatHours(project.seconds)} total, ${formatHours(project.billableSeconds)} billable`}
+                    title={`${project.name} · ${project.clientName}: ${formatDuration(project.seconds)} total, ${formatDuration(project.billableSeconds)} billable`}
                   >
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-center gap-2">
@@ -75,7 +75,7 @@ export function DepartmentProjectBreakdown({
                       />
                     </div>
                     <p className="m-0 text-right text-xs font-mono font-semibold text-foreground">
-                      {formatHours(project.seconds)}
+                      {formatDuration(project.seconds)}
                     </p>
                   </div>
                 )
@@ -127,10 +127,10 @@ export function DepartmentProjectBreakdown({
                       </p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
-                      {formatHours(project.seconds)}
+                      {formatDuration(project.seconds)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-foreground">
-                      {formatHours(project.billableSeconds)}
+                      {formatDuration(project.billableSeconds)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
                       {project.billableAmount > 0

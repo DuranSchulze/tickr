@@ -64,7 +64,12 @@ export type ReportsPayload = {
     projectsTouched: number
     billableAmount: number | null
   }
-  dailyTotals: Array<{ date: string; seconds: number }>
+  dailyTotals: Array<{
+    date: string
+    seconds: number
+    billableSeconds: number
+    nonBillableSeconds: number
+  }>
   memberBreakdown: ReportsMemberBreakdown[]
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
@@ -394,6 +399,7 @@ export async function getReports(
     parseDateOnly(range.endDate),
   )
   const dailySecondsMap = new Map(dateKeys.map((d) => [d, 0]))
+  const dailyBillableMap = new Map(dateKeys.map((d) => [d, 0]))
   for (const row of summaryRows) {
     const slices = splitWorkIntervalByDay(
       {
@@ -410,12 +416,24 @@ export async function getReports(
         slice.date,
         (dailySecondsMap.get(slice.date) ?? 0) + slice.seconds,
       )
+      if (row.billable) {
+        dailyBillableMap.set(
+          slice.date,
+          (dailyBillableMap.get(slice.date) ?? 0) + slice.seconds,
+        )
+      }
     }
   }
-  const dailyTotals = dateKeys.map((date) => ({
-    date,
-    seconds: dailySecondsMap.get(date) ?? 0,
-  }))
+  const dailyTotals = dateKeys.map((date) => {
+    const seconds = dailySecondsMap.get(date) ?? 0
+    const billable = dailyBillableMap.get(date) ?? 0
+    return {
+      date,
+      seconds,
+      billableSeconds: billable,
+      nonBillableSeconds: seconds - billable,
+    }
+  })
 
   // Tags for paginated entries
   const tagNamesByRawEntry = new Map<string, string[]>()

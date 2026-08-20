@@ -17,10 +17,8 @@ import type {
   AnalyticsOverviewPayload,
 } from '#/lib/server/tracker.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
-import {
-  formatChartDate,
-  formatHours,
-} from './analytics.utils'
+import { formatDuration } from '#/lib/time-tracker/store'
+import { formatChartDate } from './analytics.utils'
 
 const scopeLabels = {
   personal: 'My analytics',
@@ -53,17 +51,17 @@ function MetricCard({
   icon: typeof Clock3
 }) {
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {label}
           </p>
-          <p className="m-0 mt-2 truncate text-2xl font-black tracking-tight text-foreground">
+          <p className="m-0 mt-2 break-words text-xl font-black tracking-tight text-foreground sm:text-2xl">
             {value}
           </p>
         </div>
-        <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:size-9">
           <Icon className="size-4" />
         </span>
       </div>
@@ -74,10 +72,7 @@ function MetricCard({
   )
 }
 
-function metricCards(
-  metric: AnalyticsOverviewMetric,
-  currency: string,
-) {
+function metricCards(metric: AnalyticsOverviewMetric, currency: string) {
   return [
     {
       label: 'Entries',
@@ -87,14 +82,14 @@ function metricCards(
     },
     {
       label: 'Total hours',
-      value: formatHours(metric.totalSeconds),
+      value: formatDuration(metric.totalSeconds),
       helper: 'Completed time',
       icon: Clock3,
     },
     {
       label: 'Billable',
-      value: formatHours(metric.billableSeconds),
-      helper: `${formatHours(metric.nonBillableSeconds)} non-billable`,
+      value: formatDuration(metric.billableSeconds),
+      helper: `${formatDuration(metric.nonBillableSeconds)} non-billable`,
       icon: DollarSign,
     },
     {
@@ -203,7 +198,7 @@ export function AnalyticsOverviewScreen({
         </div>
       )}
 
-      <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {cards.map((card) => (
           <MetricCard key={card.label} {...card} />
         ))}
@@ -252,16 +247,18 @@ export function AnalyticsOverviewScreen({
               />
               <ComparisonValue
                 label="Hours"
-                current={formatHours(comparison.current.totalSeconds)}
-                previous={formatHours(comparison.previous.totalSeconds)}
-                delta={formatHours(Math.abs(comparison.delta.totalSeconds))}
+                current={formatDuration(comparison.current.totalSeconds)}
+                previous={formatDuration(comparison.previous.totalSeconds)}
+                delta={formatDuration(Math.abs(comparison.delta.totalSeconds))}
                 percent={comparison.percentChange.totalSeconds}
               />
               <ComparisonValue
                 label="Billable"
-                current={formatHours(comparison.current.billableSeconds)}
-                previous={formatHours(comparison.previous.billableSeconds)}
-                delta={formatHours(Math.abs(comparison.delta.billableSeconds))}
+                current={formatDuration(comparison.current.billableSeconds)}
+                previous={formatDuration(comparison.previous.billableSeconds)}
+                delta={formatDuration(
+                  Math.abs(comparison.delta.billableSeconds),
+                )}
                 percent={comparison.percentChange.billableSeconds}
               />
               <ComparisonValue
@@ -316,7 +313,7 @@ function TrendBars({
             <div
               key={day.date}
               className="group relative flex h-full min-w-0 flex-col justify-end"
-              title={`${day.date}: ${formatHours(day.totalSeconds)}, ${day.entries.toLocaleString()} entries`}
+              title={`${day.date}: ${formatDuration(day.totalSeconds)}, ${day.entries.toLocaleString()} entries`}
             >
               <div
                 className="flex w-full min-w-0 flex-col justify-end overflow-hidden rounded-t-md bg-muted"
@@ -331,7 +328,9 @@ function TrendBars({
                   style={{ height: `${billableHeight}%` }}
                 />
               </div>
-              {(index === 0 || index === data.length - 1 || index % 7 === 0) && (
+              {(index === 0 ||
+                index === data.length - 1 ||
+                index % 7 === 0) && (
                 <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] font-bold text-muted-foreground">
                   {day.label}
                 </span>
@@ -367,8 +366,7 @@ function ComparisonValue({
   delta: string
   percent: number | null
 }) {
-  const direction =
-    percent == null ? 1 : percent > 0 ? 1 : percent < 0 ? -1 : 0
+  const direction = percent == null ? 1 : percent > 0 ? 1 : percent < 0 ? -1 : 0
   return (
     <div className="min-w-0 rounded-lg border border-border bg-background p-3">
       <div className="flex items-center justify-between gap-2">

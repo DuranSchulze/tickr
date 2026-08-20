@@ -134,6 +134,13 @@
       "when": 1787196064949,
       "tag": "0018_time_entries_analytics_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787211880894,
+      "tag": "0019_open_slipstream",
+      "breakpoints": true
     }
   ]
 }

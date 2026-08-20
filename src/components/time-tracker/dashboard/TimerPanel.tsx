@@ -12,6 +12,20 @@ import { RunningTimer } from './RunningTimer'
 import { PresetDropdown } from './PresetDropdown'
 import { TimerMobileControls } from './TimerMobileControls'
 
+// Small hover hint (same pattern as the pickers' tooltips) that surfaces the
+// keyboard shortcut for the timer action buttons.
+function ActionHint({ label, shortcut }: { label: string; shortcut: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 flex items-center whitespace-nowrap rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
+    >
+      {label}
+      <Kbd className="ml-1.5">{shortcut}</Kbd>
+    </span>
+  )
+}
+
 export function TimerPanel({
   workspaceId,
   clients,
@@ -301,41 +315,11 @@ export function TimerPanel({
 
       {activeEntry && (
         <div className="min-w-0 rounded-lg border border-primary/30 bg-primary/10 p-3 sm:p-4">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-0">
-            <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
-              Running now
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onDiscard}
-                disabled={stopPending}
-                title="Discard timer — deletes this entry with no record saved"
-                className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 px-2.5 py-1 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3"
-              >
-                <Trash2 className="size-3" />
-                Discard
-                <Kbd className="hidden sm:inline-flex">Esc</Kbd>
-              </button>
-              {!stopBlocked && (
-                <button
-                  type="button"
-                  onClick={onStop}
-                  disabled={stopPending}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3"
-                >
-                  {stopPending ? (
-                    <Loader2 className="size-3 animate-spin" />
-                  ) : (
-                    <Square className="size-3 fill-current" />
-                  )}
-                  Stop
-                </button>
-              )}
-            </div>
-          </div>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1 grid gap-1.5">
+              <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
+                Running now
+              </p>
               <p className="m-0 font-bold text-foreground truncate">
                 {activeEntry.description || (
                   <span className="text-muted-foreground">No description</span>
@@ -407,7 +391,41 @@ export function TimerPanel({
                 )}
               </div>
             </div>
-            <RunningTimer entry={activeEntry} formatTime={formatTime} />
+            <div className="flex shrink-0 items-center gap-2">
+              <RunningTimer entry={activeEntry} formatTime={formatTime} />
+              <div
+                className="flex items-center gap-1"
+                role="group"
+                aria-label="Timer actions"
+              >
+                <button
+                  type="button"
+                  onClick={onDiscard}
+                  disabled={stopPending}
+                  aria-label="Discard timer (Esc)"
+                  className="group relative grid size-8 place-items-center rounded-md border border-destructive/40 text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 className="size-4" />
+                  <ActionHint label="Discard" shortcut="Esc" />
+                </button>
+                {!stopBlocked && (
+                  <button
+                    type="button"
+                    onClick={onStop}
+                    disabled={stopPending}
+                    aria-label="Stop timer (Enter)"
+                    className="group relative grid size-8 place-items-center rounded-md bg-destructive text-destructive-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {stopPending ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Square className="size-4 fill-current" />
+                    )}
+                    <ActionHint label="Stop" shortcut="↵" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

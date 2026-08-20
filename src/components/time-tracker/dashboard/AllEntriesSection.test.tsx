@@ -75,7 +75,6 @@ const completedEntry: TimeEntry = {
 
 const noop = () => undefined
 const baseProps = {
-  totalCount: 2,
   hasMore: false,
   loadingMore: false,
   onLoadMore: noop,

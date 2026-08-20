@@ -26,7 +26,7 @@ export function CalendarScreen({
   const { formatTime } = useTimeFormat()
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-5">
+    <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-6">
       <CalendarHeader
         month={calendar.month}
         view={view}
@@ -40,6 +40,7 @@ export function CalendarScreen({
         view={view}
         selectedDate={selectedDate}
         member={calendar.member}
+        timezone={calendar.timezone}
         entriesByDate={calendar.entriesByDate}
         formatTime={formatTime}
       />

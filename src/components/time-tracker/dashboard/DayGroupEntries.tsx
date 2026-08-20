@@ -144,6 +144,7 @@ function DayGroupHeaderRow({
   view,
   entryCount,
   dayCollapsed,
+  runningEntry,
   formatTime,
   onToggle,
 }: {
@@ -151,6 +152,7 @@ function DayGroupHeaderRow({
   view?: ViewMode
   entryCount: number
   dayCollapsed: boolean
+  runningEntry?: TimeEntry | null
   formatTime: (seconds: number) => string
   onToggle: () => void
 }) {
@@ -181,7 +183,7 @@ function DayGroupHeaderRow({
           {copyButton}
           <LiveGroupTotal
             completedSeconds={group.completedSeconds}
-            runningEntry={group.runningEntry}
+            runningEntry={runningEntry ?? null}
             formatTime={formatTime}
           />
         </div>
@@ -219,7 +221,7 @@ function DayGroupHeaderRow({
         {copyButton}
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
-          runningEntry={group.runningEntry}
+          runningEntry={runningEntry ?? null}
           formatTime={formatTime}
         />
       </div>
@@ -727,6 +729,9 @@ export function DayGroupsList({
               view={view}
               entryCount={entryCount}
               dayCollapsed={dayCollapsed}
+              runningEntry={
+                group.runningEntry ?? (isPinnedGroup ? activeEntry : null)
+              }
               formatTime={formatTime}
               onToggle={() => toggleDayGroup(group.dateKey)}
             />

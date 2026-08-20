@@ -40,13 +40,6 @@ export function isAnalyticsScope(
   )
 }
 
-export function formatHours(seconds: number) {
-  const hours = seconds / 3600
-  if (hours === 0) return '0h'
-  if (hours < 1) return `${Math.round(seconds / 60)}m`
-  return `${hours.toFixed(hours >= 10 ? 0 : 1)}h`
-}
-
 export function toChartHours(seconds: number) {
   return Number((seconds / 3600).toFixed(2))
 }

@@ -14,6 +14,8 @@ export type TimerReminderEmailInput = {
   memberName: string
   workspaceName: string
   taskDescription: string
+  /** How many hours the timer has been running past (4, 6 or 8). */
+  milestoneHours: number
   startedAtLabel: string
   runningDuration: string
   projectName?: string | null
@@ -25,41 +27,43 @@ export function renderTimerReminderEmail({
   memberName,
   workspaceName,
   taskDescription,
+  milestoneHours,
   startedAtLabel,
   runningDuration,
   projectName,
   taskName,
   timerUrl,
 }: TimerReminderEmailInput): RenderedEmail {
-  const subject = `Your ${BRAND.name} timer is still running`
+  const subject = `Your ${BRAND.name} timer has run for ${milestoneHours}+ hours`
   const taskLine = taskName
     ? `${taskDescription} (${taskName})`
     : taskDescription
-  const projectLine = projectName ? [`Project: ${projectName}`] : []
 
   const text = [
     `Hi ${memberName},`,
     '',
-    `Your timer in "${workspaceName}" is still running.`,
+    `Your timer in "${workspaceName}" has been running for ${milestoneHours}+ hours.`,
     '',
     `Task: ${taskLine}`,
-    ...projectLine,
+    projectName ? `Project: ${projectName}` : '',
     `Started: ${startedAtLabel}`,
     `Current duration: ${runningDuration}`,
     '',
-    `Open your timer: ${timerUrl}`,
+    `Open your timer and stop or update it: ${timerUrl}`,
     '',
-    `If you are still working, you can ignore this reminder. Otherwise, stop or update the timer so your records stay accurate.`,
+    `If you are still on the task, no action is needed. Otherwise, stop the timer so your records stay accurate.`,
     '',
     `- ${BRAND.name}`,
-  ].join('\n')
+  ]
+    .filter((line) => line !== '')
+    .join('\n')
 
   const html = renderEmailLayout({
-    title: 'Your timer is still running',
+    title: `Timer running for ${milestoneHours}+ hours`,
     children: [
       paragraph(`Hi ${escapeHtml(memberName)},`),
       paragraph(
-        `Your timer in <strong>${escapeHtml(workspaceName)}</strong> is still active.`,
+        `Just a heads-up — your timer in <strong>${escapeHtml(workspaceName)}</strong> has been running for <strong>${milestoneHours}+ hours</strong>.`,
       ),
       renderDetailTable([
         { label: 'Task', value: taskLine },
@@ -69,7 +73,7 @@ export function renderTimerReminderEmail({
       ]),
       renderButton({ href: timerUrl, label: 'Open timer' }),
       mutedParagraph(
-        'If you are still working, you can ignore this reminder. Otherwise, stop or update the timer so your records stay accurate.',
+        'If you are still on the task, no action is needed. Otherwise, open the timer and stop or update it so your time records stay accurate.',
       ),
       renderFallbackLink(timerUrl),
     ].join(''),

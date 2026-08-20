@@ -1,4 +1,4 @@
-import { departmentChartColors, formatHours } from './DepartmentChartUtils'
+import { departmentChartColors, formatDuration } from './DepartmentChartUtils'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 
 function formatDateLabel(dateKey: string): string {
@@ -50,7 +50,7 @@ export function DepartmentDailyChart({
                 <div
                   className="flex h-full overflow-hidden rounded-full"
                   style={{ width: `${totalWidth}%` }}
-                  title={`Billable ${formatHours(day.billableSeconds)} · Non-billable ${formatHours(day.nonBillableSeconds)}`}
+                  title={`Billable ${formatDuration(day.billableSeconds)} · Non-billable ${formatDuration(day.nonBillableSeconds)}`}
                 >
                   {day.billableSeconds > 0 && (
                     <div
@@ -73,7 +73,7 @@ export function DepartmentDailyChart({
                 </div>
               </div>
               <p className="m-0 text-right text-xs font-mono font-semibold text-foreground">
-                {formatHours(day.seconds)}
+                {formatDuration(day.seconds)}
               </p>
             </div>
           )

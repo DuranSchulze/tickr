@@ -1076,12 +1076,13 @@ export const timerReminderEmails = pgTable(
       .notNull()
       .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
     reminderDate: date('reminder_date').notNull(),
+    kind: varchar('kind', { length: 10 }).notNull().default('4h'),
     sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex('timer_reminder_entry_date_unique').on(
+    uniqueIndex('timer_reminder_entry_kind_unique').on(
       table.timeEntryId,
-      table.reminderDate,
+      table.kind,
     ),
     index('timer_reminder_workspace_sent_idx').on(
       table.workspaceId,

@@ -133,6 +133,7 @@ export type DepartmentMemberActivitySummary = {
     departmentName: string | null
     departmentColor: string | null
   }
+  timezone: string
   today: {
     date: string
     totalSeconds: number
@@ -886,6 +887,7 @@ export async function getDepartmentMemberTodayActivity(data: {
       departmentName: member.departmentName,
       departmentColor: member.departmentColor,
     },
+    timezone: timeZone,
     today: {
       date: todayRange.date,
       totalSeconds: completedSeconds + activeSeconds,

@@ -25,14 +25,14 @@ export const CalendarDayCell = memo(function CalendarDayCell({
 
   return (
     <div
-      className={`flex h-[152px] min-w-0 flex-col border-r border-b border-border bg-card transition-colors hover:bg-accent/20 ${
+      className={`flex h-[152px] min-w-0 flex-col border-r border-b border-border/70 bg-card transition-colors hover:bg-muted/40 ${
         isCurrentMonth ? '' : 'bg-muted/30 text-muted-foreground'
       } ${isToday ? 'ring-2 ring-inset ring-primary/50' : ''}`}
     >
       <button
         type="button"
         onClick={() => onSelectDay(dateKey)}
-        className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-accent/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+        className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
         aria-label={`Open ${dateKey} activity`}
       >
         <span

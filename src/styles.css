@@ -291,7 +291,7 @@ code {
   --acc-chevron: var(--duration-fast);
   --acc-ease: var(--ease-smooth-out);
 
-  --background: oklch(1 0 0);
+  --background: oklch(0.972 0.002 17.2);
   --foreground: oklch(0.147 0.004 49.3);
 
   --card: oklch(1 0 0);
@@ -327,7 +327,7 @@ code {
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.147 0.004 49.3);
 
-  --sidebar: oklch(0.986 0.002 67.8);
+  --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.147 0.004 49.3);
   --sidebar-primary: oklch(0.558 0.288 302.321);
   --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
