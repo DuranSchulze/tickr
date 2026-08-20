@@ -1,21 +1,15 @@
-import { BRAND } from '#/lib/brand'
+import { Building2 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
-import { Button } from '#/components/ui/button'
 import { getEntrySecondsInRange, getViewRange } from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { useNowTick } from './hooks/useNowTick'
 
-type SummaryMode = 'today' | 'week'
-
 function HeaderTotal({
   entries,
-  mode,
   formatTime,
 }: {
   entries: TimeEntry[]
-  mode: SummaryMode
   formatTime: (seconds: number) => string
 }) {
   const hasRunningEntry = entries.some((entry) => !entry.endedAt)
@@ -23,7 +17,7 @@ function HeaderTotal({
     hasRunningEntry ? getFormatterLiveTickMs(formatTime) : null,
   )
   const now = new Date(tick)
-  const range = getViewRange(mode === 'today' ? 'day' : 'week', now)
+  const range = getViewRange('day', now)
   const selectedTotalSeconds = entries.reduce(
     (total, entry) =>
       total + getEntrySecondsInRange(entry, range.start, range.end, now),
@@ -37,10 +31,20 @@ function HeaderTotal({
   )
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase())
+    .slice(0, 2)
+    .join('')
+}
+
 export function DashboardHeader({
   workspaceName,
   userName,
   userRoleName,
+  roleColor,
   entries,
   formatTime,
   trailing,
@@ -48,58 +52,52 @@ export function DashboardHeader({
   workspaceName: string
   userName: string
   userRoleName: string
+  roleColor: string
   entries: TimeEntry[]
   formatTime: (seconds: number) => string
   trailing?: ReactNode
 }) {
-  const [summaryMode, setSummaryMode] = useState<SummaryMode>('today')
+  const initials = getInitials(userName)
 
   return (
     <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-sm font-semibold text-primary">
-            {workspaceName}
-          </p>
-          <h1 className="m-0 mt-1 text-2xl font-bold tracking-tight text-foreground">
-            {BRAND.name}
-          </h1>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
-            {userName} · {userRoleName}
-          </p>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
+              <Building2 className="size-4" />
+            </span>
+            <h1 className="m-0 min-w-0 truncate text-2xl font-bold tracking-tight text-foreground">
+              {workspaceName}
+            </h1>
+          </div>
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            {initials && (
+              <span
+                aria-hidden="true"
+                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary"
+              >
+                {initials}
+              </span>
+            )}
+            <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+              {userName}
+            </span>
+            <span
+              className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-bold text-primary-foreground"
+              style={{ backgroundColor: roleColor }}
+            >
+              {userRoleName}
+            </span>
+          </div>
         </div>
-        <div className="grid w-full shrink-0 gap-2 sm:w-auto">
+        <div className="w-full shrink-0 sm:w-auto">
           <div className="w-full min-w-56 rounded-lg border border-border bg-muted px-3 py-3 sm:w-auto">
-            <fieldset className="grid grid-cols-2 rounded-md border border-border bg-background p-1">
-              <legend className="sr-only">Time total period</legend>
-              <Button
-                type="button"
-                variant={summaryMode === 'today' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setSummaryMode('today')}
-                aria-pressed={summaryMode === 'today'}
-              >
-                Today
-              </Button>
-              <Button
-                type="button"
-                variant={summaryMode === 'week' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setSummaryMode('week')}
-                aria-pressed={summaryMode === 'week'}
-              >
-                Week
-              </Button>
-            </fieldset>
-            <div className="pt-2 text-center font-mono tracking-tight">
+            <div className="text-center font-mono tracking-tight">
               <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {summaryMode === 'today' ? 'Today total' : 'This week total'}
+                Today total
               </p>
-              <HeaderTotal
-                entries={entries}
-                mode={summaryMode}
-                formatTime={formatTime}
-              />
+              <HeaderTotal entries={entries} formatTime={formatTime} />
             </div>
             {trailing && (
               <div className="mt-3 flex justify-center border-t border-border pt-3">

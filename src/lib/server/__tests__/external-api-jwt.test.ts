@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { SignJWT } from 'jose'
 import {
   looksLikeJwt,
-  signExternalApiJwt,
+  signApiKeyJwt,
+  signDeveloperJwt,
   verifyExternalApiJwt,
 } from '../integrations/external-api-jwt.server'
 import { externalApiSignInSchema } from '../integrations/external-api.shared'
@@ -15,10 +16,9 @@ beforeAll(() => {
 
 describe('external API JWT', () => {
   it('signs and verifies a token round trip', async () => {
-    const { token, expiresInSeconds, expiresAt } = await signExternalApiJwt({
+    const { token, expiresInSeconds, expiresAt } = await signApiKeyJwt({
       keyId: 'key_123',
       workspaceId: 'ws_456',
-      type: 'api_key_jwt',
     })
 
     expect(expiresInSeconds).toBe(3600)
@@ -33,10 +33,9 @@ describe('external API JWT', () => {
   })
 
   it('rejects a tampered token', async () => {
-    const { token } = await signExternalApiJwt({
+    const { token } = await signApiKeyJwt({
       keyId: 'key_123',
       workspaceId: 'ws_456',
-      type: 'api_key_jwt',
     })
     const tampered = `${token.slice(0, -2)}xx`
     expect(await verifyExternalApiJwt(tampered)).toBeNull()
@@ -84,6 +83,34 @@ describe('external API JWT', () => {
   it('distinguishes JWTs from raw API keys', () => {
     expect(looksLikeJwt('tickr_abc.def.ghi')).toBe(true)
     expect(looksLikeJwt('tickr_abcdefghijklmnopqrstuvwxyz')).toBe(false)
+  })
+
+  it('signs and verifies a developer token with high-level access', async () => {
+    const { token } = await signDeveloperJwt({
+      developerId: 'dev_123',
+      workspaceId: 'ws_456',
+      permissionLevel: 'OWNER',
+    })
+    expect(await verifyExternalApiJwt(token)).toEqual({
+      developerId: 'dev_123',
+      workspaceId: 'ws_456',
+      permissionLevel: 'OWNER',
+      type: 'developer_jwt',
+    })
+  })
+
+  it('rejects a developer token with an invalid permission level', async () => {
+    const bad = await new SignJWT({
+      developerId: 'dev_123',
+      workspaceId: 'ws_456',
+      permissionLevel: 'EMPLOYEE',
+      type: 'developer_jwt',
+    })
+      .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+      .setExpirationTime(Math.floor(Date.now() / 1000) + 3600)
+      .sign(new TextEncoder().encode(TEST_SECRET))
+
+    expect(await verifyExternalApiJwt(bad)).toBeNull()
   })
 })
 

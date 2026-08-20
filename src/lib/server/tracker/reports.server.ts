@@ -8,6 +8,7 @@ import {
   timeEntryTags,
   workspaceMembers,
   users,
+  memberClientBillableRates,
 } from '#/db/schema'
 import {
   clipWorkInterval,
@@ -199,6 +200,31 @@ export async function getReports(
   const pageSize = Math.min(100, Math.max(10, data.pageSize ?? 50))
   const whereClause = and(...entryConditions)
 
+  const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
+
+  // Seconds clipped to the requested range so range-edge entries contribute
+  // the same amounts here as in the entries table.
+  const rangeStartIso = range.start.toISOString()
+  const rangeEndExclusiveIso = range.endExclusive.toISOString()
+  const clippedSecondsSql = sql`GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (LEAST(${timeEntries.endedAt}, ${rangeEndExclusiveIso}::timestamptz) - GREATEST(${timeEntries.startedAt}, ${rangeStartIso}::timestamptz)))))`
+
+  // Effective-rate resolution matching resolveEntryRateMap:
+  // member-client rate → client default → member rate → workspace default.
+  const memberClientRateJoin = and(
+    eq(memberClientBillableRates.workspaceId, timeEntries.workspaceId),
+    eq(
+      memberClientBillableRates.workspaceMemberId,
+      timeEntries.workspaceMemberId,
+    ),
+    eq(memberClientBillableRates.clientId, projects.clientId),
+    sql`${memberClientBillableRates.effectiveFrom} <= date(${timeEntries.startedAt})`,
+    sql`(${memberClientBillableRates.effectiveTo} is null or ${memberClientBillableRates.effectiveTo} >= date(${timeEntries.startedAt}))`,
+  )
+  const effectiveRateSql = sql`coalesce(${memberClientBillableRates.billableRate}::numeric, ${clients.defaultBillableRate}::numeric, ${workspaceMembers.billableRate}::numeric, ${defaultRate})`
+  const clippedTotalSecondsSql = sql<number>`coalesce(sum(case when ${timeEntries.endedAt} is not null then ${clippedSecondsSql} else 0 end), 0)::int`
+  const clippedBillableSecondsSql = sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${clippedSecondsSql} else 0 end), 0)::int`
+  const billableAmountSql = sql<number>`coalesce(sum(case when ${timeEntries.billable} = true and ${timeEntries.endedAt} is not null then ${clippedSecondsSql}::numeric / 3600.0 * ${effectiveRateSql} else 0 end), 0)::float8`
+
   // ── Run all queries in parallel ──────────────────────────────────────────
   const [
     summaryRows,
@@ -206,6 +232,7 @@ export async function getReports(
     countResult,
     memberCountResult,
     memberBreakdownRows,
+    summaryAmountResult,
   ] = await Promise.all([
     // 1. Complete intervals for tracked vs actual time
     db
@@ -265,31 +292,47 @@ export async function getReports(
           .where(and(...memberConditions))
       : Promise.resolve(null),
 
-    // 5. Member breakdown — per-member stats grouped by workspaceMemberId
+    // 5. Member breakdown — per-member stats grouped by workspaceMemberId,
+    //    with the effective-rate cascade for billable amounts.
     db
       .select({
         workspaceMemberId: timeEntries.workspaceMemberId,
-        totalSeconds: sql<number>`COALESCE(SUM(${timeEntries.durationSeconds}), 0)::int`,
-        billableSeconds: sql<number>`COALESCE(SUM(CASE WHEN ${timeEntries.billable} THEN ${timeEntries.durationSeconds} ELSE 0 END), 0)::int`,
+        totalSeconds: clippedTotalSecondsSql,
+        billableSeconds: clippedBillableSecondsSql,
+        billableAmount: billableAmountSql,
         entryCount: sql<number>`COUNT(*)::int`,
         memberName: users.name,
         memberEmail: workspaceMembers.email,
-        memberBillableRate: workspaceMembers.billableRate,
       })
       .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(clients, eq(projects.clientId, clients.id))
       .leftJoin(
         workspaceMembers,
         eq(timeEntries.workspaceMemberId, workspaceMembers.id),
       )
       .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .leftJoin(memberClientBillableRates, memberClientRateJoin)
       .where(whereClause)
       .groupBy(
         timeEntries.workspaceMemberId,
         users.name,
         workspaceMembers.email,
-        workspaceMembers.billableRate,
       )
       .orderBy(sql`SUM(${timeEntries.durationSeconds}) DESC`),
+
+    // 6. Full-range billable amount (the entries table only shows one page).
+    db
+      .select({ billableAmount: billableAmountSql })
+      .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .leftJoin(
+        workspaceMembers,
+        eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+      )
+      .leftJoin(memberClientBillableRates, memberClientRateJoin)
+      .where(whereClause),
   ])
 
   // Distinct projects touched
@@ -386,7 +429,6 @@ export async function getReports(
     tagIdsByRawEntry.set(row.timeEntryId, ids)
   }
 
-  const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
   const currency = access.workspace.billableCurrency ?? 'PHP'
   const memberRateById = new Map(
     rawRows.map((entry) => [
@@ -445,27 +487,27 @@ export async function getReports(
     }
   })
 
-  // Compute total billable amount across all entries
-  const totalBillableAmount = entryRows.reduce((sum, entry) => {
-    if (entry.billableAmount == null) return sum
-    return sum + entry.billableAmount
-  }, 0)
+  // Full-range billable amount from the rate-cascade aggregate (the entry
+  // rows above only cover the current page).
+  const summaryBillableAmount = summaryAmountResult[0]?.billableAmount ?? 0
 
-  // Build member breakdown
+  // Build member breakdown — amounts come from the SQL rate cascade, so the
+  // effective rate shown is the blended rate actually earned in the range.
   const memberBreakdown: ReportsMemberBreakdown[] = memberBreakdownRows.map(
-    (row) => ({
-      memberId: row.workspaceMemberId,
-      name: row.memberName ?? row.memberEmail ?? '',
-      email: row.memberEmail ?? '',
-      totalSeconds: row.totalSeconds,
-      billableSeconds: row.billableSeconds,
-      entryCount: row.entryCount,
-      billableAmount:
-        row.billableSeconds > 0
-          ? (row.billableSeconds / 3600) * (defaultRate > 0 ? defaultRate : 0)
-          : 0,
-      effectiveRate: defaultRate,
-    }),
+    (row) => {
+      const billableHours = row.billableSeconds / 3600
+      return {
+        memberId: row.workspaceMemberId,
+        name: row.memberName ?? row.memberEmail ?? '',
+        email: row.memberEmail ?? '',
+        totalSeconds: row.totalSeconds,
+        billableSeconds: row.billableSeconds,
+        entryCount: row.entryCount,
+        billableAmount: row.billableAmount,
+        effectiveRate:
+          billableHours > 0 ? row.billableAmount / billableHours : 0,
+      }
+    },
   )
 
   return {
@@ -480,7 +522,7 @@ export async function getReports(
       entryCount: entriesTotal,
       activeMembers,
       projectsTouched,
-      billableAmount: totalBillableAmount > 0 ? totalBillableAmount : null,
+      billableAmount: summaryBillableAmount > 0 ? summaryBillableAmount : null,
     },
     dailyTotals,
     memberBreakdown,

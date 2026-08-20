@@ -151,7 +151,7 @@ export const EntryCard = memo(function EntryCard({
         isDeleting
           ? 'opacity-50 pointer-events-none'
           : !entry.endedAt
-            ? 'border-primary/40 ring-1 ring-primary/20'
+            ? 'running-glow border-primary/40'
             : 'border-border'
       }`}
     >
@@ -200,7 +200,7 @@ export const EntryCard = memo(function EntryCard({
         {!entry.endedAt && (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
             <span className="size-1.5 rounded-full bg-destructive animate-pulse" />
-            Running
+            Running now
           </span>
         )}
       </div>

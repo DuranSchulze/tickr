@@ -1,12 +1,14 @@
 import '@tanstack/react-start/server-only'
 import { eq } from 'drizzle-orm'
 import { db } from '#/db'
-import { workspaceApiKeys, workspaces } from '#/db/schema'
+import { developerAccounts, workspaceApiKeys, workspaces } from '#/db/schema'
 import { hashApiKey } from './api-keys.server'
 import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
 
 export type ExternalApiContext = {
-  keyId: string
+  keyId: string | null
+  developerId: string | null
+  permissionLevel: 'OWNER' | 'ADMIN' | null
   workspaceId: string
   workspace: {
     id: string
@@ -80,6 +82,8 @@ async function buildContextFromKeyRow(
 
   return {
     keyId: row.key.id,
+    developerId: null,
+    permissionLevel: null,
     workspaceId: row.workspace.id,
     workspace: {
       id: row.workspace.id,
@@ -90,6 +94,41 @@ async function buildContextFromKeyRow(
     },
     createdByUserId: row.key.createdByUserId,
   } satisfies ExternalApiContext
+}
+
+async function buildContextFromDeveloperRow(
+  row: {
+    account: typeof developerAccounts.$inferSelect
+    workspace: typeof workspaces.$inferSelect
+  },
+  expectedWorkspaceId: string | null,
+): Promise<ExternalApiContext> {
+  if (!row.account.isActive) {
+    throw new ExternalApiError(
+      401,
+      'developer_account_disabled',
+      'Developer account is disabled.',
+    )
+  }
+  if (expectedWorkspaceId && row.workspace.id !== expectedWorkspaceId) {
+    throw new ExternalApiError(401, 'invalid_token', 'Invalid access token.')
+  }
+
+  return {
+    keyId: null,
+    developerId: row.account.id,
+    permissionLevel:
+      row.account.permissionLevel === 'ADMIN' ? 'ADMIN' : 'OWNER',
+    workspaceId: row.workspace.id,
+    workspace: {
+      id: row.workspace.id,
+      name: row.workspace.name,
+      slug: row.workspace.slug,
+      timezone: row.workspace.timezone,
+      billableCurrency: row.workspace.billableCurrency,
+    },
+    createdByUserId: row.account.createdByUserId,
+  }
 }
 
 /**
@@ -106,6 +145,24 @@ export async function authenticateApiKeyCredential(
     const payload = await verifyExternalApiJwt(credential)
     if (!payload) {
       throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+    }
+
+    if (payload.type === 'developer_jwt') {
+      const [row] = await db
+        .select({ account: developerAccounts, workspace: workspaces })
+        .from(developerAccounts)
+        .innerJoin(workspaces, eq(developerAccounts.workspaceId, workspaces.id))
+        .where(eq(developerAccounts.id, payload.developerId))
+        .limit(1)
+
+      if (!row) {
+        throw new ExternalApiError(
+          401,
+          'invalid_token',
+          'Invalid access token.',
+        )
+      }
+      return buildContextFromDeveloperRow(row, payload.workspaceId)
     }
 
     const [row] = await db
@@ -133,6 +190,23 @@ export async function authenticateApiKeyCredential(
     throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
   }
   return buildContextFromKeyRow(row, null, request)
+}
+
+export async function authenticateDeveloperCredentials(
+  email: string,
+  password: string,
+): Promise<ExternalApiContext> {
+  const { verifyDeveloperCredentials } =
+    await import('./developer-accounts.server')
+  const result = await verifyDeveloperCredentials(email, password)
+  if (!result) {
+    throw new ExternalApiError(
+      401,
+      'invalid_credentials',
+      'Invalid developer credentials.',
+    )
+  }
+  return buildContextFromDeveloperRow(result, null)
 }
 
 export async function requireExternalApiKey(

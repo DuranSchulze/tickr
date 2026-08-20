@@ -8,7 +8,6 @@ import {
   Loader2,
   MoreVertical,
   Play,
-  Radio,
   Trash2,
 } from 'lucide-react'
 import { formatDuration, getEntrySeconds } from '#/lib/time-tracker/store'
@@ -476,13 +475,11 @@ export const EntryRow = memo(function EntryRow({
     <TableRow
       className={[
         isDeleting ? 'pointer-events-none opacity-50' : '',
-        isSubEntry && isRunning
-          ? 'bg-primary/10 opacity-80 hover:bg-primary/15 dark:bg-primary/20 dark:hover:bg-primary/25'
-          : isRunning
-            ? 'bg-primary/5 opacity-75'
-            : isSubEntry
-              ? 'bg-foreground/[0.045] hover:bg-foreground/[0.065] dark:bg-white/[0.075] dark:hover:bg-white/[0.095]'
-              : '',
+        isRunning
+          ? 'running-glow'
+          : isSubEntry
+            ? 'bg-foreground/[0.045] hover:bg-foreground/[0.065] dark:bg-white/[0.075] dark:hover:bg-white/[0.095]'
+            : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -497,12 +494,6 @@ export const EntryRow = memo(function EntryRow({
                 className="inline-flex shrink-0 items-center text-muted-foreground/60"
               >
                 <CornerDownRight className="size-3.5" />
-              </span>
-            )}
-            {isRunning && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-                <Radio className="size-2.5 fill-current" />
-                Ongoing
               </span>
             )}
             <div className="min-w-0 flex-1">
@@ -546,6 +537,15 @@ export const EntryRow = memo(function EntryRow({
                 </button>
               )}
             </div>
+            {isRunning && (
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-destructive">
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 rounded-full bg-destructive animate-pulse"
+                />
+                Running now
+              </span>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">

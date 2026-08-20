@@ -4,11 +4,20 @@ import { SignJWT, jwtVerify } from 'jose'
 const JWT_ALGORITHM = 'HS256'
 const DEFAULT_TTL_SECONDS = 60 * 60 // 1 hour
 
-export type ExternalApiJwtPayload = {
+export type ApiKeyJwtPayload = {
   keyId: string
   workspaceId: string
   type: 'api_key_jwt'
 }
+
+export type DeveloperJwtPayload = {
+  developerId: string
+  workspaceId: string
+  permissionLevel: 'OWNER' | 'ADMIN'
+  type: 'developer_jwt'
+}
+
+export type ExternalApiJwtPayload = ApiKeyJwtPayload | DeveloperJwtPayload
 
 function jwtSecret(): Uint8Array {
   const secret =
@@ -27,7 +36,7 @@ function jwtTtlSeconds(): number {
     : DEFAULT_TTL_SECONDS
 }
 
-export async function signExternalApiJwt(payload: ExternalApiJwtPayload) {
+async function signToken(payload: ExternalApiJwtPayload) {
   const ttlSeconds = jwtTtlSeconds()
   const issuedAt = Math.floor(Date.now() / 1000)
   const token = await new SignJWT(payload)
@@ -43,6 +52,18 @@ export async function signExternalApiJwt(payload: ExternalApiJwtPayload) {
   }
 }
 
+export function signApiKeyJwt(payload: { keyId: string; workspaceId: string }) {
+  return signToken({ ...payload, type: 'api_key_jwt' })
+}
+
+export function signDeveloperJwt(payload: {
+  developerId: string
+  workspaceId: string
+  permissionLevel: 'OWNER' | 'ADMIN'
+}) {
+  return signToken({ ...payload, type: 'developer_jwt' })
+}
+
 export async function verifyExternalApiJwt(
   token: string,
 ): Promise<ExternalApiJwtPayload | null> {
@@ -50,18 +71,36 @@ export async function verifyExternalApiJwt(
     const { payload } = await jwtVerify(token, jwtSecret(), {
       algorithms: [JWT_ALGORITHM],
     })
-    if (
-      payload.type !== 'api_key_jwt' ||
-      typeof payload.keyId !== 'string' ||
-      typeof payload.workspaceId !== 'string'
-    ) {
-      return null
+    if (payload.type === 'api_key_jwt') {
+      if (
+        typeof payload.keyId !== 'string' ||
+        typeof payload.workspaceId !== 'string'
+      ) {
+        return null
+      }
+      return {
+        keyId: payload.keyId,
+        workspaceId: payload.workspaceId,
+        type: 'api_key_jwt',
+      }
     }
-    return {
-      keyId: payload.keyId,
-      workspaceId: payload.workspaceId,
-      type: 'api_key_jwt',
+    if (payload.type === 'developer_jwt') {
+      if (
+        typeof payload.developerId !== 'string' ||
+        typeof payload.workspaceId !== 'string' ||
+        (payload.permissionLevel !== 'OWNER' &&
+          payload.permissionLevel !== 'ADMIN')
+      ) {
+        return null
+      }
+      return {
+        developerId: payload.developerId,
+        workspaceId: payload.workspaceId,
+        permissionLevel: payload.permissionLevel,
+        type: 'developer_jwt',
+      }
     }
+    return null
   } catch {
     return null
   }

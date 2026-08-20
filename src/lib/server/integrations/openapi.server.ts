@@ -292,6 +292,77 @@ export function getOpenApiDocument(origin?: string) {
           },
         },
       },
+      '/api/v1/auth/developer-sign-in': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Developer sign in and receive a JWT',
+          description:
+            'Signs in a developer access account (email and password) and returns a short-lived bearer JWT with high-level access to the account workspace. Developer accounts are created by a workspace Owner or Admin. Send the JWT as Authorization: Bearer <jwt> on subsequent requests. Disabled accounts are rejected immediately even with an unexpired token.',
+          security: [],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', format: 'password' },
+                  },
+                  required: ['email', 'password'],
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'A bearer JWT for the developer account workspace.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'object',
+                        properties: {
+                          token: { type: 'string' },
+                          tokenType: { type: 'string', enum: ['Bearer'] },
+                          expiresInSeconds: { type: 'integer' },
+                          expiresAt: { type: 'string', format: 'date-time' },
+                          permissionLevel: {
+                            type: 'string',
+                            enum: ['OWNER', 'ADMIN'],
+                          },
+                          workspace: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              name: { type: 'string' },
+                              slug: { type: 'string' },
+                            },
+                            required: ['id', 'name', 'slug'],
+                          },
+                        },
+                        required: [
+                          'token',
+                          'tokenType',
+                          'expiresInSeconds',
+                          'expiresAt',
+                          'permissionLevel',
+                          'workspace',
+                        ],
+                      },
+                    },
+                    required: ['data'],
+                  },
+                },
+              },
+            },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+          },
+        },
+      },
       '/api/v1/workspace': {
         get: {
           tags: ['Workspace'],

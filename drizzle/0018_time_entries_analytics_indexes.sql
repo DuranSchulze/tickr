@@ -1,0 +1,2 @@
+CREATE INDEX "time_entries_workspace_member_ended_idx" ON "time_entries" USING btree ("workspace_id","workspace_member_id","ended_at");--> statement-breakpoint
+CREATE INDEX "time_entries_workspace_started_billable_idx" ON "time_entries" USING btree ("workspace_id","started_at") WHERE "time_entries"."billable" = true;

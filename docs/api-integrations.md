@@ -99,15 +99,70 @@ Notes:
 - The raw key and the JWT are interchangeable for all `/api/v1/*` endpoints.
 - `EXTERNAL_API_JWT_SECRET` is used to sign JWTs; it falls back to `BETTER_AUTH_SECRET` when unset. Set it in production.
 
+### Option C — Developer access accounts
+
+Developer access accounts are dedicated API logins (email + password) created by a workspace Owner or Admin. They sign in with their own endpoint and receive a JWT with **high-level (OWNER) access** to the workspace.
+
+Create the first account with the bootstrap script:
+
+```bash
+dotenv -e .env.local -- tsx scripts/create-developer-account.ts \
+  --workspace acme-inc \
+  --name "Payroll Integration" \
+  --email dev@example.com \
+  --password "change-me-please"
+```
+
+`--workspace` accepts a workspace slug or id. Pass `--permission ADMIN` for ADMIN level instead of the default OWNER. Passwords are stored as salted scrypt hashes and are never recoverable.
+
+Sign in with the account:
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email": "dev@example.com", "password": "change-me-please"}' \
+  http://localhost:3000/api/v1/auth/developer-sign-in
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 3600,
+    "expiresAt": "2026-06-28T10:00:00.000Z",
+    "permissionLevel": "OWNER",
+    "workspace": { "id": "ws_123", "name": "Acme Inc", "slug": "acme-inc" }
+  }
+}
+```
+
+Use the token exactly like any other bearer token:
+
+```bash
+curl \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  http://localhost:3000/api/v1/workspace
+```
+
+Notes:
+
+- Developer tokens are workspace-scoped and carry the account's `permissionLevel` claim.
+- The account can be disabled at any time; disabled accounts are rejected immediately, even with an unexpired token.
+- The same `EXTERNAL_API_JWT_SECRET` and TTL settings apply to developer tokens.
+
 ## 4. Available Endpoints
 
 All endpoints are read-only and return JSON.
 
 ### Authentication
 
-| Endpoint                    | Description                                        |
-| --------------------------- | -------------------------------------------------- |
-| `POST /api/v1/auth/sign-in` | Exchange a workspace API key for a short-lived JWT |
+| Endpoint                              | Description                                        |
+| ------------------------------------- | -------------------------------------------------- |
+| `POST /api/v1/auth/sign-in`           | Exchange a workspace API key for a short-lived JWT |
+| `POST /api/v1/auth/developer-sign-in` | Sign in a developer access account for a JWT       |
 
 ### Workspace
 

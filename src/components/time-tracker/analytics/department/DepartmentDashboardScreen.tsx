@@ -2,6 +2,9 @@ import type { DepartmentDashboard } from '#/lib/server/tracker/department-dashbo
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import { AnalyticsDateRange } from '../AnalyticsDateRange'
 import { MemberBreakdownTable } from './MemberBreakdownTable'
+import { DepartmentDailyChart } from './DepartmentDailyChart'
+import { DepartmentTopTagsChart } from './DepartmentTopTagsChart'
+import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 import { Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
@@ -40,6 +43,7 @@ export function DepartmentDashboardScreen({
   onChangeRange,
   onChangeFilters,
   onViewMember,
+  onProjectPageChange,
 }: {
   dashboard: DepartmentDashboard
   startDate: string
@@ -47,6 +51,7 @@ export function DepartmentDashboardScreen({
   onChangeRange: (startDate: string, endDate: string) => void
   onChangeFilters: (filters: { departmentId?: string; q?: string }) => void
   onViewMember: (memberId: string) => void
+  onProjectPageChange: (page: number) => void
 }) {
   const {
     availableDepartments,
@@ -231,6 +236,21 @@ export function DepartmentDashboardScreen({
         members={membersBreakdown}
         currency={summary.currency}
         onViewMember={(member) => onViewMember(member.memberId)}
+      />
+
+      {/* Daily hours and top tags */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        <DepartmentDailyChart dailyTotals={dashboard.dailyTotals} />
+        <DepartmentTopTagsChart tags={dashboard.topTags} />
+      </div>
+
+      {/* Project breakdown */}
+      <DepartmentProjectBreakdown
+        projects={dashboard.projectsBreakdown}
+        topProjects={dashboard.topProjectsBreakdown}
+        pagination={dashboard.projectsPagination}
+        currency={summary.currency}
+        onPageChange={onProjectPageChange}
       />
     </div>
   )

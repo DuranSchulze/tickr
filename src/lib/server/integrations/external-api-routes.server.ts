@@ -2,10 +2,12 @@ import '@tanstack/react-start/server-only'
 import type { ZodError, z } from 'zod'
 import {
   authenticateApiKeyCredential,
+  authenticateDeveloperCredentials,
   externalApiErrorResponse,
   jsonResponse,
   requireExternalApiKey,
 } from './external-api-auth.server'
+import { developerSignInSchema } from './developer-accounts.shared'
 import {
   clientsListQuerySchema,
   departmentsListQuerySchema,
@@ -19,6 +21,7 @@ import {
   tasksListQuerySchema,
   timeEntriesQuerySchema,
 } from './external-api.shared'
+import type { ExternalApiContext } from './external-api-auth.server'
 import type {
   ListQuery,
   MembersListQuery,
@@ -60,11 +63,56 @@ async function handleList<TQuery extends ListQuery, TData>(
   }
 }
 
-export async function handleSignInRequest(request: Request): Promise<Response> {
-  let body: unknown
+async function issueTokenResponse(
+  context: ExternalApiContext,
+  claims: {
+    keyId?: string
+    developerId?: string
+    permissionLevel?: 'OWNER' | 'ADMIN'
+  },
+) {
+  const { signApiKeyJwt, signDeveloperJwt } =
+    await import('./external-api-jwt.server')
+  const { token, expiresInSeconds, expiresAt } = claims.developerId
+    ? await signDeveloperJwt({
+        developerId: claims.developerId,
+        workspaceId: context.workspaceId,
+        permissionLevel: claims.permissionLevel ?? 'OWNER',
+      })
+    : await signApiKeyJwt({
+        keyId: claims.keyId ?? '',
+        workspaceId: context.workspaceId,
+      })
+
+  return jsonResponse({
+    data: {
+      token,
+      tokenType: 'Bearer',
+      expiresInSeconds,
+      expiresAt: expiresAt.toISOString(),
+      ...(claims.developerId
+        ? { permissionLevel: claims.permissionLevel ?? 'OWNER' }
+        : {}),
+      workspace: {
+        id: context.workspace.id,
+        name: context.workspace.name,
+        slug: context.workspace.slug,
+      },
+    },
+  })
+}
+
+async function readJsonBody(request: Request): Promise<unknown | null> {
   try {
-    body = await request.json()
+    return await request.json()
   } catch {
+    return null
+  }
+}
+
+export async function handleSignInRequest(request: Request): Promise<Response> {
+  const body = await readJsonBody(request)
+  if (body == null) {
     return jsonResponse(
       {
         error: {
@@ -84,25 +132,56 @@ export async function handleSignInRequest(request: Request): Promise<Response> {
       parsed.data.apiKey,
       request,
     )
-    const { signExternalApiJwt } = await import('./external-api-jwt.server')
-    const { token, expiresInSeconds, expiresAt } = await signExternalApiJwt({
-      keyId: context.keyId,
-      workspaceId: context.workspaceId,
-      type: 'api_key_jwt',
-    })
+    if (!context.keyId) {
+      return jsonResponse(
+        { error: { code: 'invalid_api_key', message: 'Invalid API key.' } },
+        { status: 401 },
+      )
+    }
+    return issueTokenResponse(context, { keyId: context.keyId })
+  } catch (error) {
+    return externalApiErrorResponse(error)
+  }
+}
 
-    return jsonResponse({
-      data: {
-        token,
-        tokenType: 'Bearer',
-        expiresInSeconds,
-        expiresAt: expiresAt.toISOString(),
-        workspace: {
-          id: context.workspace.id,
-          name: context.workspace.name,
-          slug: context.workspace.slug,
+export async function handleDeveloperSignInRequest(
+  request: Request,
+): Promise<Response> {
+  const body = await readJsonBody(request)
+  if (body == null) {
+    return jsonResponse(
+      {
+        error: {
+          code: 'invalid_body',
+          message: 'Request body must be valid JSON.',
         },
       },
+      { status: 400 },
+    )
+  }
+
+  const parsed = developerSignInSchema.safeParse(body)
+  if (!parsed.success) return validationError(parsed.error)
+
+  try {
+    const context = await authenticateDeveloperCredentials(
+      parsed.data.email,
+      parsed.data.password,
+    )
+    if (!context.developerId || !context.permissionLevel) {
+      return jsonResponse(
+        {
+          error: {
+            code: 'invalid_credentials',
+            message: 'Invalid credentials.',
+          },
+        },
+        { status: 401 },
+      )
+    }
+    return issueTokenResponse(context, {
+      developerId: context.developerId,
+      permissionLevel: context.permissionLevel,
     })
   } catch (error) {
     return externalApiErrorResponse(error)

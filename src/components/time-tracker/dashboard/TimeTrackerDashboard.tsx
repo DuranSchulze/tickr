@@ -232,6 +232,9 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   })
 
   const currentUser = state.members.find((m) => m.id === state.currentMemberId)!
+  const currentUserRoleColor =
+    state.roles.find((role) => role.id === currentUser.workspaceRoleId)
+      ?.color ?? '#94a3b8'
   const canManageCatalog =
     currentUser.permissionLevel === 'OWNER' ||
     currentUser.permissionLevel === 'ADMIN'
@@ -616,6 +619,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
         workspaceName={state.workspace.name}
         userName={currentUser.name}
         userRoleName={currentUser.roleName}
+        roleColor={currentUserRoleColor}
         entries={summaryEntries}
         formatTime={formatTime}
         trailing={exportButton}
@@ -628,6 +632,7 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
 
       <AllEntriesSection
         entries={filteredEntries}
+        activeEntry={activeEntry}
         totalCount={allEntriesTotalCount}
         hasMore={allEntriesHasMore}
         loadingMore={allEntriesLoading}

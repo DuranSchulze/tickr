@@ -940,12 +940,12 @@ export async function getDepartmentMemberDetail(data: {
 
   const hasDateRange = !!(data.startDate && data.endDate)
 
-  // When no date range is provided, use wide-open bounds so clipWorkInterval
-  // is effectively a no-op (entries are never clipped away).
+  // Without an explicit range, default to the trailing 30 days so the
+  // summary query never scans the member's entire entry history.
   let rangeStart: Date
   let rangeEnd: Date
-  let startDate: string | null
-  let endDate: string | null
+  let startDate: string
+  let endDate: string
 
   if (hasDateRange) {
     const range = getWorkspaceDateRange(
@@ -957,27 +957,31 @@ export async function getDepartmentMemberDetail(data: {
     startDate = range.startDate
     endDate = range.endDate
   } else {
-    // Wide-open range: include everything
-    rangeStart = new Date(0)
-    rangeEnd = new Date(8640000000000000)
-    startDate = null
-    endDate = null
+    const defaultEnd = new Date()
+    const defaultStart = new Date(defaultEnd)
+    defaultStart.setUTCDate(defaultStart.getUTCDate() - 29)
+    const range = getWorkspaceDateRange(
+      {
+        startDate: formatDateInTimeZone(defaultStart, timezone),
+        endDate: formatDateInTimeZone(defaultEnd, timezone),
+      },
+      timezone,
+    )
+    rangeStart = range.start
+    rangeEnd = range.endExclusive
+    startDate = range.startDate
+    endDate = range.endDate
   }
 
-  // Build the WHERE clause with date filters only when a range is provided.
+  // Build the WHERE clause with the (possibly defaulted) date range.
   const conditions: SQL[] = [
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, member.id),
     isNotNull(timeEntries.endedAt),
     gt(timeEntries.endedAt, timeEntries.startedAt),
+    lt(timeEntries.startedAt, rangeEnd),
+    gt(timeEntries.endedAt, rangeStart),
   ]
-
-  if (hasDateRange) {
-    conditions.push(
-      lt(timeEntries.startedAt, rangeEnd),
-      gt(timeEntries.endedAt, rangeStart),
-    )
-  }
 
   const whereClause = and(...conditions)
 

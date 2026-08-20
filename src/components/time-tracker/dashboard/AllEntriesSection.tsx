@@ -31,6 +31,7 @@ function taskGroupCollapseKey(dateKey: string, groupKey: string) {
 
 export function AllEntriesSection({
   entries,
+  activeEntry,
   totalCount,
   hasMore,
   loadingMore,
@@ -57,6 +58,7 @@ export function AllEntriesSection({
   onDelete,
 }: {
   entries: TimeEntry[]
+  activeEntry: TimeEntry | undefined
   totalCount: number
   hasMore: boolean
   loadingMore: boolean
@@ -99,7 +101,15 @@ export function AllEntriesSection({
     () => new Set(),
   )
 
-  const groups = useMemo(() => groupEntriesByDay(entries), [entries])
+  const groups = useMemo(
+    () =>
+      groupEntriesByDay(
+        activeEntry
+          ? entries.filter((entry) => entry.id !== activeEntry.id)
+          : entries,
+      ),
+    [activeEntry, entries],
+  )
   const allCollapsed =
     groups.length > 0 && groups.every((g) => collapsedDates.has(g.dateKey))
 
@@ -214,8 +224,10 @@ export function AllEntriesSection({
         )}
       </div>
 
+      {/* Running entry is pinned inside the entries table by DayGroupsList. */}
+
       {/* Empty state */}
-      {groups.length === 0 && (
+      {groups.length === 0 && !activeEntry && (
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
           {activeFilterCount > 0
             ? 'No entries match your current filters.'
@@ -226,6 +238,7 @@ export function AllEntriesSection({
       {/* Day groups */}
       <DayGroupsList
         groups={groups}
+        activeEntry={activeEntry}
         view="all"
         clients={clients}
         projects={projects}

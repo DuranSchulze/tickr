@@ -67,6 +67,7 @@ import { Route as AppWorkspaceCatalogsDepartmentsRouteImport } from './routes/ap
 import { Route as AppWorkspaceCatalogsCohortsRouteImport } from './routes/app/workspace/catalogs.cohorts'
 import { Route as AppWorkspaceCatalogsClientsRouteImport } from './routes/app/workspace/catalogs.clients'
 import { Route as ApiV1AuthSignInRouteImport } from './routes/api/v1/auth/sign-in'
+import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -367,6 +368,12 @@ const ApiV1AuthSignInRoute = ApiV1AuthSignInRouteImport.update({
   path: '/api/v1/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AuthDeveloperSignInRoute =
+  ApiV1AuthDeveloperSignInRouteImport.update({
+    id: '/api/v1/auth/developer-sign-in',
+    path: '/api/v1/auth/developer-sign-in',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByFullPath {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
@@ -479,6 +487,7 @@ export interface FileRoutesByTo {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
@@ -540,6 +549,7 @@ export interface FileRoutesById {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
@@ -662,6 +673,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker'
+    | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
@@ -722,6 +734,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
@@ -762,6 +775,7 @@ export interface RootRouteChildren {
   ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
   ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
+  ApiV1AuthDeveloperSignInRoute: typeof ApiV1AuthDeveloperSignInRoute
   ApiV1AuthSignInRoute: typeof ApiV1AuthSignInRoute
 }
 
@@ -1173,6 +1187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/auth/developer-sign-in': {
+      id: '/api/v1/auth/developer-sign-in'
+      path: '/api/v1/auth/developer-sign-in'
+      fullPath: '/api/v1/auth/developer-sign-in'
+      preLoaderRoute: typeof ApiV1AuthDeveloperSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1290,6 +1311,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
   ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
+  ApiV1AuthDeveloperSignInRoute: ApiV1AuthDeveloperSignInRoute,
   ApiV1AuthSignInRoute: ApiV1AuthSignInRoute,
 }
 export const routeTree = rootRouteImport
