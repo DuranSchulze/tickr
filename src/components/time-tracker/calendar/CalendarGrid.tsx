@@ -23,11 +23,27 @@ const dateTitleFormatter = new Intl.DateTimeFormat('en', {
   timeZone: 'UTC',
 })
 
+function getHourInTimeZone(date: Date, timeZone: string): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date)
+    const hour = parts.find((part) => part.type === 'hour')?.value
+    if (hour != null) return Number(hour)
+  } catch {
+    // Fall through to the local-time fallback below.
+  }
+  return date.getHours()
+}
+
 export function CalendarGrid({
   month,
   view,
   selectedDate,
   member,
+  timezone,
   entriesByDate,
   formatTime,
 }: {
@@ -35,6 +51,7 @@ export function CalendarGrid({
   view: CalendarView
   selectedDate: string
   member: CalendarEntriesPayload['member']
+  timezone: string
   entriesByDate: Record<string, CalendarEntry[]>
   formatTime: (seconds: number) => string
 }) {
@@ -52,10 +69,10 @@ export function CalendarGrid({
 
   return (
     <>
-      <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-background px-4 py-3">
+      <section className="min-w-0 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+        <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/40 px-4 py-3">
           <div className="min-w-0">
-            <h2 className="m-0 text-base font-black text-foreground">
+            <h2 className="m-0 text-base font-black tracking-tight text-foreground">
               {view === 'week' ? 'Week schedule' : 'Month schedule'}
             </h2>
             <p className="m-0 mt-0.5 text-xs font-medium text-muted-foreground">
@@ -74,11 +91,11 @@ export function CalendarGrid({
 
         <div className="overflow-x-auto">
           <div className={view === 'week' ? 'min-w-[820px]' : 'min-w-[960px]'}>
-            <div className="grid grid-cols-7 border-b border-border bg-muted/40">
+            <div className="grid grid-cols-7 border-b border-border/70 bg-muted/40">
               {weekdays.map((weekday) => (
                 <div
                   key={weekday}
-                  className="border-r border-border px-3 py-2 text-xs font-black uppercase tracking-wide text-muted-foreground last:border-r-0"
+                  className="border-r border-border/70 px-3 py-2 text-xs font-black uppercase tracking-wide text-muted-foreground last:border-r-0"
                 >
                   {weekday}
                 </div>
@@ -118,6 +135,7 @@ export function CalendarGrid({
                 member,
                 dateKey: selectedDay,
                 entries: entriesByDate[selectedDay] ?? [],
+                timezone,
               })
             : undefined
         }
@@ -138,22 +156,28 @@ function buildActivitySummary({
   member,
   dateKey,
   entries,
+  timezone,
 }: {
   member: CalendarEntriesPayload['member']
   dateKey: string
   entries: CalendarEntry[]
+  timezone: string
 }): DepartmentMemberActivitySummary {
+  // For multi-day entries the calendar stores one slice per day. Display the
+  // underlying entry's real bounds (so the timeline never shows the midnight
+  // day boundaries), while keeping `sliceStartedAt` for hour bucketing.
   const activityEntries = entries
     .map((entry) => ({
       id: entry.id,
       description: entry.description,
       projectName: entry.project?.name ?? null,
       taskName: entry.taskName,
-      startedAt: entry.startedAt,
-      endedAt: entry.endedAt,
+      startedAt: entry.sourceStartedAt,
+      endedAt: entry.sourceEndedAt ?? entry.endedAt,
       durationSeconds: entry.durationSeconds,
       billable: entry.billable,
       status: entry.endedAt ? ('completed' as const) : ('active' as const),
+      sliceStartedAt: entry.startedAt,
     }))
     .sort(
       (a, b) =>
@@ -170,7 +194,7 @@ function buildActivitySummary({
   let activeCount = 0
 
   for (const entry of activityEntries) {
-    const hour = new Date(entry.startedAt).getHours()
+    const hour = getHourInTimeZone(new Date(entry.sliceStartedAt), timezone)
     hourlyTotals[hour].seconds += entry.durationSeconds
     totalSeconds += entry.durationSeconds
     if (entry.status === 'active') {
@@ -188,6 +212,7 @@ function buildActivitySummary({
 
   return {
     member,
+    timezone,
     today: {
       date: dateKey,
       totalSeconds,
@@ -203,6 +228,8 @@ function buildActivitySummary({
       completedEntries.length > 0
         ? completedEntries[completedEntries.length - 1]
         : null,
-    entriesToday: activityEntries,
+    entriesToday: activityEntries.map(
+      ({ sliceStartedAt: _sliceStartedAt, ...entry }) => entry,
+    ),
   }
 }

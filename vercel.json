@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/sync-gsheets",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/timer-reminders",
+      "schedule": "0 * * * *"
     }
   ],
   "headers": [

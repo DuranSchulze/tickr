@@ -51,6 +51,7 @@ import { Route as ApiV1TagsRouteImport } from './routes/api/v1/tags'
 import { Route as ApiV1ProjectsRouteImport } from './routes/api/v1/projects'
 import { Route as ApiV1MembersRouteImport } from './routes/api/v1/members'
 import { Route as ApiV1MemberDayActivityRouteImport } from './routes/api/v1/member-day-activity'
+import { Route as ApiV1DtrIntegrationRouteImport } from './routes/api/v1/dtr-integration'
 import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
 import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
 import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
@@ -65,6 +66,8 @@ import { Route as AppWorkspaceCatalogsProjectsRouteImport } from './routes/app/w
 import { Route as AppWorkspaceCatalogsDepartmentsRouteImport } from './routes/app/workspace/catalogs.departments'
 import { Route as AppWorkspaceCatalogsCohortsRouteImport } from './routes/app/workspace/catalogs.cohorts'
 import { Route as AppWorkspaceCatalogsClientsRouteImport } from './routes/app/workspace/catalogs.clients'
+import { Route as ApiV1AuthSignInRouteImport } from './routes/api/v1/auth/sign-in'
+import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -278,6 +281,11 @@ const ApiV1MemberDayActivityRoute = ApiV1MemberDayActivityRouteImport.update({
   path: '/api/v1/member-day-activity',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1DtrIntegrationRoute = ApiV1DtrIntegrationRouteImport.update({
+  id: '/api/v1/dtr-integration',
+  path: '/api/v1/dtr-integration',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1DepartmentsRoute = ApiV1DepartmentsRouteImport.update({
   id: '/api/v1/departments',
   path: '/api/v1/departments',
@@ -355,6 +363,17 @@ const AppWorkspaceCatalogsClientsRoute =
     path: '/clients',
     getParentRoute: () => AppWorkspaceCatalogsRoute,
   } as any)
+const ApiV1AuthSignInRoute = ApiV1AuthSignInRouteImport.update({
+  id: '/api/v1/auth/sign-in',
+  path: '/api/v1/auth/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthDeveloperSignInRoute =
+  ApiV1AuthDeveloperSignInRouteImport.update({
+    id: '/api/v1/auth/developer-sign-in',
+    path: '/api/v1/auth/developer-sign-in',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -386,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
   '/api/v1/members': typeof ApiV1MembersRoute
   '/api/v1/projects': typeof ApiV1ProjectsRoute
@@ -406,6 +426,8 @@ export interface FileRoutesByFullPath {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -444,6 +466,7 @@ export interface FileRoutesByTo {
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
   '/api/v1/members': typeof ApiV1MembersRoute
   '/api/v1/projects': typeof ApiV1ProjectsRoute
@@ -464,6 +487,8 @@ export interface FileRoutesByTo {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -503,6 +528,7 @@ export interface FileRoutesById {
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
+  '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
   '/api/v1/member-day-activity': typeof ApiV1MemberDayActivityRoute
   '/api/v1/members': typeof ApiV1MembersRoute
   '/api/v1/projects': typeof ApiV1ProjectsRoute
@@ -523,6 +549,8 @@ export interface FileRoutesById {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -563,6 +591,7 @@ export interface FileRouteTypes {
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
+    | '/api/v1/dtr-integration'
     | '/api/v1/member-day-activity'
     | '/api/v1/members'
     | '/api/v1/projects'
@@ -583,6 +612,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -621,6 +652,7 @@ export interface FileRouteTypes {
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
+    | '/api/v1/dtr-integration'
     | '/api/v1/member-day-activity'
     | '/api/v1/members'
     | '/api/v1/projects'
@@ -641,6 +673,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker'
+    | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -679,6 +713,7 @@ export interface FileRouteTypes {
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
+    | '/api/v1/dtr-integration'
     | '/api/v1/member-day-activity'
     | '/api/v1/members'
     | '/api/v1/projects'
@@ -699,6 +734,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/sign-in'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -729,6 +766,7 @@ export interface RootRouteChildren {
   ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
   ApiV1ClientsRoute: typeof ApiV1ClientsRoute
   ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
+  ApiV1DtrIntegrationRoute: typeof ApiV1DtrIntegrationRoute
   ApiV1MemberDayActivityRoute: typeof ApiV1MemberDayActivityRoute
   ApiV1MembersRoute: typeof ApiV1MembersRoute
   ApiV1ProjectsRoute: typeof ApiV1ProjectsRoute
@@ -737,6 +775,8 @@ export interface RootRouteChildren {
   ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
   ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
+  ApiV1AuthDeveloperSignInRoute: typeof ApiV1AuthDeveloperSignInRoute
+  ApiV1AuthSignInRoute: typeof ApiV1AuthSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1035,6 +1075,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1MemberDayActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/dtr-integration': {
+      id: '/api/v1/dtr-integration'
+      path: '/api/v1/dtr-integration'
+      fullPath: '/api/v1/dtr-integration'
+      preLoaderRoute: typeof ApiV1DtrIntegrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/departments': {
       id: '/api/v1/departments'
       path: '/api/v1/departments'
@@ -1132,6 +1179,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/workspace/catalogs/clients'
       preLoaderRoute: typeof AppWorkspaceCatalogsClientsRouteImport
       parentRoute: typeof AppWorkspaceCatalogsRoute
+    }
+    '/api/v1/auth/sign-in': {
+      id: '/api/v1/auth/sign-in'
+      path: '/api/v1/auth/sign-in'
+      fullPath: '/api/v1/auth/sign-in'
+      preLoaderRoute: typeof ApiV1AuthSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/developer-sign-in': {
+      id: '/api/v1/auth/developer-sign-in'
+      path: '/api/v1/auth/developer-sign-in'
+      fullPath: '/api/v1/auth/developer-sign-in'
+      preLoaderRoute: typeof ApiV1AuthDeveloperSignInRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -1241,6 +1302,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
   ApiV1ClientsRoute: ApiV1ClientsRoute,
   ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
+  ApiV1DtrIntegrationRoute: ApiV1DtrIntegrationRoute,
   ApiV1MemberDayActivityRoute: ApiV1MemberDayActivityRoute,
   ApiV1MembersRoute: ApiV1MembersRoute,
   ApiV1ProjectsRoute: ApiV1ProjectsRoute,
@@ -1249,6 +1311,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
   ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
+  ApiV1AuthDeveloperSignInRoute: ApiV1AuthDeveloperSignInRoute,
+  ApiV1AuthSignInRoute: ApiV1AuthSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

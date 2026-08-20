@@ -18,6 +18,11 @@ export type CalendarEntry = {
   description: string
   startedAt: string
   endedAt: string | null
+  // Original (unclipped) bounds of the underlying time entry. For a slice of a
+  // multi-day entry these point at the real start/end, while startedAt/endedAt
+  // are clamped to this calendar day's midnight boundaries.
+  sourceStartedAt: string
+  sourceEndedAt: string | null
   durationSeconds: number
   taskName: string | null
   billable: boolean
@@ -30,6 +35,7 @@ export type CalendarEntry = {
 export type CalendarEntriesPayload = {
   month: string
   workspaceId: string
+  timezone: string
   member: {
     id: string
     name: string
@@ -80,6 +86,8 @@ function splitEntryByDay(
         description: entry.description,
         startedAt: start.toISOString(),
         endedAt: isActive ? null : entry.endedAt!.toISOString(),
+        sourceStartedAt: start.toISOString(),
+        sourceEndedAt: isActive ? null : entry.endedAt!.toISOString(),
         durationSeconds: isActive
           ? Math.floor((now.getTime() - start.getTime()) / 1000)
           : entry.durationSeconds,
@@ -130,6 +138,8 @@ function splitEntryByDay(
         description: entry.description,
         startedAt: cursor.toISOString(),
         endedAt: sliceIsActive ? null : sliceEnd.toISOString(),
+        sourceStartedAt: start.toISOString(),
+        sourceEndedAt: entry.endedAt?.toISOString() ?? null,
         durationSeconds: sliceDuration,
         taskName: entry.taskName,
         billable: entry.billable,
@@ -234,6 +244,7 @@ async function loadCalendarEntries({
   return {
     month: requestedMonth,
     workspaceId: access.workspace.id,
+    timezone: access.workspace.timezone || 'UTC',
     member: {
       id: targetMemberId,
       name: memberRow.name ?? memberRow.email,

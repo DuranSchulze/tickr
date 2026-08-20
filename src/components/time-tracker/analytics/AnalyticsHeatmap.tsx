@@ -1,5 +1,6 @@
 import type { AnalyticsPayload } from '#/lib/server/tracker.server'
-import { formatChartDate, formatHours } from './analytics.utils'
+import { formatDuration } from '#/lib/time-tracker/store'
+import { formatChartDate } from './analytics.utils'
 
 const intensityStyles = [
   'bg-muted',
@@ -69,7 +70,7 @@ export function AnalyticsHeatmap({
           {heatmap.map((day) => (
             <div
               key={day.date}
-              title={`${formatChartDate(day.date)}: ${formatHours(day.seconds)}`}
+              title={`${formatChartDate(day.date)}: ${formatDuration(day.seconds)}`}
               className={`aspect-square rounded-[4px] border border-border/60 ${
                 intensityStyles[day.intensity] ?? intensityStyles[0]
               }`}
@@ -201,7 +202,7 @@ function RankingRows({
               </p>
             </div>
             <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
-              {formatHours(item.seconds)}
+              {formatDuration(item.seconds)}
             </span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-muted">

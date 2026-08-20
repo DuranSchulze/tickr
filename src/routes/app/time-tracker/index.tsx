@@ -8,6 +8,8 @@ import { BRAND } from '#/lib/brand'
 type TimeTrackerSearch = {
   view?: ViewMode
   date?: string
+  /** Deep link from reminder emails — focus the timer input on load. */
+  focusTimer?: boolean
 }
 
 const datePattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
@@ -25,6 +27,7 @@ export const Route = createFileRoute('/app/time-tracker/')({
       typeof search.date === 'string' && datePattern.test(search.date)
         ? search.date
         : undefined,
+    focusTimer: search.focus === 'timer',
   }),
   loader: ({ context }) =>
     context.queryClient.ensureQueryData({
@@ -41,5 +44,6 @@ export const Route = createFileRoute('/app/time-tracker/')({
 
 function TimeTrackerRoute() {
   const state = Route.useLoaderData()
-  return <TimeTrackerDashboard state={state} />
+  const { focusTimer } = Route.useSearch()
+  return <TimeTrackerDashboard state={state} focusTimer={focusTimer} />
 }

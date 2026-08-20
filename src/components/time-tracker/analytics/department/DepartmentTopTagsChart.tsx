@@ -1,5 +1,5 @@
 import type { DepartmentDashboard } from '#/lib/server/tracker/department-dashboard.server'
-import { EmptyChart, formatHours } from './DepartmentChartUtils'
+import { EmptyChart, formatDuration } from './DepartmentChartUtils'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
 
 type TopTag = DepartmentDashboard['topTags'][number]
@@ -22,7 +22,7 @@ export function DepartmentTopTagsChart({ tags }: { tags: TopTag[] }) {
               <div
                 key={tag.tagId}
                 className="grid min-w-0 gap-2 sm:grid-cols-[160px_minmax(0,1fr)_88px] sm:items-center"
-                title={`${tag.name}: ${formatHours(tag.seconds)}`}
+                title={`${tag.name}: ${formatDuration(tag.seconds)}`}
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span
@@ -43,7 +43,7 @@ export function DepartmentTopTagsChart({ tags }: { tags: TopTag[] }) {
                   />
                 </div>
                 <p className="m-0 text-right text-xs font-mono font-semibold text-foreground">
-                  {formatHours(tag.seconds)}
+                  {formatDuration(tag.seconds)}
                 </p>
               </div>
             )

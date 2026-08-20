@@ -52,12 +52,32 @@ import {
   subscribeToTaskSyncCompleted,
 } from '#/lib/time-tracker/task-sync'
 
-export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
+export function TimeTrackerDashboard({
+  state,
+  focusTimer = false,
+}: {
+  state: TrackerState
+  /** Deep link from reminder emails — scroll to and focus the timer input. */
+  focusTimer?: boolean
+}) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const mutations = useTrackerMutations(state.workspace.id)
   const { isOnline } = useNetworkStatus()
   const { formatTime } = useTimeFormat()
+
+  useEffect(() => {
+    if (!focusTimer) return
+    const section = document.getElementById('timer-input-section')
+    if (!section) return
+    section.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (window.matchMedia('(min-width: 640px)').matches) {
+      const input = section.querySelector<HTMLInputElement>('input')
+      window.setTimeout(() => {
+        input?.focus({ preventScroll: true })
+      }, 400)
+    }
+  }, [focusTimer])
 
   // ── "All entries" paginated state ────────────────────────────────────────────
   // Declared before useDraftAndEdit so edits in the "all" view can resolve
@@ -67,7 +87,6 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
   const [allEntriesCursor, setAllEntriesCursor] = useState<string | null>(null)
   const [allEntriesLoading, setAllEntriesLoading] = useState(false)
   const [allEntriesHasMore, setAllEntriesHasMore] = useState(false)
-  const [allEntriesTotalCount, setAllEntriesTotalCount] = useState(0)
   const [entriesDateRange, setEntriesDateRange] =
     useState<EntriesDateRange | null>(null)
   const allEntriesInitialized = useRef(false)
@@ -99,7 +118,6 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
         }
         setAllEntriesCursor(result.nextCursor)
         setAllEntriesHasMore(result.nextCursor !== null)
-        setAllEntriesTotalCount(result.totalCount)
       } catch {
         // silently fail — user can retry via "Load more"
       } finally {
@@ -145,7 +163,6 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
       mutations.deleteEntry(id, {
         onSuccess: () => {
           setAllEntries((prev) => prev.filter((entry) => entry.id !== id))
-          setAllEntriesTotalCount((prev) => Math.max(0, prev - 1))
           refreshAllEntries()
         },
       }),
@@ -622,13 +639,13 @@ export function TimeTrackerDashboard({ state }: { state: TrackerState }) {
       />
 
       {/* Desktop: inline input section */}
-      <div className="hidden min-w-0 sm:block">
+      <div id="timer-input-section" className="hidden min-w-0 sm:block">
         <InputSection {...inputSectionProps} />
       </div>
 
       <AllEntriesSection
         entries={filteredEntries}
-        totalCount={allEntriesTotalCount}
+        activeEntry={activeEntry}
         hasMore={allEntriesHasMore}
         loadingMore={allEntriesLoading}
         onLoadMore={() => void loadAllEntries(false)}

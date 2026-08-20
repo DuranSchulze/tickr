@@ -1,5 +1,13 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
-import { Building2, Check, ChevronsUpDown, Search, X } from 'lucide-react'
+import {
+  Building2,
+  Check,
+  ChevronDown,
+  ChevronsUpDown,
+  Search,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { cn } from '#/lib/utils'
 import {
@@ -40,17 +48,20 @@ const FilterSelect = memo(function FilterSelect({
       <label className="text-xs font-semibold text-muted-foreground">
         {label}
       </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 sm:min-w-[200px]"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-2.5 pr-8 text-sm text-foreground transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+      </div>
     </div>
   )
 })
@@ -100,7 +111,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
   }
 
   return (
-    <div className="min-w-0 flex flex-col gap-1 sm:col-span-2 lg:min-w-[320px]">
+    <div className="min-w-0 flex flex-col gap-1">
       <span className="text-xs font-semibold text-muted-foreground">
         Client / Project
       </span>
@@ -298,7 +309,7 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
           <button
             type="button"
             aria-expanded={open}
-            className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent sm:min-w-[200px]"
+            className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent"
           >
             <span className="truncate">{buttonLabel}</span>
             <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
@@ -436,6 +447,22 @@ export function ReportsFilterBar({
     filters.billable,
   )
 
+  const activeFilterCount = useMemo(
+    () =>
+      [
+        filters.projectId,
+        filters.clientId,
+        filters.departmentId,
+        filters.taskId,
+        filters.tagIds,
+        filters.memberIds,
+        filters.status,
+        filters.description,
+        filters.billable,
+      ].filter(Boolean).length,
+    [filters],
+  )
+
   // ── Stabilized options ──
 
   const statusOptions = useMemo(
@@ -480,10 +507,14 @@ export function ReportsFilterBar({
     () =>
       state.members.reduce<{ value: string; label: string }[]>((items, m) => {
         if (m.status !== 'ACTIVE') return items
+        // When a department is selected, only offer members of that department.
+        if (filters.departmentId && m.departmentId !== filters.departmentId) {
+          return items
+        }
         items.push({ value: m.id, label: m.name || m.email })
         return items
       }, []),
-    [state.members],
+    [filters.departmentId, state.members],
   )
 
   // ── Stabilized handlers ──
@@ -521,8 +552,25 @@ export function ReportsFilterBar({
   )
 
   const handleDepartmentChange = useCallback(
-    (v: string) => onChange({ departmentId: v || undefined, page: undefined }),
-    [onChange],
+    (v: string) => {
+      const departmentId = v || undefined
+      // Keep only member selections that belong to the newly chosen
+      // department so the Members filter stays consistent with it.
+      const nextMemberIds = departmentId
+        ? memberIdList.filter((memberId) =>
+            state.members.some(
+              (m) => m.id === memberId && m.departmentId === departmentId,
+            ),
+          )
+        : memberIdList
+      onChange({
+        departmentId,
+        memberIds:
+          nextMemberIds.length > 0 ? nextMemberIds.join(',') : undefined,
+        page: undefined,
+      })
+    },
+    [memberIdList, onChange, state.members],
   )
 
   const handleClientProjectChange = useCallback(
@@ -554,97 +602,132 @@ export function ReportsFilterBar({
   )
 
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-3 rounded-lg border border-border bg-card p-3 sm:grid-cols-2 sm:p-4 lg:flex lg:flex-wrap lg:items-end">
-      {/* Description text input */}
-      <div className="min-w-0 flex flex-col gap-1 sm:col-span-2">
-        <label className="text-xs font-semibold text-muted-foreground">
-          Description
-        </label>
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={filters.description ?? ''}
-            onChange={(e) => handleDescriptionChange(e.target.value)}
-            placeholder="Search descriptions..."
-            className="h-9 w-full rounded-lg border border-border bg-background pl-8 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
+    <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-xs">
+      {/* Bar header — title + active count, actions on the right */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/30 px-4 py-2.5 sm:px-5">
+        <div className="flex min-w-0 items-center gap-2">
+          <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
+          <h2 className="m-0 text-sm font-bold text-foreground">Filters</h2>
+          {activeFilterCount > 0 && (
+            <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+              {activeFilterCount} active
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <X className="size-3.5" />
+              Clear
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onSearch}
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:brightness-110 active:translate-y-px"
+          >
+            <Search className="size-3.5" />
+            Search
+          </button>
         </div>
       </div>
 
-      {/* Status */}
-      <FilterSelect
-        label="Status"
-        value={filters.status ?? ''}
-        onChange={handleStatusChange}
-        options={statusOptions}
-      />
+      {/* Controls */}
+      <div className="grid min-w-0 grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
+        {/* Description — full width */}
+        <div className="min-w-0 flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
+          <label className="text-xs font-semibold text-muted-foreground">
+            Description
+          </label>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={filters.description ?? ''}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSearch()
+              }}
+              placeholder="Search by description…"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            {filters.description && (
+              <button
+                type="button"
+                onClick={() => handleDescriptionChange('')}
+                aria-label="Clear description search"
+                className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
 
-      {/* Department — only for managers and above */}
-      {(isOwnerOrAdmin || (isManagerOrAbove && !filters.departmentId)) && (
+        {/* Status */}
         <FilterSelect
-          label="Department"
-          value={filters.departmentId ?? ''}
-          onChange={handleDepartmentChange}
-          options={departmentOptions}
+          label="Status"
+          value={filters.status ?? ''}
+          onChange={handleStatusChange}
+          options={statusOptions}
         />
-      )}
 
-      {/* Client / Project */}
-      <ClientProjectFilter
-        clients={state.clients}
-        projects={state.projects}
-        clientId={filters.clientId ?? ''}
-        projectId={filters.projectId ?? ''}
-        onChange={handleClientProjectChange}
-      />
+        {/* Department — only for managers and above */}
+        {(isOwnerOrAdmin || (isManagerOrAbove && !filters.departmentId)) && (
+          <FilterSelect
+            label="Department"
+            value={filters.departmentId ?? ''}
+            onChange={handleDepartmentChange}
+            options={departmentOptions}
+          />
+        )}
 
-      {/* Tags */}
-      <MultiSelectCombobox
-        label="Tags"
-        values={tagIdList}
-        onChange={handleTagsChange}
-        options={tagOptions}
-      />
+        {/* Client / Project */}
+        <ClientProjectFilter
+          clients={state.clients}
+          projects={state.projects}
+          clientId={filters.clientId ?? ''}
+          projectId={filters.projectId ?? ''}
+          onChange={handleClientProjectChange}
+        />
 
-      {/* Members — managers and above */}
-      {isManagerOrAbove && (
+        {/* Tags */}
         <MultiSelectCombobox
-          label="Members"
-          values={memberIdList}
-          onChange={handleMembersChange}
-          options={memberOptions}
+          label="Tags"
+          values={tagIdList}
+          onChange={handleTagsChange}
+          options={tagOptions}
         />
-      )}
 
-      {/* Billable */}
-      <FilterSelect
-        label="Billable"
-        value={filters.billable ?? ''}
-        onChange={handleBillableChange}
-        options={billableOptions}
-      />
+        {/* Members — managers and above */}
+        {isManagerOrAbove && (
+          <MultiSelectCombobox
+            label={
+              filters.departmentId
+                ? `Members · ${
+                    state.departments.find((d) => d.id === filters.departmentId)
+                      ?.name ?? ''
+                  }`
+                : 'Members'
+            }
+            values={memberIdList}
+            onChange={handleMembersChange}
+            options={memberOptions}
+          />
+        )}
 
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={onClear}
-          className="inline-flex h-9 items-center gap-1.5 self-end rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          <X className="size-3.5" />
-          Clear filters
-        </button>
-      )}
-
-      {/* Search / Apply button */}
-      <button
-        type="button"
-        onClick={onSearch}
-        className="inline-flex h-9 w-full items-center justify-center gap-1.5 self-end rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:brightness-110 sm:w-auto"
-      >
-        <Search className="size-3.5" />
-        Search
-      </button>
+        {/* Billable */}
+        <FilterSelect
+          label="Billable"
+          value={filters.billable ?? ''}
+          onChange={handleBillableChange}
+          options={billableOptions}
+        />
+      </div>
     </div>
   )
 }

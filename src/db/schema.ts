@@ -595,6 +595,45 @@ export const workspaceApiKeys = pgTable(
   ],
 )
 
+export const developerAccounts = pgTable(
+  'developer_accounts',
+  {
+    id: varchar('id', { length: 30 })
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    createdByUserId: varchar('created_by_user_id', { length: 30 }).references(
+      () => users.id,
+      { onDelete: 'set null' },
+    ),
+    name: varchar('name', { length: 120 }).notNull(),
+    email: varchar('email', { length: 255 }).notNull(),
+    passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+    permissionLevel: rolePermissionEnum('permission_level')
+      .notNull()
+      .default('OWNER'),
+    isActive: boolean('is_active').notNull().default(true),
+    lastSignedInAt: timestamp('last_signed_in_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('developer_accounts_workspace_email_unique').on(
+      table.workspaceId,
+      table.email,
+    ),
+    index('developer_accounts_email_idx').on(table.email),
+    index('developer_accounts_workspace_idx').on(table.workspaceId),
+  ],
+)
+
 export const workspaceInvites = pgTable(
   'workspace_invites',
   {
@@ -992,6 +1031,14 @@ export const timeEntries = pgTable(
       table.workspaceId,
       table.endedAt,
     ),
+    index('time_entries_workspace_member_ended_idx').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+      table.endedAt,
+    ),
+    index('time_entries_workspace_started_billable_idx')
+      .on(table.workspaceId, table.startedAt)
+      .where(sql`${table.billable} = true`),
     index('time_entries_project_id_idx').on(table.projectId),
     index('time_entries_task_id_idx').on(table.taskId),
   ],
@@ -1029,12 +1076,13 @@ export const timerReminderEmails = pgTable(
       .notNull()
       .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
     reminderDate: date('reminder_date').notNull(),
+    kind: varchar('kind', { length: 10 }).notNull().default('4h'),
     sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex('timer_reminder_entry_date_unique').on(
+    uniqueIndex('timer_reminder_entry_kind_unique').on(
       table.timeEntryId,
-      table.reminderDate,
+      table.kind,
     ),
     index('timer_reminder_workspace_sent_idx').on(
       table.workspaceId,

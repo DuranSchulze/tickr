@@ -31,7 +31,7 @@ function taskGroupCollapseKey(dateKey: string, groupKey: string) {
 
 export function AllEntriesSection({
   entries,
-  totalCount,
+  activeEntry,
   hasMore,
   loadingMore,
   onLoadMore,
@@ -57,7 +57,7 @@ export function AllEntriesSection({
   onDelete,
 }: {
   entries: TimeEntry[]
-  totalCount: number
+  activeEntry: TimeEntry | undefined
   hasMore: boolean
   loadingMore: boolean
   onLoadMore: () => void
@@ -99,7 +99,15 @@ export function AllEntriesSection({
     () => new Set(),
   )
 
-  const groups = useMemo(() => groupEntriesByDay(entries), [entries])
+  const groups = useMemo(
+    () =>
+      groupEntriesByDay(
+        activeEntry
+          ? entries.filter((entry) => entry.id !== activeEntry.id)
+          : entries,
+      ),
+    [activeEntry, entries],
+  )
   const allCollapsed =
     groups.length > 0 && groups.every((g) => collapsedDates.has(g.dateKey))
 
@@ -143,10 +151,6 @@ export function AllEntriesSection({
             <h2 className="m-0 text-base font-bold text-foreground sm:text-lg">
               Entries
             </h2>
-            <span className="min-w-0 truncate text-sm text-muted-foreground">
-              {totalCount.toLocaleString()} total entr
-              {totalCount === 1 ? 'y' : 'ies'}
-            </span>
             {activeFilterCount > 0 && (
               <>
                 <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -214,8 +218,10 @@ export function AllEntriesSection({
         )}
       </div>
 
+      {/* Running entry is pinned inside the entries table by DayGroupsList. */}
+
       {/* Empty state */}
-      {groups.length === 0 && (
+      {groups.length === 0 && !activeEntry && (
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">
           {activeFilterCount > 0
             ? 'No entries match your current filters.'
@@ -226,6 +232,7 @@ export function AllEntriesSection({
       {/* Day groups */}
       <DayGroupsList
         groups={groups}
+        activeEntry={activeEntry}
         view="all"
         clients={clients}
         projects={projects}

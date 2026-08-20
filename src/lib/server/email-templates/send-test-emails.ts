@@ -73,9 +73,10 @@ const sampleEmails = [
       taskDescription: 'Prepare payroll-ready time report',
       taskName: 'Payroll review',
       projectName: 'Operations',
+      milestoneHours: 6,
       startedAtLabel: 'Jul 1, 2026, 9:15 AM GMT+8',
-      runningDuration: '05:42:18',
-      timerUrl: `${baseUrl}/app/time-tracker`,
+      runningDuration: '06:42:18',
+      timerUrl: `${baseUrl}/app/time-tracker?focus=timer`,
     }),
   },
 ]

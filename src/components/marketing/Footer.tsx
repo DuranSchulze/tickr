@@ -7,6 +7,7 @@ const productLinks = [
   { href: '#how-it-works', label: 'How it works' },
   { href: '#pricing', label: 'Pricing' },
   { href: '#faq', label: 'FAQ' },
+  { href: '/api/docs', label: 'API docs' },
 ]
 
 export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
@@ -19,10 +20,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
               to="/"
               className="inline-flex items-center gap-3 no-underline"
             >
-              <AppLogo
-                              size="md"
-                              imgClassName="dark:invert"
-                            />
+              <AppLogo size="md" imgClassName="dark:invert" />
               <span className="font-heading text-lg font-black uppercase tracking-[0.16em] text-foreground">
                 {BRAND.name}
               </span>

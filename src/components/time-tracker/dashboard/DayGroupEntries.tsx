@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Copy, Play } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
@@ -144,6 +144,7 @@ function DayGroupHeaderRow({
   view,
   entryCount,
   dayCollapsed,
+  runningEntry,
   formatTime,
   onToggle,
 }: {
@@ -151,6 +152,7 @@ function DayGroupHeaderRow({
   view?: ViewMode
   entryCount: number
   dayCollapsed: boolean
+  runningEntry?: TimeEntry | null
   formatTime: (seconds: number) => string
   onToggle: () => void
 }) {
@@ -181,7 +183,7 @@ function DayGroupHeaderRow({
           {copyButton}
           <LiveGroupTotal
             completedSeconds={group.completedSeconds}
-            runningEntry={group.runningEntry}
+            runningEntry={runningEntry ?? null}
             formatTime={formatTime}
           />
         </div>
@@ -219,7 +221,7 @@ function DayGroupHeaderRow({
         {copyButton}
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
-          runningEntry={group.runningEntry}
+          runningEntry={runningEntry ?? null}
           formatTime={formatTime}
         />
       </div>
@@ -539,8 +541,37 @@ function TaskGroupHeaderCard({
 // headers (static in day view, collapsible otherwise) with collapsible ×N task
 // groups, a desktop table and mobile cards.
 
+function toLocalDateKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Column header shared by the entries table and the pinned running-now table.
+function EntryTableHeader() {
+  return (
+    <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
+      <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
+        <TableHead className="px-4 py-2.5 w-[56%] text-muted-foreground font-medium">
+          Task / Client / Tags
+        </TableHead>
+        <TableHead className="px-4 py-2.5 w-[5%] text-center text-muted-foreground font-medium">
+          Billable
+        </TableHead>
+        <TableHead className="px-4 py-2.5 w-[22%] text-center text-muted-foreground font-medium">
+          Time
+        </TableHead>
+        <TableHead className="px-3 py-2.5 w-[7%] text-right text-muted-foreground font-medium">
+          Duration
+        </TableHead>
+        <TableHead className="px-4 py-2.5 w-[10%]" />
+      </TableRow>
+    </TableHeader>
+  )
+}
+
 export function DayGroupsList({
   groups,
+  activeEntry,
   view,
   clients,
   projects,
@@ -563,6 +594,7 @@ export function DayGroupsList({
   onDelete,
 }: {
   groups: DayGroup[]
+  activeEntry?: TimeEntry
   view?: ViewMode
   clients: ClientItem[]
   projects: Project[]
@@ -597,17 +629,95 @@ export function DayGroupsList({
   const handleDuplicate = useStableCallback(onDuplicate)
   const handleDelete = useStableCallback(onDelete)
 
+  // The running entry is pinned as the first row(s) of the day group it
+  // belongs to (falling back to the newest visible group). It stays visible
+  // even when history filters hide everything else.
+  const pinnedGroupKey = useMemo(() => {
+    if (!activeEntry) return null
+    const byDate = groups.find(
+      (group) => group.dateKey === toLocalDateKey(activeEntry.startedAt),
+    )
+    if (byDate) return byDate.dateKey
+    return groups.length > 0 ? groups[0].dateKey : null
+  }, [activeEntry, groups])
+
+  const renderActiveEntryRow = () => {
+    if (!activeEntry) return null
+    return (
+      <EntryRow
+        key={activeEntry.id}
+        entry={activeEntry}
+        clients={clients}
+        projects={projects}
+        projectTasks={projectTasks}
+        tags={tags}
+        pending={pending}
+        isPending={pendingEntryIds?.has(activeEntry.id)}
+        isDeleting={deletingEntryId === activeEntry.id}
+        formatTime={formatTime}
+        currency={currency}
+        rateLookup={rateLookup}
+        onStartEdit={handleStartEdit}
+        onUpdate={handleUpdate}
+        onResume={handleResume}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+      />
+    )
+  }
+
+  const renderActiveEntryCard = () => {
+    if (!activeEntry) return null
+    return (
+      <EntryCard
+        key={activeEntry.id}
+        entry={activeEntry}
+        projects={projects}
+        tags={tags}
+        currency={currency}
+        rateLookup={rateLookup}
+        pending={pending}
+        isPending={pendingEntryIds?.has(activeEntry.id)}
+        isDeleting={deletingEntryId === activeEntry.id}
+        formatTime={formatTime}
+        onStartEdit={handleStartEdit}
+        onResume={handleResume}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+      />
+    )
+  }
+
   return (
     <div
       ref={containerRef}
       className="grid min-w-0 gap-3 bg-transparent sm:gap-4"
     >
+      {/* No history at all — keep the running entry visible in its own table. */}
+      {groups.length === 0 && activeEntry && (
+        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card">
+          {isDesktop ? (
+            <Table className="table-fixed">
+              <EntryTableHeader />
+              <TableBody className="[&_tr]:border-b-0">
+                {renderActiveEntryRow()}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="grid min-w-0 gap-2 p-2.5">
+              {renderActiveEntryCard()}
+            </div>
+          )}
+        </div>
+      )}
+
       {groups.map((group) => {
         const dayCollapsed = isDayCollapsed(group.dateKey)
         const entryCount = group.taskGroups.reduce(
           (n, tg) => n + tg.entries.length,
           0,
         )
+        const isPinnedGroup = group.dateKey === pinnedGroupKey
         return (
           <div
             key={group.dateKey}
@@ -619,6 +729,9 @@ export function DayGroupsList({
               view={view}
               entryCount={entryCount}
               dayCollapsed={dayCollapsed}
+              runningEntry={
+                group.runningEntry ?? (isPinnedGroup ? activeEntry : null)
+              }
               formatTime={formatTime}
               onToggle={() => toggleDayGroup(group.dateKey)}
             />
@@ -630,24 +743,9 @@ export function DayGroupsList({
                 {isDesktop && (
                   <div className="min-w-0">
                     <Table className="table-fixed">
-                      <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
-                        <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-                          <TableHead className="px-4 py-2.5 w-[56%] text-muted-foreground font-medium">
-                            Task / Client / Tags
-                          </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[5%] text-center text-muted-foreground font-medium">
-                            Billable
-                          </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[22%] text-center text-muted-foreground font-medium">
-                            Time
-                          </TableHead>
-                          <TableHead className="px-3 py-2.5 w-[7%] text-right text-muted-foreground font-medium">
-                            Duration
-                          </TableHead>
-                          <TableHead className="px-4 py-2.5 w-[10%]" />
-                        </TableRow>
-                      </TableHeader>
+                      <EntryTableHeader />
                       <TableBody className="[&_tr]:border-b-0">
+                        {isPinnedGroup && activeEntry && renderActiveEntryRow()}
                         {group.taskGroups.map((taskGroup) => {
                           const isGrouped = taskGroup.entries.length > 1
                           const expanded = isTaskGroupExpanded(
@@ -729,6 +827,7 @@ export function DayGroupsList({
                 {/* Mobile cards */}
                 {!isDesktop && (
                   <div className="grid min-w-0 gap-2 p-2.5">
+                    {isPinnedGroup && activeEntry && renderActiveEntryCard()}
                     {group.taskGroups.map((taskGroup) => {
                       const isGrouped = taskGroup.entries.length > 1
                       const expanded = isTaskGroupExpanded(

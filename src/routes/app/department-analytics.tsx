@@ -140,6 +140,19 @@ function DepartmentAnalyticsRoute() {
     [navigate, resolved.endDate, resolved.startDate],
   )
 
+  const changeProjectPage = useCallback(
+    (projectPage: number) => {
+      void navigate({
+        to: '/app/department-analytics',
+        search: (prev) => ({
+          ...prev,
+          projectPage,
+        }),
+      })
+    },
+    [navigate],
+  )
+
   return (
     <DepartmentDashboardScreen
       dashboard={dashboard}
@@ -148,6 +161,7 @@ function DepartmentAnalyticsRoute() {
       onChangeRange={changeRange}
       onChangeFilters={changeFilters}
       onViewMember={viewMember}
+      onProjectPageChange={changeProjectPage}
     />
   )
 }

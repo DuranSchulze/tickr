@@ -8,10 +8,10 @@ import {
   Loader2,
   MoreVertical,
   Play,
-  Radio,
   Trash2,
 } from 'lucide-react'
-import { getEntrySeconds } from '#/lib/time-tracker/store'
+import { formatDuration, getEntrySeconds } from '#/lib/time-tracker/store'
+import { parseDurationInput } from '#/lib/time-tracker/duration-input'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
@@ -58,6 +58,117 @@ const LiveDuration = memo(function LiveDuration({
   )
 })
 
+// ─── Inline duration editing ────────────────────────────────────────────
+// Completed entries: click the duration to edit it inline — accepts
+// "1:30", "1:30:45", "1h 30m", or decimal hours ("1.5"). The start time
+// stays fixed and the end time adjusts to match. Running entries keep the
+// live ticker.
+const DurationCell = memo(function DurationCell({
+  entry,
+  formatTime,
+  onUpdate,
+  disabled,
+}: {
+  entry: TimeEntry
+  formatTime: (seconds: number) => string
+  onUpdate: (patch: InlinePatch) => void
+  disabled?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [parseError, setParseError] = useState(false)
+  const skipCommit = useRef(false)
+  const focusInput = useCallback((element: HTMLInputElement | null) => {
+    element?.focus()
+  }, [])
+
+  function startEditing() {
+    if (disabled || !entry.endedAt) return
+    skipCommit.current = false
+    setDraft(formatDuration(entry.durationSeconds))
+    setParseError(false)
+    setEditing(true)
+  }
+
+  function commitEdit() {
+    if (skipCommit.current) {
+      skipCommit.current = false
+      setEditing(false)
+      return
+    }
+    if (!entry.endedAt) {
+      setEditing(false)
+      return
+    }
+    const seconds = parseDurationInput(draft)
+    if (seconds === null || seconds <= 0) {
+      setParseError(true)
+      return
+    }
+    const newEnd = new Date(
+      new Date(entry.startedAt).getTime() + seconds * 1000,
+    )
+    if (Number.isNaN(newEnd.getTime())) {
+      setParseError(true)
+      return
+    }
+    onUpdate({ endedAt: newEnd.toISOString() })
+    setEditing(false)
+  }
+
+  if (!entry.endedAt) {
+    return <LiveDuration entry={entry} formatTime={formatTime} />
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={startEditing}
+        disabled={disabled}
+        title="Edit duration"
+        className="rounded-md px-1.5 py-1 font-mono text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {formatTime(entry.durationSeconds)}
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <input
+        ref={focusInput}
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value)
+          setParseError(false)
+        }}
+        onBlur={commitEdit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault()
+            event.stopPropagation()
+            commitEdit()
+          } else if (event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            skipCommit.current = true
+            event.currentTarget.blur()
+          }
+        }}
+        aria-label="Duration"
+        placeholder="1:30 or 1h 30m"
+        className="h-9 w-28 rounded-lg border-2 border-border bg-muted/30 px-2 font-mono text-sm font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15"
+      />
+      {parseError && (
+        <p className="m-0 text-[11px] font-semibold leading-tight text-destructive">
+          Use 1:30 or 1h 30m
+        </p>
+      )}
+    </div>
+  )
+})
+
 type InlinePatch = Partial<
   Pick<
     TimeEntry,
@@ -94,6 +205,18 @@ function isTimeInputValue(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
+function timeInputToSeconds(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number)
+  return hours * 3600 + minutes * 60
+}
+
+function secondsToTimeInput(totalSeconds: number): string {
+  const wrapped = ((totalSeconds % 86400) + 86400) % 86400
+  const hours = Math.floor(wrapped / 3600)
+  const minutes = Math.floor((wrapped % 3600) / 60)
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 function EntryTimeCell({
   entry,
   onUpdate,
@@ -112,6 +235,9 @@ function EntryTimeCell({
     from: new Date(entry.startedAt),
     to: entry.endedAt ? new Date(entry.endedAt) : undefined,
   }))
+  // Last committed-complete start value — time inputs emit partial values
+  // ("") mid-typing, so deltas are measured from the last valid value.
+  const lastValidStartRef = useRef('')
   const isRunning = !entry.endedAt
   const draftStartDate = dateRange.from ?? new Date(entry.startedAt)
   const draftEndDate = dateRange.to ?? draftStartDate
@@ -132,11 +258,36 @@ function EntryTimeCell({
   useEffect(() => {
     setStartTime(toTimeInput(entry.startedAt))
     setEndTime(entry.endedAt ? toTimeInput(entry.endedAt) : '')
+    lastValidStartRef.current = toTimeInput(entry.startedAt)
     setDateRange({
       from: new Date(entry.startedAt),
       to: entry.endedAt ? new Date(entry.endedAt) : undefined,
     })
   }, [entry.id, entry.startedAt, entry.endedAt])
+
+  // Editing the start time shifts the end time by the same delta so the
+  // duration is preserved — the end time "adjusts" in most cases.
+  function handleStartTimeChange(value: string) {
+    setStartTime(value)
+    if (!entry.endedAt || !isTimeInputValue(value)) return
+    const delta =
+      timeInputToSeconds(value) - timeInputToSeconds(lastValidStartRef.current)
+    lastValidStartRef.current = value
+    if (delta === 0) return
+    if (isTimeInputValue(endTime)) {
+      const total = timeInputToSeconds(endTime) + delta
+      const dayShift = Math.floor(total / 86400)
+      if (dayShift !== 0) {
+        setDateRange((range) => {
+          const base = range.to ?? range.from ?? new Date(entry.startedAt)
+          const next = new Date(base)
+          next.setDate(next.getDate() + dayShift)
+          return { from: range.from, to: next }
+        })
+      }
+      setEndTime(secondsToTimeInput(total))
+    }
+  }
 
   function handleCalendarSelect(day: Date) {
     if (!dateRange.from || dateRange.to) {
@@ -172,7 +323,7 @@ function EntryTimeCell({
         <input
           type="time"
           value={startTime}
-          onChange={(event) => setStartTime(event.target.value)}
+          onChange={(event) => handleStartTimeChange(event.target.value)}
           onBlur={commitTimeChange}
           disabled={disabled}
           aria-label="Start time"
@@ -324,13 +475,11 @@ export const EntryRow = memo(function EntryRow({
     <TableRow
       className={[
         isDeleting ? 'pointer-events-none opacity-50' : '',
-        isSubEntry && isRunning
-          ? 'bg-primary/10 opacity-80 hover:bg-primary/15 dark:bg-primary/20 dark:hover:bg-primary/25'
-          : isRunning
-            ? 'bg-primary/5 opacity-75'
-            : isSubEntry
-              ? 'bg-foreground/[0.045] hover:bg-foreground/[0.065] dark:bg-white/[0.075] dark:hover:bg-white/[0.095]'
-              : '',
+        isRunning
+          ? 'running-glow'
+          : isSubEntry
+            ? 'bg-foreground/[0.045] hover:bg-foreground/[0.065] dark:bg-white/[0.075] dark:hover:bg-white/[0.095]'
+            : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -345,12 +494,6 @@ export const EntryRow = memo(function EntryRow({
                 className="inline-flex shrink-0 items-center text-muted-foreground/60"
               >
                 <CornerDownRight className="size-3.5" />
-              </span>
-            )}
-            {isRunning && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-primary">
-                <Radio className="size-2.5 fill-current" />
-                Ongoing
               </span>
             )}
             <div className="min-w-0 flex-1">
@@ -394,6 +537,15 @@ export const EntryRow = memo(function EntryRow({
                 </button>
               )}
             </div>
+            {isRunning && (
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-destructive">
+                <span
+                  aria-hidden="true"
+                  className="size-1.5 rounded-full bg-destructive animate-pulse"
+                />
+                Running now
+              </span>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -453,7 +605,12 @@ export const EntryRow = memo(function EntryRow({
 
       {/* Duration */}
       <TableCell className="py-3 px-3 w-[7%] text-right">
-        <LiveDuration entry={entry} formatTime={formatTime} />
+        <DurationCell
+          entry={entry}
+          formatTime={formatTime}
+          onUpdate={update}
+          disabled={actionsDisabled}
+        />
       </TableCell>
 
       {/* Actions */}

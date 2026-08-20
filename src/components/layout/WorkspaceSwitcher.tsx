@@ -99,16 +99,16 @@ export function WorkspaceSwitcher({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="default"
             title="Switch workspace"
-            className="hidden max-w-[260px] items-center gap-2 bg-card/80 text-foreground sm:inline-flex"
+            className="max-w-[240px] shrink-0 gap-2 rounded-full bg-muted/60 px-3 text-foreground hover:bg-muted sm:max-w-[280px]"
           >
-            <BriefcaseBusiness className="size-4 text-muted-foreground" />
-            <span className="truncate font-semibold">
+            <BriefcaseBusiness className="size-4 shrink-0 text-primary" />
+            <span className="hidden min-w-0 truncate font-semibold sm:inline">
               {currentWorkspaceName}
             </span>
-            <ChevronDown className="size-3.5 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
@@ -132,7 +132,9 @@ export function WorkspaceSwitcher({
                   e.preventDefault()
                   if (!isCurrentByName) void handleSwitch(ws.slug)
                 }}
-                className="flex items-start gap-2"
+                className={`flex items-start gap-2 ${
+                  isCurrentByName ? 'bg-primary/5' : ''
+                }`}
               >
                 <div className="flex-1 min-w-0">
                   <p className="m-0 truncate text-sm font-semibold">

@@ -14,7 +14,8 @@ import {
   YAxis,
 } from 'recharts'
 import type { AnalyticsPayload } from '#/lib/server/tracker.server'
-import { formatChartDate, formatHours, toChartHours } from './analytics.utils'
+import { formatDuration } from '#/lib/time-tracker/store'
+import { formatChartDate, toChartHours } from './analytics.utils'
 
 const fallbackColors = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
 
@@ -77,10 +78,12 @@ export function AnalyticsCharts({
         date: day.date,
         label: formatChartDate(day.date),
         hours: toChartHours(day.seconds),
+        seconds: day.seconds,
       })),
       projectData: analytics.projectTotals.slice(0, 8).map((project) => ({
         name: project.name,
         hours: toChartHours(project.seconds),
+        seconds: project.seconds,
         color: project.color,
       })),
       billableData: analytics.billableSplit.reduce<
@@ -154,7 +157,10 @@ export function AnalyticsCharts({
                     width={28}
                   />
                   <Tooltip
-                    formatter={(value) => [`${value}h`, 'Hours']}
+                    formatter={(_value, _name, item) => [
+                      formatDuration(Number(item.payload?.seconds ?? 0)),
+                      'Hours',
+                    ]}
                     labelFormatter={(_, payload) => payload[0]?.payload.date}
                   />
                   <Area
@@ -194,7 +200,9 @@ export function AnalyticsCharts({
                       <Cell key={`${entry.name}-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatHours(Number(value))} />
+                  <Tooltip
+                    formatter={(value) => formatDuration(Number(value))}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </ClientOnly>
@@ -233,7 +241,12 @@ export function AnalyticsCharts({
                     axisLine={false}
                     width={88}
                   />
-                  <Tooltip formatter={(value) => [`${value}h`, 'Hours']} />
+                  <Tooltip
+                    formatter={(_value, _name, item) => [
+                      formatDuration(Number(item.payload?.seconds ?? 0)),
+                      'Hours',
+                    ]}
+                  />
                   <Bar dataKey="hours" radius={[0, 6, 6, 0]}>
                     {projectData.map((entry, index) => (
                       <Cell

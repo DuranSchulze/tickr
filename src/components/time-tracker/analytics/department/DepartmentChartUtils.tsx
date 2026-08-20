@@ -11,10 +11,4 @@ export function EmptyChart({ label }: { label: string }) {
   )
 }
 
-export function formatHours(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h === 0 && m === 0) return '0m'
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
+export { formatDuration } from '#/lib/time-tracker/store'

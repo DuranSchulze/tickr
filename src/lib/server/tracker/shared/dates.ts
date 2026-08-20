@@ -91,10 +91,7 @@ function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
   }
 }
 
-function zonedDateTimeToUtc(
-  dateKey: string,
-  timeZone: string,
-): Date {
+function zonedDateTimeToUtc(dateKey: string, timeZone: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number)
   const utcGuess = new Date(Date.UTC(year, month - 1, day))
   return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, utcGuess))
@@ -143,4 +140,46 @@ export function formatDateInTimeZone(
     month: '2-digit',
     day: '2-digit',
   }).format(date)
+}
+
+export function formatTimeOfDayInTimeZone(
+  value: Date | string,
+  timeZone: string,
+): string {
+  const date = value instanceof Date ? value : new Date(value)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true,
+  }).format(date)
+}
+
+/** Formats a YYYY-MM-DD key as "May 15" without timezone ambiguity. */
+export function formatMonthDay(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+/** Formats a YYYY-MM-DD key as "Friday" without timezone ambiguity. */
+export function formatDayOfWeek(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC',
+    weekday: 'long',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}
+
+/** Formats a duration as "H:MM:SS" (e.g. 32820 -> "9:07:00"). */
+export function formatDurationClock(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds))
+  const hours = Math.floor(safe / 3600)
+  const minutes = String(Math.floor((safe % 3600) / 60)).padStart(2, '0')
+  const seconds = String(safe % 60).padStart(2, '0')
+  return `${hours}:${minutes}:${seconds}`
 }

@@ -1,8 +1,22 @@
 import '@tanstack/react-start/server-only'
-import { and, asc, eq, gte, ilike, inArray, or, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm'
+import type { SQLWrapper } from 'drizzle-orm'
 import { db } from '#/db'
 import {
   clients,
+  cohortMembers,
   departments,
   projects,
   projectTasks,
@@ -17,11 +31,22 @@ import {
 import {
   formatDateInTimeZone,
   formatDateTimeInTimeZone,
+  formatDayOfWeek,
+  formatDurationClock,
+  formatMonthDay,
+  formatTimeOfDayInTimeZone,
   getWorkspaceDateRange,
 } from '../tracker/shared/dates'
 import type {
+  ClientsListQuery,
+  DepartmentsListQuery,
+  DtrIntegrationQuery,
   ListQuery,
   MemberDayActivityQuery,
+  MembersListQuery,
+  ProjectsListQuery,
+  TagsListQuery,
+  TasksListQuery,
   TimeEntriesQuery,
 } from './external-api.shared'
 
@@ -40,6 +65,10 @@ function updatedFilter<T extends { updatedAt: unknown }>(
   return updatedSince
     ? gte(table.updatedAt as never, new Date(updatedSince))
     : undefined
+}
+
+function orderByColumn(column: SQLWrapper, dir: 'asc' | 'desc') {
+  return dir === 'desc' ? desc(column) : asc(column)
 }
 
 export async function getExternalWorkspace(workspaceId: string) {
@@ -66,184 +95,401 @@ export async function getExternalWorkspace(workspaceId: string) {
     : null
 }
 
+const MEMBER_SORT_COLUMNS = {
+  name: users.name,
+  email: workspaceMembers.email,
+  status: workspaceMembers.status,
+  createdAt: workspaceMembers.createdAt,
+  updatedAt: workspaceMembers.updatedAt,
+} as const
+
 export async function listExternalMembers(
   workspaceId: string,
-  query: ListQuery,
+  query: MembersListQuery,
 ) {
   const p = pagination(query)
   const conditions = [
     eq(workspaceMembers.workspaceId, workspaceId),
     updatedFilter(workspaceMembers, query.updatedSince),
+    query.status ? eq(workspaceMembers.status, query.status) : undefined,
+    query.roleId
+      ? eq(workspaceMembers.workspaceRoleId, query.roleId)
+      : undefined,
+    query.departmentId
+      ? eq(workspaceMembers.departmentId, query.departmentId)
+      : undefined,
+    query.search
+      ? or(
+          ilike(workspaceMembers.email, `%${query.search}%`),
+          ilike(users.email, `%${query.search}%`),
+          ilike(users.name, `%${query.search}%`),
+        )
+      : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select({
-      id: workspaceMembers.id,
-      email: workspaceMembers.email,
-      name: users.name,
-      status: workspaceMembers.status,
-      roleName: workspaceRoles.name,
-      permissionLevel: workspaceRoles.permissionLevel,
-      departmentId: workspaceMembers.departmentId,
-      createdAt: workspaceMembers.createdAt,
-      updatedAt: workspaceMembers.updatedAt,
-    })
-    .from(workspaceMembers)
-    .leftJoin(users, eq(workspaceMembers.userId, users.id))
-    .leftJoin(
-      workspaceRoles,
-      eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
-    )
-    .where(and(...conditions))
-    .orderBy(asc(workspaceMembers.createdAt), asc(workspaceMembers.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select({
+        id: workspaceMembers.id,
+        email: workspaceMembers.email,
+        name: users.name,
+        image: users.image,
+        status: workspaceMembers.status,
+        workspaceRoleId: workspaceMembers.workspaceRoleId,
+        roleName: workspaceRoles.name,
+        permissionLevel: workspaceRoles.permissionLevel,
+        departmentId: workspaceMembers.departmentId,
+        departmentName: departments.name,
+        billableRate: workspaceMembers.billableRate,
+        createdAt: workspaceMembers.createdAt,
+        updatedAt: workspaceMembers.updatedAt,
+      })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .leftJoin(
+        workspaceRoles,
+        eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+      )
+      .leftJoin(departments, eq(workspaceMembers.departmentId, departments.id))
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(MEMBER_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(workspaceMembers.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(workspaceMembers)
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    ...row,
-    name: row.name ?? row.email,
-    permissionLevel: row.permissionLevel ?? 'EMPLOYEE',
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  const cohortRows =
+    rows.length > 0
+      ? await db
+          .select({
+            memberId: cohortMembers.memberId,
+            cohortId: cohortMembers.cohortId,
+          })
+          .from(cohortMembers)
+          .where(
+            inArray(
+              cohortMembers.memberId,
+              rows.map((row) => row.id),
+            ),
+          )
+      : []
+
+  const cohortIdsByMember = new Map<string, string[]>()
+  for (const row of cohortRows) {
+    const list = cohortIdsByMember.get(row.memberId) ?? []
+    list.push(row.cohortId)
+    cohortIdsByMember.set(row.memberId, list)
+  }
+
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      name: row.name ?? row.email,
+      image: row.image,
+      status: row.status,
+      workspaceRoleId: row.workspaceRoleId,
+      roleName: row.roleName,
+      permissionLevel: row.permissionLevel ?? 'EMPLOYEE',
+      departmentId: row.departmentId,
+      departmentName: row.departmentName,
+      billableRate: row.billableRate == null ? null : Number(row.billableRate),
+      cohortIds: cohortIdsByMember.get(row.id) ?? [],
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
+
+const CLIENT_SORT_COLUMNS = {
+  name: clients.name,
+  status: clients.clientStatus,
+  createdAt: clients.createdAt,
+  updatedAt: clients.updatedAt,
+} as const
 
 export async function listExternalClients(
   workspaceId: string,
-  query: ListQuery,
+  query: ClientsListQuery,
 ) {
   const p = pagination(query)
   const conditions = [
     eq(clients.workspaceId, workspaceId),
     updatedFilter(clients, query.updatedSince),
+    query.status ? eq(clients.clientStatus, query.status) : undefined,
+    query.search ? ilike(clients.name, `%${query.search}%`) : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(clients)
-    .where(and(...conditions))
-    .orderBy(asc(clients.name), asc(clients.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select()
+      .from(clients)
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(CLIENT_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(clients.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(clients)
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    status: row.clientStatus,
-    defaultBillableRate:
-      row.defaultBillableRate == null ? null : Number(row.defaultBillableRate),
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      status: row.clientStatus,
+      defaultBillableRate:
+        row.defaultBillableRate == null
+          ? null
+          : Number(row.defaultBillableRate),
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
+
+const PROJECT_SORT_COLUMNS = {
+  name: projects.name,
+  clientId: projects.clientId,
+  archived: projects.archived,
+  createdAt: projects.createdAt,
+  updatedAt: projects.updatedAt,
+} as const
 
 export async function listExternalProjects(
   workspaceId: string,
-  query: ListQuery,
+  query: ProjectsListQuery,
 ) {
   const p = pagination(query)
   const conditions = [
     eq(projects.workspaceId, workspaceId),
     updatedFilter(projects, query.updatedSince),
+    query.search ? ilike(projects.name, `%${query.search}%`) : undefined,
+    query.clientId ? eq(projects.clientId, query.clientId) : undefined,
+    query.archived != null ? eq(projects.archived, query.archived) : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(projects)
-    .where(and(...conditions))
-    .orderBy(asc(projects.name), asc(projects.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select({
+        id: projects.id,
+        clientId: projects.clientId,
+        clientName: clients.name,
+        name: projects.name,
+        color: projects.color,
+        archived: projects.archived,
+        createdAt: projects.createdAt,
+        updatedAt: projects.updatedAt,
+      })
+      .from(projects)
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(PROJECT_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(projects.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projects)
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    id: row.id,
-    clientId: row.clientId,
-    name: row.name,
-    color: row.color,
-    archived: row.archived,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      clientId: row.clientId,
+      clientName: row.clientName,
+      name: row.name,
+      color: row.color,
+      archived: row.archived,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
 
-export async function listExternalTasks(workspaceId: string, query: ListQuery) {
+const TASK_SORT_COLUMNS = {
+  name: projectTasks.name,
+  projectId: projectTasks.projectId,
+  archived: projectTasks.archived,
+  createdAt: projectTasks.createdAt,
+  updatedAt: projectTasks.updatedAt,
+} as const
+
+export async function listExternalTasks(
+  workspaceId: string,
+  query: TasksListQuery,
+) {
   const p = pagination(query)
   const conditions = [
     eq(projectTasks.workspaceId, workspaceId),
     updatedFilter(projectTasks, query.updatedSince),
+    query.search ? ilike(projectTasks.name, `%${query.search}%`) : undefined,
+    query.projectId ? eq(projectTasks.projectId, query.projectId) : undefined,
+    query.archived != null
+      ? eq(projectTasks.archived, query.archived)
+      : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(projectTasks)
-    .where(and(...conditions))
-    .orderBy(asc(projectTasks.name), asc(projectTasks.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select({
+        id: projectTasks.id,
+        projectId: projectTasks.projectId,
+        projectName: projects.name,
+        name: projectTasks.name,
+        archived: projectTasks.archived,
+        createdAt: projectTasks.createdAt,
+        updatedAt: projectTasks.updatedAt,
+      })
+      .from(projectTasks)
+      .leftJoin(projects, eq(projectTasks.projectId, projects.id))
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(TASK_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(projectTasks.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(projectTasks)
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    id: row.id,
-    projectId: row.projectId,
-    name: row.name,
-    archived: row.archived,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      projectId: row.projectId,
+      projectName: row.projectName,
+      name: row.name,
+      archived: row.archived,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
 
-export async function listExternalTags(workspaceId: string, query: ListQuery) {
+const TAG_SORT_COLUMNS = {
+  name: tags.name,
+  archived: tags.archived,
+  createdAt: tags.createdAt,
+  updatedAt: tags.updatedAt,
+} as const
+
+export async function listExternalTags(
+  workspaceId: string,
+  query: TagsListQuery,
+) {
   const p = pagination(query)
   const conditions = [
     eq(tags.workspaceId, workspaceId),
     updatedFilter(tags, query.updatedSince),
+    query.search ? ilike(tags.name, `%${query.search}%`) : undefined,
+    query.archived != null ? eq(tags.archived, query.archived) : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(tags)
-    .where(and(...conditions))
-    .orderBy(asc(tags.name), asc(tags.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select()
+      .from(tags)
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(TAG_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(tags.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(tags)
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    color: row.color,
-    archived: row.archived,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      color: row.color,
+      archived: row.archived,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
+
+const DEPARTMENT_SORT_COLUMNS = {
+  name: departments.name,
+  createdAt: departments.createdAt,
+  updatedAt: departments.updatedAt,
+} as const
 
 export async function listExternalDepartments(
   workspaceId: string,
-  query: ListQuery,
+  query: DepartmentsListQuery,
 ) {
   const p = pagination(query)
   const conditions = [
     eq(departments.workspaceId, workspaceId),
     updatedFilter(departments, query.updatedSince),
+    query.search ? ilike(departments.name, `%${query.search}%`) : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(departments)
-    .where(and(...conditions))
-    .orderBy(asc(departments.name), asc(departments.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select()
+      .from(departments)
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(DEPARTMENT_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(departments.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(departments)
+      .where(and(...conditions)),
+  ])
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-    description: row.description,
-    color: row.color,
-    headMemberId: row.headMemberId,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      color: row.color,
+      headMemberId: row.headMemberId,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
+
+const TIME_ENTRY_SORT_COLUMNS = {
+  startedAt: timeEntries.startedAt,
+  createdAt: timeEntries.createdAt,
+  updatedAt: timeEntries.updatedAt,
+  durationSeconds: timeEntries.durationSeconds,
+} as const
 
 export async function listExternalTimeEntries(
   workspaceId: string,
@@ -259,15 +505,55 @@ export async function listExternalTimeEntries(
     query.endDate
       ? sql`${timeEntries.startedAt} <= ${new Date(query.endDate)}`
       : undefined,
+    query.search
+      ? ilike(timeEntries.description, `%${query.search}%`)
+      : undefined,
+    query.memberId
+      ? eq(timeEntries.workspaceMemberId, query.memberId)
+      : undefined,
+    query.projectId ? eq(timeEntries.projectId, query.projectId) : undefined,
+    query.taskId ? eq(timeEntries.taskId, query.taskId) : undefined,
+    query.billable != null
+      ? eq(timeEntries.billable, query.billable)
+      : undefined,
+    query.running != null
+      ? query.running
+        ? isNull(timeEntries.endedAt)
+        : isNotNull(timeEntries.endedAt)
+      : undefined,
   ].filter(Boolean)
 
-  const rows = await db
-    .select()
-    .from(timeEntries)
-    .where(and(...conditions))
-    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
-    .limit(p.limit)
-    .offset(p.offset)
+  const [rows, [countRow]] = await Promise.all([
+    db
+      .select({
+        entry: timeEntries,
+        memberName: users.name,
+        memberEmail: workspaceMembers.email,
+        projectName: projects.name,
+        clientName: clients.name,
+        taskName: projectTasks.name,
+      })
+      .from(timeEntries)
+      .leftJoin(
+        workspaceMembers,
+        eq(timeEntries.workspaceMemberId, workspaceMembers.id),
+      )
+      .leftJoin(users, eq(workspaceMembers.userId, users.id))
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
+      .where(and(...conditions))
+      .orderBy(
+        orderByColumn(TIME_ENTRY_SORT_COLUMNS[query.sortBy], query.sortDir),
+        asc(timeEntries.id),
+      )
+      .limit(p.limit)
+      .offset(p.offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(timeEntries)
+      .where(and(...conditions)),
+  ])
 
   const tagRows =
     rows.length > 0
@@ -277,7 +563,7 @@ export async function listExternalTimeEntries(
           .where(
             inArray(
               timeEntryTags.timeEntryId,
-              rows.map((row) => row.id),
+              rows.map((row) => row.entry.id),
             ),
           )
       : []
@@ -289,36 +575,32 @@ export async function listExternalTimeEntries(
     tagIdsByEntry.set(row.timeEntryId, list)
   }
 
-  return rows.map((row) => ({
-    id: row.id,
-    workspaceMemberId: row.workspaceMemberId,
-    description: row.description,
-    projectId: row.projectId,
-    taskId: row.taskId,
-    tagIds: tagIdsByEntry.get(row.id) ?? [],
-    billable: row.billable,
-    startedAt: row.startedAt.toISOString(),
-    endedAt: row.endedAt?.toISOString() ?? null,
-    durationSeconds: row.durationSeconds,
-    notes: row.notes,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  }))
+  return {
+    data: rows.map((row) => ({
+      id: row.entry.id,
+      workspaceMemberId: row.entry.workspaceMemberId,
+      memberName: row.memberName ?? row.memberEmail,
+      memberEmail: row.memberEmail,
+      description: row.entry.description,
+      projectId: row.entry.projectId,
+      projectName: row.projectName,
+      clientName: row.clientName,
+      taskId: row.entry.taskId,
+      taskName: row.taskName,
+      tagIds: tagIdsByEntry.get(row.entry.id) ?? [],
+      billable: row.entry.billable,
+      startedAt: row.entry.startedAt.toISOString(),
+      endedAt: row.entry.endedAt?.toISOString() ?? null,
+      durationSeconds: row.entry.durationSeconds,
+      notes: row.entry.notes,
+      createdAt: row.entry.createdAt.toISOString(),
+      updatedAt: row.entry.updatedAt.toISOString(),
+    })),
+    total: countRow?.count ?? 0,
+  }
 }
 
-export async function getExternalMemberDayActivity(
-  workspaceId: string,
-  workspaceTimeZone: string,
-  query: MemberDayActivityQuery,
-) {
-  const requestedDate =
-    query.date ?? formatDateInTimeZone(new Date(), workspaceTimeZone)
-  const range = getWorkspaceDateRange(
-    { startDate: requestedDate, endDate: requestedDate },
-    workspaceTimeZone,
-  )
-  const userSearch = query.user.trim()
-
+async function findExternalMember(workspaceId: string, userSearch: string) {
   const memberMatches = await db
     .select({
       member: workspaceMembers,
@@ -352,12 +634,29 @@ export async function getExternalMemberDayActivity(
     .orderBy(asc(workspaceMembers.email))
     .limit(10)
 
-  const selected =
+  return (
     memberMatches.find(
       (row) =>
         row.member.email.toLowerCase() === userSearch.toLowerCase() ||
         row.userEmail?.toLowerCase() === userSearch.toLowerCase(),
-    ) ?? memberMatches[0]
+    ) ??
+    memberMatches[0] ??
+    null
+  )
+}
+
+export async function getExternalMemberDayActivity(
+  workspaceId: string,
+  workspaceTimeZone: string,
+  query: MemberDayActivityQuery,
+) {
+  const requestedDate =
+    query.date ?? formatDateInTimeZone(new Date(), workspaceTimeZone)
+  const range = getWorkspaceDateRange(
+    { startDate: requestedDate, endDate: requestedDate },
+    workspaceTimeZone,
+  )
+  const selected = await findExternalMember(workspaceId, query.user.trim())
 
   if (!selected) {
     return null
@@ -450,5 +749,79 @@ export async function getExternalMemberDayActivity(
       durationSeconds: row.entry.durationSeconds,
       isRunning: row.entry.endedAt == null,
     })),
+  }
+}
+
+export async function getExternalDtrIntegration(
+  workspaceId: string,
+  workspaceTimeZone: string,
+  query: DtrIntegrationQuery,
+) {
+  const requestedDate =
+    query.date ?? formatDateInTimeZone(new Date(), workspaceTimeZone)
+  const range = getWorkspaceDateRange(
+    { startDate: requestedDate, endDate: requestedDate },
+    workspaceTimeZone,
+  )
+  const selected = await findExternalMember(workspaceId, query.user.trim())
+
+  if (!selected) {
+    return null
+  }
+
+  const rows = await db
+    .select({ entry: timeEntries })
+    .from(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.workspaceId, workspaceId),
+        eq(timeEntries.workspaceMemberId, selected.member.id),
+        gte(timeEntries.startedAt, range.start),
+        sql`${timeEntries.startedAt} < ${range.endExclusive}`,
+      ),
+    )
+    .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
+
+  const firstEntry = rows[0]?.entry ?? null
+  const completedEntries = rows
+    .map((row) => row.entry)
+    .filter((entry) => entry.endedAt != null)
+  const lastCompletedEntry = completedEntries.at(-1) ?? null
+  const totalSeconds = rows.reduce(
+    (sum, row) => sum + row.entry.durationSeconds,
+    0,
+  )
+
+  return {
+    date: requestedDate,
+    dateLabel: formatMonthDay(requestedDate),
+    dayOfWeek: formatDayOfWeek(requestedDate),
+    timezone: workspaceTimeZone,
+    member: {
+      id: selected.member.id,
+      name: selected.userName ?? selected.member.email,
+      email: selected.member.email,
+    },
+    entryCount: rows.length,
+    timeIn: firstEntry
+      ? {
+          at: firstEntry.startedAt.toISOString(),
+          local: formatTimeOfDayInTimeZone(
+            firstEntry.startedAt,
+            workspaceTimeZone,
+          ),
+        }
+      : null,
+    timeOut: lastCompletedEntry?.endedAt
+      ? {
+          at: lastCompletedEntry.endedAt.toISOString(),
+          local: formatTimeOfDayInTimeZone(
+            lastCompletedEntry.endedAt,
+            workspaceTimeZone,
+          ),
+        }
+      : null,
+    totalSeconds,
+    totalHours: formatDurationClock(totalSeconds),
   }
 }
