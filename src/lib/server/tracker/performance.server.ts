@@ -69,15 +69,10 @@ export type PublicPerformancePayload = {
   projectTotals: PerformanceProjectTotal[]
 }
 
-function getWorkingDays(year: number, month: number): number {
-  const days: number[] = []
-  const date = new Date(Date.UTC(year, month - 1, 1))
-  while (date.getUTCMonth() === month - 1) {
-    const dow = date.getUTCDay()
-    if (dow !== 0 && dow !== 6) days.push(date.getUTCDate())
-    date.setUTCDate(date.getUTCDate() + 1)
-  }
-  return days.length
+function isWorkingDay(dateKey: string): boolean {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  return dayOfWeek !== 0 && dayOfWeek !== 6
 }
 
 function computeGrade(activePercent: number): {
@@ -107,13 +102,19 @@ function buildMonthSummary(
   month: string,
   entries: { date: string; seconds: number }[],
 ): PerformanceMonthSummary {
-  const [y, m] = month.split('-').map(Number)
-  const workingDays = getWorkingDays(y, m)
-  const activeDaySet = new Set(
-    entries.filter((e) => e.seconds > 0).map((e) => e.date),
-  )
-  const activeDays = activeDaySet.size
-  const totalSeconds = entries.reduce((s, e) => s + e.seconds, 0)
+  const workingDaySet = new Set<string>()
+  const activeWorkingDaySet = new Set<string>()
+  let totalSeconds = 0
+
+  for (const entry of entries) {
+    totalSeconds += entry.seconds
+    if (!isWorkingDay(entry.date)) continue
+    workingDaySet.add(entry.date)
+    if (entry.seconds > 0) activeWorkingDaySet.add(entry.date)
+  }
+
+  const workingDays = workingDaySet.size
+  const activeDays = activeWorkingDaySet.size
   const activePercent =
     workingDays === 0 ? 0 : Math.round((activeDays / workingDays) * 100)
   const { grade, badge } = computeGrade(activePercent)

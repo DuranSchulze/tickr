@@ -29,6 +29,7 @@ import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
 import { useDraftAndEdit } from './hooks/useDraftAndEdit'
 import { useTimerCore } from './hooks/useTimerCore'
+import { useRemoteTaskDataSync } from './hooks/useRemoteTaskDataSync'
 import { useTimerKeyboard } from './hooks/useTimerKeyboard'
 import { useNetworkStatus } from '#/lib/time-tracker/useNetworkStatus'
 import {
@@ -149,6 +150,13 @@ export function TimeTrackerDashboard({
       }),
     [loadAllEntries, state.workspace.id],
   )
+
+  // Independent refresh leg for the locally-paginated list: reacts to the
+  // cross-tab broadcast directly instead of relying solely on the coordinator's
+  // completion notification, so a failed coordinator refresh can no longer
+  // leave stale rows (e.g. an entry still "running" after another tab stopped
+  // it) next to fresh route-loader state.
+  useRemoteTaskDataSync(state.workspace.id, refreshAllEntries)
 
   const patchAllEntries = useCallback((updated: TimeEntry) => {
     setAllEntries((prev) =>

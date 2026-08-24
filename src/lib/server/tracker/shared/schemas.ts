@@ -130,6 +130,15 @@ export const reportsRangeSchema = z.object({
   pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
+export const timesheetQuerySchema = z.object({
+  weekStart: z.iso.date().optional(),
+  memberId: z.string().optional(),
+  departmentId: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
+})
+
 export const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })

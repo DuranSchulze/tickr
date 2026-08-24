@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Hash, Pencil, Search, Trash2, X } from 'lucide-react'
+import { Hash, Pencil, Trash2 } from 'lucide-react'
 import type { AnalyticsTimeEntryRow } from '#/lib/server/tracker/analytics.server'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import {
@@ -11,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '#/components/ui/pagination'
+import { EntriesSearchForm } from './EntriesSearchForm'
 
 const pageSizeOptions = [25, 50, 100] as const
 
@@ -194,7 +195,8 @@ function EntriesTableHeader({
   filteredCount,
   pageSize,
   searchQuery,
-  onSearchChange,
+  onSearchSubmit,
+  onSearchClear,
   selectedVisibleCount,
   selectedEntries,
   onBulkDeleteEntries,
@@ -205,7 +207,8 @@ function EntriesTableHeader({
   filteredCount: number
   pageSize: number
   searchQuery: string
-  onSearchChange: (query: string) => void
+  onSearchSubmit: (query: string) => void
+  onSearchClear: () => void
   selectedVisibleCount: number
   selectedEntries: AnalyticsTimeEntryRow[]
   onBulkDeleteEntries?: (entries: AnalyticsTimeEntryRow[]) => void
@@ -228,26 +231,12 @@ function EntriesTableHeader({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search…"
-              className="h-8 w-full rounded-md border border-border bg-background pl-8 pr-8 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 md:w-52"
-            />
-            {searchQuery.trim().length > 0 && (
-              <button
-                type="button"
-                onClick={() => onSearchChange('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <EntriesSearchForm
+            searchQuery={searchQuery}
+            onSearchSubmit={onSearchSubmit}
+            onSearchClear={onSearchClear}
+          />
 
           {onPageSizeChange && (
             <label className="flex w-fit items-center gap-2 text-xs font-semibold text-muted-foreground">
@@ -322,8 +311,13 @@ function DesktopEntriesTable({
   onDeleteEntry?: (entry: AnalyticsTimeEntryRow) => void
 }) {
   return (
-    <div className="hidden overflow-x-auto lg:block">
-      <table className="w-full min-w-[1040px] table-fixed text-sm">
+    <div
+      className="hidden overflow-x-auto overscroll-x-contain lg:block"
+      role="region"
+      aria-label="Time entries table"
+      tabIndex={0}
+    >
+      <table className="w-full min-w-[1480px] table-fixed text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/30">
             {hasBulkDelete && (
@@ -356,7 +350,7 @@ function DesktopEntriesTable({
             <th className="w-[180px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Tags
             </th>
-            <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[320px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Description
             </th>
             <th className="w-[130px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -366,7 +360,7 @@ function DesktopEntriesTable({
               Billable
             </th>
             {hasActions && (
-              <th className="w-[104px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="sticky right-0 z-20 w-[104px] whitespace-nowrap border-l border-border bg-muted px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)]">
                 Actions
               </th>
             )}
@@ -415,7 +409,7 @@ function DesktopEntryRow({
   onDeleteEntry?: (entry: AnalyticsTimeEntryRow) => void
 }) {
   return (
-    <tr className="transition-colors hover:bg-muted/20">
+    <tr className="group transition-colors hover:bg-muted/20">
       {hasBulkDelete && (
         <td className="whitespace-nowrap px-4 py-2.5">
           <input
@@ -479,8 +473,10 @@ function DesktopEntryRow({
       </td>
       <td className="px-4 py-2.5 text-xs text-foreground">
         <div
-          className="max-w-[260px] truncate"
-          title={entry.description || undefined}
+          className="max-h-20 overflow-y-auto whitespace-pre-wrap break-words pr-2 leading-5 [scrollbar-gutter:stable]"
+          role="region"
+          aria-label={`Description for ${entry.memberName} on ${entry.date}`}
+          tabIndex={0}
         >
           {entry.description || (
             <span className="text-muted-foreground">Untitled</span>
@@ -500,7 +496,7 @@ function DesktopEntryRow({
         )}
       </td>
       {hasActions && (
-        <td className="whitespace-nowrap px-4 py-2.5 text-right">
+        <td className="sticky right-0 z-10 whitespace-nowrap border-l border-border bg-card px-4 py-2.5 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)] transition-colors group-hover:bg-muted/20">
           <div className="inline-flex items-center justify-end gap-1.5">
             {onEditEntry && (
               <button
@@ -542,6 +538,8 @@ export function AnalyticsEntriesTable({
   onEditEntry,
   onDeleteEntry,
   onBulkDeleteEntries,
+  searchQuery,
+  onSearchChange,
 }: {
   entries: AnalyticsTimeEntryRow[]
   entriesTotal: number
@@ -553,16 +551,22 @@ export function AnalyticsEntriesTable({
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
   onDeleteEntry?: (entry: AnalyticsTimeEntryRow) => void
   onBulkDeleteEntries?: (entries: AnalyticsTimeEntryRow[]) => void
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }) {
   const { formatTime } = useTimeFormat()
   const hasActions = onEditEntry || onDeleteEntry
   const hasBulkDelete = !!onBulkDeleteEntries
+  const serverSearch = onSearchChange !== undefined
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
-  const [searchQuery, setSearchQuery] = useState('')
+  const [appliedLocalQuery, setAppliedLocalQuery] = useState(searchQuery ?? '')
 
-  // Client-side search filtering across description, project, client, and tags
+  // Client-side filtering only runs in the default (non-server) mode. In
+  // server mode the page is already filtered by the query, so pass entries
+  // straight through.
   const filteredEntries = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
+    if (serverSearch) return entries
+    const q = appliedLocalQuery.trim().toLowerCase()
     if (!q) return entries
     return entries.filter(
       (entry) =>
@@ -571,9 +575,11 @@ export function AnalyticsEntriesTable({
         (entry.clientName?.toLowerCase().includes(q) ?? false) ||
         entry.tagNames.some((tag) => tag.toLowerCase().includes(q)),
     )
-  }, [entries, searchQuery])
+  }, [serverSearch, entries, appliedLocalQuery])
 
-  const filteredCount = filteredEntries.length
+  // In server mode the total already reflects the search, so it is the count.
+  const filteredCount = serverSearch ? entriesTotal : filteredEntries.length
+  const activeQuery = serverSearch ? (searchQuery ?? '') : appliedLocalQuery
 
   const visibleIds = useMemo(
     () => filteredEntries.map((entry) => entry.id),
@@ -593,9 +599,22 @@ export function AnalyticsEntriesTable({
     (page - 1) * pageSize + entries.length,
   )
 
-  function handleSearchChange(query: string) {
-    setSearchQuery(query)
+  function handleSearchSubmit(query: string) {
     setSelectedIds(new Set())
+    if (serverSearch) {
+      onSearchChange(query)
+      return
+    }
+    setAppliedLocalQuery(query)
+  }
+
+  function handleSearchClear() {
+    setSelectedIds(new Set())
+    if (serverSearch) {
+      onSearchChange('')
+      return
+    }
+    setAppliedLocalQuery('')
   }
 
   function toggleEntrySelected(entry: AnalyticsTimeEntryRow) {
@@ -622,11 +641,13 @@ export function AnalyticsEntriesTable({
   return (
     <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
       <EntriesTableHeader
+        key={activeQuery}
         entriesTotal={entriesTotal}
         filteredCount={filteredCount}
         pageSize={pageSize}
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
+        searchQuery={activeQuery}
+        onSearchSubmit={handleSearchSubmit}
+        onSearchClear={handleSearchClear}
         selectedVisibleCount={selectedVisibleCount}
         selectedEntries={selectedEntries}
         onBulkDeleteEntries={onBulkDeleteEntries}
@@ -636,8 +657,8 @@ export function AnalyticsEntriesTable({
 
       {filteredEntries.length === 0 ? (
         <div className="flex items-center justify-center px-4 py-12 text-sm text-muted-foreground">
-          {searchQuery.trim()
-            ? `No entries match "${searchQuery.trim()}"`
+          {activeQuery.trim()
+            ? `No entries match "${activeQuery.trim()}"`
             : 'No entries match your current filters'}
         </div>
       ) : (

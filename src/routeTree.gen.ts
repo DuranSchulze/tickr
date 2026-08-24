@@ -19,6 +19,7 @@ import { Route as PerformanceTokenRouteImport } from './routes/performance.$toke
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as AppTimesheetRouteImport } from './routes/app/timesheet'
 import { Route as AppReportsRouteImport } from './routes/app/reports'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppMyWorkspacesRouteImport } from './routes/app/my-workspaces'
@@ -118,6 +119,11 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   id: '/auth/forgot-password',
   path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppTimesheetRoute = AppTimesheetRouteImport.update({
+  id: '/timesheet',
+  path: '/timesheet',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
   id: '/reports',
@@ -393,6 +399,7 @@ export interface FileRoutesByFullPath {
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/timesheet': typeof AppTimesheetRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -454,6 +461,7 @@ export interface FileRoutesByTo {
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/timesheet': typeof AppTimesheetRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -516,6 +524,7 @@ export interface FileRoutesById {
   '/app/my-workspaces': typeof AppMyWorkspacesRoute
   '/app/profile': typeof AppProfileRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/timesheet': typeof AppTimesheetRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -579,6 +588,7 @@ export interface FileRouteTypes {
     | '/app/my-workspaces'
     | '/app/profile'
     | '/app/reports'
+    | '/app/timesheet'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
@@ -640,6 +650,7 @@ export interface FileRouteTypes {
     | '/app/my-workspaces'
     | '/app/profile'
     | '/app/reports'
+    | '/app/timesheet'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
@@ -701,6 +712,7 @@ export interface FileRouteTypes {
     | '/app/my-workspaces'
     | '/app/profile'
     | '/app/reports'
+    | '/app/timesheet'
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
@@ -850,6 +862,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/forgot-password'
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/timesheet': {
+      id: '/app/timesheet'
+      path: '/timesheet'
+      fullPath: '/app/timesheet'
+      preLoaderRoute: typeof AppTimesheetRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/reports': {
       id: '/app/reports'
@@ -1239,6 +1258,7 @@ interface AppRouteChildren {
   AppMyWorkspacesRoute: typeof AppMyWorkspacesRoute
   AppProfileRoute: typeof AppProfileRoute
   AppReportsRoute: typeof AppReportsRoute
+  AppTimesheetRoute: typeof AppTimesheetRoute
   AppAnalyticsOverviewRoute: typeof AppAnalyticsOverviewRoute
   AppDepartmentMemberAnalyticsMemberIdRoute: typeof AppDepartmentMemberAnalyticsMemberIdRoute
   AppDepartmentMemberCalendarMemberIdRoute: typeof AppDepartmentMemberCalendarMemberIdRoute
@@ -1263,6 +1283,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyWorkspacesRoute: AppMyWorkspacesRoute,
   AppProfileRoute: AppProfileRoute,
   AppReportsRoute: AppReportsRoute,
+  AppTimesheetRoute: AppTimesheetRoute,
   AppAnalyticsOverviewRoute: AppAnalyticsOverviewRoute,
   AppDepartmentMemberAnalyticsMemberIdRoute:
     AppDepartmentMemberAnalyticsMemberIdRoute,

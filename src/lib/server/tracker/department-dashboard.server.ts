@@ -67,12 +67,20 @@ export type DepartmentDashboard = {
   canFilterDepartments: boolean
   filters: {
     departmentId: string
+    memberId: string
     q: string
   }
   availableDepartments: Array<{
     id: string
     name: string
     color: string
+  }>
+  availableMembers: Array<{
+    id: string
+    name: string
+    email: string
+    departmentId: string | null
+    departmentName: string | null
   }>
   department: {
     id: string
@@ -269,6 +277,7 @@ export async function getDepartmentDashboard(data: {
   startDate: string
   endDate: string
   departmentId?: string
+  memberId?: string
   q?: string
   projectPage?: number
 }): Promise<DepartmentDashboard> {
@@ -320,6 +329,37 @@ export async function getDepartmentDashboard(data: {
 
   if (!deptRow) throw new Error('Department not found.')
 
+  const availableMemberConditions = [
+    eq(workspaceMembers.workspaceId, workspaceId),
+    eq(workspaceMembers.status, 'ACTIVE' as const),
+  ]
+  if (selectedDepartmentId) {
+    availableMemberConditions.push(
+      eq(workspaceMembers.departmentId, selectedDepartmentId),
+    )
+  }
+  const availableMemberRows = await db
+    .select({
+      id: workspaceMembers.id,
+      email: workspaceMembers.email,
+      name: users.name,
+      departmentId: workspaceMembers.departmentId,
+      departmentName: departmentsTable.name,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .leftJoin(
+      departmentsTable,
+      eq(workspaceMembers.departmentId, departmentsTable.id),
+    )
+    .where(and(...availableMemberConditions))
+    .orderBy(asc(users.name), asc(workspaceMembers.email))
+  const selectedMemberId = availableMemberRows.some(
+    (member) => member.id === data.memberId,
+  )
+    ? data.memberId!
+    : ''
+
   const memberConditions = [
     eq(workspaceMembers.workspaceId, workspaceId),
     eq(workspaceMembers.status, 'ACTIVE' as const),
@@ -328,6 +368,9 @@ export async function getDepartmentDashboard(data: {
     memberConditions.push(
       eq(workspaceMembers.departmentId, selectedDepartmentId),
     )
+  }
+  if (selectedMemberId) {
+    memberConditions.push(eq(workspaceMembers.id, selectedMemberId))
   }
 
   const searchConditions = q
@@ -357,9 +400,17 @@ export async function getDepartmentDashboard(data: {
       canFilterDepartments,
       filters: {
         departmentId: selectedDepartmentId,
+        memberId: selectedMemberId,
         q,
       },
       availableDepartments,
+      availableMembers: availableMemberRows.map((member) => ({
+        id: member.id,
+        name: member.name ?? member.email,
+        email: member.email,
+        departmentId: member.departmentId,
+        departmentName: member.departmentName,
+      })),
       department: {
         id: deptRow.id,
         name: deptRow.name,
@@ -706,9 +757,17 @@ export async function getDepartmentDashboard(data: {
     canFilterDepartments,
     filters: {
       departmentId: selectedDepartmentId,
+      memberId: selectedMemberId,
       q,
     },
     availableDepartments,
+    availableMembers: availableMemberRows.map((member) => ({
+      id: member.id,
+      name: member.name ?? member.email,
+      email: member.email,
+      departmentId: member.departmentId,
+      departmentName: member.departmentName,
+    })),
     department: {
       id: deptRow.id,
       name: deptRow.name,
@@ -908,6 +967,7 @@ export async function getDepartmentMemberDetail(data: {
   startDate?: string
   endDate?: string
   page?: number
+  description?: string
 }): Promise<DepartmentMemberDetail> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
@@ -976,7 +1036,7 @@ export async function getDepartmentMemberDetail(data: {
   }
 
   // Build the WHERE clause with the (possibly defaulted) date range.
-  const conditions: SQL[] = [
+  const baseConditions: SQL[] = [
     eq(timeEntries.workspaceId, workspaceId),
     eq(timeEntries.workspaceMemberId, member.id),
     isNotNull(timeEntries.endedAt),
@@ -985,7 +1045,16 @@ export async function getDepartmentMemberDetail(data: {
     gt(timeEntries.endedAt, rangeStart),
   ]
 
-  const whereClause = and(...conditions)
+  // Description search narrows the entries list + total count, but the summary
+  // cards stay scoped to the full range so totals don't jump while searching.
+  const searchTerm = data.description?.trim()
+  const entryConditions: SQL[] =
+    searchTerm && searchTerm.length > 0
+      ? [...baseConditions, ilike(timeEntries.description, `%${searchTerm}%`)]
+      : baseConditions
+
+  const whereClause = and(...entryConditions)
+  const summaryWhereClause = and(...baseConditions)
 
   // Summary cards must reflect the full result set, while rawRows stays paged.
   const [activity, rawRows, countResult, summaryRows] = await Promise.all([
@@ -1024,7 +1093,7 @@ export async function getDepartmentMemberDetail(data: {
         endedAt: timeEntries.endedAt,
       })
       .from(timeEntries)
-      .where(whereClause),
+      .where(summaryWhereClause),
   ])
 
   const rawEntryIds = rawRows.map((entry) => entry.id)
