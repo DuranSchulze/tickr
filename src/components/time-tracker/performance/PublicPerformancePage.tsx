@@ -47,7 +47,8 @@ export function PublicPerformancePage({
           <PerformanceHeatmap
             cells={noEntryCount}
             title="Activity this month"
-            subtitle="Each cell is one calendar day."
+            subtitle="Select a day to inspect its tracked time."
+            showEntryCount={false}
           />
 
           <div ref={chartsRef}>

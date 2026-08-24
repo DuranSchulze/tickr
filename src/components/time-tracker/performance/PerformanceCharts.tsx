@@ -27,6 +27,14 @@ const CHART_COLORS = [
   '#ec4899',
 ]
 
+const TOOLTIP_STYLE = {
+  backgroundColor: 'var(--popover)',
+  border: '1px solid var(--border)',
+  borderRadius: '0.5rem',
+  color: 'var(--popover-foreground)',
+  fontSize: 12,
+}
+
 function toHours(seconds: number) {
   return Math.round((seconds / 3600) * 10) / 10
 }
@@ -64,6 +72,7 @@ export const PerformanceCharts = memo(function ({
   }))
 
   const hasHours = dailyTotals.some((d) => d.seconds > 0)
+  const hasEntries = dailyTotals.some((d) => d.entryCount > 0)
   const hasPie = projectTotals.length > 0
 
   return (
@@ -88,23 +97,23 @@ export const PerformanceCharts = memo(function ({
                 />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                 />
                 <Tooltip
                   formatter={(value) => [`${value}h`, 'Hours']}
-                  contentStyle={{ fontSize: 12 }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Line
                   type="monotone"
                   dataKey="hours"
-                  stroke="hsl(var(--primary))"
+                  stroke="var(--primary)"
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 4 }}
+                  activeDot={{ r: 4, fill: 'var(--primary)' }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -121,7 +130,7 @@ export const PerformanceCharts = memo(function ({
         <p className="m-0 mb-4 text-sm text-muted-foreground">
           Number of entries logged per day.
         </p>
-        {hasHours ? (
+        {hasEntries ? (
           <div className="h-[180px] min-w-0 sm:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -134,20 +143,20 @@ export const PerformanceCharts = memo(function ({
                 />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                   interval="preserveStartEnd"
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                   allowDecimals={false}
                 />
                 <Tooltip
                   formatter={(value) => [value, 'Entries']}
-                  contentStyle={{ fontSize: 12 }}
+                  contentStyle={TOOLTIP_STYLE}
                 />
                 <Bar
                   dataKey="entries"
-                  fill="hsl(var(--primary))"
+                  fill="var(--primary)"
                   radius={[3, 3, 0, 0]}
                   maxBarSize={32}
                 />
@@ -187,7 +196,7 @@ export const PerformanceCharts = memo(function ({
                   </Pie>
                   <Tooltip
                     formatter={(value) => [`${value}h`, 'Hours']}
-                    contentStyle={{ fontSize: 12 }}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -220,7 +229,7 @@ export const PerformanceCharts = memo(function ({
             </div>
           </div>
         ) : (
-          <EmptyChart label="No project data for this period." />
+          <EmptyChart label="No project data for the past year." />
         )}
       </section>
     </div>

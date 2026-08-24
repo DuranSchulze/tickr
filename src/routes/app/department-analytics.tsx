@@ -13,6 +13,7 @@ type DeptSearch = {
   startDate?: string
   endDate?: string
   departmentId?: string
+  memberId?: string
   q?: string
   projectPage?: number
 }
@@ -31,11 +32,13 @@ function resolveRange(search: DeptSearch): {
   startDate: string
   endDate: string
   departmentId?: string
+  memberId?: string
   q?: string
   projectPage?: number
 } {
   const filters = {
     departmentId: search.departmentId,
+    memberId: search.memberId,
     q: search.q?.trim() || undefined,
     projectPage: search.projectPage,
   }
@@ -64,6 +67,10 @@ export const Route = createFileRoute('/app/department-analytics')({
     departmentId:
       typeof search.departmentId === 'string' && search.departmentId.trim()
         ? search.departmentId
+        : undefined,
+    memberId:
+      typeof search.memberId === 'string' && search.memberId.trim()
+        ? search.memberId
         : undefined,
     q:
       typeof search.q === 'string' && search.q.trim()
@@ -112,12 +119,13 @@ function DepartmentAnalyticsRoute() {
   )
 
   const changeFilters = useCallback(
-    (filters: { departmentId?: string; q?: string }) => {
+    (filters: { departmentId?: string; memberId?: string; q?: string }) => {
       void navigate({
         to: '/app/department-analytics',
         search: (prev) => ({
           ...prev,
           departmentId: filters.departmentId,
+          memberId: filters.memberId,
           q: filters.q,
           projectPage: undefined,
         }),

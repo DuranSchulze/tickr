@@ -428,7 +428,11 @@ const WorkspaceCard = memo(function WorkspaceCard({
         {workspace.role && (
           <p
             className="m-0 text-xs font-medium"
-            style={{ color: workspace.role.color }}
+            style={{
+              // Blend the role's hue with the inherited text color so it
+              // stays readable in light and dark mode.
+              color: `color-mix(in oklab, ${workspace.role.color} 60%, currentColor)`,
+            }}
           >
             {workspace.role.name}
           </p>

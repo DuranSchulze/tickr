@@ -141,7 +141,14 @@ export function WorkspaceSwitcher({
                     {ws.name}
                   </p>
                   {ws.role && (
-                    <p className="m-0 text-xs" style={{ color: ws.role.color }}>
+                    <p
+                      className="m-0 text-xs"
+                      style={{
+                        // Blend the role's hue with the inherited popover
+                        // text color so it stays readable in light and dark.
+                        color: `color-mix(in oklab, ${ws.role.color} 60%, currentColor)`,
+                      }}
+                    >
                       {ws.role.name}
                     </p>
                   )}

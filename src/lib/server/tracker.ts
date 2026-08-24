@@ -61,6 +61,15 @@ const reportsRangeSchema = z.object({
   pageSize: z.coerce.number().int().min(10).max(100).optional(),
 })
 
+const timesheetQuerySchema = z.object({
+  weekStart: z.iso.date().optional(),
+  memberId: z.string().optional(),
+  departmentId: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce.number().int().min(10).max(100).optional(),
+})
+
 const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
@@ -80,6 +89,7 @@ const departmentDashboardSchema = z.object({
   startDate: z.string().date(),
   endDate: z.string().date(),
   departmentId: z.string().optional(),
+  memberId: z.string().optional(),
   q: z.string().trim().max(120).optional(),
   projectPage: z.coerce.number().int().min(1).optional(),
 })
@@ -93,6 +103,7 @@ const departmentMemberDetailSchema = z.object({
   startDate: z.string().date().optional(),
   endDate: z.string().date().optional(),
   page: z.coerce.number().int().min(1).optional(),
+  description: z.string().trim().max(200).optional(),
 })
 
 const workspaceActivitySchema = z.object({
@@ -199,6 +210,22 @@ export const getReportsFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getReports } = await import('./tracker.server')
     return getReports(data)
+  })
+
+export const getTimesheetFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => timesheetQuerySchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getTimesheet } = await import('./tracker.server')
+    return getTimesheet(data)
+  })
+
+export const getTimesheetExportFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) =>
+    timesheetQuerySchema.omit({ page: true }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { getTimesheetExport } = await import('./tracker.server')
+    return getTimesheetExport(data)
   })
 
 export const getCalendarEntriesFn = createServerFn({ method: 'GET' })

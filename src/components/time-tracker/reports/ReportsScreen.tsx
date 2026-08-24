@@ -24,7 +24,11 @@ import {
   updateWorkspaceMemberEntryFn,
 } from '#/lib/server/tracker'
 import { gooeyToast } from '#/lib/toast'
-import { dateTimeLocalValue } from '#/lib/time-tracker/store'
+import {
+  dateTimeLocalValue,
+  formatDurationDdhms,
+} from '#/lib/time-tracker/store'
+import { formatDecimalHours } from '#/lib/time-tracker/export-utils'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { ConfirmDialog } from '../dashboard/ConfirmDialog'
@@ -32,6 +36,7 @@ import { EditEntryDrawer } from '../dashboard/EditEntryDrawer'
 import type { DraftEntry } from '../dashboard/utils'
 import { emptyDraft, toEntryPayload } from '../dashboard/utils'
 import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
+import { formatShortDay, periodDayCount } from './member-stats'
 
 export type ReportsQuery = {
   startDate: string
@@ -62,6 +67,7 @@ export function ReportsScreen(props: ReportsScreenProps) {
         state={props.state}
         canEditEntries={canEditEntries ?? false}
         onChangeQuery={props.onChangeQuery}
+        description={props.currentFilters.description ?? ''}
       />
     )
   }
@@ -422,11 +428,13 @@ function MemberDetailView({
   state,
   canEditEntries,
   onChangeQuery,
+  description,
 }: {
   detail: DepartmentMemberDetail
   state: TrackerState
   canEditEntries: boolean
   onChangeQuery: (updates: Partial<ReportsQuery & ReportsFilters>) => void
+  description: string
 }) {
   const page = detail.page
   const { activity } = detail
@@ -480,6 +488,18 @@ function MemberDetailView({
     })
     await router.invalidate()
   }, [queryClient, router])
+
+  // Commit the submitted entries-table search to the URL so results filter
+  // server-side across all pages rather than only the loaded page.
+  const handleDescriptionSearch = useCallback(
+    (query: string) => {
+      onChangeQuery({
+        description: query.trim() ? query : undefined,
+        page: undefined,
+      })
+    },
+    [onChangeQuery],
+  )
 
   function setEditingDraft(update: SetStateAction<DraftEntry>) {
     dispatch({ type: 'setEditingDraft', update })
@@ -614,6 +634,18 @@ function MemberDetailView({
     'this task'
   const bulkDeleteCount = screenState.bulkDeleteTargets.length
 
+  // The report period defaults to the trailing 30 days server-side; surface it
+  // so the stats are scoped honestly instead of implying all-time totals.
+  const hasPeriod = !!detail.startDate && !!detail.endDate
+  const periodDays = hasPeriod
+    ? periodDayCount(detail.startDate!, detail.endDate!)
+    : 1
+  const trackedSubtitle = `${formatDecimalHours(detail.summary.totalSeconds)}h${
+    hasPeriod
+      ? ` · ${formatShortDay(detail.startDate!)} – ${formatShortDay(detail.endDate!)}`
+      : ''
+  }`
+
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
       <button
@@ -656,19 +688,24 @@ function MemberDetailView({
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatPill
             label="Today"
-            value={formatHoursLabel(activity.today.totalSeconds)}
+            seconds={activity.today.totalSeconds}
+            subtitle={`${formatDecimalHours(activity.today.totalSeconds)}h`}
           />
           <StatPill
-            label="This Month"
-            value={formatHoursLabel(
-              activity.today.completedSeconds + activity.today.activeSeconds,
-            )}
+            label="Tracked in period"
+            seconds={detail.summary.totalSeconds}
+            subtitle={trackedSubtitle}
           />
           <StatPill
-            label="Total Tracked"
-            value={formatHoursLabel(detail.summary.totalSeconds)}
+            label="Avg per day"
+            seconds={detail.summary.totalSeconds / periodDays}
+            subtitle={`across ${periodDays} ${periodDays === 1 ? 'day' : 'days'}`}
           />
-          <StatPill label="Entries" value={String(detail.entriesTotal)} />
+          <StatPill
+            label="Entries"
+            value={String(detail.entriesTotal)}
+            subtitle="ended in period"
+          />
         </div>
 
         <CurrentActivityPanel
@@ -683,6 +720,8 @@ function MemberDetailView({
         page={page}
         onPageChange={() => {}}
         timezone={detail.timezone}
+        searchQuery={description}
+        onSearchChange={handleDescriptionSearch}
         onEditEntry={canEditEntries ? openEdit : undefined}
         onDeleteEntry={
           canEditEntries
@@ -760,21 +799,30 @@ function MemberDetailView({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatHoursLabel(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h === 0 && m === 0) return '—'
-  if (h === 0) return `${m}m`
-  return m === 0 ? `${h}h` : `${h}h ${m}m`
-}
-
-function StatPill({ label, value }: { label: string; value: string }) {
+function StatPill({
+  label,
+  value,
+  seconds,
+  subtitle,
+}: {
+  label: string
+  value?: string
+  seconds?: number
+  subtitle?: string
+}) {
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
+    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
       <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
-      <p className="m-0 mt-0.5 text-lg font-bold text-foreground">{value}</p>
+      <p className="m-0 mt-1 truncate font-mono text-base font-bold tabular-nums text-foreground">
+        {seconds === undefined ? value : formatDurationDdhms(seconds)}
+      </p>
+      {subtitle && (
+        <p className="m-0 mt-0.5 truncate text-xs font-medium tabular-nums text-muted-foreground">
+          {subtitle}
+        </p>
+      )}
     </div>
   )
 }
@@ -867,6 +915,8 @@ type TableProps = {
   onEditEntry?: (entry: AnalyticsTimeEntryRow) => void
   onDeleteEntry?: (entry: AnalyticsTimeEntryRow) => void
   onBulkDeleteEntries?: (entries: AnalyticsTimeEntryRow[]) => void
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
 }
 
 function EntriesTableWrapper(props: TableProps): React.ReactNode {

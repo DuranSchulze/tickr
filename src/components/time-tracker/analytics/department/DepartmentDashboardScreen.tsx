@@ -7,8 +7,31 @@ import { DepartmentDailyChart } from './DepartmentDailyChart'
 import { DepartmentTopTagsChart } from './DepartmentTopTagsChart'
 import { DepartmentProjectBreakdown } from './DepartmentProjectBreakdown'
 import { DepartmentSectionFrame } from './DepartmentSectionFrame'
-import { Search, X } from 'lucide-react'
-import type { FormEvent } from 'react'
+import { Combobox } from '#/components/ui/combobox'
+import type { ComboboxOption } from '#/components/ui/combobox'
+
+export function buildDepartmentMemberOptions(
+  members: DepartmentDashboard['availableMembers'],
+  departmentId: string,
+): ComboboxOption[] {
+  const visibleMembers = departmentId
+    ? members.filter((member) => member.departmentId === departmentId)
+    : members
+
+  return [
+    {
+      value: '',
+      label: departmentId ? 'All members in department' : 'All members',
+    },
+    ...visibleMembers.map((member) => ({
+      value: member.id,
+      label: member.name,
+      description: departmentId
+        ? member.email
+        : [member.email, member.departmentName].filter(Boolean).join(' · '),
+    })),
+  ]
+}
 
 function KpiCard({
   label,
@@ -43,12 +66,17 @@ export function DepartmentDashboardScreen({
   startDate: string
   endDate: string
   onChangeRange: (startDate: string, endDate: string) => void
-  onChangeFilters: (filters: { departmentId?: string; q?: string }) => void
+  onChangeFilters: (filters: {
+    departmentId?: string
+    memberId?: string
+    q?: string
+  }) => void
   onViewMember: (memberId: string) => void
   onProjectPageChange: (page: number) => void
 }) {
   const {
     availableDepartments,
+    availableMembers,
     canFilterDepartments,
     department,
     filters,
@@ -63,23 +91,6 @@ export function DepartmentDashboardScreen({
   const activeMembers = membersBreakdown.filter(
     (m) => m.totalSeconds > 0,
   ).length
-
-  function applySearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const formData = new FormData(event.currentTarget)
-    const q = String(formData.get('q') ?? '').trim()
-    onChangeFilters({
-      departmentId: filters.departmentId || undefined,
-      q: q || undefined,
-    })
-  }
-
-  function clearSearch() {
-    onChangeFilters({
-      departmentId: filters.departmentId || undefined,
-      q: undefined,
-    })
-  }
 
   return (
     <div className="space-y-6">
@@ -122,7 +133,8 @@ export function DepartmentDashboardScreen({
                 onChange={(event) =>
                   onChangeFilters({
                     departmentId: event.target.value || undefined,
-                    q: filters.q || undefined,
+                    memberId: undefined,
+                    q: undefined,
                   })
                 }
                 className="h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -136,48 +148,28 @@ export function DepartmentDashboardScreen({
               </select>
             </div>
 
-            <form
-              key={filters.q}
-              onSubmit={applySearch}
-              className="min-w-0 flex flex-col gap-1"
-            >
-              <label
-                htmlFor="department-analytics-search"
-                className="text-xs font-semibold text-muted-foreground"
-              >
-                Name or email
-              </label>
-              <div className="flex min-w-0 gap-2">
-                <div className="relative min-w-0 flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    id="department-analytics-search"
-                    name="q"
-                    type="search"
-                    defaultValue={filters.q}
-                    placeholder="Search members"
-                    className="h-10 w-full min-w-0 rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </div>
-                {filters.q && (
-                  <button
-                    type="button"
-                    onClick={clearSearch}
-                    title="Clear search"
-                    aria-label="Clear search"
-                    className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                  >
-                    <X className="size-4" />
-                  </button>
+            <div className="min-w-0 flex flex-col gap-1">
+              <p className="m-0 text-xs font-semibold text-muted-foreground">
+                Member
+              </p>
+              <Combobox
+                value={filters.memberId}
+                options={buildDepartmentMemberOptions(
+                  availableMembers,
+                  filters.departmentId,
                 )}
-                <button
-                  type="submit"
-                  className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Search
-                </button>
-              </div>
-            </form>
+                onValueChange={(memberId) =>
+                  onChangeFilters({
+                    departmentId: filters.departmentId || undefined,
+                    memberId: memberId || undefined,
+                    q: undefined,
+                  })
+                }
+                placeholder="All members"
+                searchPlaceholder="Search name or email"
+                emptyText="No members found."
+              />
+            </div>
           </div>
         </section>
       )}

@@ -13,6 +13,8 @@ export const trackerKeys = {
   analytics: (deps: unknown) => ['analytics', deps] as const,
   /** Reports dashboard, keyed by the resolved query (date range + filters). */
   reports: (deps: unknown) => ['reports', deps] as const,
+  /** Weekly DTR grid, keyed by week, filters, and member page. */
+  timesheet: (deps: unknown) => ['timesheet', deps] as const,
   /** Simplified analytics overview, keyed by scope/date. */
   analyticsOverview: (deps: unknown) => ['analytics-overview', deps] as const,
   /** Department dashboard, keyed by the resolved date range. */

@@ -4,6 +4,7 @@ import {
   Activity,
   BarChart3,
   Building2,
+  CalendarClock,
   ClipboardList,
   Cog,
   CreditCard,
@@ -100,6 +101,7 @@ export function AppShell({
   const timerActive = pathname.startsWith('/app/time-tracker')
   const analyticsActive = pathname.startsWith('/app/analytics')
   const reportsActive = pathname.startsWith('/app/reports')
+  const timesheetActive = pathname.startsWith('/app/timesheet')
   const performanceActive = pathname.startsWith('/app/my-performance')
   const departmentAnalyticsActive =
     pathname.startsWith('/app/department-analytics') ||
@@ -108,6 +110,7 @@ export function AppShell({
   const analyticsGroupActive =
     analyticsActive ||
     reportsActive ||
+    timesheetActive ||
     performanceActive ||
     departmentAnalyticsActive ||
     activityActive
@@ -148,13 +151,18 @@ export function AppShell({
     const items = []
     items.push({
       to: '/app/analytics' as const,
-      label: 'Analytics',
+      label: 'Insights',
       icon: BarChart3,
     })
     items.push({
       to: '/app/reports' as const,
       label: 'Reports',
       icon: FileText,
+    })
+    items.push({
+      to: '/app/timesheet' as const,
+      label: 'Timesheet',
+      icon: CalendarClock,
     })
     items.push({
       to: '/app/my-performance' as const,
