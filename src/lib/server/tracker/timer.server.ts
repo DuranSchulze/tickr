@@ -5,6 +5,7 @@ import { timeEntries, timeEntryTags } from '#/db/schema'
 import { and, eq, isNull, notInArray } from 'drizzle-orm'
 import { requireWorkspaceMembership } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
+import { resolveEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import {
@@ -38,6 +39,11 @@ function serializeTimeEntry(
     durationSeconds: number
     notes: string | null
     entrySource: 'TIMER' | 'MANUAL' | null
+    ipAddress: string | null
+    location: string | null
+    latitude: number | null
+    longitude: number | null
+    userAgent: string | null
   },
   tags: Array<{ tagId: string }>,
 ): TimeEntry {
@@ -54,6 +60,11 @@ function serializeTimeEntry(
     durationSeconds: entry.durationSeconds,
     notes: entry.notes ?? '',
     entrySource: entry.entrySource,
+    ipAddress: entry.ipAddress,
+    location: entry.location,
+    latitude: entry.latitude,
+    longitude: entry.longitude,
+    userAgent: entry.userAgent,
   }
 }
 
@@ -111,6 +122,10 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       durationSeconds: 0,
       entrySource: 'TIMER',
       notes: '',
+      ...(await resolveEntryOrigin({
+        trackingEnabled: access.workspace.locationTrackingEnabled,
+        deviceLocation: data.deviceLocation,
+      })),
     })
     .returning()
 
@@ -386,6 +401,13 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
       durationSeconds,
       entrySource: 'MANUAL',
       notes: entry.notes,
+      // The duplicate represents the same work event — carry its origin over
+      // rather than re-resolving at duplication time (plan assumption A3).
+      ipAddress: entry.ipAddress,
+      location: entry.location,
+      latitude: entry.latitude,
+      longitude: entry.longitude,
+      userAgent: entry.userAgent,
     })
     .returning()
 

@@ -6,6 +6,7 @@ import type { Client, Project, TimeEntry } from '#/lib/time-tracker/types'
 import { ManualEntryPanel } from './ManualEntryPanel'
 import { TimerPanel } from './TimerPanel'
 import type { DraftEntry } from './utils'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 
 export function InputSection({
   workspaceId,
@@ -93,7 +94,7 @@ export function InputSection({
     color: string,
     clientId: string,
   ) => Promise<void>
-  onCreateTask: (projectId: string, name: string) => Promise<void>
+  onCreateTask: CreateProjectTask
   onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean

@@ -7,7 +7,7 @@ import {
   timeEntries,
   projects,
 } from '#/db/schema'
-import { and, asc, eq, ilike, isNull, or } from 'drizzle-orm'
+import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { assertAtLeastManager } from './shared/role-gates.server'
 
@@ -16,6 +16,14 @@ export type ActiveEntry = {
   description: string
   projectName: string | null
   startedAt: string
+}
+
+export type MemberEntryOrigin = {
+  startedAt: string
+  description: string
+  location: string | null
+  latitude: number
+  longitude: number
 }
 
 export type WorkspaceMemberActivity = {
@@ -28,6 +36,7 @@ export type WorkspaceMemberActivity = {
   departmentName: string | null
   departmentColor: string | null
   activeEntry: ActiveEntry | null
+  latestOrigin: MemberEntryOrigin | null
 }
 
 export type WorkspaceActivityPayload = {
@@ -131,6 +140,45 @@ export async function getWorkspaceActivity(data: {
     .leftJoin(departments, eq(workspaceMembers.departmentId, departments.id))
     .where(and(...conditions))
 
+  // Latest geo-resolved entry per member (map pins). Kept as a separate
+  // bounded query — DISTINCT ON over only rows that carry coordinates —
+  // rather than widening the member/running-entry join above.
+  const memberIds = rows.map((row) => row.memberId)
+  const originRows = memberIds.length
+    ? await db
+        .selectDistinctOn([timeEntries.workspaceMemberId], {
+          workspaceMemberId: timeEntries.workspaceMemberId,
+          startedAt: timeEntries.startedAt,
+          description: timeEntries.description,
+          location: timeEntries.location,
+          latitude: timeEntries.latitude,
+          longitude: timeEntries.longitude,
+        })
+        .from(timeEntries)
+        .where(
+          and(
+            eq(timeEntries.workspaceId, workspaceId),
+            inArray(timeEntries.workspaceMemberId, memberIds),
+            isNotNull(timeEntries.latitude),
+            isNotNull(timeEntries.longitude),
+          ),
+        )
+        .orderBy(timeEntries.workspaceMemberId, desc(timeEntries.startedAt))
+    : []
+
+  const originByMember = new Map(
+    originRows.map((row) => [
+      row.workspaceMemberId,
+      {
+        startedAt: row.startedAt.toISOString(),
+        description: row.description,
+        location: row.location,
+        latitude: row.latitude!,
+        longitude: row.longitude!,
+      } satisfies MemberEntryOrigin,
+    ]),
+  )
+
   return {
     canFilterDepartments,
     filters: {
@@ -155,6 +203,7 @@ export async function getWorkspaceActivity(data: {
             startedAt: row.startedAt!.toISOString(),
           }
         : null,
+      latestOrigin: originByMember.get(row.memberId) ?? null,
     })),
   }
 }

@@ -8,6 +8,7 @@ import {
   requireWorkspaceMembership,
 } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
+import { resolveEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import { createAuditLog } from './audit/audit-logger.server'
@@ -36,6 +37,11 @@ function serializeManualTimeEntry(
     durationSeconds: number
     notes: string | null
     entrySource: 'TIMER' | 'MANUAL' | null
+    ipAddress: string | null
+    location: string | null
+    latitude: number | null
+    longitude: number | null
+    userAgent: string | null
   },
   tagIds: string[],
 ): TimeEntry {
@@ -52,6 +58,11 @@ function serializeManualTimeEntry(
     durationSeconds: entry.durationSeconds,
     notes: entry.notes ?? '',
     entrySource: entry.entrySource,
+    ipAddress: entry.ipAddress,
+    location: entry.location,
+    latitude: entry.latitude,
+    longitude: entry.longitude,
+    userAgent: entry.userAgent,
   }
 }
 
@@ -63,10 +74,7 @@ function parseEntryDate(value: string, label: string): Date {
   return date
 }
 
-function parseEntryTimes(data: {
-  startedAt: string
-  endedAt: string | null
-}) {
+function parseEntryTimes(data: { startedAt: string; endedAt: string | null }) {
   const startedAt = parseEntryDate(data.startedAt, 'Start time')
   const endedAt = data.endedAt ? parseEntryDate(data.endedAt, 'End time') : null
   if (endedAt && endedAt <= startedAt) {
@@ -100,6 +108,10 @@ export async function createManualEntry(
       durationSeconds: calculateDuration(startedAt, endedAt),
       entrySource: 'MANUAL',
       notes: data.notes,
+      ...(await resolveEntryOrigin({
+        trackingEnabled: access.workspace.locationTrackingEnabled,
+        deviceLocation: data.deviceLocation,
+      })),
     })
     .returning()
 
@@ -408,7 +420,9 @@ export async function bulkDeleteWorkspaceMemberEntries(
     )
 
   if (existingEntries.length !== ids.length) {
-    throw new Error('One or more time entries were not found in this workspace.')
+    throw new Error(
+      'One or more time entries were not found in this workspace.',
+    )
   }
 
   const deleted = await db

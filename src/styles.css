@@ -273,6 +273,12 @@ code {
   --blur-medium: 3px;
   --blur-large: 8px;
 
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-y: 100px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
   --dropdown-open-dur: var(--duration-fast);
   --dropdown-close-dur: var(--duration-quick);
   --dropdown-pre-scale: var(--scale-medium);
@@ -563,6 +569,34 @@ code {
 }
 .t-acc[data-open='true'] .t-acc-chevron {
   transform: scaleY(-1);
+}
+
+.t-panel-slide {
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open='true'] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide {
+    transition: none !important;
+  }
 }
 
 /* Pulsing glow for the currently running entry (table row + card). The inset
@@ -947,4 +981,26 @@ html[data-primary='pink'].dark {
   --ring: oklch(0.82 0.14 350);
   --sidebar-primary: oklch(0.82 0.14 350);
   --sidebar-primary-foreground: oklch(0.15 0.05 350);
+}
+
+/* ── MapLibre (mapcn) theme overrides ───────────────────────────────────── */
+@layer base {
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
+  .maplibregl-ctrl-attrib {
+    @apply bg-background! text-muted-foreground! border-border! rounded-md! border! shadow-sm!;
+  }
+  .maplibregl-ctrl-attrib a {
+    @apply text-muted-foreground!;
+  }
+  .maplibregl-ctrl-attrib a:hover {
+    @apply text-foreground!;
+  }
+  .maplibregl-ctrl-attrib-button {
+    @apply bg-transparent! dark:invert;
+  }
 }

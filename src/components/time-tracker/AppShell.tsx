@@ -10,6 +10,7 @@ import {
   CreditCard,
   ExternalLink,
   FileText,
+  MapPinned,
   Tags,
   TrendingUp,
   Users,
@@ -107,19 +108,22 @@ export function AppShell({
     pathname.startsWith('/app/department-analytics') ||
     pathname.startsWith('/app/department-member-analytics')
   const activityActive = pathname.startsWith('/app/workspace/activity')
+  const locationsActive = pathname.startsWith('/app/workspace/locations')
   const analyticsGroupActive =
     analyticsActive ||
     reportsActive ||
     timesheetActive ||
     performanceActive ||
     departmentAnalyticsActive ||
-    activityActive
+    activityActive ||
+    locationsActive
   const calendarActive =
     pathname.startsWith('/app/calendar') ||
     pathname.startsWith('/app/department-member-calendar')
   const settingsActive =
     (pathname.startsWith('/app/workspace') &&
-      !pathname.startsWith('/app/workspace/activity')) ||
+      !pathname.startsWith('/app/workspace/activity') &&
+      !pathname.startsWith('/app/workspace/locations')) ||
     pathname.startsWith('/app/audit-logs')
   const billingActive = pathname.startsWith('/app/workspace/billing')
 
@@ -174,6 +178,11 @@ export function AppShell({
         to: '/app/workspace/activity' as const,
         label: 'Team Activity',
         icon: Activity,
+      })
+      items.push({
+        to: '/app/workspace/locations' as const,
+        label: 'Locations',
+        icon: MapPinned,
       })
     }
     items.push({

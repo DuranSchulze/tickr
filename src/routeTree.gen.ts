@@ -35,6 +35,7 @@ import { Route as ApiDocsRouteImport } from './routes/api/docs'
 import { Route as AppTimeTrackerIndexRouteImport } from './routes/app/time-tracker/index'
 import { Route as AppWorkspaceSettingsRouteImport } from './routes/app/workspace/settings'
 import { Route as AppWorkspaceMembersRouteImport } from './routes/app/workspace/members'
+import { Route as AppWorkspaceLocationsRouteImport } from './routes/app/workspace/locations'
 import { Route as AppWorkspaceCatalogsRouteImport } from './routes/app/workspace/catalogs'
 import { Route as AppWorkspaceBillingRouteImport } from './routes/app/workspace/billing'
 import { Route as AppWorkspaceActivityRouteImport } from './routes/app/workspace/activity'
@@ -198,6 +199,11 @@ const AppWorkspaceSettingsRoute = AppWorkspaceSettingsRouteImport.update({
 const AppWorkspaceMembersRoute = AppWorkspaceMembersRouteImport.update({
   id: '/workspace/members',
   path: '/workspace/members',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkspaceLocationsRoute = AppWorkspaceLocationsRouteImport.update({
+  id: '/workspace/locations',
+  path: '/workspace/locations',
   getParentRoute: () => AppRoute,
 } as any)
 const AppWorkspaceCatalogsRoute = AppWorkspaceCatalogsRouteImport.update({
@@ -430,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
   '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
+  '/app/workspace/locations': typeof AppWorkspaceLocationsRoute
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
@@ -492,6 +499,7 @@ export interface FileRoutesByTo {
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
   '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
+  '/app/workspace/locations': typeof AppWorkspaceLocationsRoute
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
@@ -555,6 +563,7 @@ export interface FileRoutesById {
   '/app/workspace/activity': typeof AppWorkspaceActivityRoute
   '/app/workspace/billing': typeof AppWorkspaceBillingRoute
   '/app/workspace/catalogs': typeof AppWorkspaceCatalogsRouteWithChildren
+  '/app/workspace/locations': typeof AppWorkspaceLocationsRoute
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
@@ -619,6 +628,7 @@ export interface FileRouteTypes {
     | '/app/workspace/activity'
     | '/app/workspace/billing'
     | '/app/workspace/catalogs'
+    | '/app/workspace/locations'
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
@@ -681,6 +691,7 @@ export interface FileRouteTypes {
     | '/app/workspace/activity'
     | '/app/workspace/billing'
     | '/app/workspace/catalogs'
+    | '/app/workspace/locations'
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker'
@@ -743,6 +754,7 @@ export interface FileRouteTypes {
     | '/app/workspace/activity'
     | '/app/workspace/billing'
     | '/app/workspace/catalogs'
+    | '/app/workspace/locations'
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
@@ -973,6 +985,13 @@ declare module '@tanstack/react-router' {
       path: '/workspace/members'
       fullPath: '/app/workspace/members'
       preLoaderRoute: typeof AppWorkspaceMembersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workspace/locations': {
+      id: '/app/workspace/locations'
+      path: '/workspace/locations'
+      fullPath: '/app/workspace/locations'
+      preLoaderRoute: typeof AppWorkspaceLocationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/workspace/catalogs': {
@@ -1268,6 +1287,7 @@ interface AppRouteChildren {
   AppWorkspaceActivityRoute: typeof AppWorkspaceActivityRoute
   AppWorkspaceBillingRoute: typeof AppWorkspaceBillingRoute
   AppWorkspaceCatalogsRoute: typeof AppWorkspaceCatalogsRouteWithChildren
+  AppWorkspaceLocationsRoute: typeof AppWorkspaceLocationsRoute
   AppWorkspaceMembersRoute: typeof AppWorkspaceMembersRouteWithChildren
   AppWorkspaceSettingsRoute: typeof AppWorkspaceSettingsRoute
   AppTimeTrackerIndexRoute: typeof AppTimeTrackerIndexRoute
@@ -1295,6 +1315,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWorkspaceActivityRoute: AppWorkspaceActivityRoute,
   AppWorkspaceBillingRoute: AppWorkspaceBillingRoute,
   AppWorkspaceCatalogsRoute: AppWorkspaceCatalogsRouteWithChildren,
+  AppWorkspaceLocationsRoute: AppWorkspaceLocationsRoute,
   AppWorkspaceMembersRoute: AppWorkspaceMembersRouteWithChildren,
   AppWorkspaceSettingsRoute: AppWorkspaceSettingsRoute,
   AppTimeTrackerIndexRoute: AppTimeTrackerIndexRoute,

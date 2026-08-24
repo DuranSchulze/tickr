@@ -2,6 +2,7 @@ import '@tanstack/react-start/server-only'
 import { eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { developerAccounts, workspaceApiKeys, workspaces } from '#/db/schema'
+import { readClientIp } from '../client-ip.server'
 import { hashApiKey } from './api-keys.server'
 import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
 
@@ -41,16 +42,6 @@ function readPresentedCredential(request: Request): string | null {
 
   const headerKey = request.headers.get('x-api-key')?.trim()
   return headerKey || null
-}
-
-function readClientIp(request: Request): string | null {
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0]?.trim().slice(0, 64) || null
-  return (
-    request.headers.get('x-real-ip')?.trim().slice(0, 64) ||
-    request.headers.get('cf-connecting-ip')?.trim().slice(0, 64) ||
-    null
-  )
 }
 
 async function buildContextFromKeyRow(

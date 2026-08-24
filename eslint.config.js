@@ -21,6 +21,17 @@ export default [
     },
   },
   {
+    // Vendored as-is from the mapcn registry (maplibre-gl wrapper). Style
+    // opinions don't apply to upstream code; behavior fixes go upstream.
+    files: ['src/components/ui/map.tsx'],
+    rules: {
+      '@typescript-eslint/no-unnecessary-condition': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/naming-convention': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+    },
+  },
+  {
     ignores: [
       'eslint.config.js',
       'prettier.config.js',

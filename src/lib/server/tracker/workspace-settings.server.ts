@@ -16,9 +16,24 @@ export async function updateWorkspaceSettings(
     throw new Error('Only the workspace Owner can change workspace settings.')
   }
 
+  // Drizzle omits undefined keys from SET — only provided fields update.
+  const details = [
+    data.name !== undefined ? `name: ${data.name}` : null,
+    data.timezone !== undefined ? `timezone: ${data.timezone}` : null,
+    data.locationTrackingEnabled !== undefined
+      ? `location tracking: ${data.locationTrackingEnabled ? 'on' : 'off'}`
+      : null,
+  ].filter((part): part is string => part !== null)
+
   await db
     .update(workspaces)
-    .set({ name: data.name, timezone: data.timezone })
+    .set({
+      ...(data.name !== undefined ? { name: data.name } : {}),
+      ...(data.timezone !== undefined ? { timezone: data.timezone } : {}),
+      ...(data.locationTrackingEnabled !== undefined
+        ? { locationTrackingEnabled: data.locationTrackingEnabled }
+        : {}),
+    })
     .where(eq(workspaces.id, access.workspace.id))
 
   void createAuditLog({
@@ -28,6 +43,6 @@ export async function updateWorkspaceSettings(
     action: 'WORKSPACE_UPDATE',
     targetType: 'workspace',
     targetId: access.workspace.id,
-    details: `name: ${data.name}, timezone: ${data.timezone}`,
+    details: details.join(', '),
   })
 }

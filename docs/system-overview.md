@@ -56,7 +56,17 @@ These files contain brand name strings directly (they can't import `BRAND`):
 
 ## Recent Changes
 
-### 1. Manual Entry Panel — Blank Default State
+### 1. Entry Origin Tracking & Activity Map
+
+**Files changed:** `src/db/schema.ts`, `src/lib/server/geoip.ts`, `src/lib/server/client-ip.server.ts` (new), `src/lib/server/tracker/shared/origin.server.ts` (new), `src/lib/server/tracker/timer.server.ts`, `src/lib/server/tracker/manual-entries.server.ts`, `src/lib/server/tracker/activity.server.ts`, `src/components/ui/map.tsx` (new, vendored from mapcn), plus UI components under `time-tracker/`.
+
+**Feature:** Every new time entry (timer start or manual create) records the client IP, User-Agent, and a city-level location resolved via ipinfo.io (`geolocateIp` now returns coordinates parsed from the provider's `loc` field, with a 24h in-memory cache). Origin fields are copied on `duplicateEntry` and left untouched by edits. `duplicateEntry` and capture are gated by a per-workspace `location_tracking_enabled` toggle (Owner-controlled, Settings screen).
+
+**Display:** Entry edit drawer shows an "Logged from" section (location, coordinates, IP, UA) with a non-interactive mini map; Team Activity screen shows a workspace map (mapcn/MapLibre GL) with one pin per member at their latest geo-resolved entry — emerald dot for running timers, click popup for details.
+
+**Plan:** `plans/entry-ip-location-tracking/PLAN.md` — assumptions, access matrix, and open questions (default toggle state, retention/purge) live there.
+
+### 2. Manual Entry Panel — Blank Default State
 
 **Files changed:** `src/components/time-tracker/dashboard/hooks/useDraftAndEdit.ts`, `src/components/time-tracker/dashboard/utils.ts`
 
@@ -67,7 +77,7 @@ These files contain brand name strings directly (they can't import `BRAND`):
 - Removed `activeClients`, `initialClientId`, `initialProject` variables — they were only used to pre-fill the draft
 - `emptyDraft()` in `utils.ts` already defaults all parameters to `''` when omitted, so calling it bare gives a truly blank draft
 
-### 2. System Rename — Tickr → Trackly
+### 3. System Rename — Tickr → Trackly
 
 **Scope:** All user-facing "Tickr" strings across the full codebase.
 
@@ -87,7 +97,7 @@ These files contain brand name strings directly (they can't import `BRAND`):
 - `announcements/types.ts` — `tickr_onboarding_dismissed`, `tickr_changelog_version` (localStorage keys — renaming would reset existing users' stored state)
 - Vercel deployment URLs (`tickr-nu.vercel.app`) — still point to the live deployment
 
-### 3. Brand Consolidation — Single Source of Truth
+### 4. Brand Consolidation — Single Source of Truth
 
 **Files changed:**
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Loader2, Pencil, Play, Square, Trash2 } from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 import type { Client, Project, TimeEntry, Tag } from '#/lib/time-tracker/types'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
@@ -82,7 +83,7 @@ export function TimerPanel({
   onTagIdsChange: (ids: string[]) => void
   billable: boolean
   onBillableChange: (next: boolean) => void
-  onCreateTask: (projectId: string, name: string) => Promise<void>
+  onCreateTask: CreateProjectTask
   onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean
