@@ -1,6 +1,6 @@
 import { Clock3, DollarSign, ListChecks, TimerReset, Users } from 'lucide-react'
 import type { AnalyticsPayload } from '#/lib/server/tracker.server'
-import { formatDuration } from '#/lib/time-tracker/store'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 
 export function AnalyticsSummaryCards({
   summary,
@@ -10,23 +10,23 @@ export function AnalyticsSummaryCards({
   const cards = [
     {
       label: 'Tracked hours',
-      value: formatDuration(summary.totalSeconds),
+      value: formatDurationDdhms(summary.totalSeconds),
       helper: 'Sum of all completed entries',
       icon: Clock3,
     },
     {
       label: 'Actual hours',
-      value: formatDuration(summary.actualSeconds),
+      value: formatDurationDdhms(summary.actualSeconds),
       helper:
         summary.overlapSeconds > 0
-          ? `${formatDuration(summary.overlapSeconds)} overlapping`
+          ? `${formatDurationDdhms(summary.overlapSeconds)} overlapping`
           : 'No overlapping time',
       icon: TimerReset,
     },
     {
       label: 'Billable',
-      value: formatDuration(summary.billableSeconds),
-      helper: `${formatDuration(summary.nonBillableSeconds)} non-billable`,
+      value: formatDurationDdhms(summary.billableSeconds),
+      helper: `${formatDurationDdhms(summary.nonBillableSeconds)} non-billable`,
       icon: DollarSign,
     },
     {

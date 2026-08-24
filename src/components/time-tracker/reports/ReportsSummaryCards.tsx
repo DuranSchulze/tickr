@@ -1,17 +1,6 @@
 import { formatMoney } from '#/lib/time-tracker/export-utils'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import type { ReportsPayload } from '#/lib/server/tracker/reports.server'
-
-// DD:HH:MM:SS — days roll past 24h so long reports stay exact.
-function formatDdhms(seconds: number): string {
-  const safe = Math.max(0, Math.floor(seconds))
-  const days = Math.floor(safe / 86400)
-  const hours = Math.floor((safe % 86400) / 3600)
-  const minutes = Math.floor((safe % 3600) / 60)
-  const secs = safe % 60
-  return [days, hours, minutes, secs]
-    .map((part) => String(part).padStart(2, '0'))
-    .join(':')
-}
 
 export function ReportsSummaryCards({
   summary,
@@ -29,13 +18,13 @@ export function ReportsSummaryCards({
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         label="Total time"
-        value={formatDdhms(summary.totalSeconds)}
+        value={formatDurationDdhms(summary.totalSeconds)}
         mono
       />
       <StatCard
         label="Billable %"
         value={`${billablePercent}%`}
-        subtitle={formatDdhms(summary.billableSeconds)}
+        subtitle={formatDurationDdhms(summary.billableSeconds)}
         mono
       />
       <StatCard

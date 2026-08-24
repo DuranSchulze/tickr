@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ReportsPayload } from '#/lib/server/tracker/reports.server'
-import { formatDuration } from '#/lib/time-tracker/store'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import {
   formatChartDate,
   toChartHours,
@@ -115,7 +115,7 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
                   />
                   <Tooltip
                     formatter={(_value, _name, item) => [
-                      formatDuration(Number(item.payload?.seconds ?? 0)),
+                      formatDurationDdhms(Number(item.payload?.seconds ?? 0)),
                       'Hours',
                     ]}
                     labelFormatter={(_, payload) => payload[0]?.payload.date}
@@ -157,7 +157,7 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
                     </Pie>
                     <Tooltip
                       formatter={(value) => [
-                        formatDuration(Number(value ?? 0)),
+                        formatDurationDdhms(Number(value ?? 0)),
                         'Time',
                       ]}
                     />
@@ -169,7 +169,7 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
                   Total
                 </span>
                 <span className="font-mono text-lg font-bold tabular-nums text-foreground">
-                  {formatDuration(totalSeconds)}
+                  {formatDurationDdhms(totalSeconds)}
                 </span>
               </div>
             </div>

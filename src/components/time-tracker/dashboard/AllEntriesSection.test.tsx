@@ -19,13 +19,18 @@ vi.mock('./DayGroupEntries', () => ({
     }>
     activeEntry?: TimeEntry
   }) => (
-    <div data-testid="day-groups">
-      {activeEntry && (
-        <div data-testid="pinned-entry">
-          Running now — {activeEntry.description}
-        </div>
-      )}
-      {groups.flatMap((group) =>
+      <div data-testid="day-groups">
+        {activeEntry && (
+          <div data-testid="pinned-entry">
+            Running now — {activeEntry.description}
+          </div>
+        )}
+        {groups.map((group) => (
+          <div key={group.dateKey} data-testid="day-group">
+            {group.dateKey}
+          </div>
+        ))}
+        {groups.flatMap((group) =>
         group.taskGroups.flatMap((taskGroup) =>
           taskGroup.entries.map((entry) => (
             <div
@@ -74,6 +79,12 @@ const completedEntry: TimeEntry = {
 }
 
 const noop = () => undefined
+
+function localDateKey(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 const baseProps = {
   hasMore: false,
   loadingMore: false,
@@ -159,6 +170,21 @@ describe('AllEntriesSection', () => {
     expect(
       container.querySelector('[data-testid="grouped-entry"]')?.textContent,
     ).toBe('Completed task')
+  })
+
+  it('creates a day group for the active entry when it is the first of its day', () => {
+    renderSection([activeEntry, completedEntry], activeEntry)
+
+    // Regression: the running entry is excluded from grouping, so without
+    // synthesizing a group its row used to be pinned under the newest
+    // historical day instead of getting its own day header.
+    const dayGroupKeys = Array.from(
+      container.querySelectorAll('[data-testid="day-group"]'),
+    ).map((element) => element.textContent)
+    expect(dayGroupKeys).toEqual([
+      localDateKey(activeEntry.startedAt),
+      localDateKey(completedEntry.startedAt),
+    ])
   })
 
   it('returns the entry to normal grouping when it is no longer active', () => {

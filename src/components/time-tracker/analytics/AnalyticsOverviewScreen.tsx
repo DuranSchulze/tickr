@@ -17,7 +17,7 @@ import type {
   AnalyticsOverviewPayload,
 } from '#/lib/server/tracker.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
-import { formatDuration } from '#/lib/time-tracker/store'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import { formatChartDate } from './analytics.utils'
 
 const scopeLabels = {
@@ -82,14 +82,14 @@ function metricCards(metric: AnalyticsOverviewMetric, currency: string) {
     },
     {
       label: 'Total hours',
-      value: formatDuration(metric.totalSeconds),
+      value: formatDurationDdhms(metric.totalSeconds),
       helper: 'Completed time',
       icon: Clock3,
     },
     {
       label: 'Billable',
-      value: formatDuration(metric.billableSeconds),
-      helper: `${formatDuration(metric.nonBillableSeconds)} non-billable`,
+      value: formatDurationDdhms(metric.billableSeconds),
+      helper: `${formatDurationDdhms(metric.nonBillableSeconds)} non-billable`,
       icon: DollarSign,
     },
     {
@@ -247,16 +247,16 @@ export function AnalyticsOverviewScreen({
               />
               <ComparisonValue
                 label="Hours"
-                current={formatDuration(comparison.current.totalSeconds)}
-                previous={formatDuration(comparison.previous.totalSeconds)}
-                delta={formatDuration(Math.abs(comparison.delta.totalSeconds))}
+                current={formatDurationDdhms(comparison.current.totalSeconds)}
+                previous={formatDurationDdhms(comparison.previous.totalSeconds)}
+                delta={formatDurationDdhms(Math.abs(comparison.delta.totalSeconds))}
                 percent={comparison.percentChange.totalSeconds}
               />
               <ComparisonValue
                 label="Billable"
-                current={formatDuration(comparison.current.billableSeconds)}
-                previous={formatDuration(comparison.previous.billableSeconds)}
-                delta={formatDuration(
+                current={formatDurationDdhms(comparison.current.billableSeconds)}
+                previous={formatDurationDdhms(comparison.previous.billableSeconds)}
+                delta={formatDurationDdhms(
                   Math.abs(comparison.delta.billableSeconds),
                 )}
                 percent={comparison.percentChange.billableSeconds}
@@ -313,7 +313,7 @@ function TrendBars({
             <div
               key={day.date}
               className="group relative flex h-full min-w-0 flex-col justify-end"
-              title={`${day.date}: ${formatDuration(day.totalSeconds)}, ${day.entries.toLocaleString()} entries`}
+              title={`${day.date}: ${formatDurationDdhms(day.totalSeconds)}, ${day.entries.toLocaleString()} entries`}
             >
               <div
                 className="flex w-full min-w-0 flex-col justify-end overflow-hidden rounded-t-md bg-muted"
