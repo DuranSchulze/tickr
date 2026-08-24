@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { AlertTriangle, BarChart3 } from 'lucide-react'
 import { formatDecimalRate, formatMoney } from '#/lib/time-tracker/export-utils'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import type { AnalyticsPayload } from '#/lib/server/tracker/analytics.server'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
@@ -346,7 +347,7 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
                 </div>
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">
-                {formatDuration(entry.durationSeconds)}
+                {formatDurationDdhms(entry.durationSeconds)}
               </td>
               <td className="px-2 py-1.5 text-center">
                 {entry.billable ? 'Yes' : 'No'}
@@ -372,12 +373,6 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
       )}
     </div>
   )
-}
-
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  return `${h}:${String(m).padStart(2, '0')}`
 }
 
 function formatClockTime(value: string, timezone: string): string {

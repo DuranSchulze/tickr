@@ -116,6 +116,27 @@ function getEntryDisplayDateKeys(
   return keys.length > 0 ? keys : [toDateKey(entryStart)]
 }
 
+// The running entry is excluded from day grouping (it is pinned as its own
+// row by DayGroupsList), so a day whose only entry is the running one would
+// have no group at all. This ensures its day group exists so the list renders
+// a header for it instead of pinning the row under an older day.
+export function withActiveEntryDayGroup(
+  groups: DayGroup[],
+  activeEntry: TimeEntry | null | undefined,
+): DayGroup[] {
+  if (!activeEntry) return groups
+  const dateKey = toDateKey(new Date(activeEntry.startedAt))
+  if (groups.some((group) => group.dateKey === dateKey)) return groups
+  const group: DayGroup = {
+    dateKey,
+    label: formatDayLabel(dateKey),
+    taskGroups: [],
+    completedSeconds: 0,
+    runningEntry: activeEntry,
+  }
+  return [...groups, group].sort((a, b) => b.dateKey.localeCompare(a.dateKey))
+}
+
 export function groupEntriesByDay(
   entries: TimeEntry[],
   range?: { start: Date; end: Date },

@@ -14,7 +14,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { AnalyticsPayload } from '#/lib/server/tracker.server'
-import { formatDuration } from '#/lib/time-tracker/store'
+import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import { formatChartDate, toChartHours } from './analytics.utils'
 
 const fallbackColors = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6']
@@ -158,7 +158,7 @@ export function AnalyticsCharts({
                   />
                   <Tooltip
                     formatter={(_value, _name, item) => [
-                      formatDuration(Number(item.payload?.seconds ?? 0)),
+                      formatDurationDdhms(Number(item.payload?.seconds ?? 0)),
                       'Hours',
                     ]}
                     labelFormatter={(_, payload) => payload[0]?.payload.date}
@@ -201,7 +201,7 @@ export function AnalyticsCharts({
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => formatDuration(Number(value))}
+                    formatter={(value) => formatDurationDdhms(Number(value))}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -243,7 +243,7 @@ export function AnalyticsCharts({
                   />
                   <Tooltip
                     formatter={(_value, _name, item) => [
-                      formatDuration(Number(item.payload?.seconds ?? 0)),
+                      formatDurationDdhms(Number(item.payload?.seconds ?? 0)),
                       'Hours',
                     ]}
                   />

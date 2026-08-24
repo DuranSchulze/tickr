@@ -3,7 +3,7 @@ import { ChevronsDownUp, ChevronsUpDown, Loader2 } from 'lucide-react'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { Button } from '#/components/ui/button'
-import { groupEntriesByDay } from './entries-grouping'
+import { groupEntriesByDay, withActiveEntryDayGroup } from './entries-grouping'
 import { DayGroupsList } from './DayGroupEntries'
 import type { BillableFilter, SortKey } from './hooks/useEntriesFilterSort'
 import { EntriesFilters } from './EntriesFilters'
@@ -101,10 +101,13 @@ export function AllEntriesSection({
 
   const groups = useMemo(
     () =>
-      groupEntriesByDay(
-        activeEntry
-          ? entries.filter((entry) => entry.id !== activeEntry.id)
-          : entries,
+      withActiveEntryDayGroup(
+        groupEntriesByDay(
+          activeEntry
+            ? entries.filter((entry) => entry.id !== activeEntry.id)
+            : entries,
+        ),
+        activeEntry,
       ),
     [activeEntry, entries],
   )

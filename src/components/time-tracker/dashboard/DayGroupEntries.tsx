@@ -81,8 +81,13 @@ function getDayEntries(group: DayGroup) {
   return group.taskGroups.flatMap((taskGroup) => taskGroup.entries)
 }
 
-function getDayDtrRow(group: DayGroup) {
+function getDayDtrRow(group: DayGroup, runningEntry?: TimeEntry | null) {
   const entries = getDayEntries(group)
+  // The running entry is pinned outside the task groups, so include it here —
+  // otherwise a group holding only the pinned row copies "Invalid Date" rows.
+  if (runningEntry && !entries.some((entry) => entry.id === runningEntry.id)) {
+    entries.push(runningEntry)
+  }
   const now = new Date()
   const starts = entries.map((entry) => new Date(entry.startedAt))
   const ends = entries.map((entry) =>
@@ -130,9 +135,12 @@ async function writeClipboardText(text: string) {
   if (!copied) throw new Error('Copy command failed')
 }
 
-async function copyDayDtrRow(group: DayGroup) {
+async function copyDayDtrRow(
+  group: DayGroup,
+  runningEntry?: TimeEntry | null,
+) {
   try {
-    await writeClipboardText(getDayDtrRow(group))
+    await writeClipboardText(getDayDtrRow(group, runningEntry))
     gooeyToast.success('DTR row copied')
   } catch {
     gooeyToast.error('Could not copy DTR row')
@@ -159,7 +167,7 @@ function DayGroupHeaderRow({
   const copyButton = (
     <button
       type="button"
-      onClick={() => void copyDayDtrRow(group)}
+      onClick={() => void copyDayDtrRow(group, runningEntry)}
       className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       title="Copy DTR row for Google Sheets"
     >
@@ -713,11 +721,13 @@ export function DayGroupsList({
 
       {groups.map((group) => {
         const dayCollapsed = isDayCollapsed(group.dateKey)
-        const entryCount = group.taskGroups.reduce(
-          (n, tg) => n + tg.entries.length,
-          0,
-        )
         const isPinnedGroup = group.dateKey === pinnedGroupKey
+        // The pinned running entry renders outside the task groups, so count
+        // it separately — a day whose only entry is the running one shows
+        // "1 entry", not "0 entries".
+        const entryCount =
+          group.taskGroups.reduce((n, tg) => n + tg.entries.length, 0) +
+          (isPinnedGroup && activeEntry ? 1 : 0)
         return (
           <div
             key={group.dateKey}

@@ -18,6 +18,21 @@ export function formatDuration(seconds: number) {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
 }
 
+/**
+ * DD:HH:MM:SS — days roll past 24h so long durations stay exact.
+ * Shared by analytics and reports so both pages render durations the same way.
+ */
+export function formatDurationDdhms(seconds: number): string {
+  const safe = Math.max(0, Math.floor(seconds))
+  const days = Math.floor(safe / 86400)
+  const hours = Math.floor((safe % 86400) / 3600)
+  const minutes = Math.floor((safe % 3600) / 60)
+  const secs = safe % 60
+  return [days, hours, minutes, secs]
+    .map((part) => String(part).padStart(2, '0'))
+    .join(':')
+}
+
 export function formatDurationPrecise(seconds: number) {
   const safe = Math.max(0, seconds)
   const totalMs = Math.floor(safe * 1000)
