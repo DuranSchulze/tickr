@@ -3,7 +3,11 @@ import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { gooeyToast } from '#/lib/toast'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
-import { enqueueOfflineMutation } from '#/lib/time-tracker/offline-queue'
+import {
+  enqueueOfflineMutation,
+  setOfflineEntryDeviceLocation,
+} from '#/lib/time-tracker/offline-queue'
+import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
 import { upsertTrackerStateEntry } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { calculateManualSeconds, emptyDraft, toEntryPayload } from '../utils'
@@ -88,11 +92,26 @@ export function useDraftAndEdit({
 
     if (!isOnline) {
       const optimisticId = `optimistic-manual-${crypto.randomUUID()}`
-      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
-        type: 'createManualEntry',
-        optimisticId,
-        payload,
-      })
+      const queued = enqueueOfflineMutation(
+        state.workspace.id,
+        state.currentMemberId,
+        {
+          type: 'createManualEntry',
+          optimisticId,
+          payload,
+        },
+      )
+      if (state.workspace.locationTrackingEnabled) {
+        void captureDeviceLocation().then((deviceLocation) => {
+          if (!deviceLocation) return
+          setOfflineEntryDeviceLocation(
+            state.workspace.id,
+            state.currentMemberId,
+            queued.id,
+            deviceLocation,
+          )
+        })
+      }
       onOfflineCreate?.({
         id: optimisticId,
         workspaceMemberId: state.currentMemberId,

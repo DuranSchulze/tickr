@@ -11,9 +11,11 @@ import {
 import { Button } from '#/components/ui/button'
 import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { EntryDraftForm } from './EntryDraftForm'
+import { EntryOriginSection } from './EntryOriginSection'
 import type { DraftEntry } from './utils'
 import type { Client, Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 
 type EditEntryDrawerProps = {
   open: boolean
@@ -35,7 +37,7 @@ type EditEntryDrawerProps = {
     color: string,
     clientId: string,
   ) => Promise<void>
-  onCreateTask?: (projectId: string, name: string) => Promise<void>
+  onCreateTask?: CreateProjectTask
   onDeleteTask?: (id: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
 }
@@ -277,6 +279,9 @@ export function EditEntryDrawer({
                         )}
                       </span>
                     </div>
+
+                    {/* Origin — where this entry was logged from */}
+                    <EntryOriginSection entry={entry} />
                   </div>
                 </div>
               </div>

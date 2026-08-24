@@ -208,7 +208,7 @@ export async function listUserWorkspaces(userId: string, email: string) {
 // Skipping the 4+ relation queries saves ~150 ms per mutation call.
 
 export type WorkspaceMembership = {
-  workspace: { id: string }
+  workspace: { id: string; locationTrackingEnabled: boolean }
   member: { id: string }
   user: { id: string; email: string }
 }
@@ -250,7 +250,11 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
   // Resolve the active workspace via the slug cookie.
   const workspaceIds = [...new Set(memberRows.map((m) => m.workspaceId))]
   const workspacesData = await db
-    .select({ id: workspaces.id, slug: workspaces.slug })
+    .select({
+      id: workspaces.id,
+      slug: workspaces.slug,
+      locationTrackingEnabled: workspaces.locationTrackingEnabled,
+    })
     .from(workspaces)
     .where(inArray(workspaces.id, workspaceIds))
 
@@ -261,6 +265,8 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
     (requestedSlug
       ? memberRows.find((m) => slugMap.get(m.workspaceId) === requestedSlug)
       : undefined) ?? memberRows[0]
+  const chosenWorkspace =
+    workspacesData.find((w) => w.id === chosen.workspaceId) ?? workspacesData[0]
 
   if (chosen.userId && chosen.userId !== userId) {
     throw new WorkspaceAccessError(
@@ -280,7 +286,10 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
   }
 
   return {
-    workspace: { id: chosen.workspaceId },
+    workspace: {
+      id: chosen.workspaceId,
+      locationTrackingEnabled: chosenWorkspace?.locationTrackingEnabled ?? true,
+    },
     member: { id: chosen.id },
     user: { id: session.user.id, email: session.user.email },
   }

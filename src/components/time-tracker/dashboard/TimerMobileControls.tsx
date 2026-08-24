@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 import type { Client, Project, Tag, TimeEntry } from '#/lib/time-tracker/types'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
@@ -58,7 +59,7 @@ export function TimerMobileControls({
   onTaskIdChange: (id: string) => void
   onTagIdsChange: (ids: string[]) => void
   onBillableChange: (next: boolean) => void
-  onCreateTask: (projectId: string, name: string) => Promise<void>
+  onCreateTask: CreateProjectTask
   onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   onApplyPreset: (preset: {

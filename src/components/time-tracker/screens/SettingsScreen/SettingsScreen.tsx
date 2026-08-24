@@ -6,6 +6,7 @@ import { SmtpTestPanel } from './SmtpTestPanel'
 import { ResendTestPanel } from './ResendTestPanel'
 import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
 import { WorkspaceApiKeysPanel } from './WorkspaceApiKeysPanel'
+import { LocationTrackingPanel } from './LocationTrackingPanel'
 
 export function SettingsScreen({ state }: { state: TrackerState }) {
   const currentMember = state.members.find(
@@ -24,6 +25,11 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
   return (
     <Page title="Workspace settings" eyebrow="Company workspace">
       <WorkspaceInfoPanel workspace={state.workspace} isOwner={isOwner} />
+
+      <LocationTrackingPanel
+        locationTrackingEnabled={state.workspace.locationTrackingEnabled}
+        canEdit={isOwner}
+      />
 
       {isAtLeastManager && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">

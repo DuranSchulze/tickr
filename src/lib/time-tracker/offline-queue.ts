@@ -1,3 +1,5 @@
+import type { DeviceLocation } from './device-location'
+
 type StartTimerPayload = {
   description: string
   projectId: string
@@ -8,6 +10,7 @@ type StartTimerPayload = {
   // the reconnect moment as the start. Optional for items queued by older
   // app versions still sitting in localStorage.
   startedAt?: string
+  deviceLocation?: DeviceLocation
 }
 
 type StopTimerPayload = {
@@ -33,6 +36,7 @@ type ManualEntryPayload = {
   endedAt: string
   durationSeconds: number
   notes: string
+  deviceLocation?: DeviceLocation
 }
 
 export type OfflineQueueItem =
@@ -123,6 +127,29 @@ export function removeOfflineQueueItem(
     workspaceId,
     memberId,
     existing.filter((i) => i.id !== itemId),
+  )
+}
+
+export function setOfflineEntryDeviceLocation(
+  workspaceId: string,
+  memberId: string,
+  itemId: string,
+  deviceLocation: DeviceLocation,
+): void {
+  const existing = load(workspaceId, memberId)
+  save(
+    workspaceId,
+    memberId,
+    existing.map((item): OfflineQueueItem => {
+      if (item.id !== itemId) return item
+      if (item.type === 'startTimer') {
+        return { ...item, payload: { ...item.payload, deviceLocation } }
+      }
+      if (item.type === 'createManualEntry') {
+        return { ...item, payload: { ...item.payload, deviceLocation } }
+      }
+      return item
+    }),
   )
 }
 

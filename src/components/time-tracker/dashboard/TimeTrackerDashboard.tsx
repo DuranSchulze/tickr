@@ -63,7 +63,10 @@ export function TimeTrackerDashboard({
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const mutations = useTrackerMutations(state.workspace.id)
+  const mutations = useTrackerMutations(
+    state.workspace.id,
+    state.workspace.locationTrackingEnabled,
+  )
   const { isOnline } = useNetworkStatus()
   const { formatTime } = useTimeFormat()
 
@@ -522,8 +525,7 @@ export function TimeTrackerDashboard({
   }
 
   const handleCreateTask = useCallback(
-    (projectId: string, name: string) =>
-      mutations.createTask(projectId, name).then(() => undefined as void),
+    (projectId: string, name: string) => mutations.createTask(projectId, name),
     [mutations.createTask],
   )
   const handleDeleteTask = useCallback(
@@ -697,9 +699,7 @@ export function TimeTrackerDashboard({
         onCancel={() => setEditingId(null)}
         onCreateClient={mutations.createClient}
         onCreateProject={mutations.createProject}
-        onCreateTask={(projectId, name) =>
-          mutations.createTask(projectId, name).then(() => undefined)
-        }
+        onCreateTask={handleCreateTask}
         onDeleteTask={(id) => mutations.deleteTask(id).then(() => undefined)}
         onCreateTag={mutations.createTag}
       />

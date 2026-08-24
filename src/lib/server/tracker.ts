@@ -111,6 +111,20 @@ const workspaceActivitySchema = z.object({
   q: z.string().trim().max(120).optional(),
 })
 
+const locationHistorySchema = z.object({
+  memberId: z.string().trim().min(1).optional(),
+})
+
+const refreshEntryLocationSchema = z.object({
+  id: z.string().min(1),
+  deviceLocation: z.object({
+    latitude: z.number().finite().min(-90).max(90),
+    longitude: z.number().finite().min(-180).max(180),
+    accuracyMeters: z.number().finite().min(0).max(100_000),
+    capturedAt: z.string().datetime(),
+  }),
+})
+
 const reportSortSchema = z.object({
   sortBy: z.enum(exportSortByValues).optional(),
   sortOrder: z.enum(exportSortOrderValues).optional(),
@@ -898,10 +912,19 @@ export const getImageKitTokenFn = createServerFn({
 
 // ─── Workspace settings ───────────────────────────────────────────────────────
 
-const updateWorkspaceSettingsSchema = z.object({
-  name: z.string().trim().min(1).max(150),
-  timezone: z.string().trim().min(1).max(80),
-})
+const updateWorkspaceSettingsSchema = z
+  .object({
+    name: z.string().trim().min(1).max(150).optional(),
+    timezone: z.string().trim().min(1).max(80).optional(),
+    locationTrackingEnabled: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.timezone !== undefined ||
+      data.locationTrackingEnabled !== undefined,
+    { message: 'At least one setting is required.' },
+  )
 
 export const updateWorkspaceSettingsFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateWorkspaceSettingsSchema.parse(input))
@@ -951,6 +974,29 @@ export const getWorkspaceActivityFn = createServerFn({ method: 'GET' })
     const { getWorkspaceActivity } = await import('./tracker/activity.server')
     return getWorkspaceActivity(data)
   })
+
+export const getLocationHistoryFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => locationHistorySchema.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    const { getLocationHistory } =
+      await import('./tracker/location-history.server')
+    return getLocationHistory(data)
+  })
+
+export const refreshEntryLocationFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => refreshEntryLocationSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { refreshOwnEntryLocation } =
+      await import('./tracker/location-history.server')
+    return refreshOwnEntryLocation(data)
+  })
+
+export const getMyLocationFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { getMyLocation } = await import('./tracker/my-location.server')
+    return getMyLocation()
+  },
+)
 
 // ─── Audit Logs ───────────────────────────────────────────────────────────────
 

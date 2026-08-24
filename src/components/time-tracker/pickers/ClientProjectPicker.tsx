@@ -23,6 +23,8 @@ import {
 } from '#/components/ui/dialog'
 import { Button } from '#/components/ui/button'
 import { cn } from '#/lib/utils'
+import { getCreatedTaskSelection } from './client-project-selection'
+import type { CreatedProjectTask } from './client-project-selection'
 
 export type ClientItem = {
   id: string
@@ -43,6 +45,11 @@ export type ProjectTaskItem = {
   name: string
 }
 
+export type CreateProjectTask = (
+  projectId: string,
+  name: string,
+) => Promise<CreatedProjectTask | undefined>
+
 interface Props {
   clients: ClientItem[]
   projects: ProjectItem[]
@@ -51,7 +58,7 @@ interface Props {
   projectId: string
   taskId: string
   onChange: (clientId: string, projectId: string, taskId?: string) => void
-  onCreateTask?: (projectId: string, name: string) => Promise<void>
+  onCreateTask?: CreateProjectTask
   onDeleteTask?: (id: string) => Promise<void>
   disabled?: boolean
   placeholder?: string
@@ -300,7 +307,14 @@ export function ClientProjectPicker({
     if (!onCreateTask || !newTaskName.trim() || submittingTask) return
     setSubmittingTask(true)
     try {
-      await onCreateTask(pid, newTaskName.trim())
+      const created = await onCreateTask(pid, newTaskName.trim())
+      if (!created) return
+
+      const selection = getCreatedTaskSelection(projects, created)
+      if (selection) {
+        onChange(selection.clientId, selection.projectId, selection.taskId)
+        setOpen(false)
+      }
       setAddingTaskFor(null)
       setNewTaskName('')
     } catch {

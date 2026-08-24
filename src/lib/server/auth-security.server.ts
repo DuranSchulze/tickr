@@ -86,7 +86,8 @@ export async function checkAndSendSuspiciousLoginAlert(session: {
       .limit(1)
 
     // ── 7. Enrich IP with geolocation (optional, degrades gracefully) ────────
-    const location = await geolocateIp(session.ipAddress)
+    const geo = await geolocateIp(session.ipAddress)
+    const location = geo?.location ?? null
 
     // ── 8. Build known-devices list (deduplicated, max 5) ───────────────────
     const knownDevices: KnownDevice[] = []

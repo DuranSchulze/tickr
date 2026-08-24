@@ -5,6 +5,7 @@ import { EntryDraftForm } from './EntryDraftForm'
 import { calculateManualSeconds } from './utils'
 import type { DraftEntry } from './utils'
 import { PresetDropdown } from './PresetDropdown'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 
 export function ManualEntryPanel({
   workspaceId,
@@ -37,7 +38,7 @@ export function ManualEntryPanel({
     color: string,
     clientId: string,
   ) => Promise<void>
-  onCreateTask: (projectId: string, name: string) => Promise<void>
+  onCreateTask: CreateProjectTask
   onDeleteTask: (id: string) => Promise<void>
   onCreateTag: (name: string, color: string) => Promise<void>
   onApplyPreset: (preset: {

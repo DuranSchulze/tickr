@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   entryInputSchema,
   MAX_DESCRIPTION_LENGTH,
+  startTimerSchema,
 } from '../tracker/shared/schemas'
 
 const baseEntry = {
@@ -34,6 +35,36 @@ describe('time entry description validation', () => {
       entryInputSchema.parse({
         ...baseEntry,
         description,
+      }),
+    ).toThrow()
+  })
+})
+
+describe('time entry device location validation', () => {
+  const deviceLocation = {
+    latitude: 14.5176,
+    longitude: 121.0509,
+    accuracyMeters: 16,
+    capturedAt: '2026-08-24T04:00:00.000Z',
+  }
+
+  it('accepts precise coordinates for timer and manual creation', () => {
+    expect(startTimerSchema.parse({ deviceLocation }).deviceLocation).toEqual(
+      deviceLocation,
+    )
+    expect(
+      entryInputSchema.parse({
+        ...baseEntry,
+        description: 'Accurate location test',
+        deviceLocation,
+      }).deviceLocation,
+    ).toEqual(deviceLocation)
+  })
+
+  it('rejects coordinates outside valid geographic bounds', () => {
+    expect(() =>
+      startTimerSchema.parse({
+        deviceLocation: { ...deviceLocation, latitude: 100 },
       }),
     ).toThrow()
   })

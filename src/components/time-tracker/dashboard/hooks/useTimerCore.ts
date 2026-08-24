@@ -11,7 +11,9 @@ import {
   enqueueOfflineMutation,
   hasQueuedStart,
   removeQueuedItemsForEntry,
+  setOfflineEntryDeviceLocation,
 } from '#/lib/time-tracker/offline-queue'
+import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
@@ -597,14 +599,36 @@ export function useTimerCore({
     lastSyncedEntryIdRef.current = optimisticEntry.id
     gooeyToast.success('Timer started')
 
-    const nextInput = { description, projectId, taskId, tagIds, billable }
+    const nextInput = {
+      description,
+      projectId,
+      taskId,
+      tagIds,
+      billable,
+      startedAt,
+    }
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
-        type: 'startTimer',
-        optimisticId: optimisticEntry.id,
-        payload: { ...nextInput, startedAt },
-      })
+      const queued = enqueueOfflineMutation(
+        state.workspace.id,
+        state.currentMemberId,
+        {
+          type: 'startTimer',
+          optimisticId: optimisticEntry.id,
+          payload: nextInput,
+        },
+      )
+      if (state.workspace.locationTrackingEnabled) {
+        void captureDeviceLocation().then((deviceLocation) => {
+          if (!deviceLocation) return
+          setOfflineEntryDeviceLocation(
+            state.workspace.id,
+            state.currentMemberId,
+            queued.id,
+            deviceLocation,
+          )
+        })
+      }
       setTimerOperation({
         kind: 'runningOptimistic',
         token,

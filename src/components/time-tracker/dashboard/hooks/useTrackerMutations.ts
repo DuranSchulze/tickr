@@ -25,6 +25,8 @@ import {
 } from '#/lib/server/tracker'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { publishTaskDataChange } from '#/lib/time-tracker/task-sync'
+import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
+import type { DeviceLocation } from '#/lib/time-tracker/device-location'
 
 type StartTimerInput = {
   description: string
@@ -32,6 +34,8 @@ type StartTimerInput = {
   taskId: string | null
   tagIds: string[]
   billable: boolean
+  startedAt?: string
+  deviceLocation?: DeviceLocation
 }
 
 type UpdateActiveTimerInput = StartTimerInput & {
@@ -49,6 +53,7 @@ type EntryPayload = {
   endedAt: string
   durationSeconds: number
   notes: string
+  deviceLocation?: DeviceLocation
 }
 
 type MutationOptions<T> = {
@@ -58,7 +63,10 @@ type MutationOptions<T> = {
   onError?: () => void
 }
 
-export function useTrackerMutations(workspaceId: string) {
+export function useTrackerMutations(
+  workspaceId: string,
+  locationTrackingEnabled: boolean,
+) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const [pending, setPending] = useState(false)
@@ -102,9 +110,14 @@ export function useTrackerMutations(workspaceId: string) {
       options?: MutationOptions<TimeEntry>,
     ) => {
       setStartTimerPending(true)
-      return run(async () => startTimerFn({ data: input }), options).finally(
-        () => setStartTimerPending(false),
-      )
+      return run(async () => {
+        const deviceLocation = locationTrackingEnabled
+          ? await captureDeviceLocation()
+          : undefined
+        return startTimerFn({
+          data: { ...input, ...(deviceLocation ? { deviceLocation } : {}) },
+        })
+      }, options).finally(() => setStartTimerPending(false))
     },
     stopTimer: async (
       id: string,
@@ -138,7 +151,15 @@ export function useTrackerMutations(workspaceId: string) {
       if (!confirmed) return undefined
       return run(
         async () => {
-          const created = await createManualEntryFn({ data: payload })
+          const deviceLocation = locationTrackingEnabled
+            ? await captureDeviceLocation()
+            : undefined
+          const created = await createManualEntryFn({
+            data: {
+              ...payload,
+              ...(deviceLocation ? { deviceLocation } : {}),
+            },
+          })
           upsertTrackerStateEntry(queryClient, created)
           return created
         },

@@ -9,6 +9,7 @@ import {
 } from '#/lib/time-tracker/workspace-activity-query'
 import { Page } from '../shared/Page'
 import { MemberActivityCard } from './MemberActivityCard'
+import { MemberActivityMap } from './MemberActivityMap'
 import type {
   WorkspaceActivityPayload,
   WorkspaceMemberActivity,
@@ -204,28 +205,31 @@ export function WorkspaceActivityScreen({
           No active members found.
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {sorted.map((member) => (
-            <MemberActivityCard
-              key={member.memberId}
-              member={member}
-              viewDataAction={
-                <Link
-                  to="/app/reports"
-                  search={{
-                    memberIds: member.memberId,
-                    departmentId: canFilterDepartments
-                      ? (member.departmentId ?? undefined)
-                      : undefined,
-                  }}
-                  className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent"
-                >
-                  View Data
-                </Link>
-              }
-            />
-          ))}
-        </div>
+        <>
+          <MemberActivityMap members={sorted} />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {sorted.map((member) => (
+              <MemberActivityCard
+                key={member.memberId}
+                member={member}
+                viewDataAction={
+                  <Link
+                    to="/app/reports"
+                    search={{
+                      memberIds: member.memberId,
+                      departmentId: canFilterDepartments
+                        ? (member.departmentId ?? undefined)
+                        : undefined,
+                    }}
+                    className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent"
+                  >
+                    View Data
+                  </Link>
+                }
+              />
+            ))}
+          </div>
+        </>
       )}
     </Page>
   )

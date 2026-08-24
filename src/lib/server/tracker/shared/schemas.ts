@@ -18,6 +18,13 @@ const entryTimesAreOrdered = {
   },
 }
 
+const deviceLocationSchema = z.object({
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  accuracyMeters: z.number().finite().min(0).max(100_000),
+  capturedAt: z.string().datetime(),
+})
+
 const entryInputShape = z.object({
   description: descriptionRequired,
   projectId: z.string().default(''),
@@ -30,10 +37,9 @@ const entryInputShape = z.object({
   notes: z.string().trim().default(''),
 })
 
-export const entryInputSchema = entryInputShape.refine(
-  entryTimesAreOrdered.check,
-  entryTimesAreOrdered.params,
-)
+export const entryInputSchema = entryInputShape
+  .extend({ deviceLocation: deviceLocationSchema.optional() })
+  .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
 export const startTimerSchema = z.object({
   description: descriptionOptional.default(''),
@@ -43,6 +49,7 @@ export const startTimerSchema = z.object({
   billable: z.boolean().default(false),
   // Offline replay: the real client-side start time. Server clamps to now.
   startedAt: z.string().datetime().optional(),
+  deviceLocation: deviceLocationSchema.optional(),
 })
 
 export const updateActiveTimerSchema = z.object({
@@ -326,7 +333,16 @@ export const updateProfileSchema = z.object({
 
 // ─── Workspace settings ───────────────────────────────────────────────────────
 
-export const updateWorkspaceSettingsSchema = z.object({
-  name: z.string().trim().min(1).max(150),
-  timezone: z.string().trim().min(1).max(80),
-})
+export const updateWorkspaceSettingsSchema = z
+  .object({
+    name: z.string().trim().min(1).max(150).optional(),
+    timezone: z.string().trim().min(1).max(80).optional(),
+    locationTrackingEnabled: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.timezone !== undefined ||
+      data.locationTrackingEnabled !== undefined,
+    { message: 'At least one setting is required.' },
+  )

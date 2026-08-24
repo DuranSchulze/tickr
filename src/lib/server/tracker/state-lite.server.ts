@@ -143,6 +143,7 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
       googleSheetSyncedAt: access.workspace.googleSheetSyncedAt
         ? access.workspace.googleSheetSyncedAt.toISOString()
         : null,
+      locationTrackingEnabled: access.workspace.locationTrackingEnabled,
     },
     currentMemberId: memberId,
     roles: rolesRows.map((role) => ({

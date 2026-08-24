@@ -36,6 +36,7 @@ interface AccessWorkspace {
   billableCurrency: string
   googleSheetUrl: string | null
   googleSheetSyncedAt: Date | null
+  locationTrackingEnabled: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -294,6 +295,7 @@ export function buildTrackerStateBase(
       googleSheetSyncedAt: workspace.googleSheetSyncedAt
         ? workspace.googleSheetSyncedAt.toISOString()
         : null,
+      locationTrackingEnabled: workspace.locationTrackingEnabled,
     },
     currentMemberId: memberId,
     roles: rolesRows.map((role) => ({

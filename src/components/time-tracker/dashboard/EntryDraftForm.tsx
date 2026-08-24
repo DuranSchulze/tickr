@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { FocusEvent } from 'react'
 import { ClientProjectPicker } from '../pickers/ClientProjectPicker'
+import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 import { TagPicker } from '../pickers/TagPicker'
 import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { DraftTimeEditor } from './DraftTimeEditor'
@@ -46,7 +47,7 @@ export function EntryDraftForm({
     color: string,
     clientId: string,
   ) => Promise<void>
-  onCreateTask?: (projectId: string, name: string) => Promise<void>
+  onCreateTask?: CreateProjectTask
   onDeleteTask?: (id: string) => Promise<void>
   onCreateTag?: (name: string, color: string) => Promise<void>
   canManageCatalog?: boolean

@@ -13,6 +13,7 @@ import {
   primaryKey,
   check,
   jsonb,
+  doublePrecision,
 } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { createId } from '@paralleldrive/cuid2'
@@ -254,6 +255,9 @@ export const workspaces = pgTable('workspaces', {
     .notNull()
     .default('PHP'),
   billingExempt: boolean('billing_exempt').notNull().default(false),
+  locationTrackingEnabled: boolean('location_tracking_enabled')
+    .notNull()
+    .default(true),
   googleSheetUrl: varchar('google_sheet_url', { length: 500 }),
   googleSheetSyncedAt: timestamp('google_sheet_synced_at', {
     withTimezone: true,
@@ -1009,6 +1013,11 @@ export const timeEntries = pgTable(
     durationSeconds: integer('duration_seconds').notNull().default(0),
     entrySource: timeEntrySourceEnum('entry_source'),
     notes: text('notes'),
+    ipAddress: text('ip_address'),
+    location: text('location'),
+    latitude: doublePrecision('latitude'),
+    longitude: doublePrecision('longitude'),
+    userAgent: text('user_agent'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

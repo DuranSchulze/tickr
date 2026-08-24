@@ -12,6 +12,7 @@ export type Workspace = {
   billableCurrency: string
   googleSheetUrl: string | null
   googleSheetSyncedAt: string | null
+  locationTrackingEnabled: boolean
 }
 
 export type WorkspaceRole = {
@@ -96,6 +97,14 @@ export type TimeEntry = {
   durationSeconds: number
   notes: string
   entrySource: TimeEntrySource | null
+  // Origin metadata — always provided by server serializers; omitted by
+  // client-side optimistic entries and partial row conversions (reports,
+  // analytics) until real data is available.
+  ipAddress?: string | null
+  location?: string | null
+  latitude?: number | null
+  longitude?: number | null
+  userAgent?: string | null
 }
 
 export type TrackerState = {
