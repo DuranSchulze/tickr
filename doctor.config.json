@@ -5,6 +5,7 @@
     "react-doctor/only-export-components": "off"
   },
   "ignore": {
+    "files": [".output/**"],
     "overrides": [
       {
         "files": ["src/hooks/useInView.ts"],

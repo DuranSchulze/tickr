@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { LocationHistoryScreen } from '#/components/time-tracker/screens/LocationHistoryScreen/LocationHistoryScreen'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import {
   fetchLocationHistory,
   getLocationHistoryQueryKey,
@@ -11,9 +11,7 @@ type LocationHistorySearch = {
 }
 
 export const Route = createFileRoute('/app/workspace/locations')({
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): LocationHistorySearch => ({
+  validateSearch: (search: Record<string, unknown>): LocationHistorySearch => ({
     memberId:
       typeof search.memberId === 'string' && search.memberId.trim()
         ? search.memberId.trim()
@@ -21,13 +19,8 @@ export const Route = createFileRoute('/app/workspace/locations')({
   }),
   loaderDeps: ({ search }) => ({ memberId: search.memberId }),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    const level = access.member.permissionLevel
-    if (level !== 'OWNER' && level !== 'ADMIN' && level !== 'MANAGER') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['locations.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },

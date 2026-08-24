@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { clients, departments, projects, tags } from '#/db/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertAtLeastManager } from './shared/role-gates.server'
+import { assertPermission } from './shared/role-gates.server'
 import { getSheetsClient } from '../gsheets/auth.server'
 import { extractSheetId } from '../gsheets/extract-sheet-id'
 import {
@@ -89,7 +89,11 @@ async function resolveWorkspaceSheet() {
   // that already validates the session. assertTrustedOrigin would reject any
   // origin not in the hardcoded list (e.g. a custom prod domain).
   const access = await requireWorkspaceAccess(undefined, { skipCsrf: true })
-  assertAtLeastManager(access)
+  assertPermission(
+    access,
+    'catalogs.import',
+    'You do not have permission to import workspace catalogs.',
+  )
   const workspace = access.workspace
   if (!workspace.googleSheetUrl) {
     throw new Error(

@@ -13,7 +13,7 @@ import {
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { getAnalyticsFn, getTrackerStateLiteFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 
 type AnalyticsSearch = {
   startDate?: string
@@ -82,11 +82,7 @@ export const Route = createFileRoute('/app/analytics')({
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: async ({ context, deps }) => {
     const [analytics, state] = await Promise.all([

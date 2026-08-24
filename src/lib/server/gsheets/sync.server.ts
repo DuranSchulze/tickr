@@ -20,8 +20,7 @@ import { getSheetsClient } from './auth.server'
 import { buildSyncRows, SHEET_HEADERS } from './build-rows'
 import type { SyncEntry, SyncMember, SyncProject } from './build-rows'
 import { sanitizeTabName } from './sanitize-tab-name'
-
-const ALLOWED_ROLES = new Set(['OWNER', 'ADMIN', 'MANAGER'])
+import { assertPermission } from '../tracker/shared/role-gates.server'
 
 function mapApiError(err: unknown): Error {
   const message = err instanceof Error ? err.message : String(err)
@@ -315,12 +314,11 @@ export async function syncWorkspaceById({
 
 export async function syncWorkspaceToGoogleSheets() {
   const access = await requireWorkspaceAccess()
-  const level = access.member.workspaceRole?.permissionLevel
-  if (!level || !ALLOWED_ROLES.has(level)) {
-    throw new Error(
-      'Only Owners, Admins, and Managers can sync to Google Sheets.',
-    )
-  }
+  assertPermission(
+    access,
+    'catalogs.import',
+    'You do not have permission to sync workspace data to Google Sheets.',
+  )
 
   return syncWorkspaceById({
     workspaceId: access.workspace.id,

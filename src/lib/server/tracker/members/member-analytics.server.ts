@@ -7,6 +7,7 @@ import {
 import { and, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
+import { memberScopeCondition } from '../shared/member-scope.server'
 
 export type MemberStat = {
   memberId: string
@@ -24,29 +25,13 @@ function utcDateKey(date: Date): string {
 
 export async function getMemberAnalytics(): Promise<MemberStat[]> {
   const access = await requireWorkspaceAccess()
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-
-  // Role-scoped visibility, mirroring exportMembersCsv:
-  // - OWNER/ADMIN: all members in the workspace
-  // - MANAGER (with a department): members in their department
-  // - everyone else: only themselves
-  const scopeConditions: SQL[] = []
-
-  if (level === 'OWNER' || level === 'ADMIN') {
-    // no member restriction — all workspace members
-  } else if (level === 'MANAGER' && access.member.departmentId) {
-    const deptMemberIds = db
-      .select({ id: workspaceMembers.id })
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.departmentId, access.member.departmentId))
-    scopeConditions.push(
-      inArray(analyticsDailyMemberMetrics.workspaceMemberId, deptMemberIds),
-    )
-  } else {
-    scopeConditions.push(
-      eq(analyticsDailyMemberMetrics.workspaceMemberId, access.member.id),
-    )
-  }
+  const scopedMemberIds = db
+    .select({ id: workspaceMembers.id })
+    .from(workspaceMembers)
+    .where(memberScopeCondition(access, 'members.view'))
+  const scopeConditions: SQL[] = [
+    inArray(analyticsDailyMemberMetrics.workspaceMemberId, scopedMemberIds),
+  ]
 
   // Week/month boundaries as UTC date keys — the rollup `date` column is the
   // UTC date of the entry start, so string comparison matches the previous
@@ -72,21 +57,9 @@ export async function getMemberAnalytics(): Promise<MemberStat[]> {
     eq(timeEntries.workspaceId, access.workspace.id),
     isNotNull(timeEntries.endedAt),
   ]
-  if (level === 'OWNER' || level === 'ADMIN') {
-    // all workspace entries
-  } else if (level === 'MANAGER' && access.member.departmentId) {
-    const deptMemberIds = db
-      .select({ id: workspaceMembers.id })
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.departmentId, access.member.departmentId))
-    entryScopeConditions.push(
-      inArray(timeEntries.workspaceMemberId, deptMemberIds),
-    )
-  } else {
-    entryScopeConditions.push(
-      eq(timeEntries.workspaceMemberId, access.member.id),
-    )
-  }
+  entryScopeConditions.push(
+    inArray(timeEntries.workspaceMemberId, scopedMemberIds),
+  )
 
   const [rollupRows, projectRows] = await Promise.all([
     db

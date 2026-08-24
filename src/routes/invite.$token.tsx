@@ -12,6 +12,7 @@ import { getSessionFn } from '#/lib/server/session'
 import { acceptInviteFn, previewInviteFn } from '#/lib/server/workspace-invites'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { BRAND } from '#/lib/brand'
+import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
 
 export const Route = createFileRoute('/invite/$token')({
   loader: async ({ params }) => {
@@ -40,7 +41,7 @@ function InvitePage() {
         queryKey: ['session'],
       }),
       router.options.context.queryClient.invalidateQueries({
-        queryKey: ['workspace-access'],
+        queryKey: workspaceAuthorizationKeys.all,
       }),
       router.options.context.queryClient.invalidateQueries({
         queryKey: ['user-workspaces'],

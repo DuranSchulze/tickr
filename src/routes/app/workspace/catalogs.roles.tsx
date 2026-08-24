@@ -1,7 +1,10 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { RolesTablePage } from '#/components/time-tracker/catalogs/RolesTablePage'
 import { getPaginatedRolesFn } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import {
+  ensureWorkspaceAuthorization,
+  fetchFreshWorkspaceAuthorization,
+} from '#/lib/time-tracker/workspace-authorization'
 
 const PAGE_SIZE = 20
 
@@ -36,26 +39,35 @@ export const Route = createFileRoute('/app/workspace/catalogs/roles')({
     sort: search.sort,
   }),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    if (access.member.permissionLevel === 'EMPLOYEE') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['catalogs.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  loader: async ({ deps }) => {
-    const paginatedRoles = await getPaginatedRolesFn({
-      data: {
-        page: deps.page,
-        pageSize: PAGE_SIZE,
-        search: deps.search || undefined,
-        permissionLevel: deps.permissionLevel,
-        sort: deps.sort,
+  loader: async ({ context, deps }) => {
+    const [paginatedRoles, access] = await Promise.all([
+      getPaginatedRolesFn({
+        data: {
+          page: deps.page,
+          pageSize: PAGE_SIZE,
+          search: deps.search || undefined,
+          permissionLevel: deps.permissionLevel,
+          sort: deps.sort,
+        },
+      }),
+      ensureWorkspaceAuthorization(context.queryClient),
+    ])
+    return {
+      data: paginatedRoles,
+      pageSize: PAGE_SIZE,
+      canManagePermissions:
+        access.member.permissions['roles.manage_permissions'],
+      actor: {
+        roleId: access.member.roleId,
+        permissionLevel: access.member.permissionLevel,
+        permissions: access.member.permissions,
       },
-    })
-    return { data: paginatedRoles, pageSize: PAGE_SIZE }
+    }
   },
   staleTime: 30_000,
   component: RolesRoute,
@@ -63,13 +75,15 @@ export const Route = createFileRoute('/app/workspace/catalogs/roles')({
 
 // oxlint-disable-next-line react/only-export-components
 function RolesRoute() {
-  const { data, pageSize } = Route.useLoaderData()
+  const { data, pageSize, canManagePermissions, actor } = Route.useLoaderData()
   const navigate = Route.useNavigate()
   const search = Route.useSearch()
 
   return (
     <RolesTablePage
       data={data}
+      canManagePermissions={canManagePermissions}
+      actor={actor}
       page={search.page ?? 0}
       pageSize={pageSize}
       appliedFilters={{

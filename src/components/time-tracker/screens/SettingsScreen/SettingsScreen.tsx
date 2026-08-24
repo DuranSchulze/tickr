@@ -8,30 +8,34 @@ import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
 import { WorkspaceApiKeysPanel } from './WorkspaceApiKeysPanel'
 import { LocationTrackingPanel } from './LocationTrackingPanel'
 
-export function SettingsScreen({ state }: { state: TrackerState }) {
+export function SettingsScreen({
+  state,
+  canManageSettings,
+  canImportCatalogs,
+}: {
+  state: TrackerState
+  canManageSettings: boolean
+  canImportCatalogs: boolean
+}) {
   const currentMember = state.members.find(
     (m) => m.id === state.currentMemberId,
   )!
-  const isOwner = currentMember.permissionLevel === 'OWNER'
-  const isOwnerOrAdmin =
-    currentMember.permissionLevel === 'OWNER' ||
-    currentMember.permissionLevel === 'ADMIN'
-  const permissionLevel = currentMember.permissionLevel
-  const isAtLeastManager = isOwnerOrAdmin || permissionLevel === 'MANAGER'
-
   const hasSheet = !!state.workspace.googleSheetUrl
   const lastSyncedAt = state.workspace.googleSheetSyncedAt
 
   return (
     <Page title="Workspace settings" eyebrow="Company workspace">
-      <WorkspaceInfoPanel workspace={state.workspace} isOwner={isOwner} />
+      <WorkspaceInfoPanel
+        workspace={state.workspace}
+        isOwner={canManageSettings}
+      />
 
       <LocationTrackingPanel
         locationTrackingEnabled={state.workspace.locationTrackingEnabled}
-        canEdit={isOwner}
+        canEdit={canManageSettings}
       />
 
-      {isAtLeastManager && (
+      {canImportCatalogs && (
         <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
           <h2 className="m-0 text-base font-bold text-foreground">
             Sync time entries
@@ -55,14 +59,19 @@ export function SettingsScreen({ state }: { state: TrackerState }) {
 
       <WorkspaceGoogleSheetPanel
         workspace={state.workspace}
-        permissionLevel={permissionLevel}
+        canManageSettings={canManageSettings}
+        canImportCatalogs={canImportCatalogs}
       />
 
-      {isOwnerOrAdmin && <WorkspaceApiKeysPanel />}
+      {canManageSettings && <WorkspaceApiKeysPanel />}
 
-      {isOwnerOrAdmin && <SmtpTestPanel defaultEmail={currentMember.email} />}
+      {canManageSettings && (
+        <SmtpTestPanel defaultEmail={currentMember.email} />
+      )}
 
-      {isOwnerOrAdmin && <ResendTestPanel defaultEmail={currentMember.email} />}
+      {canManageSettings && (
+        <ResendTestPanel defaultEmail={currentMember.email} />
+      )}
     </Page>
   )
 }

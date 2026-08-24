@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Outlet, useRouterState } from '@tanstack/react-router'
+import { Outlet, useRouter, useRouterState } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Activity,
   BarChart3,
@@ -26,6 +27,8 @@ import { SubscriptionStatusBanner } from '#/components/subscription/Subscription
 import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
 import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSubscriptionGate'
 import { TaskSyncCoordinator } from './TaskSyncCoordinator'
+import type { EffectivePermissions } from '#/lib/rbac/permissions'
+import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
 
 type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
 
@@ -49,6 +52,7 @@ export function AppShell({
   workspace,
   user,
   permissionLevel,
+  permissions,
   subscription,
 }: {
   workspace: AppShellWorkspace
@@ -60,8 +64,12 @@ export function AppShell({
     birthDate?: string | null
   }
   permissionLevel: string
+  permissions: EffectivePermissions
   subscription: SubscriptionSummary
 }) {
+  const queryClient = useQueryClient()
+  const router = useRouter()
+
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') {
       fetch('/api/health', { keepalive: true }).catch(() => undefined)
@@ -70,12 +78,7 @@ export function AppShell({
 
   // ── Auto-sync every 2 hours ────────────────────────────────────────────
   useEffect(() => {
-    const isManagerOrAbove =
-      permissionLevel === 'OWNER' ||
-      permissionLevel === 'ADMIN' ||
-      permissionLevel === 'MANAGER'
-
-    if (!isManagerOrAbove) return
+    if (!permissions['catalogs.import']) return
 
     const interval = setInterval(async () => {
       try {
@@ -86,7 +89,21 @@ export function AppShell({
     }, 7_200_000) // 2 hours
 
     return () => clearInterval(interval)
-  }, [permissionLevel])
+  }, [permissions['catalogs.import']])
+
+  useEffect(() => {
+    function refreshAuthorization() {
+      void queryClient
+        .invalidateQueries({
+          queryKey: workspaceAuthorizationKeys.all,
+          refetchType: 'none',
+        })
+        .then(() => router.invalidate())
+    }
+
+    window.addEventListener('focus', refreshAuthorization)
+    return () => window.removeEventListener('focus', refreshAuthorization)
+  }, [queryClient, router])
 
   // Two separate primitive selectors so TanStack Router uses Object.is correctly.
   // A single selector returning `{ pathname, search }` creates a new object on
@@ -146,11 +163,6 @@ export function AppShell({
     return fireSideCannons()
   }, [isEmbed, user.id])
 
-  const isOwnerOrAdmin =
-    permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
-  const canAccessSettings = permissionLevel !== 'EMPLOYEE'
-  const isManagerOrAbove = permissionLevel === 'MANAGER' || isOwnerOrAdmin
-
   const analyticsChildren = useMemo(() => {
     const items = []
     items.push({
@@ -173,12 +185,14 @@ export function AppShell({
       label: 'My Performance',
       icon: TrendingUp,
     })
-    if (isManagerOrAbove) {
+    if (permissions['activity.view']) {
       items.push({
         to: '/app/workspace/activity' as const,
         label: 'Team Activity',
         icon: Activity,
       })
+    }
+    if (permissions['locations.view']) {
       items.push({
         to: '/app/workspace/locations' as const,
         label: 'Locations',
@@ -191,35 +205,39 @@ export function AppShell({
       icon: Building2,
     })
     return items
-  }, [isManagerOrAbove])
+  }, [permissions])
 
   const settingsChildren = useMemo(() => {
     const items = []
-    if (canAccessSettings) {
+    if (permissions['members.view']) {
       items.push({
         to: '/app/workspace/members' as const,
         label: 'Members',
         icon: Users,
       })
+    }
+    if (permissions['catalogs.view']) {
       items.push({
         to: '/app/workspace/catalogs' as const,
         label: 'Catalogs',
         icon: Tags,
       })
     }
-    if (isOwnerOrAdmin) {
+    if (permissions['workspace.settings.view']) {
       items.push({
         to: '/app/workspace/settings' as const,
         label: 'Workspace settings',
         icon: Cog,
       })
+    }
+    if (permissions['audit_logs.view']) {
       items.push({
         to: '/app/audit-logs' as const,
         label: 'Audit Logs',
         icon: ClipboardList,
       })
     }
-    if (permissionLevel === 'OWNER') {
+    if (permissions['billing.manage']) {
       items.push({
         to: '/app/workspace/billing' as const,
         label: 'Billing',
@@ -227,7 +245,7 @@ export function AppShell({
       })
     }
     return items
-  }, [canAccessSettings, isOwnerOrAdmin, permissionLevel])
+  }, [permissions])
 
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>

@@ -14,6 +14,7 @@ import {
 } from '#/db/schema'
 import { and, eq, inArray, or, asc } from 'drizzle-orm'
 import { assertTrustedOrigin } from './csrf.server'
+import { getMembershipActivationDecision } from '#/lib/rbac/authorization'
 
 export class WorkspaceAccessError extends Error {
   constructor(message = 'No workspace access found for this account.') {
@@ -201,6 +202,95 @@ export async function listUserWorkspaces(userId: string, email: string) {
   }))
 }
 
+// ── Lightweight authorization context (navigation + route guards) ────────────
+// This deliberately avoids loading departments, cohorts, employee profiles,
+// and government IDs. Authorization checks only need the authenticated user,
+// active membership, workspace, and assigned role.
+async function _fetchWorkspaceAuthorization(slug?: string | null) {
+  assertTrustedOrigin()
+  const session = await getAuthSession()
+  if (!session?.user) {
+    throw new WorkspaceAccessError('Please sign in to continue.')
+  }
+
+  const userId = session.user.id
+  const email = session.user.email.toLowerCase()
+  const rows = await db
+    .select({
+      member: workspaceMembers,
+      workspace: workspaces,
+      workspaceRole: workspaceRoles,
+    })
+    .from(workspaceMembers)
+    .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+    .leftJoin(
+      workspaceRoles,
+      eq(workspaceMembers.workspaceRoleId, workspaceRoles.id),
+    )
+    .where(
+      or(
+        eq(workspaceMembers.userId, userId),
+        and(
+          eq(workspaceMembers.userId, null as unknown as string),
+          eq(workspaceMembers.email, email),
+        ),
+      ),
+    )
+    .orderBy(asc(workspaceMembers.createdAt))
+
+  if (rows.length === 0) throw new WorkspaceAccessError()
+  const requestedSlug = slug ?? readActiveWorkspaceCookie()
+  const chosen =
+    (requestedSlug
+      ? rows.find((row) => row.workspace.slug === requestedSlug)
+      : undefined) ?? rows[0]
+
+  if (chosen.member.userId && chosen.member.userId !== userId) {
+    throw new WorkspaceAccessError(
+      'This workspace invitation is already linked to another account.',
+    )
+  }
+
+  // Preserve the existing invitation activation behavior, but keep the normal
+  // active-member authorization path to a single joined query.
+  const authorizationDecision = getMembershipActivationDecision(
+    chosen.member.status,
+  )
+  if (authorizationDecision === 'deny') {
+    throw new WorkspaceAccessError(
+      'Your workspace membership is disabled. Contact a workspace administrator.',
+    )
+  }
+  if (!chosen.member.userId || authorizationDecision === 'activate') {
+    return _fetchWorkspaceAccess(requestedSlug, false, true)
+  }
+
+  return {
+    session,
+    user: session.user,
+    workspace: chosen.workspace,
+    member: {
+      ...chosen.member,
+      workspaceRole: chosen.workspaceRole,
+    },
+  }
+}
+
+const _authorizationRequestCache = new WeakMap<
+  object,
+  Promise<Awaited<ReturnType<typeof _fetchWorkspaceAuthorization>>>
+>()
+
+export async function requireWorkspaceAuthorization(slug?: string | null) {
+  if (slug != null) return _fetchWorkspaceAuthorization(slug)
+  const request = getRequest()
+  const cached = _authorizationRequestCache.get(request)
+  if (cached) return cached
+  const promise = _fetchWorkspaceAuthorization()
+  _authorizationRequestCache.set(request, promise)
+  return promise
+}
+
 // ── Lightweight membership check (mutations) ──────────────────────────────────
 // Used by high-frequency timer mutations (start, stop, update, duplicate,
 // create, update, delete). Only fetches the 2 fields the mutation actually
@@ -275,7 +365,13 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
   }
 
   // Link the membership if it's still unclaimed (invited, not yet accepted).
-  if (!chosen.userId || chosen.status !== 'ACTIVE') {
+  const membershipDecision = getMembershipActivationDecision(chosen.status)
+  if (membershipDecision === 'deny') {
+    throw new WorkspaceAccessError(
+      'Your workspace membership is disabled. Contact a workspace administrator.',
+    )
+  }
+  if (!chosen.userId || membershipDecision === 'activate') {
     await db
       .update(workspaceMembers)
       .set({
@@ -353,7 +449,13 @@ async function _fetchWorkspaceAccess(
     )
   }
 
-  if (!chosen.userId || chosen.status !== 'ACTIVE') {
+  const accessDecision = getMembershipActivationDecision(chosen.status)
+  if (accessDecision === 'deny') {
+    throw new WorkspaceAccessError(
+      'Your workspace membership is disabled. Contact a workspace administrator.',
+    )
+  }
+  if (!chosen.userId || accessDecision === 'activate') {
     const [updated] = await db
       .update(workspaceMembers)
       .set({

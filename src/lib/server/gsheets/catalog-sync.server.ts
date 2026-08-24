@@ -2,7 +2,7 @@ import { db } from '#/db'
 import { clients, departments, projects, tags, workspaces } from '#/db/schema'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertAtLeastManager } from '../tracker/shared/role-gates.server'
+import { assertPermission } from '../tracker/shared/role-gates.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import { getSheetsClient } from './auth.server'
 import { extractSheetId } from './extract-sheet-id'
@@ -149,6 +149,11 @@ export async function ensureAllCatalogHeaders(
 
 export async function ensureCatalogTabsForWorkspace(): Promise<void> {
   const access = await requireWorkspaceAccess()
+  assertPermission(
+    access,
+    'catalogs.import',
+    'You do not have permission to prepare catalog imports.',
+  )
   if (!access.workspace.googleSheetUrl) return
   try {
     const sheetId = extractSheetId(access.workspace.googleSheetUrl)
@@ -194,7 +199,11 @@ async function runInBatches<T>(
 
 async function resolveWorkspaceSheet() {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
+  assertPermission(
+    access,
+    'catalogs.import',
+    'You do not have permission to import workspace catalogs.',
+  )
   const workspace = access.workspace
   if (!workspace.googleSheetUrl) {
     throw new Error(

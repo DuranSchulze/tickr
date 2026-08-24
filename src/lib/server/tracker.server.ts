@@ -89,7 +89,10 @@ export {
 } from './tracker/members/paginated-members.server'
 
 // Roles, billing, settings, profile
-export { createWorkspaceRole } from './tracker/roles.server'
+export {
+  createWorkspaceRole,
+  updateWorkspaceRolePermissions,
+} from './tracker/roles.server'
 export {
   updateWorkspaceBilling,
   getCurrencyOptions,

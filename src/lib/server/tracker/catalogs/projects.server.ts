@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { clients, projects } from '#/db/schema'
 import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import type {
   createProjectSchema,
@@ -30,7 +30,7 @@ async function exportProject(
 
 export async function createProject(data: z.infer<typeof createProjectSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [client] = await db
     .select()
@@ -92,7 +92,7 @@ export async function createProject(data: z.infer<typeof createProjectSchema>) {
 
 export async function updateProject(data: z.infer<typeof updateProjectSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [client] = await db
     .select()
@@ -140,7 +140,7 @@ const bulkIdsSchema = z.object({ ids: z.array(z.string()).min(1) })
 
 export async function bulkArchiveProjects(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({
@@ -203,7 +203,7 @@ export async function bulkActivateProjects(
   data: z.infer<typeof bulkIdsSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({
@@ -264,7 +264,7 @@ export async function bulkActivateProjects(
 
 export async function archiveProject(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [project] = await db
     .select({
@@ -324,7 +324,7 @@ export async function archiveProject(data: z.infer<typeof idSchema>) {
 
 export async function activateProject(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [project] = await db
     .select({

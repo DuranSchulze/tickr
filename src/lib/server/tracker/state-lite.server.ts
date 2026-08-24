@@ -15,16 +15,43 @@ import {
 import { and, eq, inArray, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { requireWorkspaceAccess } from '../workspace-access.server'
+import {
+  assertPermission,
+  can,
+  permissionScope,
+} from './shared/role-gates.server'
+import { memberScopeCondition } from './shared/member-scope.server'
+import type { PermissionKey } from '#/lib/rbac/permissions'
 
 /**
  * Lightweight variant of getTrackerState that skips the time-entry query
  * entirely. Use this on every route that doesn't render the timer dashboard:
  * catalogs, members, settings, profile, analytics.
  */
-export async function getTrackerStateLite(): Promise<TrackerState> {
+export async function getTrackerStateLite(
+  requiredPermission?: PermissionKey,
+): Promise<TrackerState> {
   const access = await requireWorkspaceAccess()
+  if (requiredPermission) assertPermission(access, requiredPermission)
   const workspaceId = access.workspace.id
   const memberId = access.member.id
+  const canViewMembers = can(access, 'members.view')
+  const canViewCatalogs = can(access, 'catalogs.view')
+  const canManageCatalogs = can(access, 'catalogs.manage')
+  const canViewSettings = can(access, 'workspace.settings.view')
+  const memberVisibilityScope = canViewMembers
+    ? permissionScope(access, 'members.view')
+    : 'self'
+  const visibleMemberCondition = canViewMembers
+    ? memberScopeCondition(access, 'members.view')
+    : and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.id, memberId),
+      )
+  const visibleMemberIds = db
+    .select({ id: workspaceMembers.id })
+    .from(workspaceMembers)
+    .where(visibleMemberCondition)
 
   const [
     rolesRows,
@@ -40,17 +67,45 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
     db
       .select()
       .from(workspaceRoles)
-      .where(eq(workspaceRoles.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || canViewMembers
+          ? eq(workspaceRoles.workspaceId, workspaceId)
+          : and(
+              eq(workspaceRoles.workspaceId, workspaceId),
+              eq(workspaceRoles.id, access.member.workspaceRoleId ?? ''),
+            ),
+      )
       .orderBy(asc(workspaceRoles.permissionLevel), asc(workspaceRoles.name)),
     db
       .select()
       .from(departments)
-      .where(eq(departments.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || memberVisibilityScope === 'workspace'
+          ? eq(departments.workspaceId, workspaceId)
+          : access.member.departmentId
+            ? and(
+                eq(departments.workspaceId, workspaceId),
+                eq(departments.id, access.member.departmentId),
+              )
+            : and(
+                eq(departments.workspaceId, workspaceId),
+                eq(departments.id, ''),
+              ),
+      )
       .orderBy(asc(departments.name)),
     db
       .select()
       .from(cohorts)
-      .where(eq(cohorts.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || memberVisibilityScope === 'workspace'
+          ? eq(cohorts.workspaceId, workspaceId)
+          : access.member.departmentId
+            ? and(
+                eq(cohorts.workspaceId, workspaceId),
+                eq(cohorts.departmentId, access.member.departmentId),
+              )
+            : and(eq(cohorts.workspaceId, workspaceId), eq(cohorts.id, '')),
+      )
       .orderBy(asc(cohorts.name)),
     db
       .select()
@@ -75,7 +130,7 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
     db
       .select()
       .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, workspaceId))
+      .where(visibleMemberCondition)
       .orderBy(asc(workspaceMembers.email)),
     db
       .select()
@@ -90,7 +145,16 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
     db
       .select()
       .from(memberClientBillableRates)
-      .where(eq(memberClientBillableRates.workspaceId, workspaceId)),
+      .where(
+        and(
+          eq(memberClientBillableRates.workspaceId, workspaceId),
+          inArray(
+            memberClientBillableRates.workspaceMemberId,
+            visibleMemberIds,
+          ),
+          eq(memberClientBillableRates.workspaceMemberId, memberId),
+        ),
+      ),
   ])
 
   const memberIds = memberRows.map((m) => m.id)
@@ -139,10 +203,15 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
       timezone: access.workspace.timezone,
       defaultBillableRate: Number(access.workspace.defaultBillableRate),
       billableCurrency: access.workspace.billableCurrency,
-      googleSheetUrl: access.workspace.googleSheetUrl,
-      googleSheetSyncedAt: access.workspace.googleSheetSyncedAt
-        ? access.workspace.googleSheetSyncedAt.toISOString()
-        : null,
+      googleSheetUrl:
+        canViewSettings || can(access, 'catalogs.import')
+          ? access.workspace.googleSheetUrl
+          : null,
+      googleSheetSyncedAt:
+        (canViewSettings || can(access, 'catalogs.import')) &&
+        access.workspace.googleSheetSyncedAt
+          ? access.workspace.googleSheetSyncedAt.toISOString()
+          : null,
       locationTrackingEnabled: access.workspace.locationTrackingEnabled,
     },
     currentMemberId: memberId,
@@ -180,7 +249,9 @@ export async function getTrackerStateLite(): Promise<TrackerState> {
       name: c.name,
       clientStatus: c.clientStatus,
       defaultBillableRate:
-        c.defaultBillableRate == null ? null : Number(c.defaultBillableRate),
+        canManageCatalogs && c.defaultBillableRate != null
+          ? Number(c.defaultBillableRate)
+          : null,
     })),
     tags: tagsRows.map((t) => ({
       id: t.id,

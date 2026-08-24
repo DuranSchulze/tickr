@@ -1,10 +1,20 @@
 import { createServerFn } from '@tanstack/react-start'
+import { getEffectivePermissions } from '#/lib/rbac/permissions'
 
 export const getWorkspaceAccessFn = createServerFn({ method: 'GET' })
   .inputValidator((input: { slug?: string } | undefined) => input ?? {})
   .handler(async ({ data }) => {
-    const { requireWorkspaceAccess } = await import('./workspace-access.server')
-    const access = await requireWorkspaceAccess(data.slug ?? null)
+    const { requireWorkspaceAuthorization } =
+      await import('./workspace-access.server')
+    const access = await requireWorkspaceAuthorization(data.slug ?? null)
+    const permissionLevel =
+      access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+    const permissionOverrides =
+      access.member.workspaceRole?.permissionOverrides ?? {}
+    const permissions = getEffectivePermissions(
+      permissionLevel,
+      permissionOverrides,
+    )
     return {
       workspace: {
         id: access.workspace.id,
@@ -13,7 +23,11 @@ export const getWorkspaceAccessFn = createServerFn({ method: 'GET' })
         timezone: access.workspace.timezone,
         defaultBillableRate: Number(access.workspace.defaultBillableRate),
         billableCurrency: access.workspace.billableCurrency,
-        googleSheetUrl: access.workspace.googleSheetUrl,
+        googleSheetUrl:
+          permissions['workspace.settings.view'] ||
+          permissions['catalogs.import']
+            ? access.workspace.googleSheetUrl
+            : null,
       },
       user: {
         id: access.user.id,
@@ -23,8 +37,10 @@ export const getWorkspaceAccessFn = createServerFn({ method: 'GET' })
       },
       member: {
         id: access.member.id,
-        permissionLevel:
-          access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE',
+        roleId: access.member.workspaceRoleId,
+        departmentId: access.member.departmentId,
+        permissionLevel,
+        permissions,
       },
     }
   })

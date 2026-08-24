@@ -17,6 +17,7 @@ type WorkspaceAccess = {
   member: {
     id: string
     permissionLevel: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+    permissions: Record<string, boolean>
   }
 }
 
@@ -25,14 +26,9 @@ type NavigateFn = (opts: {
 }) => void
 
 export function useCatalogPermissions(access: WorkspaceAccess) {
-  const canManage =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN'
+  const canManage = access.member.permissions['catalogs.manage'] ?? false
 
-  const canImportSheet =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN' ||
-    access.member.permissionLevel === 'MANAGER'
+  const canImportSheet = access.member.permissions['catalogs.import'] ?? false
 
   const canViewBillable = canImportSheet
 

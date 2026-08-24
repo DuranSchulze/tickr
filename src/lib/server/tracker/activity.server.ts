@@ -7,9 +7,20 @@ import {
   timeEntries,
   projects,
 } from '#/db/schema'
-import { and, asc, desc, eq, ilike, inArray, isNotNull, isNull, or } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  or,
+} from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertAtLeastManager } from './shared/role-gates.server'
+import { permissionScope } from './shared/role-gates.server'
+import { memberScopeCondition } from './shared/member-scope.server'
 
 export type ActiveEntry = {
   id: string
@@ -58,13 +69,12 @@ export async function getWorkspaceActivity(data: {
   q?: string
 }): Promise<WorkspaceActivityPayload> {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
+  const memberVisibility = memberScopeCondition(access, 'activity.view')
+  const visibilityScope = permissionScope(access, 'activity.view')
+  const canFilterDepartments = visibilityScope === 'workspace'
+  const actorDepartmentId = access.member.departmentId
 
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const canFilterDepartments = level === 'OWNER' || level === 'ADMIN'
-  const managerDepartmentId = access.member.departmentId
-
-  if (!canFilterDepartments && !managerDepartmentId) {
+  if (visibilityScope === 'department' && !actorDepartmentId) {
     throw new Error(
       'You are not assigned to a department. Ask your admin to assign you to one.',
     )
@@ -83,10 +93,15 @@ export async function getWorkspaceActivity(data: {
     .where(
       canFilterDepartments
         ? eq(departments.workspaceId, workspaceId)
-        : and(
-            eq(departments.workspaceId, workspaceId),
-            eq(departments.id, managerDepartmentId!),
-          ),
+        : actorDepartmentId
+          ? and(
+              eq(departments.workspaceId, workspaceId),
+              eq(departments.id, actorDepartmentId),
+            )
+          : and(
+              eq(departments.workspaceId, workspaceId),
+              eq(departments.id, ''),
+            ),
     )
     .orderBy(asc(departments.name))
 
@@ -95,10 +110,12 @@ export async function getWorkspaceActivity(data: {
       departmentRows.some((department) => department.id === data.departmentId)
       ? data.departmentId
       : ''
-    : managerDepartmentId!
+    : visibilityScope === 'department'
+      ? actorDepartmentId!
+      : ''
 
   const conditions = [
-    eq(workspaceMembers.workspaceId, workspaceId),
+    memberVisibility,
     eq(workspaceMembers.status, 'ACTIVE' as const),
   ]
 

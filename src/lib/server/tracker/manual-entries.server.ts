@@ -1,18 +1,18 @@
 import type { z } from 'zod'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { db } from '#/db'
-import { timeEntries, timeEntryTags } from '#/db/schema'
+import { timeEntries, timeEntryTags, workspaceMembers } from '#/db/schema'
 import { and, eq, inArray, notInArray } from 'drizzle-orm'
 import {
   requireWorkspaceAccess,
   requireWorkspaceMembership,
 } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
-import { resolveEntryOrigin } from './shared/origin.server'
+import { captureEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import { createAuditLog } from './audit/audit-logger.server'
-import { assertOwnerOrAdmin } from './shared/role-gates.server'
+import { memberScopeCondition } from './shared/member-scope.server'
 import {
   entryRollupTarget,
   safeRefreshAnalyticsRollups,
@@ -108,10 +108,10 @@ export async function createManualEntry(
       durationSeconds: calculateDuration(startedAt, endedAt),
       entrySource: 'MANUAL',
       notes: data.notes,
-      ...(await resolveEntryOrigin({
+      ...captureEntryOrigin({
         trackingEnabled: access.workspace.locationTrackingEnabled,
         deviceLocation: data.deviceLocation,
-      })),
+      }),
     })
     .returning()
 
@@ -237,7 +237,10 @@ export async function updateWorkspaceMemberEntry(
   data: z.infer<typeof updateEntrySchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const visibleMemberIds = db
+    .select({ id: workspaceMembers.id })
+    .from(workspaceMembers)
+    .where(memberScopeCondition(access, 'time_entries.manage_all'))
 
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
@@ -253,6 +256,7 @@ export async function updateWorkspaceMemberEntry(
         and(
           eq(timeEntries.id, data.id),
           eq(timeEntries.workspaceId, access.workspace.id),
+          inArray(timeEntries.workspaceMemberId, visibleMemberIds),
         ),
       )
       .limit(1),
@@ -360,7 +364,10 @@ export async function deleteWorkspaceMemberEntry(
   data: z.infer<typeof entryIdSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const visibleMemberIds = db
+    .select({ id: workspaceMembers.id })
+    .from(workspaceMembers)
+    .where(memberScopeCondition(access, 'time_entries.manage_all'))
 
   const deleted = await db
     .delete(timeEntries)
@@ -368,6 +375,7 @@ export async function deleteWorkspaceMemberEntry(
       and(
         eq(timeEntries.id, data.id),
         eq(timeEntries.workspaceId, access.workspace.id),
+        inArray(timeEntries.workspaceMemberId, visibleMemberIds),
       ),
     )
     .returning({
@@ -400,7 +408,10 @@ export async function bulkDeleteWorkspaceMemberEntries(
   data: z.infer<typeof bulkEntryIdsSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const visibleMemberIds = db
+    .select({ id: workspaceMembers.id })
+    .from(workspaceMembers)
+    .where(memberScopeCondition(access, 'time_entries.manage_all'))
 
   const ids = [...new Set(data.ids)]
   const existingEntries = await db
@@ -415,6 +426,7 @@ export async function bulkDeleteWorkspaceMemberEntries(
     .where(
       and(
         eq(timeEntries.workspaceId, access.workspace.id),
+        inArray(timeEntries.workspaceMemberId, visibleMemberIds),
         inArray(timeEntries.id, ids),
       ),
     )
@@ -430,6 +442,7 @@ export async function bulkDeleteWorkspaceMemberEntries(
     .where(
       and(
         eq(timeEntries.workspaceId, access.workspace.id),
+        inArray(timeEntries.workspaceMemberId, visibleMemberIds),
         inArray(timeEntries.id, ids),
       ),
     )

@@ -13,7 +13,7 @@ import {
   requireWorkspaceAccess,
   requireWorkspaceMembership,
 } from '../workspace-access.server'
-import { assertAtLeastManager } from './shared/role-gates.server'
+import { memberScopeCondition } from './shared/member-scope.server'
 import { resolveEntryOrigin } from './shared/origin.server'
 import { createAuditLog } from './audit/audit-logger.server'
 import type { DeviceLocation } from '#/lib/time-tracker/device-location'
@@ -57,28 +57,11 @@ export async function getLocationHistory(data: {
   memberId?: string
 }): Promise<LocationHistoryPayload> {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
-
-  const permissionLevel =
-    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  const isManager = permissionLevel === 'MANAGER'
-  const managerDepartmentId = access.member.departmentId
-
-  if (isManager && !managerDepartmentId) {
-    throw new Error(
-      'You are not assigned to a department. Ask your admin to assign you to one.',
-    )
-  }
 
   const memberConditions = [
-    eq(workspaceMembers.workspaceId, access.workspace.id),
+    memberScopeCondition(access, 'locations.view'),
     eq(workspaceMembers.status, 'ACTIVE' as const),
   ]
-  if (isManager) {
-    memberConditions.push(
-      eq(workspaceMembers.departmentId, managerDepartmentId!),
-    )
-  }
 
   const memberRows = await db
     .select({

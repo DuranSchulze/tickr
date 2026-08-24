@@ -56,10 +56,12 @@ import {
 export function TimeTrackerDashboard({
   state,
   focusTimer = false,
+  canManageCatalog = false,
 }: {
   state: TrackerState
   /** Deep link from reminder emails — scroll to and focus the timer input. */
   focusTimer?: boolean
+  canManageCatalog?: boolean
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -259,10 +261,9 @@ export function TimeTrackerDashboard({
     discardTimer,
   })
 
-  const currentUser = state.members.find((m) => m.id === state.currentMemberId)!
-  const canManageCatalog =
-    currentUser.permissionLevel === 'OWNER' ||
-    currentUser.permissionLevel === 'ADMIN'
+  const currentUser = state.members.find(
+    (member) => member.id === state.currentMemberId,
+  )!
 
   useEffect(() => {
     if (!allEntriesInitialized.current) {

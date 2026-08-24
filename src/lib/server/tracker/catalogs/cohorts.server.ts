@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { cohorts, departments } from '#/db/schema'
 import { and, eq, ilike, ne } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import type {
   createCohortSchema,
@@ -13,7 +13,7 @@ import type {
 
 export async function createCohort(data: z.infer<typeof createCohortSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [department] = await db
     .select()
@@ -65,7 +65,7 @@ export async function createCohort(data: z.infer<typeof createCohortSchema>) {
 
 export async function updateCohort(data: z.infer<typeof updateCohortSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [department] = await db
     .select()
@@ -119,7 +119,7 @@ export async function updateCohort(data: z.infer<typeof updateCohortSchema>) {
 
 export async function deleteCohort(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .delete(cohorts)

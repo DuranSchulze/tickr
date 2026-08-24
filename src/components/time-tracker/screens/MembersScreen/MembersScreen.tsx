@@ -14,6 +14,7 @@ import {
 import { Page } from '../shared/Page'
 import { MembersFilterBar } from './MembersFilterBar'
 import type { MembersFilters } from './MembersFilterBar'
+import { canAssignRoleLevel } from '#/lib/rbac/authorization'
 
 interface MembersScreenProps {
   state: TrackerState
@@ -30,6 +31,7 @@ interface MembersScreenProps {
   statusFilter: string
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
+  canManage: boolean
 }
 
 export function MembersScreen({
@@ -47,15 +49,35 @@ export function MembersScreen({
   statusFilter,
   onFilterChange,
   onPageChange,
+  canManage,
 }: MembersScreenProps) {
-  const currentMember = state.members.find(
-    (m) => m.id === state.currentMemberId,
-  )!
-  const canManage =
-    currentMember.permissionLevel === 'OWNER' ||
-    currentMember.permissionLevel === 'ADMIN'
-
   const [showForm, setShowForm] = useState(false)
+  const currentMember = state.members.find(
+    (member) => member.id === state.currentMemberId,
+  )
+  const assignableRoles = useMemo(
+    () =>
+      state.roles.filter((role) =>
+        canAssignRoleLevel(
+          currentMember?.permissionLevel ?? 'EMPLOYEE',
+          role.permissionLevel,
+        ),
+      ),
+    [currentMember?.permissionLevel, state.roles],
+  )
+  const manageableDepartments = useMemo(
+    () =>
+      currentMember?.permissionLevel === 'MANAGER'
+        ? state.departments.filter(
+            (department) => department.id === currentMember.departmentId,
+          )
+        : state.departments,
+    [
+      currentMember?.departmentId,
+      currentMember?.permissionLevel,
+      state.departments,
+    ],
+  )
 
   const statsMap = useMemo(() => {
     const map = new Map<string, MemberStat>()
@@ -123,8 +145,8 @@ export function MembersScreen({
           <InviteMemberDialog
             open={showForm}
             onOpenChange={setShowForm}
-            roles={state.roles}
-            departments={state.departments}
+            roles={assignableRoles}
+            departments={manageableDepartments}
           />
         )}
 

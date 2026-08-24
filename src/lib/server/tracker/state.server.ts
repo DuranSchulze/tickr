@@ -18,6 +18,8 @@ import { and, eq, gte, isNull, or, asc } from 'drizzle-orm'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { toIso } from './shared/dates'
+import { can, permissionScope } from './shared/role-gates.server'
+import { memberScopeCondition } from './shared/member-scope.server'
 
 // 62 days guarantees the month view can navigate one full month back even
 // from the last day of a 31-day month (31 + 31). Older entries live in the
@@ -28,6 +30,19 @@ export async function getTrackerState(): Promise<TrackerState> {
   const access = await requireWorkspaceAccess()
   const workspaceId = access.workspace.id
   const memberId = access.member.id
+  const canViewMembers = can(access, 'members.view')
+  const canViewCatalogs = can(access, 'catalogs.view')
+  const canManageCatalogs = can(access, 'catalogs.manage')
+  const canViewSettings = can(access, 'workspace.settings.view')
+  const memberVisibilityScope = canViewMembers
+    ? permissionScope(access, 'members.view')
+    : 'self'
+  const visibleMemberCondition = canViewMembers
+    ? memberScopeCondition(access, 'members.view')
+    : and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.id, memberId),
+      )
 
   const windowStart = new Date()
   windowStart.setUTCDate(windowStart.getUTCDate() - ENTRIES_WINDOW_DAYS)
@@ -63,17 +78,45 @@ export async function getTrackerState(): Promise<TrackerState> {
     db
       .select()
       .from(workspaceRoles)
-      .where(eq(workspaceRoles.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || canViewMembers
+          ? eq(workspaceRoles.workspaceId, workspaceId)
+          : and(
+              eq(workspaceRoles.workspaceId, workspaceId),
+              eq(workspaceRoles.id, access.member.workspaceRoleId ?? ''),
+            ),
+      )
       .orderBy(asc(workspaceRoles.permissionLevel), asc(workspaceRoles.name)),
     db
       .select()
       .from(departments)
-      .where(eq(departments.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || memberVisibilityScope === 'workspace'
+          ? eq(departments.workspaceId, workspaceId)
+          : access.member.departmentId
+            ? and(
+                eq(departments.workspaceId, workspaceId),
+                eq(departments.id, access.member.departmentId),
+              )
+            : and(
+                eq(departments.workspaceId, workspaceId),
+                eq(departments.id, ''),
+              ),
+      )
       .orderBy(asc(departments.name)),
     db
       .select()
       .from(cohorts)
-      .where(eq(cohorts.workspaceId, workspaceId))
+      .where(
+        canViewCatalogs || memberVisibilityScope === 'workspace'
+          ? eq(cohorts.workspaceId, workspaceId)
+          : access.member.departmentId
+            ? and(
+                eq(cohorts.workspaceId, workspaceId),
+                eq(cohorts.departmentId, access.member.departmentId),
+              )
+            : and(eq(cohorts.workspaceId, workspaceId), eq(cohorts.id, '')),
+      )
       .orderBy(asc(cohorts.name)),
     db
       .select()
@@ -104,7 +147,7 @@ export async function getTrackerState(): Promise<TrackerState> {
       })
       .from(workspaceMembers)
       .leftJoin(users, eq(workspaceMembers.userId, users.id))
-      .where(eq(workspaceMembers.workspaceId, workspaceId))
+      .where(visibleMemberCondition)
       .orderBy(asc(workspaceMembers.email)),
     db
       .select()
@@ -142,7 +185,12 @@ export async function getTrackerState(): Promise<TrackerState> {
     db
       .select()
       .from(memberClientBillableRates)
-      .where(eq(memberClientBillableRates.workspaceId, workspaceId)),
+      .where(
+        and(
+          eq(memberClientBillableRates.workspaceId, workspaceId),
+          eq(memberClientBillableRates.workspaceMemberId, memberId),
+        ),
+      ),
   ])
 
   // Member roles are always roles of this workspace, so the full roles list
@@ -168,10 +216,15 @@ export async function getTrackerState(): Promise<TrackerState> {
       timezone: access.workspace.timezone,
       defaultBillableRate: Number(access.workspace.defaultBillableRate),
       billableCurrency: access.workspace.billableCurrency,
-      googleSheetUrl: access.workspace.googleSheetUrl,
-      googleSheetSyncedAt: access.workspace.googleSheetSyncedAt
-        ? access.workspace.googleSheetSyncedAt.toISOString()
-        : null,
+      googleSheetUrl:
+        canViewSettings || can(access, 'catalogs.import')
+          ? access.workspace.googleSheetUrl
+          : null,
+      googleSheetSyncedAt:
+        (canViewSettings || can(access, 'catalogs.import')) &&
+        access.workspace.googleSheetSyncedAt
+          ? access.workspace.googleSheetSyncedAt.toISOString()
+          : null,
       locationTrackingEnabled: access.workspace.locationTrackingEnabled,
     },
     currentMemberId: memberId,
@@ -209,7 +262,9 @@ export async function getTrackerState(): Promise<TrackerState> {
       name: c.name,
       clientStatus: c.clientStatus,
       defaultBillableRate:
-        c.defaultBillableRate == null ? null : Number(c.defaultBillableRate),
+        canManageCatalogs && c.defaultBillableRate != null
+          ? Number(c.defaultBillableRate)
+          : null,
     })),
     tags: tagsRows.map((t) => ({
       id: t.id,

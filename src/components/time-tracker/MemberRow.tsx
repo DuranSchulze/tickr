@@ -44,6 +44,7 @@ import type { TrackerState } from '#/lib/time-tracker/types'
 import type { MemberStat } from './MembersTable'
 import { MemberAnalyticsRow } from './MemberAnalyticsRow'
 import { useMemberRow } from './useMemberRow'
+import { canAssignRoleLevel } from '#/lib/rbac/authorization'
 
 type Member = TrackerState['members'][number]
 
@@ -425,6 +426,20 @@ export const MemberRow = memo(function MemberRow({
 }) {
   const department = state.departments.find((d) => d.id === member.departmentId)
   const cohorts = state.cohorts.filter((c) => member.cohortIds.includes(c.id))
+  const actorMember = state.members.find(
+    (candidate) => candidate.id === state.currentMemberId,
+  )
+  const actorLevel = actorMember?.permissionLevel ?? 'EMPLOYEE'
+  const assignableRoles = state.roles.filter((role) =>
+    canAssignRoleLevel(actorLevel, role.permissionLevel),
+  )
+  const actorDepartmentId = actorMember?.departmentId
+  const manageableDepartments =
+    actorLevel === 'MANAGER'
+      ? state.departments.filter(
+          (candidate) => candidate.id === actorDepartmentId,
+        )
+      : state.departments
   const effectiveRate = computeEffectiveRate(
     member.billableRate,
     state.workspace.defaultBillableRate,
@@ -497,7 +512,7 @@ export const MemberRow = memo(function MemberRow({
               className="h-8 w-full rounded border border-border bg-card px-2 text-xs text-foreground outline-none focus:border-primary"
             >
               <option value="">No role</option>
-              {state.roles.map((r) => (
+              {assignableRoles.map((r) => (
                 <option key={r.id} value={r.id}>
                   {r.name}
                 </option>
@@ -551,7 +566,7 @@ export const MemberRow = memo(function MemberRow({
               className="h-8 w-full rounded border border-border bg-card px-2 text-xs text-foreground outline-none focus:border-primary"
             >
               <option value="">Unassigned</option>
-              {state.departments.map((d) => (
+              {manageableDepartments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>

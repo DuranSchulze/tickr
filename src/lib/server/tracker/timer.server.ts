@@ -5,7 +5,7 @@ import { timeEntries, timeEntryTags } from '#/db/schema'
 import { and, eq, isNull, notInArray } from 'drizzle-orm'
 import { requireWorkspaceMembership } from '../workspace-access.server'
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
-import { resolveEntryOrigin } from './shared/origin.server'
+import { captureEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import {
@@ -122,10 +122,10 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
       durationSeconds: 0,
       entrySource: 'TIMER',
       notes: '',
-      ...(await resolveEntryOrigin({
+      ...captureEntryOrigin({
         trackingEnabled: access.workspace.locationTrackingEnabled,
         deviceLocation: data.deviceLocation,
-      })),
+      }),
     })
     .returning()
 

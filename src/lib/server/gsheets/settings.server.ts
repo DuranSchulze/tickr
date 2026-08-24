@@ -5,9 +5,11 @@ import { eq } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import { extractSheetId } from './extract-sheet-id'
+import { assertPermission } from '../tracker/shared/role-gates.server'
 
 export async function getServiceAccountEmail() {
-  await requireWorkspaceAccess()
+  const access = await requireWorkspaceAccess()
+  assertPermission(access, 'workspace.settings.view')
   const { getServiceAccountEmail: read } = await import('./auth.server')
   try {
     return { email: read() }
@@ -24,11 +26,11 @@ export async function updateWorkspaceGoogleSheet(
   data: z.infer<typeof updateGoogleSheetSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-
-  const level = access.member.workspaceRole?.permissionLevel
-  if (level !== 'OWNER') {
-    throw new Error('Only the workspace Owner can change the Google Sheet URL.')
-  }
+  assertPermission(
+    access,
+    'workspace.settings.manage',
+    'You do not have permission to change the Google Sheet URL.',
+  )
 
   const trimmed = data.url.trim()
   if (trimmed === '') {

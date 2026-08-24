@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react'
 import { TimesheetScreen } from '#/components/time-tracker/timesheet/TimesheetScreen'
 import { Button } from '#/components/ui/button'
 import { getTimesheetFn } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { isValidDateKey } from '#/lib/time-tracker/timesheet'
 
@@ -36,11 +36,7 @@ export const Route = createFileRoute('/app/timesheet')({
   }),
   loaderDeps: ({ search }) => search,
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: async ({ context, deps }) => {
     const timesheet = await context.queryClient.ensureQueryData({

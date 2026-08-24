@@ -5,7 +5,7 @@ import {
   getAnalyticsOverviewFn,
   getTrackerStateLiteFn,
 } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import {
   isAnalyticsScope,
@@ -33,11 +33,7 @@ export const Route = createFileRoute('/app/analytics_/overview')({
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: async ({ context, deps }) => {
     const [overview] = await Promise.all([

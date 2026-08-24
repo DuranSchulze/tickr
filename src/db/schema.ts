@@ -285,6 +285,10 @@ export const workspaceRoles = pgTable(
     permissionLevel: rolePermissionEnum('permission_level')
       .notNull()
       .default('EMPLOYEE'),
+    permissionOverrides: jsonb('permission_overrides')
+      .$type<Record<string, boolean>>()
+      .notNull()
+      .default({}),
     color: varchar('color', { length: 20 }).notNull().default('#6366f1'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

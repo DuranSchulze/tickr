@@ -6,7 +6,7 @@ import {
 } from '#/components/time-tracker/analytics/analytics.utils'
 import { getDepartmentDashboardFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import { DepartmentDashboardScreen } from '#/components/time-tracker/analytics/department/DepartmentDashboardScreen'
 
 type DeptSearch = {
@@ -80,11 +80,7 @@ export const Route = createFileRoute('/app/department-analytics')({
   }),
   loaderDeps: ({ search }) => resolveRange(search),
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: ({ context, deps }) =>
     context.queryClient.ensureQueryData({

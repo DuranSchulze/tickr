@@ -13,6 +13,8 @@ import { deriveWorkspaceSubscriptionAccess } from '#/lib/subscriptions/access'
 import { buildXenditReturnUrls } from '#/lib/subscriptions/xendit-return-urls'
 import { assertTrustedOrigin } from './csrf.server'
 import { requireWorkspaceAccess } from './workspace-access.server'
+import { getEffectivePermissions } from '#/lib/rbac/permissions'
+import { assertPermission } from './tracker/shared/role-gates.server'
 
 export type PlanSlug = 'team' | 'business'
 
@@ -144,9 +146,15 @@ export async function getCurrentWorkspaceSubscription() {
       .limit(20),
   ])
 
+  const permissionLevel =
+    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
+  const permissionOverrides =
+    access.member.workspaceRole?.permissionOverrides ?? {}
+
   return {
     ...state,
-    permissionLevel: access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE',
+    permissionLevel,
+    permissions: getEffectivePermissions(permissionLevel, permissionOverrides),
     invoices: invoices.map((invoice) => ({
       ...invoice,
       expiresAt: invoice.expiresAt?.toISOString() ?? null,
@@ -266,9 +274,11 @@ export async function createSubscriptionCheckout(planSlug: PlanSlug) {
   const access = await requireWorkspaceAccess(undefined, {
     skipSubscriptionGate: true,
   })
-  if (access.member.workspaceRole?.permissionLevel !== 'OWNER') {
-    throw new Error('Only a workspace owner can choose or pay for a plan.')
-  }
+  assertPermission(
+    access,
+    'billing.manage',
+    'You do not have permission to choose or pay for a workspace plan.',
+  )
   if (access.workspace.billingExempt) {
     throw new Error(
       'This workspace is permanently billing-exempt and does not need checkout.',

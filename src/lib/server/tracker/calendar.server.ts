@@ -12,6 +12,10 @@ import { and, eq, gte, isNull, lt, or } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { toDateKey } from './shared/dates'
 import type { calendarMonthSchema } from './shared/schemas'
+import {
+  assertCanAccessMember,
+  assertPermission,
+} from './shared/role-gates.server'
 
 export type CalendarEntry = {
   id: string
@@ -256,28 +260,6 @@ async function loadCalendarEntries({
   }
 }
 
-function canViewMemberCalendar({
-  requesterId,
-  requesterDepartmentId,
-  permissionLevel,
-  targetMemberId,
-  targetDepartmentId,
-}: {
-  requesterId: string
-  requesterDepartmentId: string | null
-  permissionLevel: string
-  targetMemberId: string
-  targetDepartmentId: string | null
-}) {
-  if (targetMemberId === requesterId) return true
-  if (permissionLevel === 'OWNER' || permissionLevel === 'ADMIN') return true
-  return (
-    permissionLevel === 'MANAGER' &&
-    requesterDepartmentId != null &&
-    requesterDepartmentId === targetDepartmentId
-  )
-}
-
 export async function getCalendarEntries(
   data: z.infer<typeof calendarMonthSchema>,
 ): Promise<CalendarEntriesPayload> {
@@ -294,6 +276,7 @@ export async function getDepartmentMemberCalendarEntries(data: {
   month: string
 }): Promise<CalendarEntriesPayload> {
   const access = await requireWorkspaceAccess()
+  assertPermission(access, 'members.view')
   const [member] = await db
     .select({
       id: workspaceMembers.id,
@@ -311,19 +294,7 @@ export async function getDepartmentMemberCalendarEntries(data: {
 
   if (!member) throw new Error('Member not found.')
 
-  const permissionLevel =
-    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  if (
-    !canViewMemberCalendar({
-      requesterId: access.member.id,
-      requesterDepartmentId: access.member.departmentId,
-      permissionLevel,
-      targetMemberId: member.id,
-      targetDepartmentId: member.departmentId,
-    })
-  ) {
-    throw new Error('You do not have permission to view this calendar.')
-  }
+  assertCanAccessMember(access, member, 'members.view')
 
   return loadCalendarEntries({
     month: data.month,

@@ -35,7 +35,7 @@ export const Route = createFileRoute('/app/workspace/billing')({
       getWorkspaceSubscriptionFn(),
       listSubscriptionPlansFn(),
     ])
-    if (billing.permissionLevel !== 'OWNER') {
+    if (!billing.permissions['billing.manage']) {
       throw redirect({ to: '/app/time-tracker' })
     }
     return { billing, plans }

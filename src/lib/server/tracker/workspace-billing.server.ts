@@ -4,7 +4,7 @@ import { workspaces } from '#/db/schema'
 import { eq } from 'drizzle-orm'
 import { normalizeCurrency, toFiniteRate } from '#/lib/time-tracker/billing'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertOwnerOrAdmin } from './shared/role-gates.server'
+import { assertPermission } from './shared/role-gates.server'
 import type { updateWorkspaceBillingSchema } from './shared/schemas'
 
 type CurrencyOption = {
@@ -47,7 +47,11 @@ export async function updateWorkspaceBilling(
   data: z.infer<typeof updateWorkspaceBillingSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(
+    access,
+    'billing.manage',
+    'You do not have permission to manage workspace billing.',
+  )
 
   await db
     .update(workspaces)

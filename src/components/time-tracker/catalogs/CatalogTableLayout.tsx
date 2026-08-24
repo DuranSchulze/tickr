@@ -493,7 +493,7 @@ export function CatalogTablePage<TData>({
       </header>
 
       {/* Card */}
-      <div className="rounded-lg border border-border bg-card shadow-sm">
+      <div className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
         {/* Toolbar */}
         {toolbar && (
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">

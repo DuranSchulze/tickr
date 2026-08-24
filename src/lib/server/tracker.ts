@@ -27,6 +27,11 @@ const createRoleSchema = z.object({
   color: z.string().default('#6366f1'),
 })
 
+const updateRolePermissionsSchema = z.object({
+  roleId: z.string().min(1),
+  overrides: z.record(z.string(), z.boolean()),
+})
+
 const analyticsRangeSchema = z.object({
   startDate: z.string().date(),
   endDate: z.string().date(),
@@ -190,6 +195,27 @@ export const getTrackerStateLiteFn = createServerFn({ method: 'GET' }).handler(
     return getTrackerStateLite()
   },
 )
+
+export const getCatalogBootstrapStateFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getTrackerStateLite } = await import('./tracker/state-lite.server')
+  return getTrackerStateLite('catalogs.view')
+})
+
+export const getMemberDirectoryStateFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getTrackerStateLite } = await import('./tracker/state-lite.server')
+  return getTrackerStateLite('members.view')
+})
+
+export const getWorkspaceSettingsStateFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getTrackerStateLite } = await import('./tracker/state-lite.server')
+  return getTrackerStateLite('workspace.settings.view')
+})
 
 export const getMemberAnalyticsFn = createServerFn({ method: 'GET' }).handler(
   async () => {
@@ -436,6 +462,15 @@ export const createWorkspaceRoleFn = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const { createWorkspaceRole } = await import('./tracker.server')
     return createWorkspaceRole(data)
+  })
+
+export const updateWorkspaceRolePermissionsFn = createServerFn({
+  method: 'POST',
+})
+  .inputValidator((input) => updateRolePermissionsSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { updateWorkspaceRolePermissions } = await import('./tracker.server')
+    return updateWorkspaceRolePermissions(data)
   })
 
 // ─── Projects ────────────────────────────────────────────────────────────────

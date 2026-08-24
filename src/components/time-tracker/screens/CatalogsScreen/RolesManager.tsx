@@ -18,9 +18,11 @@ type PermissionLevel = 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 export function RolesManager({
   state,
   canManage,
+  actorPermissionLevel,
 }: {
   state: TrackerState
   canManage: boolean
+  actorPermissionLevel: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
 }) {
   const router = useRouter()
   const [local, dispatch] = useReducer(
@@ -109,8 +111,9 @@ export function RolesManager({
             >
               <option value="EMPLOYEE">Employee (can track time)</option>
               <option value="MANAGER">Manager (can view team)</option>
-              <option value="ADMIN">Admin (can manage workspace)</option>
-              <option value="OWNER">Owner (full access)</option>
+              {actorPermissionLevel === 'OWNER' && (
+                <option value="ADMIN">Admin (can manage workspace)</option>
+              )}
             </select>
             <input
               type="color"

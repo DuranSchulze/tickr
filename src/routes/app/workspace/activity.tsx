@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import {
   fetchWorkspaceActivity,
   getWorkspaceActivityQueryKey,
@@ -27,13 +27,8 @@ export const Route = createFileRoute('/app/workspace/activity')({
     q: search.q,
   }),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    const level = access.member.permissionLevel
-    if (level !== 'OWNER' && level !== 'ADMIN' && level !== 'MANAGER') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['activity.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },

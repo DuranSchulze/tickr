@@ -21,9 +21,14 @@ import {
 } from '#/lib/time-tracker/billing'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import {
-  assertAtLeastManager,
-  assertOwnerOrAdmin,
+  assertCanReadMembers,
+  assertCanManageMembers,
+  assertCanAccessMember,
+  can,
+  canAccessMember,
 } from '../shared/role-gates.server'
+import { assertCanManageMemberTarget } from '../shared/member-scope.server'
+import { canManageMemberRole } from '#/lib/rbac/authorization'
 import type {
   memberIdSchema,
   updateMemberDetailSchema,
@@ -46,10 +51,7 @@ function emptyToNull<T extends string | undefined>(v: T): string | null {
 
 export async function getMemberDetail(data: z.infer<typeof memberIdSchema>) {
   const access = await requireWorkspaceAccess()
-  assertAtLeastManager(access)
-  const canManage =
-    access.member.workspaceRole?.permissionLevel === 'OWNER' ||
-    access.member.workspaceRole?.permissionLevel === 'ADMIN'
+  assertCanReadMembers(access)
 
   // Fetch base member row
   const [memberRow] = await db
@@ -64,6 +66,7 @@ export async function getMemberDetail(data: z.infer<typeof memberIdSchema>) {
     .limit(1)
 
   if (!memberRow) throw new Error('Member not found in this workspace.')
+  assertCanAccessMember(access, memberRow)
 
   // Collect IDs for related fetches
   const roleId = memberRow.workspaceRoleId
@@ -119,6 +122,13 @@ export async function getMemberDetail(data: z.infer<typeof memberIdSchema>) {
 
   const user = usersData[0] ?? null
   const role = rolesData[0] ?? null
+  const canManage =
+    can(access, 'members.manage') &&
+    canAccessMember(access, memberRow) &&
+    canManageMemberRole(
+      access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE',
+      role?.permissionLevel ?? 'EMPLOYEE',
+    )
   const department = departmentsData[0] ?? null
   const empData = empProfileData[0] ?? null
   const employeeProfile = empData
@@ -245,7 +255,7 @@ export async function updateMemberDetail(
   data: z.infer<typeof updateMemberDetailSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
 
   const [target] = await db
     .select()
@@ -259,6 +269,7 @@ export async function updateMemberDetail(
     .limit(1)
 
   if (!target) throw new Error('Member not found in this workspace.')
+  await assertCanManageMemberTarget(access, target)
 
   let employeeProfileId: string | null = null
 

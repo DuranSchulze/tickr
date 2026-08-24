@@ -4,7 +4,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { developerAccounts, workspaces } from '#/db/schema'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertOwnerOrAdmin } from '../tracker/shared/role-gates.server'
+import { assertPermission } from '../tracker/shared/role-gates.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import {
   createDeveloperAccountSchema,
@@ -49,7 +49,7 @@ export async function createDeveloperAccount(
 ): Promise<DeveloperAccountMetadata> {
   const data = createDeveloperAccountSchema.parse(input)
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
 
   const [created] = await db
     .insert(developerAccounts)
@@ -80,7 +80,7 @@ export async function listDeveloperAccounts(): Promise<
   DeveloperAccountMetadata[]
 > {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
 
   const rows = await db
     .select()
@@ -96,7 +96,7 @@ export async function revokeDeveloperAccount(input: {
 }): Promise<{ ok: true }> {
   const data = revokeDeveloperAccountSchema.parse(input)
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
 
   const [revoked] = await db
     .update(developerAccounts)
