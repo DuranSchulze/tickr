@@ -117,6 +117,22 @@ export function loadOfflineQueue(
   return load(workspaceId, memberId)
 }
 
+/** Entry ids whose local display copies must be retained until replay ends. */
+export function getQueuedEntryIds(
+  workspaceId: string,
+  memberId: string,
+): Set<string> {
+  const entryIds = new Set<string>()
+  for (const item of load(workspaceId, memberId)) {
+    if (item.type === 'startTimer' || item.type === 'createManualEntry') {
+      entryIds.add(item.optimisticId)
+    } else {
+      entryIds.add(item.payload.id)
+    }
+  }
+  return entryIds
+}
+
 export function removeOfflineQueueItem(
   workspaceId: string,
   memberId: string,

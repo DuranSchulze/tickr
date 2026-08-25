@@ -4,11 +4,14 @@ import { useQueryClient } from '@tanstack/react-query'
 import { gooeyToast } from '#/lib/toast'
 import {
   loadPendingEntries,
+  reconcilePendingEntries,
   removePendingEntry,
+  replacePendingEntries,
   savePendingEntry,
 } from '#/lib/time-tracker/pending-entries'
 import {
   enqueueOfflineMutation,
+  getQueuedEntryIds,
   hasQueuedStart,
   removeQueuedItemsForEntry,
   setOfflineEntryDeviceLocation,
@@ -103,6 +106,59 @@ export function useTimerCore({
   const [optimisticStoppedEntries, setOptimisticStoppedEntries] = useState<
     TimeEntry[]
   >(() => loadPendingEntries(state.workspace.id, state.currentMemberId))
+  const reconciledPendingScopeRef = useRef<string | null>(null)
+
+  // A browser can retain optimistic display rows after an older request or app
+  // version loses its corresponding queue item. Reconcile once per member and
+  // workspace on load: queued work remains visible, while redundant confirmed
+  // copies and un-replayable orphans are removed from this browser only.
+  useEffect(() => {
+    const scope = `${state.workspace.id}:${state.currentMemberId}`
+    if (reconciledPendingScopeRef.current === scope) return
+    reconciledPendingScopeRef.current = scope
+
+    const pendingEntries = loadPendingEntries(
+      state.workspace.id,
+      state.currentMemberId,
+    )
+    if (pendingEntries.length === 0) {
+      setOptimisticStoppedEntries([])
+      return
+    }
+
+    const reconciliation = reconcilePendingEntries(
+      pendingEntries,
+      state.entries,
+      getQueuedEntryIds(state.workspace.id, state.currentMemberId),
+    )
+    setOptimisticStoppedEntries(reconciliation.retained)
+    replacePendingEntries(
+      state.workspace.id,
+      state.currentMemberId,
+      reconciliation.retained,
+    )
+
+    if (reconciliation.orphaned.length > 0) {
+      const count = reconciliation.orphaned.length
+      gooeyToast.success('Local entries refreshed', {
+        description: `${count} stale local ${count === 1 ? 'entry was' : 'entries were'} removed. Your server records are unchanged.`,
+      })
+    }
+
+    if (
+      reconciliation.orphaned.length > 0 ||
+      reconciliation.confirmed.length > 0
+    ) {
+      void invalidateTrackerState(queryClient)
+      void router.invalidate()
+    }
+  }, [
+    queryClient,
+    router,
+    state.currentMemberId,
+    state.entries,
+    state.workspace.id,
+  ])
 
   function upsertOptimisticStoppedEntry(entry: TimeEntry) {
     setOptimisticStoppedEntries((prev) => [
