@@ -39,11 +39,11 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { useNowTick } from './hooks/useNowTick'
 import {
   classifyEntryTimingIssue,
-  isTimeInputWithSeconds,
-  patchDateAndTimeWithSeconds,
-  secondsToTimeInput,
-  timeInputToSeconds,
-  toTimeInputWithSeconds,
+  isTimeInputMinutes,
+  patchDateAndTimeWithMinutes,
+  secondsToTimeInputMinutes,
+  timeInputMinutesToSeconds,
+  toTimeInputMinutes,
 } from '#/lib/time-tracker/entry-timing'
 
 const noopCreate = () => Promise.resolve()
@@ -204,10 +204,10 @@ function EntryTimeCell({
   disabled?: boolean
 }) {
   const [startTime, setStartTime] = useState(() =>
-    toTimeInputWithSeconds(entry.startedAt),
+    toTimeInputMinutes(entry.startedAt),
   )
   const [endTime, setEndTime] = useState(() =>
-    entry.endedAt ? toTimeInputWithSeconds(entry.endedAt) : '',
+    entry.endedAt ? toTimeInputMinutes(entry.endedAt) : '',
   )
   const [timeTouched, setTimeTouched] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
@@ -221,14 +221,14 @@ function EntryTimeCell({
   const isRunning = !entry.endedAt
   const draftStartDate = dateRange.from ?? new Date(entry.startedAt)
   const draftEndDate = dateRange.to ?? draftStartDate
-  const hasValidStartTime = isTimeInputWithSeconds(startTime)
-  const hasValidEndTime = isRunning || isTimeInputWithSeconds(endTime)
+  const hasValidStartTime = isTimeInputMinutes(startTime)
+  const hasValidEndTime = isRunning || isTimeInputMinutes(endTime)
   const draftStartIso = hasValidStartTime
-    ? patchDateAndTimeWithSeconds(entry.startedAt, draftStartDate, startTime)
+    ? patchDateAndTimeWithMinutes(entry.startedAt, draftStartDate, startTime)
     : null
   const draftEndIso =
     entry.endedAt && hasValidEndTime
-      ? patchDateAndTimeWithSeconds(entry.endedAt, draftEndDate, endTime)
+      ? patchDateAndTimeWithMinutes(entry.endedAt, draftEndDate, endTime)
       : null
   const hasTimeError =
     !!draftStartIso &&
@@ -236,10 +236,10 @@ function EntryTimeCell({
     new Date(draftEndIso) <= new Date(draftStartIso)
 
   useEffect(() => {
-    setStartTime(toTimeInputWithSeconds(entry.startedAt))
-    setEndTime(entry.endedAt ? toTimeInputWithSeconds(entry.endedAt) : '')
+    setStartTime(toTimeInputMinutes(entry.startedAt))
+    setEndTime(entry.endedAt ? toTimeInputMinutes(entry.endedAt) : '')
     setTimeTouched(false)
-    lastValidStartRef.current = toTimeInputWithSeconds(entry.startedAt)
+    lastValidStartRef.current = toTimeInputMinutes(entry.startedAt)
     setDateRange({
       from: new Date(entry.startedAt),
       to: entry.endedAt ? new Date(entry.endedAt) : undefined,
@@ -251,13 +251,14 @@ function EntryTimeCell({
   function handleStartTimeChange(value: string) {
     setStartTime(value)
     setTimeTouched(true)
-    if (!entry.endedAt || !isTimeInputWithSeconds(value)) return
+    if (!entry.endedAt || !isTimeInputMinutes(value)) return
     const delta =
-      timeInputToSeconds(value) - timeInputToSeconds(lastValidStartRef.current)
+      timeInputMinutesToSeconds(value) -
+      timeInputMinutesToSeconds(lastValidStartRef.current)
     lastValidStartRef.current = value
     if (delta === 0) return
-    if (isTimeInputWithSeconds(endTime)) {
-      const total = timeInputToSeconds(endTime) + delta
+    if (isTimeInputMinutes(endTime)) {
+      const total = timeInputMinutesToSeconds(endTime) + delta
       const dayShift = Math.floor(total / 86400)
       if (dayShift !== 0) {
         setDateRange((range) => {
@@ -267,7 +268,7 @@ function EntryTimeCell({
           return { from: range.from, to: next }
         })
       }
-      setEndTime(secondsToTimeInput(total))
+      setEndTime(secondsToTimeInputMinutes(total))
     }
   }
 
@@ -305,7 +306,7 @@ function EntryTimeCell({
       <div className="inline-flex items-center justify-center gap-1.5">
         <input
           type="time"
-          step="1"
+          step="60"
           value={startTime}
           onChange={(event) => handleStartTimeChange(event.target.value)}
           onBlur={commitTimeChange}
@@ -318,7 +319,7 @@ function EntryTimeCell({
         </span>
         <input
           type="time"
-          step="1"
+          step="60"
           value={isRunning ? '' : endTime}
           onChange={(event) => {
             setEndTime(event.target.value)

@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   classifyEntryTimingIssue,
+  isTimeInputMinutes,
+  patchDateAndTimeWithMinutes,
   patchDateAndTimeWithSeconds,
+  secondsToTimeInputMinutes,
   secondsToTimeInput,
   stopEntryAt,
+  timeInputMinutesToSeconds,
+  toTimeInputMinutes,
   toTimeInputWithSeconds,
 } from './entry-timing'
 
@@ -60,6 +65,29 @@ describe('seconds-aware time input helpers', () => {
 
   it('formats shifted times with seconds', () => {
     expect(secondsToTimeInput(5 * 3600 + 2 * 60 + 9)).toBe('05:02:09')
+  })
+})
+
+describe('minute-only time input helpers', () => {
+  it('formats valid time input values without seconds', () => {
+    const value = toTimeInputMinutes('2026-08-25T09:02:09.000Z')
+
+    expect(value).toHaveLength(5)
+    expect(isTimeInputMinutes(value)).toBe(true)
+    expect(timeInputMinutesToSeconds('05:02')).toBe(18_120)
+    expect(secondsToTimeInputMinutes(5 * 3600 + 2 * 60 + 9)).toBe('05:02')
+  })
+
+  it('preserves stored seconds and milliseconds when minutes are edited', () => {
+    const base = '2026-08-25T09:00:03.456Z'
+    const patched = new Date(
+      patchDateAndTimeWithMinutes(base, new Date(base), '07:45'),
+    )
+
+    expect(patched.getHours()).toBe(7)
+    expect(patched.getMinutes()).toBe(45)
+    expect(patched.getSeconds()).toBe(3)
+    expect(patched.getMilliseconds()).toBe(456)
   })
 })
 

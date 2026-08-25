@@ -6,7 +6,15 @@ import { gooeyToast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#/components/ui/select'
 import { cn } from '#/lib/utils'
+import type { Department } from '#/lib/time-tracker/types'
 import { updateProfileFn } from '#/lib/server/tracker'
 import {
   EMPTY_PROFILE_ERRORS,
@@ -100,7 +108,8 @@ export function ProfileForm({
   selfProfile,
   fallbackName,
   fallbackEmail,
-  departmentName,
+  departments,
+  departmentId,
   imagekitConfigured,
   onAvatarChange,
   onNameChange,
@@ -108,7 +117,8 @@ export function ProfileForm({
   selfProfile: SelfProfileData
   fallbackName: string
   fallbackEmail: string
-  departmentName: string
+  departments: Department[]
+  departmentId: string
   imagekitConfigured: boolean
   onAvatarChange: (url: string) => void
   onNameChange: (name: string) => void
@@ -335,6 +345,14 @@ export function ProfileForm({
     event.preventDefault()
     void saveProfile()
   }
+
+  // Department is admin-assigned; show a read-only dropdown of all departments
+  // with the member's current one selected (falling back to "Unassigned").
+  const currentDepartmentId = departments.some(
+    (d) => d.id === departmentId,
+  )
+    ? departmentId
+    : 'NONE'
 
   return (
     <form onSubmit={handleSave} className="grid gap-4" noValidate>
@@ -618,7 +636,21 @@ export function ProfileForm({
 
           <div className="grid gap-2">
             <Label htmlFor="pf-department">Department</Label>
-            <Input id="pf-department" value={departmentName} readOnly />
+            <Select value={currentDepartmentId} disabled>
+              <SelectTrigger id="pf-department" className="w-full">
+                <SelectValue placeholder="Unassigned" />
+              </SelectTrigger>
+              <SelectContent>
+                {currentDepartmentId === 'NONE' && (
+                  <SelectItem value="NONE">Unassigned</SelectItem>
+                )}
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </SectionCard>

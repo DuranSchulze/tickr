@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Clock, KeyRound, LayoutGrid, Palette } from 'lucide-react'
+import { KeyRound, LayoutGrid, Palette } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Button } from '#/components/ui/button'
 import {
@@ -10,7 +10,6 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { ThemeControls } from '#/components/settings/ThemeSection'
-import { TimeFormatDialog } from './TimeFormatDialog'
 import { Info } from '../shared/Info'
 import { MemberStatusBadge } from '../shared/MemberStatusBadge'
 
@@ -38,7 +37,6 @@ export function ProfileSidebar({
   onChangePassword: () => void
 }) {
   const [appearanceOpen, setAppearanceOpen] = useState(false)
-  const [timeFormatOpen, setTimeFormatOpen] = useState(false)
 
   return (
     <div className="grid h-fit gap-4">
@@ -92,15 +90,6 @@ export function ProfileSidebar({
         <Button
           type="button"
           variant="outline"
-          onClick={() => setTimeFormatOpen(true)}
-          className="mt-2 w-full"
-        >
-          <Clock className="size-3.5" />
-          Time format
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
           onClick={onChangePassword}
           className="mt-2 w-full"
         >
@@ -123,11 +112,6 @@ export function ProfileSidebar({
           </div>
         </DialogContent>
       </Dialog>
-
-      <TimeFormatDialog
-        open={timeFormatOpen}
-        onOpenChange={setTimeFormatOpen}
-      />
     </div>
   )
 }
