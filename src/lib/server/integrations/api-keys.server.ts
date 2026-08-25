@@ -5,7 +5,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { workspaceApiKeys, users } from '#/db/schema'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { assertOwnerOrAdmin } from '../tracker/shared/role-gates.server'
+import { assertPermission } from '../tracker/shared/role-gates.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import {
   createWorkspaceApiKeySchema,
@@ -64,7 +64,7 @@ export async function listWorkspaceApiKeys(): Promise<
   WorkspaceApiKeyMetadata[]
 > {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
   return listRowsForWorkspace(access.workspace.id)
 }
 
@@ -73,7 +73,7 @@ export async function createWorkspaceApiKey(
 ): Promise<CreatedWorkspaceApiKey> {
   const data = createWorkspaceApiKeySchema.parse(input)
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
 
   const expiresAt = data.expiresAt ? new Date(data.expiresAt) : null
   if (expiresAt && expiresAt.getTime() <= Date.now()) {
@@ -119,7 +119,7 @@ export async function revokeWorkspaceApiKey(
 ): Promise<{ ok: true }> {
   const data = revokeWorkspaceApiKeySchema.parse(input)
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(access, 'workspace.settings.manage')
 
   const [revoked] = await db
     .update(workspaceApiKeys)

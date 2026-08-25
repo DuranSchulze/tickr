@@ -8,9 +8,12 @@ import { MembersScreen } from '#/components/time-tracker/WorkspaceScreens'
 import {
   getMemberAnalyticsFn,
   getPaginatedMembersFn,
-  getTrackerStateLiteFn,
+  getMemberDirectoryStateFn,
 } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import {
+  ensureWorkspaceAuthorization,
+  fetchFreshWorkspaceAuthorization,
+} from '#/lib/time-tracker/workspace-authorization'
 import type { MemberStat } from '#/lib/server/tracker.server'
 
 const PAGE_SIZE = 10
@@ -42,18 +45,14 @@ export const Route = createFileRoute('/app/workspace/members')({
     status: search.status ?? '',
   }),
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    if (access.member.permissionLevel === 'EMPLOYEE') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['members.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  loader: async ({ deps }) => {
-    const [state, memberStats, paginatedMembers] = await Promise.all([
-      getTrackerStateLiteFn(),
+  loader: async ({ context, deps }) => {
+    const [state, memberStats, paginatedMembers, access] = await Promise.all([
+      getMemberDirectoryStateFn(),
       getMemberAnalyticsFn().catch((): MemberStat[] => []),
       getPaginatedMembersFn({
         data: {
@@ -66,8 +65,15 @@ export const Route = createFileRoute('/app/workspace/members')({
           status: deps.status || undefined,
         },
       }),
+      ensureWorkspaceAuthorization(context.queryClient),
     ])
-    return { state, memberStats, paginatedMembers, pageSize: PAGE_SIZE }
+    return {
+      state,
+      memberStats,
+      paginatedMembers,
+      pageSize: PAGE_SIZE,
+      canManage: access.member.permissions['members.manage'],
+    }
   },
   staleTime: 30_000,
   component: MembersRoute,
@@ -78,7 +84,7 @@ function MembersRoute() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const { state, memberStats, paginatedMembers, pageSize } =
+  const { state, memberStats, paginatedMembers, pageSize, canManage } =
     Route.useLoaderData()
   const navigate = Route.useNavigate()
   const search = Route.useSearch()
@@ -105,6 +111,7 @@ function MembersRoute() {
       deptFilter={search.dept ?? ''}
       cohortFilter={search.cohort ?? ''}
       statusFilter={search.status ?? ''}
+      canManage={canManage}
       onFilterChange={(updates) => {
         void navigate({
           search: (prev) => ({ ...prev, ...updates, page: 0 }),

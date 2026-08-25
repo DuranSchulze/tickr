@@ -1,4 +1,5 @@
 import type { TimeEntry } from '#/lib/time-tracker/types'
+import { classifyEntryTimingIssue } from '#/lib/time-tracker/entry-timing'
 
 export type TaskGroup = {
   key: string
@@ -10,6 +11,7 @@ export type TaskGroup = {
   completedSeconds: number
   totalSeconds: number
   runningEntry: TimeEntry | null
+  affectedCount: number
 }
 
 export type DayGroup = {
@@ -56,6 +58,7 @@ function groupEntriesByTask(entries: TimeEntry[]): TaskGroup[] {
       completedSeconds,
       totalSeconds,
       runningEntry: sorted.find((e) => !e.endedAt) ?? null,
+      affectedCount: sorted.filter(classifyEntryTimingIssue).length,
     }
   })
 }

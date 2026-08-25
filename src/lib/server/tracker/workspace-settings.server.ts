@@ -4,6 +4,7 @@ import { workspaces } from '#/db/schema'
 import { eq } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
+import { assertPermission } from './shared/role-gates.server'
 import type { updateWorkspaceSettingsSchema } from './shared/schemas'
 
 export async function updateWorkspaceSettings(
@@ -11,10 +12,11 @@ export async function updateWorkspaceSettings(
 ) {
   const access = await requireWorkspaceAccess()
 
-  const level = access.member.workspaceRole?.permissionLevel
-  if (level !== 'OWNER') {
-    throw new Error('Only the workspace Owner can change workspace settings.')
-  }
+  assertPermission(
+    access,
+    'workspace.settings.manage',
+    'You do not have permission to change workspace settings.',
+  )
 
   // Drizzle omits undefined keys from SET — only provided fields update.
   const details = [

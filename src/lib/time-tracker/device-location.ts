@@ -5,6 +5,13 @@ export type DeviceLocation = {
   capturedAt: string
 }
 
+export type EntryLocationCaptureStatus =
+  | 'idle'
+  | 'locating'
+  | 'attached'
+  | 'approximate'
+  | 'unavailable'
+
 const LOCATION_TIMEOUT_MS = 8_000
 const LOCATION_MAX_AGE_MS = 15_000
 

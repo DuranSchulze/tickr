@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { tags } from '#/db/schema'
 import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import type {
   createTagSchema,
@@ -24,7 +24,7 @@ async function exportTag(
 
 export async function createTag(data: z.infer<typeof createTagSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [existing] = await db
     .select()
@@ -67,7 +67,7 @@ export async function createTag(data: z.infer<typeof createTagSchema>) {
 
 export async function updateTag(data: z.infer<typeof updateTagSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .update(tags)
@@ -96,7 +96,7 @@ const bulkIdsSchema = z.object({ ids: z.array(z.string()).min(1) })
 
 export async function bulkArchiveTags(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({ id: tags.id, name: tags.name, color: tags.color })
@@ -139,7 +139,7 @@ export async function bulkArchiveTags(data: z.infer<typeof bulkIdsSchema>) {
 
 export async function bulkActivateTags(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({ id: tags.id, name: tags.name, color: tags.color })
@@ -182,7 +182,7 @@ export async function bulkActivateTags(data: z.infer<typeof bulkIdsSchema>) {
 
 export async function archiveTag(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [tag] = await db
     .select({ name: tags.name, color: tags.color })
@@ -217,7 +217,7 @@ export async function archiveTag(data: z.infer<typeof idSchema>) {
 
 export async function activateTag(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [tag] = await db
     .select({ name: tags.name, color: tags.color })

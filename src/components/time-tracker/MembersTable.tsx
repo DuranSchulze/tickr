@@ -24,6 +24,7 @@ import {
 } from '#/components/ui/table'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { MemberRow } from './MemberRow'
+import { canManageMemberRole } from '#/lib/rbac/authorization'
 
 declare module '@tanstack/react-table' {
   interface ColumnMeta<TData extends RowData, TValue> {
@@ -82,6 +83,9 @@ export function MembersTable({
   const columnCount = table.getAllLeafColumns().length
   const firstItem = totalCount === 0 ? 0 : page * pageSize + 1
   const lastItem = Math.min((page + 1) * pageSize, totalCount)
+  const currentMember = state.members.find(
+    (member) => member.id === state.currentMemberId,
+  )
 
   return (
     <div className="min-w-0 overflow-x-auto">
@@ -124,7 +128,14 @@ export function MembersTable({
                   key={row.id}
                   member={row.original}
                   state={state}
-                  canManage={canManage}
+                  canManage={
+                    canManage &&
+                    row.original.id !== state.currentMemberId &&
+                    canManageMemberRole(
+                      currentMember?.permissionLevel ?? 'EMPLOYEE',
+                      row.original.permissionLevel,
+                    )
+                  }
                   columnCount={columnCount}
                   isSelf={row.original.id === state.currentMemberId}
                   stats={statsMap.get(row.original.id)}

@@ -1,6 +1,7 @@
 import { requireWorkspaceAccess } from './workspace-access.server'
 import { sendEmail } from './mailer'
 import { BRAND } from '#/lib/brand'
+import { assertPermission } from './tracker/shared/role-gates.server'
 
 export type SendTestEmailResult = { ok: true } | { ok: false; error: string }
 
@@ -14,10 +15,7 @@ export async function sendTestEmail(data: {
   to: string
 }): Promise<SendTestEmailResult> {
   const access = await requireWorkspaceAccess()
-  const level = access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  if (level !== 'OWNER' && level !== 'ADMIN') {
-    throw new Error('Only workspace owners or admins can send a test email.')
-  }
+  assertPermission(access, 'workspace.settings.manage')
 
   const sentAt = new Date().toISOString()
   const subject = `${BRAND.name} SMTP test email`

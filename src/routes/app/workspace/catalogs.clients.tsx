@@ -56,16 +56,9 @@ function ClientsRoute() {
   const navigate = Route.useNavigate()
   const search = Route.useSearch()
 
-  const canManage =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN'
-
-  const canImportSheet =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN' ||
-    access.member.permissionLevel === 'MANAGER'
-
-  const canViewBillable = canImportSheet
+  const canManage = access.member.permissions['catalogs.manage']
+  const canImportSheet = access.member.permissions['catalogs.import']
+  const canViewBillable = access.member.permissions['catalogs.view']
 
   const currency = access.workspace.billableCurrency
 

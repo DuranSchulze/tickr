@@ -15,6 +15,7 @@ import {
 import { and, eq, ilike, asc, desc, sql, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { toFiniteRate } from '#/lib/time-tracker/billing'
+import { assertCanReadCatalogs } from '../shared/role-gates.server'
 
 type PaginatedResult<T> = {
   items: T[]
@@ -155,6 +156,7 @@ export async function getPaginatedClients({
   sort?: NameSort
 }): Promise<PaginatedResult<PaginatedClient>> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
   const defaultRate = toFiniteRate(
     parseFloat(access.workspace.defaultBillableRate ?? '0'),
@@ -249,6 +251,7 @@ export async function getPaginatedProjects({
   sort?: NameSort
 }): Promise<PaginatedProjectsResult> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
   const defaultRate = toFiniteRate(
     parseFloat(access.workspace.defaultBillableRate ?? '0'),
@@ -355,6 +358,7 @@ export async function getPaginatedTags({
   sort?: NameSort
 }): Promise<PaginatedResult<PaginatedTag>> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
 
   const conditions = [eq(tags.workspaceId, workspaceId)]
@@ -434,6 +438,7 @@ export async function getPaginatedDepartments({
   sort?: DepartmentSort
 }): Promise<PaginatedResult<PaginatedDepartment>> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
 
   // Member counts per department, scoped to the workspace. LEFT-joined below so
@@ -540,6 +545,7 @@ export async function getPaginatedCohorts({
   sort?: NameSort
 }): Promise<PaginatedCohortsResult> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
 
   const conditions = [eq(cohorts.workspaceId, workspaceId)]
@@ -601,6 +607,7 @@ export type PaginatedRole = {
   name: string
   permissionLevel: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   color: string
+  permissionOverrides: Record<string, boolean>
 }
 
 export type RoleSort = 'permission' | 'name_asc' | 'name_desc'
@@ -619,6 +626,7 @@ export async function getPaginatedRoles({
   sort?: RoleSort
 }): Promise<PaginatedResult<PaginatedRole>> {
   const access = await requireWorkspaceAccess()
+  assertCanReadCatalogs(access)
   const workspaceId = access.workspace.id
 
   const conditions = [eq(workspaceRoles.workspaceId, workspaceId)]
@@ -646,6 +654,7 @@ export async function getPaginatedRoles({
         name: workspaceRoles.name,
         permissionLevel: workspaceRoles.permissionLevel,
         color: workspaceRoles.color,
+        permissionOverrides: workspaceRoles.permissionOverrides,
       })
       .from(workspaceRoles)
       .where(whereClause)

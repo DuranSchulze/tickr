@@ -16,6 +16,7 @@ import type { DraftEntry } from './utils'
 import type { Client, Project, TimeEntry } from '#/lib/time-tracker/types'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
+import { classifyEntryTimingIssue } from '#/lib/time-tracker/entry-timing'
 
 type EditEntryDrawerProps = {
   open: boolean
@@ -63,6 +64,7 @@ export function EditEntryDrawer({
   onCreateTag,
 }: EditEntryDrawerProps) {
   const dialogOpen = open && !!entry
+  const timingIssue = entry ? classifyEntryTimingIssue(entry) : null
 
   // Resolve selected items for the preview panel
   const selectedClient = useMemo(
@@ -121,6 +123,26 @@ export function EditEntryDrawer({
                   </p>
                 )}
               </div>
+
+              {timingIssue && (
+                <div
+                  className={`border-y px-4 py-3 text-sm sm:mx-5 sm:mt-3 sm:rounded-md sm:border ${
+                    timingIssue === 'needs-repair'
+                      ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                      : 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
+                  }`}
+                >
+                  <p className="m-0 font-semibold">
+                    {timingIssue === 'needs-repair'
+                      ? 'This entry needs a valid start and end time.'
+                      : 'This entry is 10 seconds or shorter. Review its exact times.'}
+                  </p>
+                  <p className="m-0 mt-1 text-xs opacity-80">
+                    Location or start latency may have affected it. Open Date
+                    &amp; Time below, correct the seconds, then save.
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-0 sm:grid-cols-[1fr_minmax(240px,300px)] sm:gap-0">
                 {/* Left: Form */}

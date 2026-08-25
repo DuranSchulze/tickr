@@ -7,6 +7,7 @@ import { ManualEntryPanel } from './ManualEntryPanel'
 import { TimerPanel } from './TimerPanel'
 import type { DraftEntry } from './utils'
 import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
+import type { EntryLocationCaptureStatus } from '#/lib/time-tracker/device-location'
 
 export function InputSection({
   workspaceId,
@@ -36,6 +37,7 @@ export function InputSection({
   onStop,
   onDiscard,
   onUpdateStartedAt,
+  locationStatus,
   // manual
   draft,
   setDraft,
@@ -85,6 +87,7 @@ export function InputSection({
   onStop: () => void
   onDiscard: () => void
   onUpdateStartedAt: (iso: string) => void
+  locationStatus: EntryLocationCaptureStatus
   draft: DraftEntry
   setDraft: (draft: DraftEntry) => void
   onAddManual: () => void
@@ -219,6 +222,7 @@ export function InputSection({
                   onStop={onStop}
                   onDiscard={onDiscard}
                   onUpdateStartedAt={onUpdateStartedAt}
+                  locationStatus={locationStatus}
                   descriptionDropdownUp={descriptionDropdownUp}
                 />
               </motion.div>

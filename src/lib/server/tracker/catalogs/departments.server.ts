@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { departments } from '#/db/schema'
 import { and, eq, ilike } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import type {
   createDepartmentSchema,
@@ -15,7 +15,7 @@ export async function createDepartment(
   data: z.infer<typeof createDepartmentSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [existing] = await db
     .select()
@@ -55,7 +55,7 @@ export async function updateDepartment(
   data: z.infer<typeof updateDepartmentSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .update(departments)
@@ -87,7 +87,7 @@ export async function updateDepartment(
 
 export async function deleteDepartment(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .delete(departments)

@@ -26,12 +26,27 @@ import type { useTrackerMutations } from './useTrackerMutations'
 import { useDescriptionSuggestions } from './useDescriptionSuggestions'
 import { singleTagIds } from '../utils'
 import { publishTaskDataChange } from '#/lib/time-tracker/task-sync'
+import { stopEntryAt } from '#/lib/time-tracker/entry-timing'
+
+type StopFields = {
+  description: string
+  projectId: string
+  taskId: string | null
+  tagIds: string[]
+  billable: boolean
+}
 
 type TimerOperation =
   | { kind: 'idle' }
   | { kind: 'starting'; token: number; optimisticId: string }
   | { kind: 'runningOptimistic'; token: number; entryId: string }
-  | { kind: 'stopping'; token: number; entryId: string }
+  | {
+      kind: 'stopping'
+      token: number
+      entryId: string
+      endedAt: string
+      fields: StopFields
+    }
   | { kind: 'discarding'; token: number; entryId: string }
 
 export type { TimerOperation }
@@ -102,14 +117,6 @@ export function useTimerCore({
     removePendingEntry(state.workspace.id, state.currentMemberId, entryId)
   }
 
-  function buildStoppedEntry(entryToStop: TimeEntry): TimeEntry {
-    const now = new Date()
-    const durationSeconds = Math.floor(
-      (now.getTime() - new Date(entryToStop.startedAt).getTime()) / 1000,
-    )
-    return { ...entryToStop, endedAt: now.toISOString(), durationSeconds }
-  }
-
   // --- Derived active-entry base ---
   const serverActiveEntry = state.entries.find(
     (e) => e.workspaceMemberId === state.currentMemberId && !e.endedAt,
@@ -131,6 +138,9 @@ export function useTimerCore({
   const [timerTagIds, setTimerTagIds] = useState<string[]>([])
   const [timerBillable, setTimerBillable] = useState(false)
   const [timerStartedAt, setTimerStartedAt] = useState<string | null>(null)
+  const [subsecondStopRequestedAt, setSubsecondStopRequestedAt] = useState<
+    string | null
+  >(null)
 
   const lastSyncedEntryIdRef = useRef<string | null>(null)
   const timerInputDirtyRef = useRef(false)
@@ -476,22 +486,25 @@ export function useTimerCore({
   function performOptimisticStop(
     entryToStop: TimeEntry,
     token?: number,
-    fields?: {
-      description: string
-      projectId: string
-      taskId: string | null
-      tagIds: string[]
-      billable: boolean
+    fields: StopFields = {
+      description: entryToStop.description,
+      projectId: entryToStop.projectId,
+      taskId: entryToStop.taskId,
+      tagIds: entryToStop.tagIds,
+      billable: entryToStop.billable,
     },
+    requestedEndedAt = new Date().toISOString(),
   ) {
     const operationToken = token ?? nextOperationToken()
-    const stoppedEntry = buildStoppedEntry(entryToStop)
+    const stoppedEntry = stopEntryAt(entryToStop, requestedEndedAt)
 
     setOptimisticActiveEntry(null)
     setTimerOperation({
       kind: 'stopping',
       token: operationToken,
       entryId: entryToStop.id,
+      endedAt: stoppedEntry.endedAt!,
+      fields,
     })
     upsertOptimisticStoppedEntry(stoppedEntry)
 
@@ -509,7 +522,9 @@ export function useTimerCore({
       return
     }
 
-    void stopTimerFn({ data: { id: entryToStop.id, ...fields } })
+    void stopTimerFn({
+      data: { id: entryToStop.id, endedAt: stoppedEntry.endedAt!, ...fields },
+    })
       .then((confirmedEntry) => {
         publishTaskDataChange(state.workspace.id)
         const op = timerOperationRef.current
@@ -658,7 +673,7 @@ export function useTimerCore({
 
         if (op.kind === 'stopping') {
           removeOptimisticStoppedEntry(op.entryId)
-          performOptimisticStop(newEntry, token)
+          performOptimisticStop(newEntry, token, op.fields, op.endedAt)
           return
         }
 
@@ -707,6 +722,7 @@ export function useTimerCore({
         saveTimeoutRef.current = null
       }
 
+      const requestedEndedAt = new Date().toISOString()
       const confirmed = await confirmTimeEntryOverlap({
         entryId: activeEntry.id,
       })
@@ -716,6 +732,7 @@ export function useTimerCore({
         const stoppedEntry = await stopTimerFn({
           data: {
             id: activeEntry.id,
+            endedAt: requestedEndedAt,
             description: timerDescription.trim(),
             projectId: timerProjectId,
             taskId: timerTaskId || null,
@@ -834,7 +851,7 @@ export function useTimerCore({
     })
   }
 
-  async function stopTimer() {
+  async function finishStopTimer(requestedEndedAt: string) {
     if (!activeEntry) return
 
     // Cancel any pending debounced autosave — the final field values are sent
@@ -847,6 +864,13 @@ export function useTimerCore({
 
     const entryToStop = activeEntry
     const currentOp = timerOperationRef.current
+    const fields: StopFields = {
+      description: timerDescription.trim(),
+      projectId: timerProjectId,
+      taskId: timerTaskId || null,
+      tagIds: singleTagIds(timerTagIds),
+      billable: timerBillable,
+    }
 
     if (entryToStop.id.startsWith('optimistic-')) {
       setOptimisticActiveEntry(null)
@@ -856,8 +880,10 @@ export function useTimerCore({
         kind: 'stopping',
         token,
         entryId: entryToStop.id,
+        endedAt: requestedEndedAt,
+        fields,
       })
-      const stoppedEntry = buildStoppedEntry(entryToStop)
+      const stoppedEntry = stopEntryAt(entryToStop, requestedEndedAt)
       upsertOptimisticStoppedEntry(stoppedEntry)
       // The start itself is waiting in the offline queue (offline start →
       // stop before reconnect). Queue the stop behind it — the drain remaps
@@ -875,11 +901,7 @@ export function useTimerCore({
           payload: {
             id: entryToStop.id,
             endedAt: stoppedEntry.endedAt!,
-            description: timerDescription.trim(),
-            projectId: timerProjectId,
-            taskId: timerTaskId || null,
-            tagIds: singleTagIds(timerTagIds),
-            billable: timerBillable,
+            ...fields,
           },
         })
       }
@@ -894,14 +916,33 @@ export function useTimerCore({
       if (!confirmed) return
     }
 
-    performOptimisticStop(entryToStop, undefined, {
-      description: timerDescription.trim(),
-      projectId: timerProjectId,
-      taskId: timerTaskId || null,
-      tagIds: singleTagIds(timerTagIds),
-      billable: timerBillable,
-    })
+    performOptimisticStop(entryToStop, undefined, fields, requestedEndedAt)
     clearTimerInputs()
+  }
+
+  function stopTimer() {
+    if (!activeEntry) return
+    const requestedEndedAt = new Date().toISOString()
+    const elapsedMs =
+      new Date(requestedEndedAt).getTime() -
+      new Date(activeEntry.startedAt).getTime()
+    if (elapsedMs < 1000) {
+      setSubsecondStopRequestedAt(requestedEndedAt)
+      return
+    }
+    void finishStopTimer(requestedEndedAt)
+  }
+
+  function keepSubsecondEntry() {
+    if (!subsecondStopRequestedAt) return
+    const requestedEndedAt = subsecondStopRequestedAt
+    setSubsecondStopRequestedAt(null)
+    void finishStopTimer(requestedEndedAt)
+  }
+
+  function discardSubsecondEntry() {
+    setSubsecondStopRequestedAt(null)
+    discardTimer()
   }
 
   return {
@@ -916,6 +957,7 @@ export function useTimerCore({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    subsecondStopRequestedAt,
     // Pending-entry store access — used by offline manual creation (to show
     // the queued entry instantly) and by the reconnect drain (to clear
     // optimistic entries once their server counterparts exist).
@@ -941,6 +983,9 @@ export function useTimerCore({
     startTimer,
     stopTimer,
     discardTimer,
+    keepSubsecondEntry,
+    discardSubsecondEntry,
+    cancelSubsecondStop: () => setSubsecondStopRequestedAt(null),
     resumeEntry,
     flushDescriptionSave,
     // Autosave (exposed for onUpdateStartedAt in inputSectionProps)

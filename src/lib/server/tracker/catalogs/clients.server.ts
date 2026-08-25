@@ -3,7 +3,7 @@ import { db } from '#/db'
 import { clients } from '#/db/schema'
 import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import { toFiniteRate } from '#/lib/time-tracker/billing'
 import type {
@@ -30,7 +30,7 @@ async function exportClient(
 
 export async function createClient(data: z.infer<typeof createClientSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [existing] = await db
     .select()
@@ -80,7 +80,7 @@ export async function createClient(data: z.infer<typeof createClientSchema>) {
 
 export async function updateClient(data: z.infer<typeof updateClientSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .update(clients)
@@ -124,7 +124,7 @@ const bulkIdsSchema = z.object({ ids: z.array(z.string()).min(1) })
 
 export async function bulkArchiveClients(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({
@@ -171,7 +171,7 @@ export async function bulkArchiveClients(data: z.infer<typeof bulkIdsSchema>) {
 
 export async function bulkActivateClients(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({
@@ -218,7 +218,7 @@ export async function bulkActivateClients(data: z.infer<typeof bulkIdsSchema>) {
 
 export async function bulkSuspendClients(data: z.infer<typeof bulkIdsSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const rows = await db
     .select({
@@ -265,7 +265,7 @@ export async function bulkSuspendClients(data: z.infer<typeof bulkIdsSchema>) {
 
 export async function archiveClient(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [client] = await db
     .select({
@@ -313,7 +313,7 @@ export async function archiveClient(data: z.infer<typeof idSchema>) {
 
 export async function activateClient(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [client] = await db
     .select({
@@ -361,7 +361,7 @@ export async function activateClient(data: z.infer<typeof idSchema>) {
 
 export async function suspendClient(data: z.infer<typeof idSchema>) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [client] = await db
     .select({

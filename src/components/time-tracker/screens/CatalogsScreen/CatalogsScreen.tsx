@@ -24,19 +24,23 @@ const INITIAL_STEPS: ImportStep[] = [
   { label: 'Tags', status: 'pending' },
 ]
 
-export function CatalogsScreen({ state }: { state: TrackerState }) {
+export function CatalogsScreen({
+  state,
+  canManage,
+  canImport,
+  canManageRoles,
+  actorPermissionLevel,
+}: {
+  state: TrackerState
+  canManage: boolean
+  canImport: boolean
+  canManageRoles: boolean
+  actorPermissionLevel: 'OWNER' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
+}) {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [steps, setSteps] = useState<ImportStep[]>(INITIAL_STEPS)
   const [importDone, setImportDone] = useState(false)
-
-  const currentMember = state.members.find(
-    (m) => m.id === state.currentMemberId,
-  )!
-  const canManage =
-    currentMember.permissionLevel === 'OWNER' ||
-    currentMember.permissionLevel === 'ADMIN'
-  const canImport = canManage || currentMember.permissionLevel === 'MANAGER'
 
   function setStep(index: number, patch: Partial<ImportStep>) {
     setSteps((prev) =>
@@ -131,7 +135,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
   return (
     <Page
       title="Catalogs"
-      eyebrow={canManage ? 'Controlled tagging' : 'Manager — read only'}
+      eyebrow={canManage ? 'Controlled tagging' : 'Read-only access'}
     >
       {canImport && state.workspace.googleSheetUrl && (
         <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
@@ -157,7 +161,11 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <RolesManager state={state} canManage={canManage} />
+        <RolesManager
+          state={state}
+          canManage={canManageRoles}
+          actorPermissionLevel={actorPermissionLevel}
+        />
         <ClientsManager state={state} canManage={canManage} />
         <ProjectsManager state={state} canManage={canManage} />
         <TagsManager state={state} canManage={canManage} />

@@ -5,7 +5,10 @@ import {
   getDepartmentMemberDetailFn,
   getTrackerStateLiteFn,
 } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import {
+  ensureWorkspaceAuthorization,
+  fetchFreshWorkspaceAuthorization,
+} from '#/lib/time-tracker/workspace-authorization'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 
 type MemberDetailSearch = {
@@ -53,11 +56,7 @@ export const Route = createFileRoute(
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: async ({ context, deps, params }) => {
     const [detail, state, access] = await Promise.all([
@@ -77,11 +76,7 @@ export const Route = createFileRoute(
         queryFn: () => getTrackerStateLiteFn(),
         staleTime: 60_000,
       }),
-      context.queryClient.ensureQueryData({
-        queryKey: ['workspace-access'],
-        queryFn: () => getWorkspaceAccessFn(),
-        staleTime: 5 * 60 * 1000,
-      }),
+      ensureWorkspaceAuthorization(context.queryClient),
     ])
     return { detail, state, access }
   },
@@ -161,10 +156,7 @@ function DepartmentMemberDetailRoute() {
     <DepartmentMemberDetailScreen
       detail={detail}
       state={state}
-      canEditEntries={
-        access.member.permissionLevel === 'OWNER' ||
-        access.member.permissionLevel === 'ADMIN'
-      }
+      canEditEntries={access.member.permissions['time_entries.manage_all']}
       onBack={backToDepartment}
       onViewCalendar={viewCalendar}
       onChangeRange={changeRange}

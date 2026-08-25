@@ -13,7 +13,10 @@ import {
   getTrackerStateLiteFn,
 } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import {
+  ensureWorkspaceAuthorization,
+  fetchFreshWorkspaceAuthorization,
+} from '#/lib/time-tracker/workspace-authorization'
 
 type ReportsSearch = {
   startDate?: string
@@ -95,11 +98,7 @@ export const Route = createFileRoute('/app/reports')({
   }),
   loaderDeps: ({ search }) => resolveQuery(search),
   beforeLoad: async ({ context }) => {
-    await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
+    await fetchFreshWorkspaceAuthorization(context.queryClient)
   },
   loader: async ({ context, deps }) => {
     const singleMemberId =
@@ -129,11 +128,7 @@ export const Route = createFileRoute('/app/reports')({
             staleTime: 30_000,
           })
         : Promise.resolve(undefined),
-      context.queryClient.ensureQueryData({
-        queryKey: ['workspace-access'],
-        queryFn: () => getWorkspaceAccessFn(),
-        staleTime: 5 * 60 * 1000,
-      }),
+      ensureWorkspaceAuthorization(context.queryClient),
     ])
     return { reports, state, detail, singleMemberId, access }
   },
@@ -147,9 +142,7 @@ function ReportsRoute() {
   const search = Route.useSearch()
   const navigate = useNavigate()
 
-  const canEditEntries =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN'
+  const canEditEntries = access.member.permissions['time_entries.manage_all']
 
   const changeQuery = useCallback(
     (updates: Partial<ReportsQuery & ReportsSearch>) => {

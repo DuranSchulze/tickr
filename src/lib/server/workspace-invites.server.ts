@@ -16,9 +16,20 @@ import {
   requireWorkspaceAccess,
   setActiveWorkspaceCookie,
 } from './workspace-access.server'
+import type { WorkspaceAccess } from './workspace-access.server'
 import { createAuditLog } from './tracker/audit/audit-logger.server'
 import { shareSheetWithUser } from './gsheets/auth.server'
 import { extractSheetId } from './gsheets/extract-sheet-id'
+import {
+  assertPermission,
+  getAccessLevel,
+  permissionScope,
+} from './tracker/shared/role-gates.server'
+import { assertCanCreateMemberInDepartment } from './tracker/shared/member-scope.server'
+import {
+  AuthorizationError,
+  getRoleAssignmentViolation,
+} from '#/lib/rbac/authorization'
 
 const INVITE_TTL_DAYS = 7
 
@@ -84,21 +95,30 @@ function getAppUrl(): string {
   ).replace(/\/$/, '')
 }
 
-function assertOwnerOrAdmin(access: {
-  member: { workspaceRole: { permissionLevel: string } | null }
-}) {
-  const level = access.member.workspaceRole?.permissionLevel
-  if (level !== 'OWNER' && level !== 'ADMIN') {
-    throw new WorkspaceInviteError(
-      'forbidden',
-      'Only Owners and Admins can manage invites.',
+function inviteScopeCondition(access: WorkspaceAccess) {
+  assertPermission(
+    access,
+    'members.manage',
+    'You do not have permission to manage workspace invites.',
+  )
+  const scope = permissionScope(access, 'members.manage')
+  if (scope === 'workspace') {
+    return eq(workspaceInvites.workspaceId, access.workspace.id)
+  }
+  if (scope === 'department' && access.member.departmentId) {
+    return and(
+      eq(workspaceInvites.workspaceId, access.workspace.id),
+      eq(workspaceInvites.departmentId, access.member.departmentId),
     )
   }
+  throw new AuthorizationError(
+    'You must manage a department to access workspace invites.',
+  )
 }
 
 export async function listWorkspaceInvites() {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const inviteScope = inviteScopeCondition(access)
 
   const rows = await db
     .select({
@@ -114,7 +134,7 @@ export async function listWorkspaceInvites() {
     .leftJoin(departments, eq(workspaceInvites.departmentId, departments.id))
     .where(
       and(
-        eq(workspaceInvites.workspaceId, access.workspace.id),
+        inviteScope,
         isNull(workspaceInvites.acceptedAt),
         isNull(workspaceInvites.revokedAt),
       ),
@@ -123,8 +143,17 @@ export async function listWorkspaceInvites() {
 
   return rows.map((r) => ({
     ...r.invite,
-    workspaceRole: r.workspaceRole,
-    department: r.department,
+    workspaceRole: r.workspaceRole
+      ? {
+          id: r.workspaceRole.id,
+          name: r.workspaceRole.name,
+          permissionLevel: r.workspaceRole.permissionLevel,
+          color: r.workspaceRole.color,
+        }
+      : null,
+    department: r.department
+      ? { id: r.department.id, name: r.department.name }
+      : null,
   }))
 }
 
@@ -134,7 +163,7 @@ export async function createWorkspaceInvite(input: {
   departmentId?: string | null
 }) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanCreateMemberInDepartment(access, input.departmentId)
 
   const email = input.email.trim().toLowerCase()
   if (!email.includes('@')) {
@@ -158,17 +187,33 @@ export async function createWorkspaceInvite(input: {
     )
   }
 
-  // Only Owners can assign Owner or Admin roles to others
-  const inviterLevel =
-    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  if (
-    inviterLevel !== 'OWNER' &&
-    (role.permissionLevel === 'OWNER' || role.permissionLevel === 'ADMIN')
-  ) {
-    throw new WorkspaceInviteError(
-      'forbidden',
-      'Only the workspace Owner can assign the Owner or Admin role.',
-    )
+  const assignmentViolation = getRoleAssignmentViolation({
+    actorLevel: getAccessLevel(access),
+    actorOverrides: access.member.workspaceRole?.permissionOverrides,
+    targetRoleLevel: role.permissionLevel,
+    targetRoleOverrides: role.permissionOverrides,
+  })
+  if (assignmentViolation) {
+    throw new WorkspaceInviteError('forbidden', assignmentViolation)
+  }
+
+  if (input.departmentId) {
+    const [department] = await db
+      .select({ id: departments.id })
+      .from(departments)
+      .where(
+        and(
+          eq(departments.id, input.departmentId),
+          eq(departments.workspaceId, access.workspace.id),
+        ),
+      )
+      .limit(1)
+    if (!department) {
+      throw new WorkspaceInviteError(
+        'forbidden',
+        'Selected department does not exist in this workspace.',
+      )
+    }
   }
 
   const [existingMember] = await db
@@ -249,7 +294,7 @@ export async function createWorkspaceInvite(input: {
 
 export async function resendWorkspaceInvite(input: { inviteId: string }) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const inviteScope = inviteScopeCondition(access)
 
   const [inviteRow] = await db
     .select({
@@ -261,12 +306,7 @@ export async function resendWorkspaceInvite(input: { inviteId: string }) {
       workspaceRoles,
       eq(workspaceInvites.workspaceRoleId, workspaceRoles.id),
     )
-    .where(
-      and(
-        eq(workspaceInvites.id, input.inviteId),
-        eq(workspaceInvites.workspaceId, access.workspace.id),
-      ),
-    )
+    .where(and(eq(workspaceInvites.id, input.inviteId), inviteScope))
     .limit(1)
 
   if (!inviteRow)
@@ -312,17 +352,12 @@ export async function resendWorkspaceInvite(input: { inviteId: string }) {
 
 export async function revokeWorkspaceInvite(input: { inviteId: string }) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  const inviteScope = inviteScopeCondition(access)
 
   const [invite] = await db
     .select()
     .from(workspaceInvites)
-    .where(
-      and(
-        eq(workspaceInvites.id, input.inviteId),
-        eq(workspaceInvites.workspaceId, access.workspace.id),
-      ),
-    )
+    .where(and(eq(workspaceInvites.id, input.inviteId), inviteScope))
     .limit(1)
   if (!invite) throw new WorkspaceInviteError('not_found', 'Invite not found.')
 

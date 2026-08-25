@@ -10,7 +10,18 @@ import {
 } from '#/db/schema'
 import { and, eq, ilike, inArray } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import {
+  assertCanManageMembers,
+  getAccessLevel,
+} from '../shared/role-gates.server'
+import {
+  assertCanCreateMemberInDepartment,
+  assertCanManageMemberTarget,
+} from '../shared/member-scope.server'
+import {
+  AuthorizationError,
+  getRoleAssignmentViolation,
+} from '#/lib/rbac/authorization'
 import { createAuditLog } from '../audit/audit-logger.server'
 import { shareSheetWithUser } from '../../gsheets/auth.server'
 import { extractSheetId } from '../../gsheets/extract-sheet-id'
@@ -26,7 +37,7 @@ export async function createWorkspaceMember(
   data: z.infer<typeof inviteMemberSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanCreateMemberInDepartment(access, data.departmentId)
 
   const email = data.email.toLowerCase()
 
@@ -60,17 +71,28 @@ export async function createWorkspaceMember(
     throw new Error('Selected role does not exist in this workspace.')
   }
 
-  // Only Owners can assign Owner or Admin roles to others
-  const inviterLevel =
-    access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-  if (
-    inviterLevel !== 'OWNER' &&
-    (roleExists.permissionLevel === 'OWNER' ||
-      roleExists.permissionLevel === 'ADMIN')
-  ) {
-    throw new Error(
-      'Only the workspace Owner can assign the Owner or Admin role.',
-    )
+  const assignmentViolation = getRoleAssignmentViolation({
+    actorLevel: getAccessLevel(access),
+    actorOverrides: access.member.workspaceRole?.permissionOverrides,
+    targetRoleLevel: roleExists.permissionLevel,
+    targetRoleOverrides: roleExists.permissionOverrides,
+  })
+  if (assignmentViolation) throw new AuthorizationError(assignmentViolation)
+
+  if (data.departmentId) {
+    const [department] = await db
+      .select({ id: departments.id })
+      .from(departments)
+      .where(
+        and(
+          eq(departments.id, data.departmentId),
+          eq(departments.workspaceId, access.workspace.id),
+        ),
+      )
+      .limit(1)
+    if (!department) {
+      throw new Error('Selected department does not exist in this workspace.')
+    }
   }
 
   await db.insert(workspaceMembers).values({
@@ -87,7 +109,7 @@ export async function updateWorkspaceMember(
   data: z.infer<typeof updateWorkspaceMemberSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
 
   const [target] = await db
     .select()
@@ -100,6 +122,11 @@ export async function updateWorkspaceMember(
     )
     .limit(1)
   if (!target) throw new Error('Member not found in this workspace.')
+  await assertCanManageMemberTarget(access, target)
+
+  if (data.workspaceRoleId && target.id === access.member.id) {
+    throw new AuthorizationError('You cannot change your own assigned role.')
+  }
 
   if (data.workspaceRoleId) {
     const [roleExists] = await db
@@ -115,22 +142,18 @@ export async function updateWorkspaceMember(
     if (!roleExists)
       throw new Error('Selected role does not exist in this workspace.')
 
-    // Only Owners can assign Owner or Admin roles to others
-    const inviterLevel =
-      access.member.workspaceRole?.permissionLevel ?? 'EMPLOYEE'
-    if (
-      inviterLevel !== 'OWNER' &&
-      (roleExists.permissionLevel === 'OWNER' ||
-        roleExists.permissionLevel === 'ADMIN')
-    ) {
-      throw new Error(
-        'Only the workspace Owner can assign the Owner or Admin role.',
-      )
-    }
+    const assignmentViolation = getRoleAssignmentViolation({
+      actorLevel: getAccessLevel(access),
+      actorOverrides: access.member.workspaceRole?.permissionOverrides,
+      targetRoleLevel: roleExists.permissionLevel,
+      targetRoleOverrides: roleExists.permissionOverrides,
+    })
+    if (assignmentViolation) throw new AuthorizationError(assignmentViolation)
   }
 
   const effectiveDepartmentId =
     data.departmentId !== undefined ? data.departmentId : target.departmentId
+  assertCanCreateMemberInDepartment(access, effectiveDepartmentId)
 
   if (effectiveDepartmentId) {
     const [departmentExists] = await db
@@ -247,7 +270,7 @@ export async function setMemberStatus(
   data: z.infer<typeof setMemberStatusSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
 
   if (data.memberId === access.member.id) {
     throw new Error('You cannot change your own account status.')
@@ -264,6 +287,7 @@ export async function setMemberStatus(
     )
     .limit(1)
   if (!target) throw new Error('Member not found in this workspace.')
+  await assertCanManageMemberTarget(access, target)
 
   await db
     .update(workspaceMembers)

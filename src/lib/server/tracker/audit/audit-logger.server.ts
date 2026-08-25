@@ -39,6 +39,7 @@ export type AuditAction =
   | 'DEPT_EDIT'
   | 'DEPT_DELETE'
   | 'ROLE_CREATE'
+  | 'ROLE_PERMISSIONS_UPDATE'
   | 'COHORT_CREATE'
   | 'COHORT_EDIT'
   | 'COHORT_DELETE'
@@ -129,9 +130,13 @@ export async function getWorkspaceAuditLogs(
 ): Promise<GetAuditLogsResult> {
   const { requireWorkspaceAccess } =
     await import('../../workspace-access.server')
-  const { assertOwnerOrAdmin } = await import('../shared/role-gates.server')
+  const { assertPermission } = await import('../shared/role-gates.server')
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertPermission(
+    access,
+    'audit_logs.view',
+    'You do not have permission to view workspace audit logs.',
+  )
 
   const endDate = query.toDate
     ? new Date(new Date(query.toDate).getTime() + 86_400_000 - 1)

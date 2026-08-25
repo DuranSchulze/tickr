@@ -193,5 +193,5 @@ export function useFilteredEntries(
 export function dateTimeLocalValue(date: Date) {
   const offset = date.getTimezoneOffset()
   const local = new Date(date.getTime() - offset * 60 * 1000)
-  return local.toISOString().slice(0, 16)
+  return local.toISOString().slice(0, 19)
 }

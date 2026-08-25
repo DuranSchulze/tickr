@@ -11,7 +11,7 @@ import {
 } from '#/components/ui/card'
 import { getSessionFn } from '#/lib/server/session'
 import { getSelfProfileFn } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import { getWorkspaceSubscriptionFn } from '#/lib/server/subscriptions'
 import { ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 
@@ -30,11 +30,7 @@ export const Route = createFileRoute('/app')({
   loader: async ({ context }) => {
     try {
       const [access, selfProfile, subscription] = await Promise.all([
-        context.queryClient.ensureQueryData({
-          queryKey: ['workspace-access'],
-          queryFn: () => getWorkspaceAccessFn(),
-          staleTime: 5 * 60 * 1000,
-        }),
+        fetchFreshWorkspaceAuthorization(context.queryClient),
         context.queryClient.ensureQueryData({
           queryKey: ['self-profile'],
           queryFn: () => getSelfProfileFn(),
@@ -60,6 +56,7 @@ export const Route = createFileRoute('/app')({
           birthDate: selfProfile.profile?.birthDate ?? '',
         },
         permissionLevel: access.member.permissionLevel,
+        permissions: access.member.permissions,
         subscription: {
           access: subscription.access,
           plan: {
@@ -73,7 +70,7 @@ export const Route = createFileRoute('/app')({
       throw redirect({ to: '/onboarding', search: { plan: undefined } })
     }
   },
-  staleTime: 5 * 60 * 1000,
+  staleTime: 0,
   pendingComponent: () => (
     <FullscreenRouteState
       eyebrow="Preparing workspace"
@@ -102,6 +99,7 @@ function AppRoute() {
       workspace={data.workspace}
       user={data.user}
       permissionLevel={data.permissionLevel}
+      permissions={data.permissions}
       subscription={data.subscription}
     />
   )

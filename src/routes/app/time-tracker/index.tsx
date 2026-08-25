@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { TimeTrackerDashboard } from '#/components/time-tracker/dashboard/TimeTrackerDashboard'
 import { getTrackerStateFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import type { ViewMode } from '#/lib/time-tracker/types'
 import { BRAND } from '#/lib/brand'
 
@@ -29,12 +30,21 @@ export const Route = createFileRoute('/app/time-tracker/')({
         : undefined,
     focusTimer: search.focus === 'timer',
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: trackerKeys.state,
-      queryFn: () => getTrackerStateFn(),
-      staleTime: 60_000,
-    }),
+  loader: async ({ context }) => {
+    const [state, authorization] = await Promise.all([
+      context.queryClient.ensureQueryData({
+        queryKey: trackerKeys.state,
+        queryFn: () => getTrackerStateFn(),
+        staleTime: 60_000,
+      }),
+      fetchFreshWorkspaceAuthorization(context.queryClient),
+    ])
+
+    return {
+      state,
+      canManageCatalog: authorization.member.permissions['catalogs.manage'],
+    }
+  },
   staleTime: 60_000,
   component: TimeTrackerRoute,
   head: () => ({
@@ -43,7 +53,13 @@ export const Route = createFileRoute('/app/time-tracker/')({
 })
 
 function TimeTrackerRoute() {
-  const state = Route.useLoaderData()
+  const { state, canManageCatalog } = Route.useLoaderData()
   const { focusTimer } = Route.useSearch()
-  return <TimeTrackerDashboard state={state} focusTimer={focusTimer} />
+  return (
+    <TimeTrackerDashboard
+      state={state}
+      focusTimer={focusTimer}
+      canManageCatalog={canManageCatalog}
+    />
+  )
 }

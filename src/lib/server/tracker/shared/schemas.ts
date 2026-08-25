@@ -164,6 +164,11 @@ export const createRoleSchema = z.object({
   color: z.string().default('#6366f1'),
 })
 
+export const updateRolePermissionsSchema = z.object({
+  roleId: z.string().min(1),
+  overrides: z.record(z.string(), z.boolean()),
+})
+
 export const updateWorkspaceMemberSchema = z.object({
   memberId: z.string().min(1),
   workspaceRoleId: z.string().optional(),

@@ -13,7 +13,7 @@ import { cn } from '#/lib/utils'
 import { format } from 'date-fns'
 
 type DateTimePickerProps = {
-  value: string // ISO datetime-local format (yyyy-MM-ddTHH:mm)
+  value: string // ISO datetime-local format (yyyy-MM-ddTHH:mm:ss)
   onChange: (value: string) => void
   placeholder?: string
 }
@@ -27,7 +27,7 @@ export function DateTimePicker({
 
   const date = value ? new Date(value) : undefined
   const datePart = value ? value.split('T')[0] : ''
-  const timePart = value ? value.split('T')[1] : '00:00'
+  const timePart = value ? value.split('T')[1] : '00:00:00'
 
   function handleDateSelect(newDate: Date | undefined) {
     if (!newDate) return
@@ -35,7 +35,7 @@ export function DateTimePicker({
     const year = newDate.getFullYear()
     const month = String(newDate.getMonth() + 1).padStart(2, '0')
     const day = String(newDate.getDate()).padStart(2, '0')
-    const newDateStr = `${year}-${month}-${day}T${timePart || '00:00'}`
+    const newDateStr = `${year}-${month}-${day}T${timePart || '00:00:00'}`
 
     onChange(newDateStr)
   }
@@ -86,7 +86,8 @@ export function DateTimePicker({
             <Label className="text-xs text-muted-foreground">Time</Label>
             <Input
               type="time"
-              value={timePart || '00:00'}
+              step="1"
+              value={timePart || '00:00:00'}
               onChange={(e) => handleTimeChange(e.target.value)}
               onFocus={(event) => {
                 const target = event.currentTarget

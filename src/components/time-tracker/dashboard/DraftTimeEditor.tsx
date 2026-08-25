@@ -11,22 +11,12 @@ import {
 import { Button } from '#/components/ui/button'
 import { Calendar } from '#/components/ui/calendar'
 import type { DateRange } from 'react-day-picker'
-
-function toTimeInput(iso: string) {
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return ''
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-function patchDateAndTime(baseIso: string, day: Date, time: string) {
-  const d = new Date(baseIso)
-  if (isNaN(d.getTime())) return baseIso
-  const [h, m] = time.split(':').map(Number)
-  if (isNaN(h) || isNaN(m)) return baseIso
-  d.setFullYear(day.getFullYear(), day.getMonth(), day.getDate())
-  d.setHours(h, m, 0, 0)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
+import {
+  isTimeInputWithSeconds,
+  patchDateAndTimeWithSeconds,
+  toTimeInputWithSeconds,
+} from '#/lib/time-tracker/entry-timing'
+import { formatDuration } from '#/lib/time-tracker/store'
 
 function isSameLocalDate(a: Date, b: Date) {
   return (
@@ -46,8 +36,12 @@ function formatTimeDisplay(iso: string) {
   const d = new Date(iso)
   const hour = d.getHours()
   const minute = d.getMinutes()
+  const second = d.getSeconds()
   const period = hour >= 12 ? 'pm' : 'am'
   const h12 = hour % 12 || 12
+  if (second !== 0) {
+    return `${h12}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}${period}`
+  }
   return minute === 0
     ? `${h12}${period}`
     : `${h12}:${String(minute).padStart(2, '0')}${period}`
@@ -74,10 +68,13 @@ export function DraftTimeEditor({
     from: startDate,
     to: isRunning ? undefined : endDate,
   })
-  const [startTime, setStartTime] = useState(() => toTimeInput(startedAt))
-  const [endTime, setEndTime] = useState(() =>
-    isRunning ? '' : toTimeInput(endedAt || startedAt),
+  const [startTime, setStartTime] = useState(() =>
+    toTimeInputWithSeconds(startedAt),
   )
+  const [endTime, setEndTime] = useState(() =>
+    isRunning ? '' : toTimeInputWithSeconds(endedAt || startedAt),
+  )
+  const [saveAttempted, setSaveAttempted] = useState(false)
 
   const spansDates = !isRunning && !isSameLocalDate(startDate, endDate)
 
@@ -86,8 +83,9 @@ export function DraftTimeEditor({
       from: startDate,
       to: isRunning ? undefined : endDate,
     })
-    setStartTime(toTimeInput(startedAt))
-    setEndTime(isRunning ? '' : toTimeInput(endedAt))
+    setStartTime(toTimeInputWithSeconds(startedAt))
+    setEndTime(isRunning ? '' : toTimeInputWithSeconds(endedAt))
+    setSaveAttempted(false)
     setOpen(true)
   }
 
@@ -103,16 +101,21 @@ export function DraftTimeEditor({
   }
 
   function saveTimeChange() {
-    if (!startTime) return
+    setSaveAttempted(true)
+    if (!isTimeInputWithSeconds(startTime)) return
     const draftStartDate = dateRange.from ?? startDate
     const draftEndDate = dateRange.to ?? draftStartDate
 
-    const newStartedAt = patchDateAndTime(startedAt, draftStartDate, startTime)
+    const newStartedAt = patchDateAndTimeWithSeconds(
+      startedAt,
+      draftStartDate,
+      startTime,
+    )
     const newEndedAt =
-      !isRunning && endTime && dateRange.to
-        ? patchDateAndTime(endedAt, draftEndDate, endTime)
-        : !isRunning && endTime
-          ? patchDateAndTime(endedAt, draftStartDate, endTime)
+      !isRunning && isTimeInputWithSeconds(endTime) && dateRange.to
+        ? patchDateAndTimeWithSeconds(endedAt, draftEndDate, endTime)
+        : !isRunning && isTimeInputWithSeconds(endTime)
+          ? patchDateAndTimeWithSeconds(endedAt, draftStartDate, endTime)
           : undefined
 
     if (
@@ -127,6 +130,28 @@ export function DraftTimeEditor({
 
   const draftStartDate = dateRange.from ?? startDate
   const draftEndDate = dateRange.to ?? draftStartDate
+  const previewStartedAt = isTimeInputWithSeconds(startTime)
+    ? patchDateAndTimeWithSeconds(startedAt, draftStartDate, startTime)
+    : null
+  const previewEndedAt =
+    !isRunning && isTimeInputWithSeconds(endTime)
+      ? patchDateAndTimeWithSeconds(
+          endedAt,
+          dateRange.to ? draftEndDate : draftStartDate,
+          endTime,
+        )
+      : null
+  const previewDurationSeconds =
+    previewStartedAt && previewEndedAt
+      ? Math.floor(
+          (new Date(previewEndedAt).getTime() -
+            new Date(previewStartedAt).getTime()) /
+            1000,
+        )
+      : null
+  const hasTimeError =
+    !isRunning &&
+    (previewDurationSeconds === null || previewDurationSeconds <= 0)
 
   return (
     <>
@@ -235,8 +260,12 @@ export function DraftTimeEditor({
                   Start time
                   <input
                     type="time"
+                    step="1"
                     value={startTime}
-                    onChange={(event) => setStartTime(event.target.value)}
+                    onChange={(event) => {
+                      setStartTime(event.target.value)
+                      setSaveAttempted(false)
+                    }}
                     className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                   />
                 </label>
@@ -245,13 +274,35 @@ export function DraftTimeEditor({
                   End time
                   <input
                     type="time"
+                    step="1"
                     value={isRunning ? '' : endTime}
-                    onChange={(event) => setEndTime(event.target.value)}
+                    onChange={(event) => {
+                      setEndTime(event.target.value)
+                      setSaveAttempted(false)
+                    }}
                     disabled={isRunning}
                     placeholder={isRunning ? 'Running timer' : undefined}
                     className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
                   />
                 </label>
+                {!isRunning && (
+                  <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Duration preview
+                    </span>
+                    <p className="m-0 mt-1 font-mono font-bold text-foreground">
+                      {previewDurationSeconds !== null &&
+                      previewDurationSeconds > 0
+                        ? formatDuration(previewDurationSeconds)
+                        : '—'}
+                    </p>
+                  </div>
+                )}
+                {saveAttempted && hasTimeError && (
+                  <p className="m-0 text-xs font-semibold text-destructive">
+                    End must be after start.
+                  </p>
+                )}
               </div>
             </div>
           </div>

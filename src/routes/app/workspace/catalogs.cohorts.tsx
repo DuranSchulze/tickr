@@ -57,9 +57,7 @@ function CohortsRoute() {
   const navigate = Route.useNavigate()
   const search = Route.useSearch()
 
-  const canManage =
-    access.member.permissionLevel === 'OWNER' ||
-    access.member.permissionLevel === 'ADMIN'
+  const canManage = access.member.permissions['catalogs.manage']
 
   return (
     <CohortsTablePage

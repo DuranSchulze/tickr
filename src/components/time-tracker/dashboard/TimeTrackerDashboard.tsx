@@ -25,6 +25,7 @@ import { InputSection } from './InputSection'
 import { AllEntriesSection } from './AllEntriesSection'
 import type { EntriesDateRange } from './EntriesDateRangeFilter'
 import { EditEntryDrawer } from './EditEntryDrawer'
+import { SubsecondStopDialog } from './SubsecondStopDialog'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
 import { useDraftAndEdit } from './hooks/useDraftAndEdit'
@@ -56,10 +57,12 @@ import {
 export function TimeTrackerDashboard({
   state,
   focusTimer = false,
+  canManageCatalog = false,
 }: {
   state: TrackerState
   /** Deep link from reminder emails — scroll to and focus the timer input. */
   focusTimer?: boolean
+  canManageCatalog?: boolean
 }) {
   const router = useRouter()
   const queryClient = useQueryClient()
@@ -206,6 +209,7 @@ export function TimeTrackerDashboard({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    subsecondStopRequestedAt,
     upsertOptimisticStoppedEntry,
     removeOptimisticStoppedEntry,
     isTimerStarting,
@@ -222,6 +226,9 @@ export function TimeTrackerDashboard({
     startTimer,
     stopTimer,
     discardTimer,
+    keepSubsecondEntry,
+    discardSubsecondEntry,
+    cancelSubsecondStop,
     resumeEntry,
     flushDescriptionSave,
     persistActiveTimerStartedAt,
@@ -259,10 +266,9 @@ export function TimeTrackerDashboard({
     discardTimer,
   })
 
-  const currentUser = state.members.find((m) => m.id === state.currentMemberId)!
-  const canManageCatalog =
-    currentUser.permissionLevel === 'OWNER' ||
-    currentUser.permissionLevel === 'ADMIN'
+  const currentUser = state.members.find(
+    (member) => member.id === state.currentMemberId,
+  )!
 
   useEffect(() => {
     if (!allEntriesInitialized.current) {
@@ -561,6 +567,7 @@ export function TimeTrackerDashboard({
       onStop: stopTimer,
       onDiscard: discardTimer,
       onUpdateStartedAt: persistActiveTimerStartedAt,
+      locationStatus: mutations.timerLocationStatus,
       draft,
       setDraft,
       onAddManual: addManualEntry,
@@ -602,6 +609,7 @@ export function TimeTrackerDashboard({
       stopTimer,
       discardTimer,
       persistActiveTimerStartedAt,
+      mutations.timerLocationStatus,
       draft,
       setDraft,
       addManualEntry,
@@ -702,6 +710,13 @@ export function TimeTrackerDashboard({
         onCreateTask={handleCreateTask}
         onDeleteTask={(id) => mutations.deleteTask(id).then(() => undefined)}
         onCreateTag={mutations.createTag}
+      />
+
+      <SubsecondStopDialog
+        open={!!subsecondStopRequestedAt}
+        onContinue={cancelSubsecondStop}
+        onKeep={keepSubsecondEntry}
+        onDiscard={discardSubsecondEntry}
       />
 
       {/* Mobile: floating action button */}

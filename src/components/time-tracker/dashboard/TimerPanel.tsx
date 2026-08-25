@@ -1,5 +1,13 @@
 import { useMemo, useState } from 'react'
-import { Loader2, Pencil, Play, Square, Trash2 } from 'lucide-react'
+import {
+  CircleAlert,
+  Loader2,
+  MapPin,
+  Pencil,
+  Play,
+  Square,
+  Trash2,
+} from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
@@ -12,6 +20,12 @@ import { DescriptionAutocomplete } from './DescriptionAutocomplete'
 import { RunningTimer } from './RunningTimer'
 import { PresetDropdown } from './PresetDropdown'
 import { TimerMobileControls } from './TimerMobileControls'
+import type { EntryLocationCaptureStatus } from '#/lib/time-tracker/device-location'
+import {
+  isTimeInputWithSeconds,
+  patchDateAndTimeWithSeconds,
+  toTimeInputWithSeconds,
+} from '#/lib/time-tracker/entry-timing'
 
 // Small hover hint (same pattern as the pickers' tooltips) that surfaces the
 // keyboard shortcut for the timer action buttons.
@@ -24,6 +38,42 @@ function ActionHint({ label, shortcut }: { label: string; shortcut: string }) {
       {label}
       <Kbd className="ml-1.5">{shortcut}</Kbd>
     </span>
+  )
+}
+
+function LocationCaptureStatus({
+  status,
+}: {
+  status: EntryLocationCaptureStatus
+}) {
+  if (status === 'idle') return null
+  const content = {
+    locating: {
+      label: 'Getting location…',
+      icon: <Loader2 className="size-3 animate-spin" />,
+    },
+    attached: {
+      label: 'Precise location attached',
+      icon: <MapPin className="size-3" />,
+    },
+    approximate: {
+      label: 'Network location attached',
+      icon: <MapPin className="size-3" />,
+    },
+    unavailable: {
+      label: 'Location unavailable',
+      icon: <CircleAlert className="size-3" />,
+    },
+  }[status]
+
+  return (
+    <output
+      aria-live="polite"
+      className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
+    >
+      {content.icon}
+      {content.label}
+    </output>
   )
 }
 
@@ -61,6 +111,7 @@ export function TimerPanel({
   onStop,
   onDiscard,
   onUpdateStartedAt,
+  locationStatus,
   descriptionDropdownUp = false,
 }: {
   workspaceId: string
@@ -102,6 +153,7 @@ export function TimerPanel({
   onStop: () => void
   onDiscard: () => void
   onUpdateStartedAt: (iso: string) => void
+  locationStatus: EntryLocationCaptureStatus
   descriptionDropdownUp?: boolean
 }) {
   const [editStarted, setEditStarted] = useState(false)
@@ -109,20 +161,20 @@ export function TimerPanel({
 
   function openStartedEdit() {
     if (!activeEntry) return
-    const d = new Date(activeEntry.startedAt)
-    setDraftStarted(
-      `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`,
-    )
+    setDraftStarted(toTimeInputWithSeconds(activeEntry.startedAt))
     setEditStarted(true)
   }
 
   function commitStartedAt() {
     setEditStarted(false)
-    if (!activeEntry || !draftStarted) return
-    const [h, m] = draftStarted.split(':').map(Number)
-    if (isNaN(h) || isNaN(m)) return
-    const updated = new Date(activeEntry.startedAt)
-    updated.setHours(h, m, 0, 0)
+    if (!activeEntry || !isTimeInputWithSeconds(draftStarted)) return
+    const updated = new Date(
+      patchDateAndTimeWithSeconds(
+        activeEntry.startedAt,
+        new Date(activeEntry.startedAt),
+        draftStarted,
+      ),
+    )
     if (updated >= new Date()) return
     onUpdateStartedAt(updated.toISOString())
   }
@@ -321,6 +373,7 @@ export function TimerPanel({
               <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
                 Running now
               </p>
+              <LocationCaptureStatus status={locationStatus} />
               <p className="m-0 font-bold text-foreground truncate">
                 {activeEntry.description || (
                   <span className="text-muted-foreground">No description</span>
@@ -362,6 +415,7 @@ export function TimerPanel({
                 {editStarted ? (
                   <input
                     type="time"
+                    step="1"
                     className="rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                     value={draftStarted}
                     onChange={(e) => setDraftStarted(e.target.value)}

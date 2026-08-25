@@ -9,6 +9,7 @@ import {
 import { and, eq, ilike, inArray, or, asc, sql } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import type { Member } from '#/lib/time-tracker/types'
+import { memberScopeCondition } from '../shared/member-scope.server'
 
 export type PaginatedMembersResult = {
   members: Member[]
@@ -36,9 +37,8 @@ export async function getPaginatedMembers({
   status,
 }: GetPaginatedMembersInput): Promise<PaginatedMembersResult> {
   const access = await requireWorkspaceAccess()
-  const workspaceId = access.workspace.id
 
-  const conditions = [eq(workspaceMembers.workspaceId, workspaceId)]
+  const conditions = [memberScopeCondition(access, 'members.view')]
 
   if (search) {
     const pattern = `%${search}%`

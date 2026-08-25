@@ -10,21 +10,18 @@ import type { Workspace } from '#/lib/time-tracker/types'
 
 export function WorkspaceGoogleSheetPanel({
   workspace,
-  permissionLevel,
+  canManageSettings,
+  canImportCatalogs,
 }: {
   workspace: Workspace
-  permissionLevel: string
+  canManageSettings: boolean
+  canImportCatalogs: boolean
 }) {
   const router = useRouter()
   const [url, setUrl] = useState(workspace.googleSheetUrl ?? '')
   const [pending, setPending] = useState(false)
   const [serviceEmail, setServiceEmail] = useState<string | null>(null)
   const [emailError, setEmailError] = useState(false)
-
-  const isOwner = permissionLevel === 'OWNER'
-  const isOwnerOrAdmin =
-    permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
-  const isAtLeastManager = isOwnerOrAdmin || permissionLevel === 'MANAGER'
 
   useEffect(() => {
     setUrl(workspace.googleSheetUrl ?? '')
@@ -81,7 +78,7 @@ export function WorkspaceGoogleSheetPanel({
 
         <ServiceAccountHint email={serviceEmail} errored={emailError} />
 
-        {isOwner ? (
+        {canManageSettings ? (
           <form onSubmit={handleSave} className="mt-4 grid gap-3">
             <label className="grid gap-1.5 text-xs font-semibold text-foreground">
               Google Sheet URL
@@ -114,7 +111,7 @@ export function WorkspaceGoogleSheetPanel({
               )}
             </div>
           </form>
-        ) : isAtLeastManager && workspace.googleSheetUrl ? (
+        ) : canImportCatalogs && workspace.googleSheetUrl ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <p className="m-0 flex-1 text-sm text-muted-foreground">
               Sheet linked by the workspace Owner.
@@ -131,7 +128,7 @@ export function WorkspaceGoogleSheetPanel({
           </div>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
-            Only the workspace Owner can change the Google Sheet URL.
+            You do not have permission to change the Google Sheet URL.
           </p>
         )}
 

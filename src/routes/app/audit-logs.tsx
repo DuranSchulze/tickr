@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { getAuditLogsFn } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
 import { AuditLogsScreen } from '#/components/time-tracker/screens/AuditLogsScreen/AuditLogsScreen'
 
 const auditLogsSearchSchema = z.object({
@@ -16,13 +16,8 @@ export const Route = createFileRoute('/app/audit-logs')({
   validateSearch: auditLogsSearchSchema,
   loaderDeps: ({ search }) => search,
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    const level = access.member.permissionLevel
-    if (level !== 'OWNER' && level !== 'ADMIN') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['audit_logs.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },

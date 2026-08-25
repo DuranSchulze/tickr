@@ -5,21 +5,32 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import { CatalogsScreen } from '#/components/time-tracker/catalogs/CatalogsScreen'
-import { getTrackerStateLiteFn } from '#/lib/server/tracker'
-import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
+import { getCatalogBootstrapStateFn } from '#/lib/server/tracker'
+import {
+  ensureWorkspaceAuthorization,
+  fetchFreshWorkspaceAuthorization,
+} from '#/lib/time-tracker/workspace-authorization'
 
 export const Route = createFileRoute('/app/workspace/catalogs')({
   beforeLoad: async ({ context }) => {
-    const access = await context.queryClient.ensureQueryData({
-      queryKey: ['workspace-access'],
-      queryFn: () => getWorkspaceAccessFn(),
-      staleTime: 5 * 60 * 1000,
-    })
-    if (access.member.permissionLevel === 'EMPLOYEE') {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    if (!access.member.permissions['catalogs.view']) {
       throw redirect({ to: '/app/time-tracker' })
     }
   },
-  loader: () => getTrackerStateLiteFn(),
+  loader: async ({ context }) => {
+    const [state, access] = await Promise.all([
+      getCatalogBootstrapStateFn(),
+      ensureWorkspaceAuthorization(context.queryClient),
+    ])
+    return {
+      state,
+      canManage: access.member.permissions['catalogs.manage'],
+      canImport: access.member.permissions['catalogs.import'],
+      canManageRoles: access.member.permissions['roles.manage_permissions'],
+      actorPermissionLevel: access.member.permissionLevel,
+    }
+  },
   staleTime: 30_000,
   component: CatalogsRoute,
 })
@@ -29,7 +40,7 @@ function CatalogsRoute() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const state = Route.useLoaderData()
+  const data = Route.useLoaderData()
 
   const isSubPage =
     pathname !== '/app/workspace/catalogs' &&
@@ -37,5 +48,5 @@ function CatalogsRoute() {
 
   if (isSubPage) return <Outlet />
 
-  return <CatalogsScreen state={state} />
+  return <CatalogsScreen {...data} />
 }

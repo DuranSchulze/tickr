@@ -8,7 +8,9 @@ import {
 import { and, asc, eq, gte, isNull, lt, lte } from 'drizzle-orm'
 import { toFiniteRate } from '#/lib/time-tracker/billing'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import type { WorkspaceAccess } from '../../workspace-access.server'
+import { assertCanManageMembers } from '../shared/role-gates.server'
+import { assertCanManageMemberTarget } from '../shared/member-scope.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 import { formatDateInTimeZone, parseDateOnly, toDateKey } from '../shared/dates'
 import type {
@@ -34,18 +36,19 @@ function assertFutureEffectiveDate(effectiveFrom: string, timeZone: string) {
   }
 }
 
-async function requireManagedMember(workspaceId: string, memberId: string) {
+async function requireManagedMember(access: WorkspaceAccess, memberId: string) {
   const [target] = await db
     .select()
     .from(workspaceMembers)
     .where(
       and(
         eq(workspaceMembers.id, memberId),
-        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.workspaceId, access.workspace.id),
       ),
     )
     .limit(1)
   if (!target) throw new Error('Member not found in this workspace.')
+  await assertCanManageMemberTarget(access, target)
   return target
 }
 
@@ -63,7 +66,7 @@ export async function updateMemberBillableRate(
   data: z.infer<typeof updateMemberBillableRateSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
 
   const [target] = await db
     .select()
@@ -76,6 +79,7 @@ export async function updateMemberBillableRate(
     )
     .limit(1)
   if (!target) throw new Error('Member not found in this workspace.')
+  await assertCanManageMemberTarget(access, target)
 
   await db
     .update(workspaceMembers)
@@ -92,8 +96,8 @@ export async function getMemberClientBillableRates(
   data: z.infer<typeof memberIdSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
-  const member = await requireManagedMember(access.workspace.id, data.memberId)
+  assertCanManageMembers(access)
+  const member = await requireManagedMember(access, data.memberId)
 
   const [clientRows, rateRows] = await Promise.all([
     db
@@ -148,10 +152,10 @@ export async function setMemberClientBillableRate(
   data: z.infer<typeof setMemberClientBillableRateSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
   assertFutureEffectiveDate(data.effectiveFrom, access.workspace.timezone)
 
-  await requireManagedMember(access.workspace.id, data.memberId)
+  await requireManagedMember(access, data.memberId)
   const client = await requireWorkspaceClient(
     access.workspace.id,
     data.clientId,
@@ -222,9 +226,9 @@ export async function unsetMemberClientBillableRate(
   data: z.infer<typeof unsetMemberClientBillableRateSchema>,
 ) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageMembers(access)
 
-  await requireManagedMember(access.workspace.id, data.memberId)
+  await requireManagedMember(access, data.memberId)
   const client = await requireWorkspaceClient(
     access.workspace.id,
     data.clientId,

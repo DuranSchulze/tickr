@@ -2,7 +2,7 @@ import { db } from '#/db'
 import { projectTasks, timeEntries } from '#/db/schema'
 import { and, eq, ilike } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
-import { assertOwnerOrAdmin } from '../shared/role-gates.server'
+import { assertCanManageCatalogs } from '../shared/role-gates.server'
 import { createAuditLog } from '../audit/audit-logger.server'
 
 const createTaskSchema = {
@@ -61,7 +61,7 @@ export async function createTask(data: typeof createTaskSchema) {
 
 export async function updateTask(data: typeof updateTaskSchema) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   await db
     .update(projectTasks)
@@ -86,7 +86,7 @@ export async function updateTask(data: typeof updateTaskSchema) {
 
 export async function archiveTask(data: typeof idSchema) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [task] = await db
     .select({ name: projectTasks.name })
@@ -152,7 +152,7 @@ export async function deleteTask(data: typeof idSchema) {
 
 export async function activateTask(data: typeof idSchema) {
   const access = await requireWorkspaceAccess()
-  assertOwnerOrAdmin(access)
+  assertCanManageCatalogs(access)
 
   const [task] = await db
     .select({ name: projectTasks.name })
