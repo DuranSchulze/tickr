@@ -25,6 +25,7 @@ import { InputSection } from './InputSection'
 import { AllEntriesSection } from './AllEntriesSection'
 import type { EntriesDateRange } from './EntriesDateRangeFilter'
 import { EditEntryDrawer } from './EditEntryDrawer'
+import { SubsecondStopDialog } from './SubsecondStopDialog'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
 import { useDraftAndEdit } from './hooks/useDraftAndEdit'
@@ -208,6 +209,7 @@ export function TimeTrackerDashboard({
     activeEntry,
     stopBlocked,
     optimisticStoppedEntries,
+    subsecondStopRequestedAt,
     upsertOptimisticStoppedEntry,
     removeOptimisticStoppedEntry,
     isTimerStarting,
@@ -224,6 +226,9 @@ export function TimeTrackerDashboard({
     startTimer,
     stopTimer,
     discardTimer,
+    keepSubsecondEntry,
+    discardSubsecondEntry,
+    cancelSubsecondStop,
     resumeEntry,
     flushDescriptionSave,
     persistActiveTimerStartedAt,
@@ -562,6 +567,7 @@ export function TimeTrackerDashboard({
       onStop: stopTimer,
       onDiscard: discardTimer,
       onUpdateStartedAt: persistActiveTimerStartedAt,
+      locationStatus: mutations.timerLocationStatus,
       draft,
       setDraft,
       onAddManual: addManualEntry,
@@ -603,6 +609,7 @@ export function TimeTrackerDashboard({
       stopTimer,
       discardTimer,
       persistActiveTimerStartedAt,
+      mutations.timerLocationStatus,
       draft,
       setDraft,
       addManualEntry,
@@ -703,6 +710,13 @@ export function TimeTrackerDashboard({
         onCreateTask={handleCreateTask}
         onDeleteTask={(id) => mutations.deleteTask(id).then(() => undefined)}
         onCreateTag={mutations.createTag}
+      />
+
+      <SubsecondStopDialog
+        open={!!subsecondStopRequestedAt}
+        onContinue={cancelSubsecondStop}
+        onKeep={keepSubsecondEntry}
+        onDiscard={discardSubsecondEntry}
       />
 
       {/* Mobile: floating action button */}

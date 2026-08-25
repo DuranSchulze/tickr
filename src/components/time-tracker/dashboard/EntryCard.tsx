@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import { Copy, Loader2, Pencil, Play, Trash2 } from 'lucide-react'
+import { CircleAlert, Copy, Loader2, Pencil, Play, Trash2 } from 'lucide-react'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import type { Project, TimeEntry } from '#/lib/time-tracker/types'
@@ -7,6 +7,7 @@ import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useNowTick } from './hooks/useNowTick'
+import { classifyEntryTimingIssue } from '#/lib/time-tracker/entry-timing'
 
 // ─── Live ticking duration + billable for cards ────────────────────────────
 // Extracted so only the tiny duration text re-renders every second — the
@@ -94,54 +95,107 @@ export const EntryCard = memo(function EntryCard({
     [tags, entry.tagIds],
   )
   const actionsDisabled = !!isPending || !!isDeleting
+  const timingIssue = classifyEntryTimingIssue(entry)
 
   const start = new Date(entry.startedAt)
   const end = entry.endedAt ? new Date(entry.endedAt) : null
+  const timeOptions: Intl.DateTimeFormatOptions = timingIssue
+    ? { hour: '2-digit', minute: '2-digit', second: '2-digit' }
+    : { hour: '2-digit', minute: '2-digit' }
   const timeRange = end
-    ? `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    : `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} – now`
+    ? `${start.toLocaleTimeString([], timeOptions)} – ${end.toLocaleTimeString([], timeOptions)}`
+    : `${start.toLocaleTimeString([], timeOptions)} – now`
 
   // Sub-entries (inside a grouped set) show only the time range + actions
   if (isSubEntry) {
     return (
-      <div
-        className={`min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
-      >
-        <div className="flex min-w-0 items-center justify-between gap-2">
-          <div
-            className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
-            suppressHydrationWarning
-          >
-            <span className="shrink-0 text-muted-foreground/40">
-              {isDeleting ? <Loader2 className="size-3 animate-spin" /> : '↳'}
-            </span>
-            <span className="min-w-0 truncate">{timeRange}</span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {isDeleting ? (
-              <span className="text-xs text-muted-foreground">Deleting…</span>
-            ) : (
-              <CardDuration
-                entry={entry}
-                formatTime={formatTime}
-                currency={currency}
-                rateLookup={rateLookup}
-              />
-            )}
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => onStartEdit(entry)}
-                disabled={actionsDisabled}
-                className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
-                aria-label="Edit entry"
-              >
-                <Pencil className="size-3" />
-              </button>
+      <>
+        <div
+          className={`min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <div
+              className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+              suppressHydrationWarning
+            >
+              <span className="shrink-0 text-muted-foreground/40">
+                {isDeleting ? <Loader2 className="size-3 animate-spin" /> : '↳'}
+              </span>
+              <span className="min-w-0 truncate">{timeRange}</span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {isDeleting ? (
+                <span className="text-xs text-muted-foreground">Deleting…</span>
+              ) : (
+                <CardDuration
+                  entry={entry}
+                  formatTime={formatTime}
+                  currency={currency}
+                  rateLookup={rateLookup}
+                />
+              )}
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => onStartEdit(entry)}
+                  disabled={actionsDisabled}
+                  className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                  aria-label="Edit entry"
+                >
+                  <Pencil className="size-3" />
+                </button>
+              </div>
             </div>
           </div>
+          {timingIssue && (
+            <div
+              className={`mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs ${
+                timingIssue === 'needs-repair'
+                  ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                  : 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
+              }`}
+            >
+              <span className="inline-flex items-center gap-1 font-semibold">
+                <CircleAlert className="size-3" />
+                {timingIssue === 'needs-repair'
+                  ? 'Needs repair'
+                  : 'Very short — review'}
+              </span>
+              <span className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => onStartEdit(entry)}
+                  className="rounded border border-current/30 px-2 py-1 font-semibold"
+                >
+                  Edit time
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="rounded border border-current/30 px-2 py-1 font-semibold"
+                >
+                  Delete
+                </button>
+              </span>
+            </div>
+          )}
         </div>
-      </div>
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          title="Delete Entry"
+          description={`Delete "${entry.description}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          variant="destructive"
+          onConfirm={() => {
+            if (actionsDisabled) return
+            onDelete(entry.id)
+            setShowDeleteDialog(false)
+          }}
+          pending={pending}
+        />
+      </>
     )
   }
 
@@ -203,7 +257,53 @@ export const EntryCard = memo(function EntryCard({
             Running now
           </span>
         )}
+        {timingIssue && (
+          <span
+            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-bold ${
+              timingIssue === 'needs-repair'
+                ? 'bg-destructive/10 text-destructive'
+                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+            }`}
+          >
+            <CircleAlert className="size-3" />
+            {timingIssue === 'needs-repair'
+              ? 'Needs repair'
+              : 'Very short — review'}
+          </span>
+        )}
       </div>
+
+      {timingIssue && (
+        <div
+          className={`mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-xs ${
+            timingIssue === 'needs-repair'
+              ? 'border-destructive/30 bg-destructive/5 text-destructive'
+              : 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
+          }`}
+        >
+          <span>
+            {timingIssue === 'needs-repair'
+              ? 'This entry has no valid recorded duration.'
+              : 'Location or start latency may have affected this entry.'}
+          </span>
+          <span className="flex gap-1">
+            <button
+              type="button"
+              onClick={() => onStartEdit(entry)}
+              className="rounded border border-current/30 px-2 py-1 font-semibold"
+            >
+              Edit time
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteDialog(true)}
+              className="rounded border border-current/30 px-2 py-1 font-semibold"
+            >
+              Delete
+            </button>
+          </span>
+        </div>
+      )}
 
       <div className="mt-2.5 flex min-w-0 flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">

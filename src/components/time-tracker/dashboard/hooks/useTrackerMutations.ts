@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { gooeyToast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -17,6 +17,7 @@ import {
   createTagFn,
   deleteEntryFn,
   duplicateEntryFn,
+  attachEntryOriginFn,
   startTimerFn,
   stopTimerFn,
   updateActiveTimerFn,
@@ -26,7 +27,10 @@ import {
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { publishTaskDataChange } from '#/lib/time-tracker/task-sync'
 import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
-import type { DeviceLocation } from '#/lib/time-tracker/device-location'
+import type {
+  DeviceLocation,
+  EntryLocationCaptureStatus,
+} from '#/lib/time-tracker/device-location'
 
 type StartTimerInput = {
   description: string
@@ -73,6 +77,66 @@ export function useTrackerMutations(
   const [startTimerPending, setStartTimerPending] = useState(false)
   const [stopTimerPending, setStopTimerPending] = useState(false)
   const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null)
+  const [timerLocationStatus, setTimerLocationStatus] =
+    useState<EntryLocationCaptureStatus>('idle')
+  const timerLocationEntryIdRef = useRef<string | null>(null)
+
+  function patchEntryOrigin(
+    result: Awaited<ReturnType<typeof attachEntryOriginFn>>,
+  ) {
+    queryClient.setQueryData<TrackerState>(trackerKeys.state, (prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        entries: prev.entries.map((entry) =>
+          entry.id === result.id
+            ? {
+                ...entry,
+                ipAddress: result.ipAddress,
+                location: result.location,
+                latitude: result.latitude,
+                longitude: result.longitude,
+                userAgent: result.userAgent,
+              }
+            : entry,
+        ),
+      }
+    })
+    void queryClient.invalidateQueries({ queryKey: ['location-history'] })
+  }
+
+  function attachOriginInBackground(
+    entryId: string,
+    locationPromise: Promise<DeviceLocation | undefined>,
+    updateTimerStatus: boolean,
+  ) {
+    void locationPromise
+      .then((deviceLocation) =>
+        attachEntryOriginFn({
+          data: {
+            entryId,
+            ...(deviceLocation ? { deviceLocation } : {}),
+          },
+        }),
+      )
+      .then((result) => {
+        patchEntryOrigin(result)
+        if (updateTimerStatus && timerLocationEntryIdRef.current === entryId) {
+          setTimerLocationStatus(
+            result.status === 'attached'
+              ? 'attached'
+              : result.status === 'approximate'
+                ? 'approximate'
+                : 'unavailable',
+          )
+        }
+      })
+      .catch(() => {
+        if (updateTimerStatus && timerLocationEntryIdRef.current === entryId) {
+          setTimerLocationStatus('unavailable')
+        }
+      })
+  }
 
   async function run<T>(
     action: () => Promise<T>,
@@ -105,19 +169,34 @@ export function useTrackerMutations(
     startTimerPending,
     stopTimerPending,
     deletingEntryId,
+    timerLocationStatus,
     startTimer: (
       input: StartTimerInput,
       options?: MutationOptions<TimeEntry>,
     ) => {
       setStartTimerPending(true)
-      return run(async () => {
-        const deviceLocation = locationTrackingEnabled
-          ? await captureDeviceLocation()
-          : undefined
-        return startTimerFn({
-          data: { ...input, ...(deviceLocation ? { deviceLocation } : {}) },
-        })
-      }, options).finally(() => setStartTimerPending(false))
+      timerLocationEntryIdRef.current = null
+      setTimerLocationStatus(locationTrackingEnabled ? 'locating' : 'idle')
+      const locationPromise = locationTrackingEnabled
+        ? captureDeviceLocation()
+        : Promise.resolve(undefined)
+      return run(
+        async () => {
+          const created = await startTimerFn({ data: input })
+          if (locationTrackingEnabled) {
+            timerLocationEntryIdRef.current = created.id
+            attachOriginInBackground(created.id, locationPromise, true)
+          }
+          return created
+        },
+        {
+          ...options,
+          onError: () => {
+            setTimerLocationStatus('idle')
+            options?.onError?.()
+          },
+        },
+      ).finally(() => setStartTimerPending(false))
     },
     stopTimer: async (
       id: string,
@@ -149,18 +228,18 @@ export function useTrackerMutations(
         endedAt: payload.endedAt,
       })
       if (!confirmed) return undefined
+      const locationPromise = locationTrackingEnabled
+        ? captureDeviceLocation()
+        : Promise.resolve(undefined)
       return run(
         async () => {
-          const deviceLocation = locationTrackingEnabled
-            ? await captureDeviceLocation()
-            : undefined
           const created = await createManualEntryFn({
-            data: {
-              ...payload,
-              ...(deviceLocation ? { deviceLocation } : {}),
-            },
+            data: payload,
           })
           upsertTrackerStateEntry(queryClient, created)
+          if (locationTrackingEnabled) {
+            attachOriginInBackground(created.id, locationPromise, false)
+          }
           return created
         },
         {

@@ -120,14 +120,21 @@ const locationHistorySchema = z.object({
   memberId: z.string().trim().min(1).optional(),
 })
 
+const deviceLocationSchema = z.object({
+  latitude: z.number().finite().min(-90).max(90),
+  longitude: z.number().finite().min(-180).max(180),
+  accuracyMeters: z.number().finite().min(0).max(100_000),
+  capturedAt: z.string().datetime(),
+})
+
 const refreshEntryLocationSchema = z.object({
   id: z.string().min(1),
-  deviceLocation: z.object({
-    latitude: z.number().finite().min(-90).max(90),
-    longitude: z.number().finite().min(-180).max(180),
-    accuracyMeters: z.number().finite().min(0).max(100_000),
-    capturedAt: z.string().datetime(),
-  }),
+  deviceLocation: deviceLocationSchema,
+})
+
+const attachEntryOriginSchema = z.object({
+  entryId: z.string().min(1),
+  deviceLocation: deviceLocationSchema.optional(),
 })
 
 const reportSortSchema = z.object({
@@ -1024,6 +1031,14 @@ export const refreshEntryLocationFn = createServerFn({ method: 'POST' })
     const { refreshOwnEntryLocation } =
       await import('./tracker/location-history.server')
     return refreshOwnEntryLocation(data)
+  })
+
+export const attachEntryOriginFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => attachEntryOriginSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { attachOwnEntryOrigin } =
+      await import('./tracker/location-history.server')
+    return attachOwnEntryOrigin(data)
   })
 
 export const getMyLocationFn = createServerFn({ method: 'GET' }).handler(

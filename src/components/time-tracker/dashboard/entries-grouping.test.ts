@@ -11,6 +11,7 @@ function makeEntry(
   id: string,
   startedAt: string,
   endedAt: string | null,
+  durationSeconds = endedAt ? 3600 : 0,
 ): TimeEntry {
   return {
     id,
@@ -22,7 +23,7 @@ function makeEntry(
     billable: false,
     startedAt,
     endedAt,
-    durationSeconds: endedAt ? 3600 : 0,
+    durationSeconds,
     notes: '',
     entrySource: 'TIMER',
   }
@@ -38,8 +39,16 @@ const stoppedAug24 = makeEntry(
   '2026-08-24T12:00:00.000Z',
   '2026-08-24T13:00:00.000Z',
 )
-const runningAug24 = makeEntry('entry-running', '2026-08-24T14:00:00.000Z', null)
-const runningAug19 = makeEntry('entry-running-old', '2026-08-19T12:00:00.000Z', null)
+const runningAug24 = makeEntry(
+  'entry-running',
+  '2026-08-24T14:00:00.000Z',
+  null,
+)
+const runningAug19 = makeEntry(
+  'entry-running-old',
+  '2026-08-19T12:00:00.000Z',
+  null,
+)
 
 describe('withActiveEntryDayGroup', () => {
   it('returns groups unchanged without an active entry', () => {
@@ -83,5 +92,32 @@ describe('withActiveEntryDayGroup', () => {
     expect(result).toHaveLength(1)
     expect(result[0].dateKey).toBe(localDateKey(runningAug24.startedAt))
     expect(result[0].runningEntry).toBe(runningAug24)
+  })
+})
+
+describe('group timing review counts', () => {
+  it('counts affected child entries once on the task group', () => {
+    const entries = [
+      makeEntry(
+        'entry-zero',
+        '2026-08-24T12:00:00.000Z',
+        '2026-08-24T12:00:00.500Z',
+        0,
+      ),
+      makeEntry(
+        'entry-short',
+        '2026-08-24T12:01:00.000Z',
+        '2026-08-24T12:01:05.000Z',
+        5,
+      ),
+      makeEntry(
+        'entry-normal',
+        '2026-08-24T12:02:00.000Z',
+        '2026-08-24T12:03:00.000Z',
+        60,
+      ),
+    ]
+
+    expect(groupEntriesByDay(entries)[0].taskGroups[0].affectedCount).toBe(2)
   })
 })

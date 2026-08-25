@@ -51,7 +51,72 @@ export type LocationHistoryPayload = {
   limit: number
 }
 
+export type EntryOriginAttachment = {
+  id: string
+  ipAddress: string | null
+  location: string | null
+  latitude: number | null
+  longitude: number | null
+  userAgent: string | null
+  status: 'attached' | 'approximate' | 'unavailable'
+}
+
 const ENTRY_LIMIT = 200
+
+export async function attachOwnEntryOrigin(data: {
+  entryId: string
+  deviceLocation?: DeviceLocation
+}): Promise<EntryOriginAttachment> {
+  const access = await requireWorkspaceMembership()
+  if (!access.workspace.locationTrackingEnabled) {
+    throw new Error('Location tracking is disabled for this workspace.')
+  }
+
+  const [ownedEntry] = await db
+    .select({ id: timeEntries.id })
+    .from(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.id, data.entryId),
+        eq(timeEntries.workspaceId, access.workspace.id),
+        eq(timeEntries.workspaceMemberId, access.member.id),
+      ),
+    )
+    .limit(1)
+
+  if (!ownedEntry) {
+    throw new Error('This entry was not found or does not belong to you.')
+  }
+
+  const origin = await resolveEntryOrigin({
+    trackingEnabled: true,
+    deviceLocation: data.deviceLocation,
+  })
+  const [updated] = await db
+    .update(timeEntries)
+    .set({ ...origin, updatedAt: new Date() })
+    .where(eq(timeEntries.id, ownedEntry.id))
+    .returning({
+      id: timeEntries.id,
+      ipAddress: timeEntries.ipAddress,
+      location: timeEntries.location,
+      latitude: timeEntries.latitude,
+      longitude: timeEntries.longitude,
+      userAgent: timeEntries.userAgent,
+    })
+
+  const hasCoordinates = updated.latitude !== null && updated.longitude !== null
+  const hasNetworkOrigin = !!updated.ipAddress || !!updated.location
+
+  return {
+    ...updated,
+    status: data.deviceLocation
+      ? 'attached'
+      : hasCoordinates || hasNetworkOrigin
+        ? 'approximate'
+        : 'unavailable',
+  }
+}
 
 export async function getLocationHistory(data: {
   memberId?: string

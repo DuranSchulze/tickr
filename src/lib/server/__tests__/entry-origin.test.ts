@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { resolveEntryOrigin } from '../tracker/shared/origin.server'
+import {
+  captureEntryOrigin,
+  resolveEntryOrigin,
+} from '../tracker/shared/origin.server'
 
 const { getRequestMock } = vi.hoisted(() => ({
   getRequestMock: vi.fn(),
@@ -13,6 +16,28 @@ describe('time-entry origin capture', () => {
   afterEach(() => {
     getRequestMock.mockReset()
     vi.unstubAllGlobals()
+  })
+
+  it('captures request metadata without waiting for network geolocation', () => {
+    getRequestMock.mockReturnValue(
+      new Request('https://tickr.example/api/timer', {
+        headers: {
+          'x-forwarded-for': '192.0.2.126',
+          'user-agent': 'Tickr test browser',
+        },
+      }),
+    )
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(captureEntryOrigin({ trackingEnabled: true })).toEqual({
+      ipAddress: '192.0.2.126',
+      location: null,
+      latitude: null,
+      longitude: null,
+      userAgent: 'Tickr test browser',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('stores the same resolved IP and coordinates used by the location badge', async () => {

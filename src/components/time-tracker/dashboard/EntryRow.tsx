@@ -2,11 +2,13 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { DateRange } from 'react-day-picker'
 import {
   CalendarDays,
+  CircleAlert,
   Clock,
   CornerDownRight,
   Copy,
   Loader2,
   MoreVertical,
+  Pencil,
   Play,
   Trash2,
 } from 'lucide-react'
@@ -35,6 +37,14 @@ import { SuspendedClientWarning } from '../catalogs/CatalogFormParts'
 import { BillableToggleButton } from './BillableToggleButton'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useNowTick } from './hooks/useNowTick'
+import {
+  classifyEntryTimingIssue,
+  isTimeInputWithSeconds,
+  patchDateAndTimeWithSeconds,
+  secondsToTimeInput,
+  timeInputToSeconds,
+  toTimeInputWithSeconds,
+} from '#/lib/time-tracker/entry-timing'
 
 const noopCreate = () => Promise.resolve()
 
@@ -184,39 +194,6 @@ type InlinePatch = Partial<
 
 type ClientItem = { id: string; name: string; clientStatus: string }
 
-function toTimeInput(isoStr: string): string {
-  const d = new Date(isoStr)
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-function patchDateAndTime(
-  isoStr: string,
-  date: Date,
-  timeInput: string,
-): string {
-  const next = new Date(isoStr)
-  const [hours, minutes] = timeInput.split(':').map(Number)
-  next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
-  next.setHours(hours, minutes, 0, 0)
-  return next.toISOString()
-}
-
-function isTimeInputValue(value: string): boolean {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-}
-
-function timeInputToSeconds(value: string): number {
-  const [hours, minutes] = value.split(':').map(Number)
-  return hours * 3600 + minutes * 60
-}
-
-function secondsToTimeInput(totalSeconds: number): string {
-  const wrapped = ((totalSeconds % 86400) + 86400) % 86400
-  const hours = Math.floor(wrapped / 3600)
-  const minutes = Math.floor((wrapped % 3600) / 60)
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-}
-
 function EntryTimeCell({
   entry,
   onUpdate,
@@ -226,10 +203,13 @@ function EntryTimeCell({
   onUpdate: (patch: InlinePatch) => void
   disabled?: boolean
 }) {
-  const [startTime, setStartTime] = useState(() => toTimeInput(entry.startedAt))
-  const [endTime, setEndTime] = useState(() =>
-    entry.endedAt ? toTimeInput(entry.endedAt) : '',
+  const [startTime, setStartTime] = useState(() =>
+    toTimeInputWithSeconds(entry.startedAt),
   )
+  const [endTime, setEndTime] = useState(() =>
+    entry.endedAt ? toTimeInputWithSeconds(entry.endedAt) : '',
+  )
+  const [timeTouched, setTimeTouched] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [dateRange, setDateRange] = useState<DateRange>(() => ({
     from: new Date(entry.startedAt),
@@ -241,14 +221,14 @@ function EntryTimeCell({
   const isRunning = !entry.endedAt
   const draftStartDate = dateRange.from ?? new Date(entry.startedAt)
   const draftEndDate = dateRange.to ?? draftStartDate
-  const hasValidStartTime = isTimeInputValue(startTime)
-  const hasValidEndTime = isRunning || isTimeInputValue(endTime)
+  const hasValidStartTime = isTimeInputWithSeconds(startTime)
+  const hasValidEndTime = isRunning || isTimeInputWithSeconds(endTime)
   const draftStartIso = hasValidStartTime
-    ? patchDateAndTime(entry.startedAt, draftStartDate, startTime)
+    ? patchDateAndTimeWithSeconds(entry.startedAt, draftStartDate, startTime)
     : null
   const draftEndIso =
     entry.endedAt && hasValidEndTime
-      ? patchDateAndTime(entry.endedAt, draftEndDate, endTime)
+      ? patchDateAndTimeWithSeconds(entry.endedAt, draftEndDate, endTime)
       : null
   const hasTimeError =
     !!draftStartIso &&
@@ -256,9 +236,10 @@ function EntryTimeCell({
     new Date(draftEndIso) <= new Date(draftStartIso)
 
   useEffect(() => {
-    setStartTime(toTimeInput(entry.startedAt))
-    setEndTime(entry.endedAt ? toTimeInput(entry.endedAt) : '')
-    lastValidStartRef.current = toTimeInput(entry.startedAt)
+    setStartTime(toTimeInputWithSeconds(entry.startedAt))
+    setEndTime(entry.endedAt ? toTimeInputWithSeconds(entry.endedAt) : '')
+    setTimeTouched(false)
+    lastValidStartRef.current = toTimeInputWithSeconds(entry.startedAt)
     setDateRange({
       from: new Date(entry.startedAt),
       to: entry.endedAt ? new Date(entry.endedAt) : undefined,
@@ -269,12 +250,13 @@ function EntryTimeCell({
   // duration is preserved — the end time "adjusts" in most cases.
   function handleStartTimeChange(value: string) {
     setStartTime(value)
-    if (!entry.endedAt || !isTimeInputValue(value)) return
+    setTimeTouched(true)
+    if (!entry.endedAt || !isTimeInputWithSeconds(value)) return
     const delta =
       timeInputToSeconds(value) - timeInputToSeconds(lastValidStartRef.current)
     lastValidStartRef.current = value
     if (delta === 0) return
-    if (isTimeInputValue(endTime)) {
+    if (isTimeInputWithSeconds(endTime)) {
       const total = timeInputToSeconds(endTime) + delta
       const dayShift = Math.floor(total / 86400)
       if (dayShift !== 0) {
@@ -290,6 +272,7 @@ function EntryTimeCell({
   }
 
   function handleCalendarSelect(day: Date) {
+    setTimeTouched(true)
     if (!dateRange.from || dateRange.to) {
       setDateRange({ from: day, to: undefined })
       return
@@ -322,25 +305,30 @@ function EntryTimeCell({
       <div className="inline-flex items-center justify-center gap-1.5">
         <input
           type="time"
+          step="1"
           value={startTime}
           onChange={(event) => handleStartTimeChange(event.target.value)}
           onBlur={commitTimeChange}
           disabled={disabled}
           aria-label="Start time"
-          className="h-9 w-[5.5rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[6.75rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
         <span className="text-base font-bold text-muted-foreground select-none">
           —
         </span>
         <input
           type="time"
+          step="1"
           value={isRunning ? '' : endTime}
-          onChange={(event) => setEndTime(event.target.value)}
+          onChange={(event) => {
+            setEndTime(event.target.value)
+            setTimeTouched(true)
+          }}
           onBlur={commitTimeChange}
           disabled={disabled || isRunning}
           placeholder={isRunning ? 'now' : undefined}
           aria-label="End time"
-          className="h-9 w-[5.5rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[6.75rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         <Popover
@@ -377,7 +365,7 @@ function EntryTimeCell({
         </Popover>
       </div>
 
-      {hasTimeError && (
+      {timeTouched && hasTimeError && (
         <p className="m-0 text-[11px] font-semibold leading-tight text-destructive">
           End must be after start
         </p>
@@ -436,6 +424,7 @@ export const EntryRow = memo(function EntryRow({
   const [draftDesc, setDraftDesc] = useState(() => entry.description)
   const descInputRef = useRef<HTMLInputElement>(null)
   const skipDescCommit = useRef(false)
+  const timingIssue = classifyEntryTimingIssue(entry)
 
   // Callback ref: focus the description input as soon as it mounts (when the
   // user clicks to edit). Memoised so it fires only on mount, not every render.
@@ -546,6 +535,20 @@ export const EntryRow = memo(function EntryRow({
                 Running now
               </span>
             )}
+            {timingIssue && (
+              <span
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                  timingIssue === 'needs-repair'
+                    ? 'bg-destructive/10 text-destructive'
+                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                }`}
+              >
+                <CircleAlert className="size-3" />
+                {timingIssue === 'needs-repair'
+                  ? 'Needs repair'
+                  : 'Very short — review'}
+              </span>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -580,6 +583,42 @@ export const EntryRow = memo(function EntryRow({
           {entryClient?.clientStatus === 'SUSPENDED' && (
             <div>
               <SuspendedClientWarning clientName={entryClient.name} />
+            </div>
+          )}
+
+          {timingIssue && (
+            <div
+              className={`flex flex-wrap items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-xs ${
+                timingIssue === 'needs-repair'
+                  ? 'border-destructive/30 bg-destructive/5 text-destructive'
+                  : 'border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-200'
+              }`}
+            >
+              <span>
+                {timingIssue === 'needs-repair'
+                  ? 'This entry has no valid recorded duration.'
+                  : 'Location or start latency may have affected this entry.'}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onStartEdit(entry)}
+                  disabled={actionsDisabled}
+                  className="inline-flex items-center gap-1 rounded border border-current/30 px-2 py-1 font-semibold hover:bg-background/70 disabled:opacity-50"
+                >
+                  <Pencil className="size-3" />
+                  Edit time
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={actionsDisabled}
+                  className="inline-flex items-center gap-1 rounded border border-current/30 px-2 py-1 font-semibold hover:bg-background/70 disabled:opacity-50"
+                >
+                  <Trash2 className="size-3" />
+                  Delete
+                </button>
+              </span>
             </div>
           )}
         </div>

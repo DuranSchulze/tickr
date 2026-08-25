@@ -135,10 +135,7 @@ async function writeClipboardText(text: string) {
   if (!copied) throw new Error('Copy command failed')
 }
 
-async function copyDayDtrRow(
-  group: DayGroup,
-  runningEntry?: TimeEntry | null,
-) {
+async function copyDayDtrRow(group: DayGroup, runningEntry?: TimeEntry | null) {
   try {
     await writeClipboardText(getDayDtrRow(group, runningEntry))
     gooeyToast.success('DTR row copied')
@@ -325,6 +322,7 @@ function TaskGroupHeaderRow({
   onResume: () => void
 }) {
   const project = projects.find((p) => p.id === group.projectId)
+  const affectedCount = group.affectedCount
 
   return (
     <TableRow
@@ -367,6 +365,18 @@ function TaskGroupHeaderRow({
               >
                 ×{group.entries.length}
               </span>
+              {affectedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    if (!isExpanded) onToggle()
+                  }}
+                  className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300"
+                >
+                  {affectedCount} need{affectedCount === 1 ? 's' : ''} review
+                </button>
+              )}
             </div>
             <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
               {project ? (
@@ -450,6 +460,7 @@ function TaskGroupHeaderCard({
   onResume: () => void
 }) {
   const project = projects.find((p) => p.id === group.projectId)
+  const affectedCount = group.affectedCount
   const entryTags = tags.filter((t) => group.tagIds.includes(t.id))
   const tick = useNowTick(
     group.runningEntry ? getFormatterLiveTickMs(formatTime) : null,
@@ -493,6 +504,11 @@ function TaskGroupHeaderCard({
           >
             ×{group.entries.length}
           </span>
+          {affectedCount > 0 && (
+            <span className="shrink-0 rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-300">
+              {affectedCount} need{affectedCount === 1 ? 's' : ''} review
+            </span>
+          )}
         </div>
         <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-foreground">
           {formatTime(totalSeconds)}
