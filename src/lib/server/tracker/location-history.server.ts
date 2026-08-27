@@ -37,6 +37,8 @@ export type LocationHistoryEntry = {
   location: string | null
   latitude: number
   longitude: number
+  locationSource: 'device' | 'network' | null
+  locationAccuracyM: number | null
   startedAt: string
   endedAt: string | null
   durationSeconds: number
@@ -57,6 +59,8 @@ export type EntryOriginAttachment = {
   location: string | null
   latitude: number | null
   longitude: number | null
+  locationSource: 'device' | 'network' | null
+  locationAccuracyM: number | null
   userAgent: string | null
   status: 'attached' | 'approximate' | 'unavailable'
 }
@@ -102,6 +106,8 @@ export async function attachOwnEntryOrigin(data: {
       location: timeEntries.location,
       latitude: timeEntries.latitude,
       longitude: timeEntries.longitude,
+      locationSource: timeEntries.locationSource,
+      locationAccuracyM: timeEntries.locationAccuracyM,
       userAgent: timeEntries.userAgent,
     })
 
@@ -175,6 +181,8 @@ export async function getLocationHistory(data: {
           location: timeEntries.location,
           latitude: timeEntries.latitude,
           longitude: timeEntries.longitude,
+          locationSource: timeEntries.locationSource,
+          locationAccuracyM: timeEntries.locationAccuracyM,
           startedAt: timeEntries.startedAt,
           endedAt: timeEntries.endedAt,
           durationSeconds: timeEntries.durationSeconds,
@@ -210,6 +218,8 @@ export async function getLocationHistory(data: {
       location: entry.location ?? null,
       latitude: entry.latitude!,
       longitude: entry.longitude!,
+      locationSource: entry.locationSource ?? null,
+      locationAccuracyM: entry.locationAccuracyM ?? null,
       startedAt: entry.startedAt.toISOString(),
       endedAt: entry.endedAt?.toISOString() ?? null,
     })),

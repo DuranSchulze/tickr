@@ -25,6 +25,8 @@ const entry = {
   location: 'Makati City, Metro Manila, PH',
   latitude: 14.5547,
   longitude: 121.0244,
+  locationSource: 'network' as const,
+  locationAccuracyM: null,
   startedAt: '2026-08-24T08:00:00.000Z',
   endedAt: '2026-08-24T09:00:00.000Z',
   durationSeconds: 3600,

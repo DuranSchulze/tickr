@@ -1,17 +1,22 @@
 import { getMyLocationFn } from '#/lib/server/tracker'
+import type { DeviceLocation } from '#/lib/time-tracker/device-location'
 
 export type MyLocation = {
+  source: 'device' | 'network'
   ipAddress: string | null
-  /** 'City, Region, Country' — null when the provider returns no usable parts. */
+  /** Place name (device fix) or 'City, Region, Country' (IP fallback). */
   location: string | null
   latitude: number | null
   longitude: number | null
+  accuracyMeters: number | null
 }
 
 export const getMyLocationQueryKey = () => ['my-location'] as const
 
-export function fetchMyLocation(): Promise<MyLocation> {
-  return getMyLocationFn()
+export function fetchMyLocation(
+  deviceLocation?: DeviceLocation,
+): Promise<MyLocation> {
+  return getMyLocationFn({ data: { deviceLocation } })
 }
 
 /**

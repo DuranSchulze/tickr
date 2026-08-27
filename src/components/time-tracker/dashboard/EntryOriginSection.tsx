@@ -7,7 +7,15 @@ import { EntryLocationMap } from './EntryLocationMap'
  * legacy entries and tracking-disabled workspaces show no section.
  */
 export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
-  const { ipAddress, location, latitude, longitude, userAgent } = entry
+  const {
+    ipAddress,
+    location,
+    latitude,
+    longitude,
+    locationSource,
+    locationAccuracyM,
+    userAgent,
+  } = entry
 
   if (
     !ipAddress &&
@@ -20,6 +28,7 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
   }
 
   const hasCoords = latitude != null && longitude != null
+  const isDevice = locationSource === 'device'
 
   return (
     <div className="grid gap-1">
@@ -39,7 +48,13 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
         {hasCoords && (
           <span className="font-mono text-xs text-muted-foreground">
             {latitude.toFixed(4)}, {longitude.toFixed(4)}{' '}
-            <span className="not-italic">(city-level, approximate)</span>
+            <span className="not-italic">
+              {isDevice
+                ? locationAccuracyM != null
+                  ? `(device GPS, ±${locationAccuracyM.toLocaleString('en-US')} m)`
+                  : '(device GPS)'
+                : '(city-level, approximate)'}
+            </span>
           </span>
         )}
 
@@ -64,6 +79,8 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
           latitude={latitude}
           longitude={longitude}
           location={location}
+          source={locationSource}
+          accuracyMeters={locationAccuracyM}
         />
       )}
     </div>

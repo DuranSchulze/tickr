@@ -96,6 +96,8 @@ export function useTrackerMutations(
                 location: result.location,
                 latitude: result.latitude,
                 longitude: result.longitude,
+                locationSource: result.locationSource,
+                locationAccuracyM: result.locationAccuracyM,
                 userAgent: result.userAgent,
               }
             : entry,

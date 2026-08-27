@@ -9,14 +9,16 @@ import {
 } from '#/components/ui/popover'
 
 /**
- * Badge showing the current user's approximate location, resolved from
- * their request IP — the same source recorded on time-entry origins. The
- * clickable popover exposes the resolved source and a manual refresh.
+ * Badge showing the current user's location. A granted-permission device fix
+ * is preferred (reverse-geocoded to a place name); otherwise the request IP
+ * resolves to an approximate city-level location — the same network source
+ * recorded on time-entry origins when no device fix is available.
  */
 export function LocationBadge() {
   const { data, isLoading, isFetching, dataUpdatedAt, refetch } =
     useMyLocation()
 
+  const isDevice = data?.source === 'device'
   const label = isLoading
     ? 'Locating…'
     : (data?.location ?? 'Location unavailable')
@@ -45,7 +47,7 @@ export function LocationBadge() {
           <span
             className={cn(
               'size-1.5 shrink-0 rounded-full',
-              data?.location ? 'bg-emerald-500' : 'bg-amber-500',
+              isDevice && data.location ? 'bg-emerald-500' : 'bg-amber-500',
               isFetching && 'animate-pulse',
             )}
             aria-hidden="true"
@@ -62,6 +64,18 @@ export function LocationBadge() {
             ? 'Resolving your location…'
             : (data?.location ?? 'Unknown')}
         </p>
+        {isDevice ? (
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            Device GPS
+            {data.accuracyMeters != null
+              ? ` · accurate to about ${data.accuracyMeters.toLocaleString('en-US')} m`
+              : ''}
+          </p>
+        ) : (
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            Approximate · resolved from your network
+          </p>
+        )}
         {hasCoords && (
           <p className="m-0 mt-0.5 text-xs text-muted-foreground">
             {formatCoordinates(data!.latitude!, data!.longitude!)}
@@ -73,9 +87,9 @@ export function LocationBadge() {
           </p>
         )}
         <p className="m-0 mt-2 text-[11px] leading-snug text-muted-foreground">
-          This is checked automatically every minute. The same public IP,
-          location, and coordinates are recorded on new time entries when
-          workspace location tracking is on.
+          This is checked automatically every minute. New time entries record
+          your device location when browser permission is granted, and fall back
+          to this network-based location otherwise.
         </p>
 
         <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">

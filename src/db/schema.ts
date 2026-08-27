@@ -1021,6 +1021,10 @@ export const timeEntries = pgTable(
     location: text('location'),
     latitude: doublePrecision('latitude'),
     longitude: doublePrecision('longitude'),
+    // 'device' (browser geolocation) or 'network' (IP-based, city-level).
+    locationSource: text('location_source', { enum: ['device', 'network'] }),
+    // Radius in meters for device fixes; null for network-derived rows.
+    locationAccuracyM: integer('location_accuracy_m'),
     userAgent: text('user_agent'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

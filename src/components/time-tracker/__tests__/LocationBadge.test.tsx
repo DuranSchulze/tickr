@@ -4,17 +4,33 @@ import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { LocationBadge } from '../LocationBadge'
+import type { MyLocation } from '#/lib/time-tracker/my-location-query'
 
 const refetch = vi.fn()
 
+const networkLocation: MyLocation = {
+  source: 'network',
+  ipAddress: '203.0.113.42',
+  location: 'Makati City, Metro Manila, PH',
+  latitude: 14.5547,
+  longitude: 121.0244,
+  accuracyMeters: null,
+}
+
+const deviceLocation: MyLocation = {
+  source: 'device',
+  ipAddress: '203.0.113.42',
+  location: '5th Avenue, Bonifacio Global City, Taguig',
+  latitude: 14.5409,
+  longitude: 121.0518,
+  accuracyMeters: 22,
+}
+
+let mockData: MyLocation | undefined = networkLocation
+
 vi.mock('#/hooks/useMyLocation', () => ({
   useMyLocation: () => ({
-    data: {
-      ipAddress: '203.0.113.42',
-      location: 'Makati City, Metro Manila, PH',
-      latitude: 14.5547,
-      longitude: 121.0244,
-    },
+    data: mockData,
     isLoading: false,
     isFetching: false,
     dataUpdatedAt: new Date('2026-08-24T06:00:00Z').getTime(),
@@ -40,6 +56,7 @@ describe('LocationBadge', () => {
   afterEach(() => {
     cleanup()
     refetch.mockClear()
+    mockData = networkLocation
   })
 
   it('renders accessible location details and refreshes on demand', () => {
@@ -56,5 +73,24 @@ describe('LocationBadge', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     expect(refetch).toHaveBeenCalledOnce()
+  })
+
+  it('marks network-resolved locations as approximate', () => {
+    render(<LocationBadge />)
+
+    expect(
+      screen.getByText(/approximate · resolved from your network/i),
+    ).toBeTruthy()
+    expect(screen.queryByText(/device gps/i)).toBeNull()
+  })
+
+  it('shows device accuracy when a GPS fix is available', () => {
+    mockData = deviceLocation
+    render(<LocationBadge />)
+
+    expect(
+      screen.getByText(/device gps · accurate to about 22 m/i),
+    ).toBeTruthy()
+    expect(screen.queryByText(/resolved from your network/i)).toBeNull()
   })
 })
