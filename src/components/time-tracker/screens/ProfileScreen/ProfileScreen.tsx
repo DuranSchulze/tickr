@@ -92,7 +92,8 @@ export function ProfileScreen({
           selfProfile={selfProfile}
           fallbackName={member.name}
           fallbackEmail={member.email}
-          departmentName={department?.name || 'Unassigned'}
+          departments={state.departments}
+          departmentId={member.departmentId}
           imagekitConfigured={imagekitConfigured}
           onAvatarChange={setDisplayAvatar}
           onNameChange={setDisplayName}

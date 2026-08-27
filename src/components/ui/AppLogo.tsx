@@ -16,7 +16,7 @@ export function AppLogo({
   imgClassName,
 }: {
   size?: keyof typeof sizes
-  /** Override the default BRAND.logoSrc (e.g. "/favicon/icon1.png") */
+  /** Override the default BRAND.logoSrc */
   customSrc?: string
   /** Additional classes for the <img> (e.g. "dark:invert") */
   imgClassName?: string

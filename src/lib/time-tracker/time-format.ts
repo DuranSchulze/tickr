@@ -10,7 +10,21 @@ function formatHuman(seconds: number): string {
   return `${m}m`
 }
 
-export const TIME_FORMATS = ['precise', 'clock', 'decimal', 'human'] as const
+function formatHoursAndMinutes(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds))
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
+export const TIME_FORMATS = [
+  'precise',
+  'clock',
+  'hours-minutes',
+  'decimal',
+  'human',
+] as const
 export type TimeFormat = (typeof TIME_FORMATS)[number]
 
 export const TimeFormatSchema = z.enum(TIME_FORMATS)
@@ -41,6 +55,8 @@ export function getFormatter(format: TimeFormat): (seconds: number) => string {
   switch (format) {
     case 'clock':
       return formatDuration
+    case 'hours-minutes':
+      return formatHoursAndMinutes
     case 'decimal':
       return formatHours
     case 'human':
@@ -58,6 +74,7 @@ export function getLiveTickMs(format: TimeFormat): number {
 export const FORMAT_LABELS: Record<TimeFormat, string> = {
   precise: 'HH:MM:SS:CC',
   clock: 'HH:MM:SS',
+  'hours-minutes': 'HH:MM',
   decimal: 'Decimal (1.25h)',
   human: 'Human (1h 15m)',
 }

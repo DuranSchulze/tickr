@@ -27,13 +27,26 @@ export function toTimeInputWithSeconds(iso: string): string {
     .join(':')
 }
 
+export function toTimeInputMinutes(iso: string): string {
+  return toTimeInputWithSeconds(iso).slice(0, 5)
+}
+
 export function isTimeInputWithSeconds(value: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(value)
+}
+
+export function isTimeInputMinutes(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
 export function timeInputToSeconds(value: string): number {
   const [hours, minutes, seconds] = value.split(':').map(Number)
   return hours * 3600 + minutes * 60 + seconds
+}
+
+export function timeInputMinutesToSeconds(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number)
+  return hours * 3600 + minutes * 60
 }
 
 export function secondsToTimeInput(totalSeconds: number): string {
@@ -46,6 +59,10 @@ export function secondsToTimeInput(totalSeconds: number): string {
     .join(':')
 }
 
+export function secondsToTimeInputMinutes(totalSeconds: number): string {
+  return secondsToTimeInput(totalSeconds).slice(0, 5)
+}
+
 export function patchDateAndTimeWithSeconds(
   iso: string,
   date: Date,
@@ -56,6 +73,16 @@ export function patchDateAndTimeWithSeconds(
   next.setFullYear(date.getFullYear(), date.getMonth(), date.getDate())
   next.setHours(hours, minutes, seconds, next.getMilliseconds())
   return next.toISOString()
+}
+
+export function patchDateAndTimeWithMinutes(
+  iso: string,
+  date: Date,
+  timeInput: string,
+): string {
+  const seconds = new Date(iso).getSeconds()
+  const timeWithSeconds = `${timeInput}:${String(seconds).padStart(2, '0')}`
+  return patchDateAndTimeWithSeconds(iso, date, timeWithSeconds)
 }
 
 export function stopEntryAt(

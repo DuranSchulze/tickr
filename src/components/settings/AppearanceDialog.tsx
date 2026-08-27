@@ -6,8 +6,15 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { ThemeControls } from './ThemeSection'
+import { TimeFormatControls } from './TimeFormatControls'
+import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 
 const PREVIEW_BARS = [30, 52, 38, 68, 46, 84, 58, 40, 74, 28]
+
+// Sample durations shown in the live preview, formatted with the picked
+// time display format (6h 42m today, 28h 10m this week).
+const PREVIEW_TODAY_SECONDS = 6 * 3600 + 42 * 60
+const PREVIEW_WEEK_SECONDS = 28 * 3600 + 10 * 60
 
 export function AppearanceDialog({
   open,
@@ -24,14 +31,17 @@ export function AppearanceDialog({
             Appearance
           </DialogTitle>
           <DialogDescription>
-            Choose your mode, accent color, and font. Changes apply instantly
-            and are saved on this device.
+            Choose your mode, accent color, font, and time format. Changes
+            apply instantly and are saved on this device.
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col md:grid md:grid-cols-[300px_minmax(0,1fr)]">
           <div className="shrink-0 overflow-y-auto border-b border-border p-5 md:border-r md:border-b-0 md:p-6">
             <ThemeControls />
+            <div className="mt-6 border-t border-border pt-6">
+              <TimeFormatControls />
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-muted/40 p-5 md:p-6">
@@ -52,8 +62,16 @@ export function AppearanceDialog({
 }
 
 function ThemePreview() {
+  // The picked font applies via the [data-font] CSS variables, so the preview
+  // uses them explicitly: var(--font-sans) for body text and var(--font-heading)
+  // for headings, and formatTime() so durations follow the picked time format.
+  const { formatTime } = useTimeFormat()
+
   return (
-    <div className="overflow-hidden rounded-xl bg-background shadow-xs ring-1 ring-foreground/10">
+    <div
+      className="overflow-hidden rounded-xl bg-background shadow-xs ring-1 ring-foreground/10"
+      style={{ fontFamily: 'var(--font-sans)' }}
+    >
       {/* Window chrome */}
       <div className="flex items-center gap-1.5 border-b border-border/70 bg-card px-3 py-2">
         <span className="size-2.5 rounded-full bg-red-400/80" />
@@ -101,7 +119,10 @@ function ThemePreview() {
             Overview
           </div>
 
-          <p className="m-0 font-heading text-sm font-black tracking-tight text-foreground">
+          <p
+            className="m-0 font-heading text-sm font-black tracking-tight text-foreground"
+            style={{ fontFamily: 'var(--font-heading)' }}
+          >
             Time tracker
           </p>
           <p className="m-0 text-[10px] leading-4 text-muted-foreground">
@@ -113,16 +134,22 @@ function ThemePreview() {
               <p className="m-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
                 Today
               </p>
-              <p className="m-0 mt-0.5 font-heading text-base font-black text-foreground">
-                6h 42m
+              <p
+                className="m-0 mt-0.5 font-heading text-base font-black tabular-nums text-foreground"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {formatTime(PREVIEW_TODAY_SECONDS)}
               </p>
             </div>
             <div className="rounded-lg bg-card p-2.5 shadow-xs ring-1 ring-foreground/10">
               <p className="m-0 text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
                 This week
               </p>
-              <p className="m-0 mt-0.5 font-heading text-base font-black text-foreground">
-                28h 10m
+              <p
+                className="m-0 mt-0.5 font-heading text-base font-black tabular-nums text-foreground"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                {formatTime(PREVIEW_WEEK_SECONDS)}
               </p>
             </div>
           </div>
