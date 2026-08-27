@@ -104,6 +104,8 @@ export type TimeEntry = {
   location?: string | null
   latitude?: number | null
   longitude?: number | null
+  locationSource?: 'device' | 'network' | null
+  locationAccuracyM?: number | null
   userAgent?: string | null
 }
 

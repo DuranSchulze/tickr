@@ -41,6 +41,8 @@ function serializeManualTimeEntry(
     location: string | null
     latitude: number | null
     longitude: number | null
+    locationSource: 'device' | 'network' | null
+    locationAccuracyM: number | null
     userAgent: string | null
   },
   tagIds: string[],
@@ -62,6 +64,8 @@ function serializeManualTimeEntry(
     location: entry.location,
     latitude: entry.latitude,
     longitude: entry.longitude,
+    locationSource: entry.locationSource,
+    locationAccuracyM: entry.locationAccuracyM,
     userAgent: entry.userAgent,
   }
 }

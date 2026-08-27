@@ -12,6 +12,37 @@ vi.mock('@tanstack/react-start/server', () => ({
   getRequest: getRequestMock,
 }))
 
+function ipInfoResponse() {
+  return new Response(
+    JSON.stringify({
+      ip: '192.0.2.126',
+      city: 'Davao City',
+      region: 'Davao Region',
+      country: 'PH',
+      loc: '7.1907,125.4553',
+    }),
+    { status: 200 },
+  )
+}
+
+function nominatimResponse() {
+  return new Response(
+    JSON.stringify({
+      name: '5th Avenue',
+      display_name:
+        '5th Avenue, Bonifacio Global City, Taguig, Metro Manila, Philippines',
+      address: {
+        road: '5th Avenue',
+        suburb: 'Bonifacio Global City',
+        city: 'Taguig',
+        state: 'Metro Manila',
+        country: 'Philippines',
+      },
+    }),
+    { status: 200 },
+  )
+}
+
 describe('time-entry origin capture', () => {
   afterEach(() => {
     getRequestMock.mockReset()
@@ -35,6 +66,8 @@ describe('time-entry origin capture', () => {
       location: null,
       latitude: null,
       longitude: null,
+      locationSource: 'network',
+      locationAccuracyM: null,
       userAgent: 'Tickr test browser',
     })
     expect(fetchMock).not.toHaveBeenCalled()
@@ -49,21 +82,7 @@ describe('time-entry origin capture', () => {
         },
       }),
     )
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            ip: '192.0.2.126',
-            city: 'Davao City',
-            region: 'Davao Region',
-            country: 'PH',
-            loc: '7.1907,125.4553',
-          }),
-          { status: 200 },
-        ),
-      ),
-    )
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ipInfoResponse()))
 
     await expect(
       resolveEntryOrigin({ trackingEnabled: true }),
@@ -72,6 +91,8 @@ describe('time-entry origin capture', () => {
       location: 'Davao City, Davao Region, PH',
       latitude: 7.1907,
       longitude: 125.4553,
+      locationSource: 'network',
+      locationAccuracyM: null,
       userAgent: 'Tickr test browser',
     })
   })
@@ -87,6 +108,8 @@ describe('time-entry origin capture', () => {
       location: null,
       latitude: null,
       longitude: null,
+      locationSource: null,
+      locationAccuracyM: null,
       userAgent: null,
     })
     expect(getRequestMock).not.toHaveBeenCalled()
@@ -130,6 +153,42 @@ describe('time-entry origin capture', () => {
       location: 'Device location (accurate to about 18 m)',
       latitude: 14.5176,
       longitude: 121.0509,
+      locationSource: 'device',
+      locationAccuracyM: 18,
+      userAgent: 'Tickr test browser',
+    })
+  })
+
+  it('labels device coordinates with their reverse-geocoded place name', async () => {
+    getRequestMock.mockReturnValue(
+      new Request('https://tickr.example/api/timer', {
+        headers: { 'user-agent': 'Tickr test browser' },
+      }),
+    )
+    const fetchMock = vi.fn(async (url: string | URL | Request) =>
+      String(url).includes('nominatim')
+        ? nominatimResponse()
+        : ipInfoResponse(),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      resolveEntryOrigin({
+        trackingEnabled: true,
+        deviceLocation: {
+          latitude: 14.5409,
+          longitude: 121.0518,
+          accuracyMeters: 22,
+          capturedAt: '2026-08-24T04:00:00.000Z',
+        },
+      }),
+    ).resolves.toEqual({
+      ipAddress: '192.0.2.126',
+      location: '5th Avenue, Bonifacio Global City, Taguig',
+      latitude: 14.5409,
+      longitude: 121.0518,
+      locationSource: 'device',
+      locationAccuracyM: 22,
       userAgent: 'Tickr test browser',
     })
   })
@@ -153,6 +212,8 @@ describe('time-entry origin capture', () => {
       location: 'Device location (accurate to about 25 m)',
       latitude: 14.5176,
       longitude: 121.0509,
+      locationSource: 'device',
+      locationAccuracyM: 25,
     })
   })
 })

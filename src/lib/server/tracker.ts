@@ -137,6 +137,10 @@ const attachEntryOriginSchema = z.object({
   deviceLocation: deviceLocationSchema.optional(),
 })
 
+const myLocationSchema = z.object({
+  deviceLocation: deviceLocationSchema.optional(),
+})
+
 const reportSortSchema = z.object({
   sortBy: z.enum(exportSortByValues).optional(),
   sortOrder: z.enum(exportSortOrderValues).optional(),
@@ -1041,12 +1045,12 @@ export const attachEntryOriginFn = createServerFn({ method: 'POST' })
     return attachOwnEntryOrigin(data)
   })
 
-export const getMyLocationFn = createServerFn({ method: 'GET' }).handler(
-  async () => {
+export const getMyLocationFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) => myLocationSchema.parse(input ?? {}))
+  .handler(async ({ data }) => {
     const { getMyLocation } = await import('./tracker/my-location.server')
-    return getMyLocation()
-  },
-)
+    return getMyLocation(data.deviceLocation)
+  })
 
 // ─── Audit Logs ───────────────────────────────────────────────────────────────
 

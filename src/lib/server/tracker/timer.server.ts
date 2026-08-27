@@ -43,6 +43,8 @@ function serializeTimeEntry(
     location: string | null
     latitude: number | null
     longitude: number | null
+    locationSource: 'device' | 'network' | null
+    locationAccuracyM: number | null
     userAgent: string | null
   },
   tags: Array<{ tagId: string }>,
@@ -64,6 +66,8 @@ function serializeTimeEntry(
     location: entry.location,
     latitude: entry.latitude,
     longitude: entry.longitude,
+    locationSource: entry.locationSource,
+    locationAccuracyM: entry.locationAccuracyM,
     userAgent: entry.userAgent,
   }
 }
@@ -407,6 +411,8 @@ export async function duplicateEntry(data: z.infer<typeof entryIdSchema>) {
       location: entry.location,
       latitude: entry.latitude,
       longitude: entry.longitude,
+      locationSource: entry.locationSource,
+      locationAccuracyM: entry.locationAccuracyM,
       userAgent: entry.userAgent,
     })
     .returning()

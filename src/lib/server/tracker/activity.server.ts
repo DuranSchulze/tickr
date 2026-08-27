@@ -35,6 +35,8 @@ export type MemberEntryOrigin = {
   location: string | null
   latitude: number
   longitude: number
+  locationSource: 'device' | 'network' | null
+  locationAccuracyM: number | null
 }
 
 export type WorkspaceMemberActivity = {
@@ -170,6 +172,8 @@ export async function getWorkspaceActivity(data: {
           location: timeEntries.location,
           latitude: timeEntries.latitude,
           longitude: timeEntries.longitude,
+          locationSource: timeEntries.locationSource,
+          locationAccuracyM: timeEntries.locationAccuracyM,
         })
         .from(timeEntries)
         .where(
@@ -192,6 +196,8 @@ export async function getWorkspaceActivity(data: {
         location: row.location,
         latitude: row.latitude!,
         longitude: row.longitude!,
+        locationSource: row.locationSource ?? null,
+        locationAccuracyM: row.locationAccuracyM ?? null,
       } satisfies MemberEntryOrigin,
     ]),
   )
