@@ -7,4 +7,8 @@ export {
 } from './screens/ProfileScreen/ProfileScreen'
 export { MembersScreen } from './screens/MembersScreen/MembersScreen'
 export { CatalogsScreen } from './screens/CatalogsScreen/CatalogsScreen'
-export { SettingsScreen } from './screens/SettingsScreen/SettingsScreen'
+export {
+  normalizeSettingsTab,
+  SettingsScreen,
+  type SettingsTab,
+} from './screens/SettingsScreen/SettingsScreen'

@@ -74,6 +74,41 @@ function formatTimeRange(
   }`
 }
 
+function MemberAvatar({
+  name,
+  avatarUrl,
+  className = 'size-6 text-[10px]',
+}: {
+  name: string
+  avatarUrl: string | null
+  className?: string
+}) {
+  const initials = name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('')
+
+  if (avatarUrl) {
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className={`shrink-0 rounded-full object-cover ${className}`}
+      />
+    )
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className={`flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary ${className}`}
+    >
+      {initials}
+    </div>
+  )
+}
+
 function EntryMobileCard({
   entry,
   onEditEntry,
@@ -116,8 +151,15 @@ function EntryMobileCard({
             <p className="m-0 truncate text-sm font-semibold text-foreground">
               {entry.description || 'Untitled'}
             </p>
-            <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-              {entry.memberName} · {entry.date}
+            <p className="m-0 mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <MemberAvatar
+                name={entry.memberName}
+                avatarUrl={entry.memberImage}
+                className="size-5 text-[9px]"
+              />
+              <span className="truncate">
+                {entry.memberName} · {entry.date}
+              </span>
             </p>
             <p className="m-0 mt-0.5 text-xs text-muted-foreground">
               {formatTimeRange(entry, timezone)}
@@ -428,8 +470,14 @@ function DesktopEntryRow({
         {formatTimeRange(entry, timezone)}
       </td>
       <td className="px-4 py-2.5 text-xs font-medium text-foreground">
-        <div className="truncate" title={entry.memberName}>
-          {entry.memberName}
+        <div className="flex min-w-0 items-center gap-2">
+          <MemberAvatar
+            name={entry.memberName}
+            avatarUrl={entry.memberImage}
+          />
+          <span className="truncate" title={entry.memberName}>
+            {entry.memberName}
+          </span>
         </div>
       </td>
       <td className="px-4 py-2.5">

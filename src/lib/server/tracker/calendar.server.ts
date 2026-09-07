@@ -8,14 +8,18 @@ import {
   users,
   workspaceMembers,
 } from '#/db/schema'
-import { and, eq, gte, isNull, lt, or } from 'drizzle-orm'
+import { and, asc, eq, gte, isNull, lt, or } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { toDateKey } from './shared/dates'
 import type { calendarMonthSchema } from './shared/schemas'
 import {
   assertCanAccessMember,
+  assertOwnerOrAdmin,
   assertPermission,
+  can,
+  getAccessLevel,
 } from './shared/role-gates.server'
+import { canViewTeamCalendars } from '#/lib/time-tracker/calendar-access'
 
 export type CalendarEntry = {
   id: string
@@ -48,6 +52,15 @@ export type CalendarEntriesPayload = {
     departmentColor: string | null
   }
   entriesByDate: Record<string, CalendarEntry[]>
+}
+
+export type CalendarMemberOption = CalendarEntriesPayload['member']
+
+export type CalendarPagePayload = {
+  calendar: CalendarEntriesPayload
+  canViewTeamCalendars: boolean
+  currentMemberId: string
+  memberOptions: CalendarMemberOption[]
 }
 
 type RawEntry = {
@@ -257,6 +270,78 @@ async function loadCalendarEntries({
       departmentColor: memberRow.departmentColor ?? null,
     },
     entriesByDate,
+  }
+}
+
+async function loadCalendarMemberOptions(
+  workspaceId: string,
+): Promise<CalendarMemberOption[]> {
+  const rows = await db
+    .select({
+      id: workspaceMembers.id,
+      name: users.name,
+      email: workspaceMembers.email,
+      departmentName: departments.name,
+      departmentColor: departments.color,
+    })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(workspaceMembers.userId, users.id))
+    .leftJoin(departments, eq(workspaceMembers.departmentId, departments.id))
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.status, 'ACTIVE'),
+      ),
+    )
+    .orderBy(asc(users.name), asc(workspaceMembers.email))
+
+  return rows.map((member) => ({
+    id: member.id,
+    name: member.name ?? member.email,
+    email: member.email,
+    departmentName: member.departmentName ?? null,
+    departmentColor: member.departmentColor ?? null,
+  }))
+}
+
+export async function getCalendarPage(data: {
+  month: string
+  memberId?: string
+}): Promise<CalendarPagePayload> {
+  const access = await requireWorkspaceAccess()
+  const canViewTeam = canViewTeamCalendars(
+    getAccessLevel(access),
+    can(access, 'members.view'),
+  )
+  const isRequestingAnotherMember =
+    Boolean(data.memberId) && data.memberId !== access.member.id
+
+  if (isRequestingAnotherMember) {
+    assertOwnerOrAdmin(access)
+    assertPermission(
+      access,
+      'members.view',
+      'You do not have permission to view team calendars.',
+    )
+  }
+
+  const targetMemberId = data.memberId ?? access.member.id
+  const [calendar, memberOptions] = await Promise.all([
+    loadCalendarEntries({
+      month: data.month,
+      targetMemberId,
+      access,
+    }),
+    canViewTeam
+      ? loadCalendarMemberOptions(access.workspace.id)
+      : Promise.resolve([]),
+  ])
+
+  return {
+    calendar,
+    canViewTeamCalendars: canViewTeam,
+    currentMemberId: access.member.id,
+    memberOptions,
   }
 }
 

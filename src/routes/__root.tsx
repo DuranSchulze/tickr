@@ -34,6 +34,27 @@ function DeferredToaster() {
   )
 }
 
+// Registers the service worker after the page fully loads so it never
+// competes with the initial visit, and only in production builds — a dev
+// service worker would serve stale chunks across Vite HMR restarts.
+// oxlint-disable-next-line react/only-export-components
+function ServiceWorkerRegistrar() {
+  useEffect(() => {
+    if (!import.meta.env.PROD) return
+    if (!('serviceWorker' in navigator)) return
+    const register = () => {
+      void navigator.serviceWorker.register('/sw.js')
+    }
+    if (document.readyState === 'complete') {
+      register()
+      return
+    }
+    window.addEventListener('load', register, { once: true })
+    return () => window.removeEventListener('load', register)
+  }, [])
+  return null
+}
+
 // oxlint-disable-next-line react/only-export-components
 function NotFoundComponent() {
   return (
@@ -72,6 +93,23 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         title: BRAND.name,
+      },
+      // iOS standalone ("Add to Home Screen") behavior.
+      {
+        name: 'mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: BRAND.name,
       },
     ],
     links: [
@@ -126,11 +164,27 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         {/* The theme init script must run before React hydrates to prevent FOUC */}
         {/* oxlint-disable-next-line react/no-danger */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Both theme-color variants must survive TanStack's meta dedupe
+            (same `name` collapses to one), so they are rendered as plain JSX.
+            They color the mobile browser / standalone-app chrome and follow
+            the system color scheme — the in-app manual theme override cannot
+            reach this. */}
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: light)"
+          content="#f7f5f5"
+        />
+        <meta
+          name="theme-color"
+          media="(prefers-color-scheme: dark)"
+          content="#161c24"
+        />
         <HeadContent />
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20 selection:text-foreground">
         {children}
         <Monitoring />
+        <ServiceWorkerRegistrar />
         <DeferredToaster />
         <Scripts />
       </body>

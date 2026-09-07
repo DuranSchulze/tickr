@@ -11,6 +11,7 @@ import { BarChart3, Clock, Users } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
 import { gooeyToast } from '#/lib/toast'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
+import { BrandLogo } from '#/components/ui/BrandLogo'
 import { BRAND } from '#/lib/brand'
 import { PasswordInput } from '#/components/ui/password-input'
 import { DevLoginButton } from '#/components/auth/DevLoginButton'
@@ -240,11 +241,7 @@ function AuthPage() {
               to="/"
               className="inline-flex w-fit items-center gap-3 no-underline"
             >
-              <img
-                src={BRAND.logoSrc}
-                alt={BRAND.logoAlt}
-                className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur"
-              />
+              <BrandLogo className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur" />
               <span className="text-sm font-bold tracking-wide text-white">
                 {BRAND.name}
               </span>
@@ -284,11 +281,7 @@ function AuthPage() {
               to="/"
               className="inline-flex items-center gap-3 no-underline lg:hidden"
             >
-              <img
-                src={BRAND.logoSrc}
-                alt={BRAND.logoAlt}
-                className="size-9 rounded-lg border border-border bg-card object-contain"
-              />
+              <BrandLogo className="size-9 rounded-lg border border-border bg-card object-contain" />
               <span className="text-sm font-bold text-foreground">
                 {BRAND.name}
               </span>

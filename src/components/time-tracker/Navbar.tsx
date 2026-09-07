@@ -2,12 +2,20 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { LogOut, Palette, Settings, Sparkles, UserCircle } from 'lucide-react'
+import {
+  LogOut,
+  Palette,
+  Settings,
+  Smartphone,
+  Sparkles,
+  UserCircle,
+} from 'lucide-react'
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
+import { InstallAppDialog } from '#/components/shared/InstallAppDialog'
 import { authClient } from '#/lib/auth-client'
-import { BRAND } from '#/lib/brand'
+import { usePwaInstall } from '#/hooks/usePwaInstall'
 import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,
@@ -40,6 +48,11 @@ export function Navbar({
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const [installOpen, setInstallOpen] = useState(false)
+  const { canPrompt, isInstalled, isIos, promptInstall } = usePwaInstall()
+  // Hidden once installed; on browsers with neither a native install prompt
+  // nor iOS instructions there is nothing useful to show.
+  const showInstallEntry = !isInstalled && (canPrompt || isIos)
 
   const handleSignOut = () => {
     void authClient.signOut({
@@ -58,17 +71,8 @@ export function Navbar({
         {birthdayCelebration}
 
         {mobileMenuButton}
-        <Link
-          to="/app/time-tracker"
-          className="flex items-center gap-3 no-underline"
-        >
-          <AppLogo size="md" imgClassName="dark:invert" />
-          <div className="hidden sm:block">
-            <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-foreground">
-              {BRAND.name}
-            </p>
-            <p className="m-0 text-xs text-muted-foreground">{BRAND.tagline}</p>
-          </div>
+        <Link to="/app/time-tracker" className="flex items-center no-underline">
+          <AppLogo size="md" />
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
@@ -138,6 +142,16 @@ export function Navbar({
                 Appearance
               </DropdownMenuItem>
 
+              {showInstallEntry && (
+                <DropdownMenuItem
+                  onSelect={() => setInstallOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Smartphone className="size-4" />
+                  Install app
+                </DropdownMenuItem>
+              )}
+
               <DropdownMenuSeparator />
 
               <DropdownMenuItem
@@ -154,6 +168,16 @@ export function Navbar({
             open={appearanceOpen}
             onOpenChange={setAppearanceOpen}
           />
+
+          {showInstallEntry && (
+            <InstallAppDialog
+              open={installOpen}
+              onOpenChange={setInstallOpen}
+              canPrompt={canPrompt}
+              isIos={isIos}
+              promptInstall={promptInstall}
+            />
+          )}
         </div>
       </div>
     </header>

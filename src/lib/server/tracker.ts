@@ -79,6 +79,10 @@ const calendarMonthSchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
 })
 
+const calendarPageSchema = calendarMonthSchema.extend({
+  memberId: z.string().trim().min(1).max(128).optional(),
+})
+
 const departmentMemberCalendarSchema = calendarMonthSchema.extend({
   memberId: z.string().min(1),
 })
@@ -284,6 +288,13 @@ export const getCalendarEntriesFn = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     const { getCalendarEntries } = await import('./tracker.server')
     return getCalendarEntries(data)
+  })
+
+export const getCalendarPageFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) => calendarPageSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getCalendarPage } = await import('./tracker.server')
+    return getCalendarPage(data)
   })
 
 export const getDepartmentMemberCalendarEntriesFn = createServerFn({
@@ -962,21 +973,41 @@ const updateWorkspaceSettingsSchema = z
   .object({
     name: z.string().trim().min(1).max(150).optional(),
     timezone: z.string().trim().min(1).max(80).optional(),
-    locationTrackingEnabled: z.boolean().optional(),
   })
-  .refine(
-    (data) =>
-      data.name !== undefined ||
-      data.timezone !== undefined ||
-      data.locationTrackingEnabled !== undefined,
-    { message: 'At least one setting is required.' },
-  )
+  .refine((data) => data.name !== undefined || data.timezone !== undefined, {
+    message: 'At least one setting is required.',
+  })
 
 export const updateWorkspaceSettingsFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateWorkspaceSettingsSchema.parse(input))
   .handler(async ({ data }) => {
     const { updateWorkspaceSettings } = await import('./tracker.server')
     return updateWorkspaceSettings(data)
+  })
+
+export const updateWorkspaceLocationTrackingFn = createServerFn({
+  method: 'POST',
+})
+  .inputValidator((input) => z.object({ enabled: z.boolean() }).parse(input))
+  .handler(async ({ data }) => {
+    const { updateWorkspaceLocationTracking } = await import('./tracker.server')
+    return updateWorkspaceLocationTracking(data.enabled)
+  })
+
+export const getWorkspaceLocationDataSummaryFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getWorkspaceLocationDataSummary } = await import('./tracker.server')
+  return getWorkspaceLocationDataSummary()
+})
+
+export const purgeWorkspaceLocationDataFn = createServerFn({ method: 'POST' })
+  .inputValidator((input) =>
+    z.object({ confirmation: z.string().trim().min(1).max(150) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { purgeWorkspaceLocationData } = await import('./tracker.server')
+    return purgeWorkspaceLocationData(data.confirmation)
   })
 
 // ─── My Performance ───────────────────────────────────────────────────────────

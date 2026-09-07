@@ -1,8 +1,14 @@
-import type { CalendarEntriesPayload } from '#/lib/server/tracker.server'
+import type {
+  CalendarEntriesPayload,
+  CalendarMemberOption,
+} from '#/lib/server/tracker.server'
 import { useTimeFormat } from '#/lib/time-tracker/useTimeFormat'
 import { CalendarGrid } from './CalendarGrid'
 import { CalendarHeader } from './CalendarHeader'
+import { CalendarMemberSwitcher } from './CalendarMemberSwitcher'
 import type { CalendarView } from './calendar.utils'
+
+const EMPTY_MEMBER_OPTIONS: CalendarMemberOption[] = []
 
 export function CalendarScreen({
   calendar,
@@ -10,6 +16,9 @@ export function CalendarScreen({
   selectedDate,
   eyebrow,
   description,
+  memberOptions = EMPTY_MEMBER_OPTIONS,
+  currentMemberId,
+  onChangeMember,
   onChangeCalendar,
 }: {
   calendar: CalendarEntriesPayload
@@ -17,6 +26,9 @@ export function CalendarScreen({
   selectedDate: string
   eyebrow?: string
   description?: string
+  memberOptions?: CalendarMemberOption[]
+  currentMemberId?: string
+  onChangeMember?: (memberId: string) => void
   onChangeCalendar: (next: {
     month: string
     view?: CalendarView
@@ -35,6 +47,14 @@ export function CalendarScreen({
         description={description}
         onChangeCalendar={onChangeCalendar}
       />
+      {memberOptions.length > 0 && currentMemberId && onChangeMember && (
+        <CalendarMemberSwitcher
+          members={memberOptions}
+          selectedMemberId={calendar.member.id}
+          currentMemberId={currentMemberId}
+          onChange={onChangeMember}
+        />
+      )}
       <CalendarGrid
         month={calendar.month}
         view={view}

@@ -809,6 +809,7 @@ export async function getDepartmentMemberTodayActivity(data: {
       id: workspaceMembers.id,
       email: workspaceMembers.email,
       userName: users.name,
+      userImage: users.image,
       departmentId: workspaceMembers.departmentId,
       departmentName: departmentsTable.name,
       departmentColor: departmentsTable.color,
@@ -977,6 +978,7 @@ export async function getDepartmentMemberDetail(data: {
       id: workspaceMembers.id,
       email: workspaceMembers.email,
       userName: users.name,
+      userImage: users.image,
       departmentId: workspaceMembers.departmentId,
       billableRate: workspaceMembers.billableRate,
     })
@@ -1170,6 +1172,7 @@ export async function getDepartmentMemberDetail(data: {
           workspaceMemberId: entry.workspaceMemberId,
           date: formatDateInTimeZone(clipped.startedAt, timezone),
           memberName: member.userName ?? member.email,
+          memberImage: member.userImage ?? null,
           projectId: entry.projectId ?? '',
           taskId: entry.taskId ?? null,
           projectName: entry.projectName ?? null,

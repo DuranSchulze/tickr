@@ -97,10 +97,7 @@ export const MobileNav = memo(function ({
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
-                <AppLogo
-                                  size="sm"
-                                  imgClassName="dark:invert"
-                                />
+                <AppLogo size="sm" />
                 <BriefcaseBusiness className="size-4 text-primary" />
               </div>
             </div>

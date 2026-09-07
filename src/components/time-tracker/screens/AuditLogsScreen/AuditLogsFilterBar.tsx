@@ -57,6 +57,7 @@ const ACTION_GROUPS = [
     label: 'Workspace & Sheets',
     actions: [
       { value: 'WORKSPACE_UPDATE', label: 'Workspace settings updated' },
+      { value: 'LOCATION_DATA_PURGE', label: 'Location history erased' },
       { value: 'GSHEET_URL_UPDATE', label: 'Sheet URL changed' },
       { value: 'GSHEET_SYNC', label: 'Sheet synced' },
       { value: 'GSHEET_IMPORT', label: 'Catalogs imported from sheet' },

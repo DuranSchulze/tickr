@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import { BarChart3, Clock, Users } from 'lucide-react'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
+import { BrandLogo } from '#/components/ui/BrandLogo'
 import { DevLoginButton } from '#/components/auth/DevLoginButton'
 import { BRAND } from '#/lib/brand'
 
@@ -26,11 +27,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
               to="/"
               className="inline-flex w-fit items-center gap-3 no-underline"
             >
-              <img
-                src={BRAND.logoSrc}
-                alt={BRAND.logoAlt}
-                className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur"
-              />
+              <BrandLogo className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur" />
               <span className="text-sm font-bold tracking-wide text-white">
                 {BRAND.name}
               </span>
@@ -70,11 +67,7 @@ export function AuthSplitLayout({ children }: { children: React.ReactNode }) {
               to="/"
               className="inline-flex items-center gap-3 no-underline lg:hidden"
             >
-              <img
-                src={BRAND.logoSrc}
-                alt={BRAND.logoAlt}
-                className="size-9 rounded-lg border border-border bg-card object-contain"
-              />
+              <BrandLogo className="size-9 rounded-lg border border-border bg-card object-contain" />
               <span className="text-sm font-bold text-foreground">
                 {BRAND.name}
               </span>

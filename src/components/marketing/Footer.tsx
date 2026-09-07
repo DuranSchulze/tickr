@@ -16,14 +16,8 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.6fr_0.6fr]">
           <div className="max-w-sm">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-3 no-underline"
-            >
-              <AppLogo size="md" imgClassName="dark:invert" />
-              <span className="font-heading text-lg font-black uppercase tracking-[0.16em] text-foreground">
-                {BRAND.name}
-              </span>
+            <Link to="/" className="inline-flex items-center no-underline">
+              <AppLogo size="md" />
             </Link>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               A calm, connected workspace for tracking team time and turning it

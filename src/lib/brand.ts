@@ -9,7 +9,8 @@ export const BRAND = {
   tagline: 'Workspace time tracking',
   /** For email footers and meta descriptions */
   description: 'Workspace time tracking for teams',
-  /** Path relative to /public, or an absolute https:// URL */
-  logoSrc: '/logo-8-26-26.png',
+  /** Paths relative to /public, or absolute https:// URLs */
+  logoSrc: '/Logo-Black.png',
+  logoDarkSrc: '/Logo-White.png',
   logoAlt: 'Trackly logo',
 } as const

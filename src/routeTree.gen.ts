@@ -68,6 +68,7 @@ import { Route as AppWorkspaceCatalogsProjectsRouteImport } from './routes/app/w
 import { Route as AppWorkspaceCatalogsDepartmentsRouteImport } from './routes/app/workspace/catalogs.departments'
 import { Route as AppWorkspaceCatalogsCohortsRouteImport } from './routes/app/workspace/catalogs.cohorts'
 import { Route as AppWorkspaceCatalogsClientsRouteImport } from './routes/app/workspace/catalogs.clients'
+import { Route as AppWorkspaceActivityMapRouteImport } from './routes/app/workspace/activity_.map'
 import { Route as ApiV1AuthSignInRouteImport } from './routes/api/v1/auth/sign-in'
 import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
 
@@ -375,6 +376,11 @@ const AppWorkspaceCatalogsClientsRoute =
     path: '/clients',
     getParentRoute: () => AppWorkspaceCatalogsRoute,
   } as any)
+const AppWorkspaceActivityMapRoute = AppWorkspaceActivityMapRouteImport.update({
+  id: '/workspace/activity_/map',
+  path: '/workspace/activity/map',
+  getParentRoute: () => AppRoute,
+} as any)
 const ApiV1AuthSignInRoute = ApiV1AuthSignInRouteImport.update({
   id: '/api/v1/auth/sign-in',
   path: '/api/v1/auth/sign-in',
@@ -442,6 +448,7 @@ export interface FileRoutesByFullPath {
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
+  '/app/workspace/activity/map': typeof AppWorkspaceActivityMapRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -505,6 +512,7 @@ export interface FileRoutesByTo {
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
+  '/app/workspace/activity/map': typeof AppWorkspaceActivityMapRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -569,6 +577,7 @@ export interface FileRoutesById {
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
+  '/app/workspace/activity_/map': typeof AppWorkspaceActivityMapRoute
   '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
@@ -634,6 +643,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker/'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
+    | '/app/workspace/activity/map'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -697,6 +707,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
+    | '/app/workspace/activity/map'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -760,6 +771,7 @@ export interface FileRouteTypes {
     | '/app/time-tracker/'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/sign-in'
+    | '/app/workspace/activity_/map'
     | '/app/workspace/catalogs/clients'
     | '/app/workspace/catalogs/cohorts'
     | '/app/workspace/catalogs/departments'
@@ -1218,6 +1230,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkspaceCatalogsClientsRouteImport
       parentRoute: typeof AppWorkspaceCatalogsRoute
     }
+    '/app/workspace/activity_/map': {
+      id: '/app/workspace/activity_/map'
+      path: '/workspace/activity/map'
+      fullPath: '/app/workspace/activity/map'
+      preLoaderRoute: typeof AppWorkspaceActivityMapRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/api/v1/auth/sign-in': {
       id: '/api/v1/auth/sign-in'
       path: '/api/v1/auth/sign-in'
@@ -1291,6 +1310,7 @@ interface AppRouteChildren {
   AppWorkspaceMembersRoute: typeof AppWorkspaceMembersRouteWithChildren
   AppWorkspaceSettingsRoute: typeof AppWorkspaceSettingsRoute
   AppTimeTrackerIndexRoute: typeof AppTimeTrackerIndexRoute
+  AppWorkspaceActivityMapRoute: typeof AppWorkspaceActivityMapRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1319,6 +1339,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWorkspaceMembersRoute: AppWorkspaceMembersRouteWithChildren,
   AppWorkspaceSettingsRoute: AppWorkspaceSettingsRoute,
   AppTimeTrackerIndexRoute: AppTimeTrackerIndexRoute,
+  AppWorkspaceActivityMapRoute: AppWorkspaceActivityMapRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
