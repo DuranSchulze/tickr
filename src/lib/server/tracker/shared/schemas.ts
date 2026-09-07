@@ -342,12 +342,7 @@ export const updateWorkspaceSettingsSchema = z
   .object({
     name: z.string().trim().min(1).max(150).optional(),
     timezone: z.string().trim().min(1).max(80).optional(),
-    locationTrackingEnabled: z.boolean().optional(),
   })
-  .refine(
-    (data) =>
-      data.name !== undefined ||
-      data.timezone !== undefined ||
-      data.locationTrackingEnabled !== undefined,
-    { message: 'At least one setting is required.' },
-  )
+  .refine((data) => data.name !== undefined || data.timezone !== undefined, {
+    message: 'At least one setting is required.',
+  })

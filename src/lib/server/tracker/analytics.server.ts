@@ -35,6 +35,7 @@ export type AnalyticsTimeEntryRow = {
   workspaceMemberId: string
   date: string
   memberName: string
+  memberImage: string | null
   projectId: string
   taskId: string | null
   projectName: string | null
@@ -364,6 +365,7 @@ export async function getAnalytics(
         clientName: clients.name,
         memberEmail: workspaceMembers.email,
         memberUserName: users.name,
+        memberImage: users.image,
         memberBillableRate: workspaceMembers.billableRate,
       })
       .from(timeEntries)
@@ -524,6 +526,7 @@ export async function getAnalytics(
       workspaceMemberId: e.workspaceMemberId,
       date: formatDateInTimeZone(displayStartedAt, timezone),
       memberName: e.memberUserName ?? e.memberEmail ?? '',
+      memberImage: e.memberImage ?? null,
       projectId: e.projectId ?? '',
       taskId: e.taskId ?? null,
       projectName: e.projectName ?? null,

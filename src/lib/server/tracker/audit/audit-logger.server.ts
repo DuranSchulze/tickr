@@ -45,6 +45,7 @@ export type AuditAction =
   | 'COHORT_DELETE'
   // Workspace & settings
   | 'WORKSPACE_UPDATE'
+  | 'LOCATION_DATA_PURGE'
   | 'GSHEET_URL_UPDATE'
   | 'GSHEET_SYNC'
   | 'GSHEET_AUTO_SYNC'

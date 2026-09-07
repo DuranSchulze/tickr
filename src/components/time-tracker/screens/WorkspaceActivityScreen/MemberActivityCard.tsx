@@ -4,6 +4,7 @@ import { Link } from '@tanstack/react-router'
 import { useNowTick } from '#/components/time-tracker/dashboard/hooks/useNowTick'
 import { formatDuration } from '#/lib/time-tracker/store'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
+import { getTimerStatusLabel, hasRunningTimer } from './member-timer-status'
 import type { WorkspaceMemberActivity } from '#/lib/server/tracker/activity.server'
 
 function MemberAvatar({
@@ -56,7 +57,8 @@ export function MemberActivityCard({
   member: WorkspaceMemberActivity
   viewDataAction?: ReactNode
 }) {
-  const isOnline = member.activeEntry !== null
+  const isTimerRunning = hasRunningTimer(member)
+  const timerStatus = getTimerStatusLabel(member)
 
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 transition-colors">
@@ -71,7 +73,7 @@ export function MemberActivityCard({
         <span
           aria-hidden="true"
           className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card ${
-            isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+            isTimerRunning ? 'bg-emerald-500' : 'bg-muted-foreground/40'
           }`}
         />
       </Link>
@@ -87,21 +89,21 @@ export function MemberActivityCard({
             {member.name}
           </Link>
           <span
-            aria-label={isOnline ? 'Online' : 'Offline'}
+            aria-label={timerStatus}
             className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-              isOnline
+              isTimerRunning
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                 : 'bg-muted text-muted-foreground'
             }`}
           >
-            {isOnline ? 'Online' : 'Offline'}
+            {timerStatus}
           </span>
         </div>
         <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">
           {member.departmentName ?? 'No department'}
         </p>
 
-        {isOnline && member.activeEntry ? (
+        {isTimerRunning && member.activeEntry ? (
           <div className="mt-1.5 space-y-1">
             <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
               <Briefcase className="size-3 shrink-0" />
@@ -118,7 +120,9 @@ export function MemberActivityCard({
             </p>
           </div>
         ) : (
-          <p className="mt-1 text-xs text-muted-foreground">Not working</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            No task is currently being tracked.
+          </p>
         )}
 
         {/* Export button \u2014 date-range dialog with PDF / CSV */}

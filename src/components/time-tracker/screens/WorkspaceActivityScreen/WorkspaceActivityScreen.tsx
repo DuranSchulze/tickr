@@ -10,6 +10,7 @@ import {
 import { Page } from '../shared/Page'
 import { MemberActivityCard } from './MemberActivityCard'
 import { MemberActivityMap } from './MemberActivityMap'
+import { countRunningTimers, hasRunningTimer } from './member-timer-status'
 import type {
   WorkspaceActivityPayload,
   WorkspaceMemberActivity,
@@ -26,13 +27,13 @@ type ActivityFilters = {
 function sortMembers(
   members: WorkspaceMemberActivity[],
 ): WorkspaceMemberActivity[] {
-  const online = members
-    .filter((m) => m.activeEntry !== null)
+  const tracking = members
+    .filter(hasRunningTimer)
     .sort((a, b) => a.name.localeCompare(b.name))
-  const offline = members
-    .filter((m) => m.activeEntry === null)
+  const notTracking = members
+    .filter((member) => !hasRunningTimer(member))
     .sort((a, b) => a.name.localeCompare(b.name))
-  return [...online, ...offline]
+  return [...tracking, ...notTracking]
 }
 
 export function WorkspaceActivityScreen({
@@ -66,7 +67,7 @@ export function WorkspaceActivityScreen({
 
   const members = activity.members
   const sorted = sortMembers(members)
-  const onlineCount = members.filter((m) => m.activeEntry !== null).length
+  const runningTimerCount = countRunningTimers(members)
   const total = members.length
   const canFilterDepartments = activity.canFilterDepartments
   const filters = activity.filters
@@ -98,15 +99,22 @@ export function WorkspaceActivityScreen({
 
   return (
     <Page title="Team Activity" eyebrow="Analytics">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-            {onlineCount} online
-          </span>
-          {' · '}
-          {total} total members
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+              {runningTimerCount} running{' '}
+              {runningTimerCount === 1 ? 'timer' : 'timers'}
+            </span>
+            {' · '}
+            {total} visible {total === 1 ? 'member' : 'members'}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            A running timer means a member is tracking time. It does not
+            indicate login status.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 self-stretch sm:self-auto">
           {trackerState && <BulkExportButton state={trackerState} />}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <RefreshCw
@@ -202,11 +210,11 @@ export function WorkspaceActivityScreen({
 
       {total === 0 ? (
         <p className="text-sm text-muted-foreground">
-          No active members found.
+          No members match the current filters.
         </p>
       ) : (
         <>
-          <MemberActivityMap members={sorted} />
+          <MemberActivityMap members={sorted} filters={currentFilters} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {sorted.map((member) => (
               <MemberActivityCard

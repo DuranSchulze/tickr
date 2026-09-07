@@ -1,13 +1,14 @@
 import { BRAND } from '#/lib/brand'
+import { BrandLogo } from '#/components/ui/BrandLogo'
 
 const sizes = {
-  sm: { container: 'size-8', img: 'size-5' },
-  md: { container: 'size-11', img: 'size-7' },
-  lg: { container: 'size-14', img: 'size-10' },
+  sm: 'h-7 w-auto sm:h-8',
+  md: 'h-9 w-auto sm:h-10',
+  lg: 'h-11 w-auto sm:h-12',
 }
 
 /**
- * App logo mark — the icon in a rounded container.
+ * Responsive app wordmark that preserves the source image's aspect ratio.
  * Change the source of truth in src/lib/brand.ts.
  */
 export function AppLogo({
@@ -21,25 +22,11 @@ export function AppLogo({
   /** Additional classes for the <img> (e.g. "dark:invert") */
   imgClassName?: string
 }) {
-  const { container } = sizes[size]
-  const src = customSrc ?? BRAND.logoSrc
+  const className = `block shrink-0 object-contain ${sizes[size]} ${imgClassName ?? ''}`
 
-  return (
-    <div
-      className={`
-        ${container}
-        flex shrink-0 items-center justify-center
-        rounded-2xl overflow-hidden
-      `}
-    >
-      <img
-        src={src}
-        alt={BRAND.logoAlt}
-        /* max-h-full and max-w-full keep it inside the box
-           block removes any baseline whitespace
-        */
-        className={`max-h-full max-w-full block object-contain transition-[filter] duration-300 ${imgClassName ?? ''}`}
-      />
-    </div>
+  return customSrc ? (
+    <img src={customSrc} alt={BRAND.logoAlt} className={className} />
+  ) : (
+    <BrandLogo className={className} />
   )
 }

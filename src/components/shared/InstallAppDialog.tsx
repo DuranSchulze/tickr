@@ -51,7 +51,7 @@ export function InstallAppDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl font-black tracking-tight text-foreground">
-            <AppLogo size="sm" imgClassName="dark:invert" />
+            <AppLogo size="sm" />
             Install {BRAND.name}
           </DialogTitle>
           <DialogDescription>

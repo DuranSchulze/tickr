@@ -29,6 +29,10 @@ import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSu
 import { TaskSyncCoordinator } from './TaskSyncCoordinator'
 import type { EffectivePermissions } from '#/lib/rbac/permissions'
 import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
+import {
+  getAppShellLayout,
+  getAppShellNavigationState,
+} from './app-shell-layout'
 
 type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
 
@@ -115,41 +119,22 @@ export function AppShell({
       'embed' in s.location.search &&
       (s.location.search as Record<string, unknown>).embed === '1',
   })
+  const { showAppChrome, mainClassName } = getAppShellLayout(pathname, isEmbed)
 
-  const timerActive = pathname.startsWith('/app/time-tracker')
-  const analyticsActive = pathname.startsWith('/app/analytics')
-  const reportsActive = pathname.startsWith('/app/reports')
-  const timesheetActive = pathname.startsWith('/app/timesheet')
-  const performanceActive = pathname.startsWith('/app/my-performance')
-  const departmentAnalyticsActive =
-    pathname.startsWith('/app/department-analytics') ||
-    pathname.startsWith('/app/department-member-analytics')
-  const activityActive = pathname.startsWith('/app/workspace/activity')
-  const locationsActive = pathname.startsWith('/app/workspace/locations')
-  const analyticsGroupActive =
-    analyticsActive ||
-    reportsActive ||
-    timesheetActive ||
-    performanceActive ||
-    departmentAnalyticsActive ||
-    activityActive ||
-    locationsActive
-  const calendarActive =
-    pathname.startsWith('/app/calendar') ||
-    pathname.startsWith('/app/department-member-calendar')
-  const settingsActive =
-    (pathname.startsWith('/app/workspace') &&
-      !pathname.startsWith('/app/workspace/activity') &&
-      !pathname.startsWith('/app/workspace/locations')) ||
-    pathname.startsWith('/app/audit-logs')
-  const billingActive = pathname.startsWith('/app/workspace/billing')
+  const {
+    timerActive,
+    analyticsGroupActive,
+    calendarActive,
+    settingsActive,
+    billingActive,
+  } = getAppShellNavigationState(pathname)
 
   const [analyticsOpen, setAnalyticsOpen] = useState(analyticsGroupActive)
   const [settingsOpen, setSettingsOpen] = useState(settingsActive)
   const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
-    if (isEmbed) return
+    if (!showAppChrome) return
 
     const storageKey = `tickr:first-open-confetti:${user.id}`
 
@@ -161,7 +146,7 @@ export function AppShell({
     }
 
     return fireSideCannons()
-  }, [isEmbed, user.id])
+  }, [showAppChrome, user.id])
 
   const analyticsChildren = useMemo(() => {
     const items = []
@@ -250,7 +235,7 @@ export function AppShell({
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
       <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
-        {!isEmbed && (
+        {showAppChrome && (
           <div className="print:hidden">
             <Navbar
               workspace={workspace}
@@ -283,13 +268,13 @@ export function AppShell({
           </div>
         )}
 
-        {!isEmbed && <SubscriptionStatusBanner summary={subscription} />}
+        {showAppChrome && <SubscriptionStatusBanner summary={subscription} />}
 
         {!subscription.access.canAccess && !billingActive ? (
           <WorkspaceSubscriptionGate summary={subscription} />
         ) : (
           <div className="flex min-h-0 flex-1 overflow-hidden">
-            {!isEmbed && (
+            {showAppChrome && (
               <div className="print:hidden">
                 <AppSidebar
                   collapsed={collapsed}
@@ -310,9 +295,7 @@ export function AppShell({
               </div>
             )}
 
-            <main
-              className={`min-w-0 flex-1 overflow-y-auto overflow-x-hidden ${isEmbed ? 'p-2' : 'p-4 sm:p-6'}`}
-            >
+            <main className={mainClassName}>
               <Outlet />
               {isEmbed && <EmbedFooter />}
             </main>

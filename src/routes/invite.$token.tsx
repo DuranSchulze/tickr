@@ -11,6 +11,7 @@ import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { acceptInviteFn, previewInviteFn } from '#/lib/server/workspace-invites'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
+import { BrandLogo } from '#/components/ui/BrandLogo'
 import { BRAND } from '#/lib/brand'
 import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
 
@@ -105,11 +106,7 @@ function InvitePage() {
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-background dark:text-foreground">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-3 no-underline">
-          <img
-            src={BRAND.logoSrc}
-            alt={BRAND.logoAlt}
-            className="size-9 rounded-lg object-contain"
-          />
+          <BrandLogo className="size-9 rounded-lg object-contain" />
           <span className="text-sm font-bold">{BRAND.name}</span>
         </Link>
         <ThemeToggle />

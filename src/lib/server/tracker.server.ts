@@ -98,7 +98,12 @@ export {
   getCurrencyOptions,
 } from './tracker/workspace-billing.server'
 export { updateProfile, getSelfProfile } from './tracker/profile.server'
-export { updateWorkspaceSettings } from './tracker/workspace-settings.server'
+export {
+  getWorkspaceLocationDataSummary,
+  purgeWorkspaceLocationData,
+  updateWorkspaceLocationTracking,
+  updateWorkspaceSettings,
+} from './tracker/workspace-settings.server'
 
 // Analytics
 export {
@@ -124,9 +129,12 @@ export {
 } from './tracker/timesheet.server'
 export {
   getCalendarEntries,
+  getCalendarPage,
   getDepartmentMemberCalendarEntries,
   type CalendarEntriesPayload,
   type CalendarEntry,
+  type CalendarMemberOption,
+  type CalendarPagePayload,
 } from './tracker/calendar.server'
 export {
   getPaginatedEntries,

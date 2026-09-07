@@ -268,6 +268,7 @@ export async function getReports(
         clientName: clients.name,
         memberEmail: workspaceMembers.email,
         memberUserName: users.name,
+        memberImage: users.image,
         memberBillableRate: workspaceMembers.billableRate,
       })
       .from(timeEntries)
@@ -488,6 +489,7 @@ export async function getReports(
       workspaceMemberId: e.workspaceMemberId,
       date: formatDateInTimeZone(displayStartedAt, timezone),
       memberName: e.memberUserName ?? e.memberEmail ?? '',
+      memberImage: e.memberImage ?? null,
       projectId: e.projectId ?? '',
       taskId: e.taskId ?? null,
       projectName: e.projectName ?? null,

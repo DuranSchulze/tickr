@@ -130,6 +130,10 @@ const ACTION_META: Record<string, ActionMeta> = {
     label: 'Workspace updated',
     color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
   },
+  LOCATION_DATA_PURGE: {
+    label: 'Location history erased',
+    color: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  },
   GSHEET_URL_UPDATE: {
     label: 'Sheet URL changed',
     color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',

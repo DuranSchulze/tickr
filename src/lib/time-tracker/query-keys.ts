@@ -28,6 +28,8 @@ export const trackerKeys = {
   /** Department member calendar page, keyed by member + month. */
   departmentMemberCalendar: (deps: unknown) =>
     ['department-member-calendar', deps] as const,
+  /** Calendar page, keyed by month and optional owner/admin member selection. */
+  calendar: (deps: unknown) => ['calendar', deps] as const,
   /** Current member's performance page (getMyPerformanceFn). */
   myPerformance: ['my-performance'] as const,
   /** Current member's saved timer presets in a workspace. */

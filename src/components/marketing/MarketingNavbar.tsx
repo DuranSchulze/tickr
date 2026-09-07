@@ -50,13 +50,10 @@ export function MarketingNavbar({ session }: MarketingNavbarProps) {
       <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8 lg:px-10">
         <Link
           to="/"
-          className="flex items-center gap-3 no-underline"
+          className="flex items-center no-underline"
           aria-label={`${BRAND.name} home`}
         >
-          <AppLogo size="md" imgClassName="dark:invert" />
-          <span className="font-heading text-sm font-black uppercase tracking-[0.18em] text-foreground">
-            {BRAND.name}
-          </span>
+          <AppLogo size="md" />
         </Link>
 
         <nav

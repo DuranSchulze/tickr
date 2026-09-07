@@ -24,6 +24,7 @@ import { createWorkspaceFn } from '#/lib/server/workspaces'
 import { redeemInviteByCodeFn } from '#/lib/server/workspace-invites'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { TimezoneSelect } from '#/components/ui/TimezoneSelect'
+import { BrandLogo } from '#/components/ui/BrandLogo'
 
 type OnboardingSearch = { plan?: 'team' | 'business' }
 
@@ -158,11 +159,7 @@ function OnboardingPage() {
     <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-background dark:text-foreground">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-3 no-underline">
-          <img
-            src={BRAND.logoSrc}
-            alt={BRAND.logoAlt}
-            className="size-9 rounded-lg object-contain"
-          />
+          <BrandLogo className="size-9 rounded-lg object-contain" />
           <span className="text-sm font-bold text-slate-950 dark:text-slate-50">
             {BRAND.name}
           </span>

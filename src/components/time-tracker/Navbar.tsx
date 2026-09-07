@@ -15,7 +15,6 @@ import { AppLogo } from '#/components/ui/AppLogo'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
 import { InstallAppDialog } from '#/components/shared/InstallAppDialog'
 import { authClient } from '#/lib/auth-client'
-import { BRAND } from '#/lib/brand'
 import { usePwaInstall } from '#/hooks/usePwaInstall'
 import { Button } from '#/components/ui/button'
 import {
@@ -72,17 +71,8 @@ export function Navbar({
         {birthdayCelebration}
 
         {mobileMenuButton}
-        <Link
-          to="/app/time-tracker"
-          className="flex items-center gap-3 no-underline"
-        >
-          <AppLogo size="md" imgClassName="dark:invert" />
-          <div className="hidden sm:block">
-            <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-foreground">
-              {BRAND.name}
-            </p>
-            <p className="m-0 text-xs text-muted-foreground">{BRAND.tagline}</p>
-          </div>
+        <Link to="/app/time-tracker" className="flex items-center no-underline">
+          <AppLogo size="md" />
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
