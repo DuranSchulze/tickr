@@ -342,7 +342,26 @@ export const updateWorkspaceSettingsSchema = z
   .object({
     name: z.string().trim().min(1).max(150).optional(),
     timezone: z.string().trim().min(1).max(80).optional(),
+    expectedDailyHours: z
+      .number()
+      .min(1)
+      .max(24)
+      .multipleOf(0.5)
+      .optional(),
+    payrollCutoffDays: z
+      .array(z.number().int().min(1).max(28))
+      .min(1)
+      .max(6)
+      .refine((days) => days.every((d, i) => i === 0 || d > days[i - 1]), {
+        message: 'Cutoff days must be unique and in ascending order.',
+      })
+      .optional(),
   })
-  .refine((data) => data.name !== undefined || data.timezone !== undefined, {
-    message: 'At least one setting is required.',
-  })
+  .refine(
+    (data) =>
+      data.name !== undefined ||
+      data.timezone !== undefined ||
+      data.expectedDailyHours !== undefined ||
+      data.payrollCutoffDays !== undefined,
+    { message: 'At least one setting is required.' },
+  )

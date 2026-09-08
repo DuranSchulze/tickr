@@ -41,3 +41,18 @@ export function formatManualEntryIndicator(
 ): string {
   return entrySource === 'MANUAL' ? 'X' : ''
 }
+
+/** Changing clock times makes the entry manually adjusted; content edits do not. */
+export function sourceAfterTimeEdit(
+  existing: {
+    entrySource: TimeEntrySource | null
+    startedAt: Date
+    endedAt: Date | null
+  },
+  next: { startedAt: Date; endedAt: Date | null },
+): TimeEntrySource | null {
+  return existing.startedAt.getTime() !== next.startedAt.getTime() ||
+    existing.endedAt?.getTime() !== next.endedAt?.getTime()
+    ? 'MANUAL'
+    : existing.entrySource
+}

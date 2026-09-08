@@ -42,6 +42,7 @@ export function PublicPerformancePage({
           <PerformanceBadgeCard
             summary={data.currentMonth}
             label="This month"
+            expectedDailyHours={data.expectedDailyHours}
           />
 
           <PerformanceHeatmap
@@ -55,12 +56,9 @@ export function PublicPerformancePage({
             {chartsInView ? (
               <Suspense fallback={<ChartSkeleton />}>
                 <PerformanceCharts
-                  dailyTotals={data.heatmapMonth.map((c) => ({
-                    date: c.date,
-                    seconds: c.seconds,
-                    entryCount: c.entryCount,
-                  }))}
+                  dailyTotals={data.dailyTotals}
                   projectTotals={data.projectTotals}
+                  expectedDailyHours={data.expectedDailyHours}
                 />
               </Suspense>
             ) : (

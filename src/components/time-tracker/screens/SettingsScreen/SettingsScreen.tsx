@@ -10,6 +10,7 @@ import { ResendTestPanel } from './ResendTestPanel'
 import { WorkspaceInfoPanel } from './WorkspaceInfoPanel'
 import { WorkspaceApiKeysPanel } from './WorkspaceApiKeysPanel'
 import { LocationTrackingPanel } from './LocationTrackingPanel'
+import { TrackingExpectationsPanel } from './TrackingExpectationsPanel'
 import { SettingsTabList } from './SettingsTabList'
 import type { SettingsTab } from './SettingsTabList'
 
@@ -80,6 +81,21 @@ export function SettingsScreen({
           isOwner={isOwner}
         />
       </div>
+
+      {canManageSettings && (
+        <div
+          id={`${tabListId}-expectations-panel`}
+          role="tabpanel"
+          aria-labelledby={`${tabListId}-expectations-tab`}
+          hidden={activeTab !== 'expectations'}
+          className={cn(
+            'outline-none',
+            activeTab === 'expectations' ? 'grid gap-4' : 'hidden',
+          )}
+        >
+          <TrackingExpectationsPanel workspace={state.workspace} />
+        </div>
+      )}
 
       <div
         id={`${tabListId}-integrations-panel`}

@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { BarChart3, Clock, Users } from 'lucide-react'
+import { ArrowLeft, BarChart3, Clock, Users } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
 import { gooeyToast } from '#/lib/toast'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
@@ -220,6 +220,16 @@ function AuthPage() {
     await navigate({ to: '/auth' })
   }
 
+  function handleBack(): void {
+    // Prefer the previous page; fall back to the home page when there is no
+    // history (e.g. the user landed directly on /auth).
+    if (window.history.length > 1) {
+      router.history.back()
+    } else {
+      void navigate({ to: '/' })
+    }
+  }
+
   return (
     <main className="relative min-h-screen bg-background text-foreground">
       <div className="absolute top-4 right-4 z-20">
@@ -237,14 +247,14 @@ function AuthPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/40 to-black/80" />
 
           <div className="relative flex h-full flex-col justify-between p-10 text-white">
-            <Link
-              to="/"
-              className="inline-flex w-fit items-center gap-3 no-underline"
-            >
-              <BrandLogo className="size-10 rounded-lg border border-white/20 bg-white/10 object-contain backdrop-blur" />
-              <span className="text-sm font-bold tracking-wide text-white">
-                {BRAND.name}
-              </span>
+            {/* Left panel always sits on a dark photo, so always use the
+                white logo variant regardless of theme. */}
+            <Link to="/" className="inline-flex w-fit no-underline">
+              <img
+                src={BRAND.logoDarkSrc}
+                alt={BRAND.logoAlt}
+                className="h-16 w-auto object-contain"
+              />
             </Link>
 
             <div className="max-w-lg">
@@ -277,14 +287,20 @@ function AuthPage() {
         {/* ── Right: form card ─────────────────────────────────────────── */}
         <section className="flex items-center justify-center px-4 py-12 sm:px-8">
           <div className="max-h-[calc(100vh-6rem)] w-full max-w-[440px] overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground no-underline transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back
+            </button>
+
             <Link
               to="/"
-              className="inline-flex items-center gap-3 no-underline lg:hidden"
+              className="inline-flex items-center no-underline lg:hidden"
             >
-              <BrandLogo className="size-9 rounded-lg border border-border bg-card object-contain" />
-              <span className="text-sm font-bold text-foreground">
-                {BRAND.name}
-              </span>
+              <BrandLogo className="h-12 w-auto object-contain" />
             </Link>
 
             {signedIn ? (

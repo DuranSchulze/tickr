@@ -1,9 +1,14 @@
 import { useRef } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Building2, Code2, ShieldCheck, Workflow } from 'lucide-react'
+import { Building2, Code2, ShieldCheck, Target, Workflow } from 'lucide-react'
 import { cn } from '#/lib/utils'
 
-export type SettingsTab = 'general' | 'location' | 'integrations' | 'developer'
+export type SettingsTab =
+  | 'general'
+  | 'location'
+  | 'integrations'
+  | 'expectations'
+  | 'developer'
 
 const settingsTabs = [
   {
@@ -23,6 +28,13 @@ const settingsTabs = [
     label: 'Integrations',
     description: 'Google Sheets and sync',
     icon: Workflow,
+  },
+  {
+    id: 'expectations',
+    label: 'Working hours & payroll',
+    description: 'Tracking expectations and pay periods',
+    icon: Target,
+    manageOnly: true,
   },
   {
     id: 'developer',
@@ -61,6 +73,12 @@ export function SettingsTabList({
   const visibleTabs = settingsTabs.filter(
     (tab) => !tab.manageOnly || canManageSettings,
   )
+  const gridClass =
+    visibleTabs.length >= 5
+      ? 'sm:grid-cols-5'
+      : visibleTabs.length === 4
+        ? 'sm:grid-cols-4'
+        : 'sm:grid-cols-3'
 
   function handleTabKeyDown(
     event: KeyboardEvent<HTMLButtonElement>,
@@ -88,7 +106,7 @@ export function SettingsTabList({
     <div
       className={cn(
         'flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/35 p-2 shadow-sm sm:grid',
-        visibleTabs.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3',
+        gridClass,
       )}
       role="tablist"
       aria-label="Workspace settings sections"

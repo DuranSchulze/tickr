@@ -37,6 +37,12 @@ export async function updateWorkspaceSettings(
   const details = [
     data.name !== undefined ? `name: ${data.name}` : null,
     data.timezone !== undefined ? `timezone: ${data.timezone}` : null,
+    data.expectedDailyHours !== undefined
+      ? `expected daily hours: ${data.expectedDailyHours}`
+      : null,
+    data.payrollCutoffDays !== undefined
+      ? `payroll cutoff days: [${data.payrollCutoffDays.join(', ')}]`
+      : null,
   ].filter((part): part is string => part !== null)
 
   await db
@@ -44,6 +50,12 @@ export async function updateWorkspaceSettings(
     .set({
       ...(data.name !== undefined ? { name: data.name } : {}),
       ...(data.timezone !== undefined ? { timezone: data.timezone } : {}),
+      ...(data.expectedDailyHours !== undefined
+        ? { expectedDailyHours: data.expectedDailyHours.toFixed(2) }
+        : {}),
+      ...(data.payrollCutoffDays !== undefined
+        ? { payrollCutoffDays: data.payrollCutoffDays }
+        : {}),
     })
     .where(eq(workspaces.id, access.workspace.id))
 

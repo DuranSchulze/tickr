@@ -37,6 +37,7 @@ describe('SettingsTabList', () => {
 
   it('normalizes direct-link tab values', () => {
     expect(normalizeSettingsTab('location')).toBe('location')
+    expect(normalizeSettingsTab('expectations')).toBe('expectations')
     expect(normalizeSettingsTab('unknown')).toBe('general')
     expect(normalizeSettingsTab(undefined)).toBe('general')
   })
@@ -47,13 +48,15 @@ describe('SettingsTabList', () => {
       container.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
     )
 
-    expect(tabs).toHaveLength(4)
+    expect(tabs).toHaveLength(5)
     expect(tabs[0].textContent).toContain('General')
     expect(tabs[0].getAttribute('aria-selected')).toBe('true')
 
     act(() => tabs[1].click())
     expect(tabs[1].textContent).toContain('Location & privacy')
     expect(tabs[1].getAttribute('aria-selected')).toBe('true')
+
+    expect(tabs[3].textContent).toContain('Working hours & payroll')
   })
 
   it('supports keyboard navigation and hides unavailable tools', () => {
@@ -63,9 +66,13 @@ describe('SettingsTabList', () => {
     )
 
     expect(tabs).toHaveLength(3)
-    expect(tabs.every((tab) => !tab.textContent.includes('Developer'))).toBe(
-      true,
-    )
+    expect(
+      tabs.every(
+        (tab) =>
+          !tab.textContent.includes('Developer') &&
+          !tab.textContent.includes('Working hours'),
+      ),
+    ).toBe(true)
 
     act(() => {
       tabs[0].dispatchEvent(

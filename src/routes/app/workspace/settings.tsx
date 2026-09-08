@@ -59,7 +59,8 @@ function SettingsRoute() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const activeTab =
-    search.tab === 'developer' && !canManageSettings
+    (search.tab === 'developer' || search.tab === 'expectations') &&
+    !canManageSettings
       ? 'general'
       : (search.tab ?? 'general')
 

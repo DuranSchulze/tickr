@@ -10,6 +10,25 @@ export function formatHours(seconds: number) {
   return m === 0 ? `${h}h` : `${h}h ${m}m`
 }
 
+/** "8:12 AM" from an ISO timestamp. */
+export function formatTimeOfDay(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+/** Short weekday + day label, e.g. "Mon 9/7". */
+export function formatDayLabel(dateKey: string) {
+  const [y, mo, d] = dateKey.split('-').map(Number)
+  const date = new Date(Date.UTC(y, mo - 1, d))
+  const weekday = date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    timeZone: 'UTC',
+  })
+  return `${weekday} ${mo}/${d}`
+}
+
 export function formatDate(dateKey: string) {
   const [y, mo, d] = dateKey.split('-').map(Number)
   return new Date(Date.UTC(y, mo - 1, d)).toLocaleDateString('en-US', {
@@ -68,8 +87,17 @@ export const GRADE_COLORS: Record<PerformanceGrade, string> = {
   F: 'text-destructive',
 }
 
-export function getLast7Days(
-  dailyTotals: Array<{ date: string; seconds: number; entryCount: number }>,
+export type PerformanceDailyCell = {
+  date: string
+  seconds: number
+  entryCount: number
+  spanSeconds?: number
+  firstStartedAt?: string | null
+  lastEndedAt?: string | null
+}
+
+export function getLast7Days<T extends PerformanceDailyCell>(
+  dailyTotals: T[],
   today: string,
 ) {
   const sorted = dailyTotals.toSorted((a, b) => b.date.localeCompare(a.date))
@@ -79,8 +107,8 @@ export function getLast7Days(
     .reverse()
 }
 
-export function getLast30Days(
-  dailyTotals: Array<{ date: string; seconds: number; entryCount: number }>,
+export function getLast30Days<T extends PerformanceDailyCell>(
+  dailyTotals: T[],
   today: string,
 ) {
   const sorted = dailyTotals.toSorted((a, b) => b.date.localeCompare(a.date))
@@ -90,8 +118,8 @@ export function getLast30Days(
     .reverse()
 }
 
-export function getThisMonth(
-  dailyTotals: Array<{ date: string; seconds: number; entryCount: number }>,
+export function getThisMonth<T extends PerformanceDailyCell>(
+  dailyTotals: T[],
   today: string,
 ) {
   const monthPrefix = today.slice(0, 7)

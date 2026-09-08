@@ -54,9 +54,12 @@ export const PerformanceHeatmap = memo(function ({
       >
         {cells.map((day) => {
           const selected = day.date === selectedCell?.date
-          const label = showEntryCount
-            ? `${formatDate(day.date)}: ${formatHours(day.seconds)}, ${day.entryCount} entries`
-            : `${formatDate(day.date)}: ${formatHours(day.seconds)}`
+          const label =
+            day.spanSeconds > 0
+              ? `${formatDate(day.date)}: ${formatHours(day.seconds)} tracked, ${formatHours(day.spanSeconds)} span, ${day.entryCount} entries`
+              : showEntryCount
+                ? `${formatDate(day.date)}: ${formatHours(day.seconds)}, ${day.entryCount} entries`
+                : `${formatDate(day.date)}: ${formatHours(day.seconds)}`
 
           return (
             <button
@@ -91,7 +94,13 @@ export const PerformanceHeatmap = memo(function ({
       {selectedCell && (
         <div
           key={selectedCell.date}
-          className={`mt-4 grid min-w-0 gap-2 rounded-lg border border-border bg-background p-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 ${showEntryCount ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}
+          className={`mt-4 grid min-w-0 gap-2 rounded-lg border border-border bg-background p-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 ${
+            selectedCell.spanSeconds > 0
+              ? 'sm:grid-cols-2 lg:grid-cols-4'
+              : showEntryCount
+                ? 'sm:grid-cols-3'
+                : 'sm:grid-cols-2'
+          }`}
         >
           <HeatmapValue
             icon={CalendarDays}
@@ -103,6 +112,13 @@ export const PerformanceHeatmap = memo(function ({
             label="Tracked time"
             value={formatHours(selectedCell.seconds)}
           />
+          {selectedCell.spanSeconds > 0 && (
+            <HeatmapValue
+              icon={Clock3}
+              label="Day span"
+              value={formatHours(selectedCell.spanSeconds)}
+            />
+          )}
           {showEntryCount && (
             <HeatmapValue
               icon={ListChecks}

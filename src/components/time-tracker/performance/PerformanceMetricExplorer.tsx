@@ -1,10 +1,10 @@
-import { Activity, CalendarCheck2, Clock3, ListChecks } from 'lucide-react'
+import { Activity, CalendarCheck2, Clock3, ListChecks, Sunrise } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import type { PerformanceDailyTotal } from '#/lib/server/tracker/performance.server'
+import type { PerformanceDailyCell } from './performance.utils'
 import { formatDate, formatHours } from './performance.utils'
 
-type MetricKey = 'time' | 'days' | 'entries' | 'average'
+type MetricKey = 'time' | 'days' | 'span' | 'entries' | 'average'
 
 type Metric = {
   key: MetricKey
@@ -18,7 +18,7 @@ export function PerformanceMetricExplorer({
   dailyTotals,
   periodLabel,
 }: {
-  dailyTotals: PerformanceDailyTotal[]
+  dailyTotals: PerformanceDailyCell[]
   periodLabel: string
 }) {
   const [selectedMetric, setSelectedMetric] = useState<MetricKey>('time')
@@ -28,7 +28,12 @@ export function PerformanceMetricExplorer({
     const entries = dailyTotals.reduce((sum, day) => sum + day.entryCount, 0)
     const activeDays = dailyTotals.filter((day) => day.seconds > 0).length
     const averageSeconds = activeDays > 0 ? totalSeconds / activeDays : 0
-    const busiestDay = dailyTotals.reduce<PerformanceDailyTotal | null>(
+    const spanDays = dailyTotals.filter((day) => (day.spanSeconds ?? 0) > 0)
+    const spanSeconds = spanDays.reduce(
+      (sum, day) => sum + (day.spanSeconds ?? 0),
+      0,
+    )
+    const busiestDay = dailyTotals.reduce<PerformanceDailyCell | null>(
       (busiest, day) =>
         !busiest || day.seconds > busiest.seconds ? day : busiest,
       null,
@@ -64,6 +69,19 @@ export function PerformanceMetricExplorer({
             ? `${entries} completed ${entries === 1 ? 'entry' : 'entries'} contributed to these metrics.`
             : 'Running timers are not included until they are completed.',
         icon: ListChecks,
+      },
+      {
+        key: 'span',
+        label: 'Avg day span',
+        value:
+          spanDays.length > 0
+            ? formatHours(spanSeconds / spanDays.length)
+            : '—',
+        detail:
+          spanDays.length > 0
+            ? 'First activity to last activity. A full day is expected hours plus normal breaks.'
+            : 'Your day span appears once you complete entries on multiple days.',
+        icon: Sunrise,
       },
       {
         key: 'average',

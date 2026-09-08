@@ -9,6 +9,7 @@ import {
   stopTimerSchema,
   updateActiveTimerSchema,
   updateEntrySchema,
+  updateWorkspaceSettingsSchema,
 } from './tracker/shared/schemas'
 import {
   exportSortByValues,
@@ -969,15 +970,6 @@ export const getImageKitTokenFn = createServerFn({
 
 // ─── Workspace settings ───────────────────────────────────────────────────────
 
-const updateWorkspaceSettingsSchema = z
-  .object({
-    name: z.string().trim().min(1).max(150).optional(),
-    timezone: z.string().trim().min(1).max(80).optional(),
-  })
-  .refine((data) => data.name !== undefined || data.timezone !== undefined, {
-    message: 'At least one setting is required.',
-  })
-
 export const updateWorkspaceSettingsFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateWorkspaceSettingsSchema.parse(input))
   .handler(async ({ data }) => {
@@ -1042,6 +1034,13 @@ export const getPublicPerformanceFn = createServerFn({ method: 'GET' })
       await import('./tracker/performance.server')
     return getPublicPerformance(data.token)
   })
+
+export const getWorkspaceLeaderboardFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getWorkspaceLeaderboard } = await import('./tracker/leaderboard.server')
+  return getWorkspaceLeaderboard()
+})
 
 // ─── Workspace Activity ───────────────────────────────────────────────────────
 

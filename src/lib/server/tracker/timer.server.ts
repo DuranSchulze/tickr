@@ -1,3 +1,4 @@
+import { sourceAfterTimeEdit } from '#/lib/time-tracker/entry-source'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import type { z } from 'zod'
 import { db } from '#/db'
@@ -190,7 +191,15 @@ export async function updateActiveTimer(
         projectId,
         taskId,
         billable: data.billable,
-        ...(data.startedAt ? { startedAt: new Date(data.startedAt) } : {}),
+        ...(data.startedAt
+          ? {
+              startedAt: new Date(data.startedAt),
+              entrySource: sourceAfterTimeEdit(entry, {
+                startedAt: new Date(data.startedAt),
+                endedAt: entry.endedAt,
+              }),
+            }
+          : {}),
       })
       .where(eq(timeEntries.id, entry.id))
       .returning(),
@@ -311,7 +320,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
         ...(data.taskId !== undefined ? { taskId: effectiveTaskId } : {}),
         endedAt,
         durationSeconds: calculateDuration(entry.startedAt, endedAt),
-        entrySource: 'TIMER',
+        entrySource: entry.entrySource === 'MANUAL' ? 'MANUAL' : 'TIMER',
       })
       .where(eq(timeEntries.id, entry.id))
       .returning()
@@ -355,7 +364,7 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
       .set({
         endedAt,
         durationSeconds: calculateDuration(entry.startedAt, endedAt),
-        entrySource: 'TIMER',
+        entrySource: entry.entrySource === 'MANUAL' ? 'MANUAL' : 'TIMER',
       })
       .where(eq(timeEntries.id, entry.id))
       .returning()
