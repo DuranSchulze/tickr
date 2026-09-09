@@ -1,3 +1,21 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Cross-TAB sync for time-entry data (same browser only).
+//
+// Mutations publish a "task-data-changed" broadcast over a BroadcastChannel;
+// TaskSyncCoordinator (and the dashboard's useRemoteTaskDataSync leg for its
+// locally-paginated list) subscribe and refresh. The channel also names the
+// query-key roots and route prefixes that count as "task data" so both
+// invalidation and activation refreshes stay in sync with the router.
+//
+// IMPORTANT — scope (documented 2026-09 when cross-device polling was added):
+// BroadcastChannel reaches only tabs of the SAME browser profile on the SAME
+// device. It never crosses machines (or Chrome ↔ Safari on one machine), so
+// this file alone cannot keep two PCs in sync. Cross-device liveness comes
+// from the coordinator's other two legs: activation refresh
+// (visibilitychange/focus/pageshow/online) and pulse polling via
+// getTrackerPulseFn — see lib/time-tracker/tracker-pulse.ts.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import type { QueryClient } from '@tanstack/react-query'
 
 const TASK_SYNC_CHANNEL = 'tickr:task-data-sync:v1'

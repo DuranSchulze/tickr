@@ -201,6 +201,20 @@ export const getTrackerStateFn = createServerFn({ method: 'GET' }).handler(
 )
 
 /**
+ * Cross-device sync heartbeat — a per-member change stamp (running entry +
+ * max updated_at + entry count), NOT entry data. Polled by
+ * TaskSyncCoordinator while a task-data route is visible so a page left open
+ * on another device picks up remote starts/stops/edits within one poll
+ * interval. Kept deliberately tiny; do not grow it into a state payload.
+ */
+export const getTrackerPulseFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { getTrackerPulse } = await import('./tracker/pulse.server')
+    return getTrackerPulse()
+  },
+)
+
+/**
  * Lite version — skips the time-entry query entirely.
  * Use on every route that does NOT render the timer dashboard:
  * analytics, catalogs, members, settings, profile.
@@ -1038,7 +1052,8 @@ export const getPublicPerformanceFn = createServerFn({ method: 'GET' })
 export const getWorkspaceLeaderboardFn = createServerFn({
   method: 'GET',
 }).handler(async () => {
-  const { getWorkspaceLeaderboard } = await import('./tracker/leaderboard.server')
+  const { getWorkspaceLeaderboard } =
+    await import('./tracker/leaderboard.server')
   return getWorkspaceLeaderboard()
 })
 
