@@ -48,6 +48,9 @@ coverage
 .idea
 .vscode
 .windsurf
+.agents
+.claude
+.zcode/plans/
 /plans-idea
 
 # Local task state
