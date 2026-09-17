@@ -24,14 +24,12 @@ function ChangelogRoute() {
     <div className="mx-auto max-w-3xl space-y-10 py-4 sm:py-8">
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div>
-        <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+        <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
           <Sparkles className="size-3.5" />
           Changelog
         </div>
-        <h1 className="m-0 text-3xl font-black tracking-tight sm:text-4xl">
-          What's new
-        </h1>
-        <p className="m-0 mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+        <h1 className="m-0 font-display text-heading-sm">What's new</h1>
+        <p className="m-0 mt-2 max-w-xl text-sm leading-6 text-smoke">
           Follow along with every update, improvement, and fix shipped to{' '}
           {BRAND.name}.
         </p>
@@ -42,11 +40,11 @@ function ChangelogRoute() {
         {/* Vertical line */}
         <div
           aria-hidden
-          className="absolute top-2 bottom-0 left-[11px] w-px bg-border"
+          className="absolute top-2 bottom-0 left-[11px] w-px bg-stone"
         />
 
         {updates.length === 0 && (
-          <p className="pl-9 text-sm text-muted-foreground">
+          <p className="pl-9 text-sm text-smoke">
             No updates yet. Check back soon!
           </p>
         )}
@@ -56,32 +54,29 @@ function ChangelogRoute() {
             {/* Dot on the timeline */}
             <div
               aria-hidden
-              className="absolute left-0 top-1.5 flex size-6 items-center justify-center rounded-full border border-border bg-card"
+              className="absolute left-0 top-1.5 flex size-6 items-center justify-center rounded-full border border-stone bg-eggshell"
             >
               <div className="size-2 rounded-full bg-primary" />
             </div>
 
             {/* Release card */}
-            <div className="rounded-xl border border-border bg-card p-5 sm:p-6">
+            <div className="rounded-xl border border-stone bg-eggshell p-5 sm:p-6">
               {/* Version badge + date */}
               <div className="mb-3 flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                  <ArrowUpCircle className="size-3.5" />
-                  v{entry.version}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                  <ArrowUpCircle className="size-3.5" />v{entry.version}
                 </span>
                 {entry.publishedAt && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-smoke">
                     {formatDate(entry.publishedAt)}
                   </span>
                 )}
               </div>
 
               {/* Title & body */}
-              <h2 className="m-0 text-xl font-black tracking-tight">
-                {entry.title}
-              </h2>
+              <h2 className="m-0 text-xl font-black">{entry.title}</h2>
               {entry.body && (
-                <p className="m-0 mt-2 text-sm leading-6 text-muted-foreground">
+                <p className="m-0 mt-2 text-sm leading-6 text-smoke">
                   {entry.body}
                 </p>
               )}
@@ -92,14 +87,14 @@ function ChangelogRoute() {
                   {entry.features.map((feature, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border border-border bg-muted/30 p-4"
+                      className="rounded-xl border border-stone bg-warm-taupe p-4"
                     >
                       <h3 className="m-0 flex items-center gap-2 text-sm font-bold">
                         <ArrowUpCircle className="size-4 shrink-0 text-primary" />
                         {feature.title}
                       </h3>
                       {feature.description && (
-                        <p className="m-0 mt-1.5 text-sm leading-6 text-muted-foreground">
+                        <p className="m-0 mt-1.5 text-sm leading-6 text-smoke">
                           {feature.description}
                         </p>
                       )}

@@ -119,7 +119,7 @@ function FullscreenRouteState({
   const isLoading = tone === 'loading'
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4 py-12">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-eggshell px-4 py-12">
       <div
         aria-hidden
         className="absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_oklab,var(--primary)_18%,transparent),transparent_55%)]"
@@ -128,9 +128,9 @@ function FullscreenRouteState({
         aria-hidden
         className="absolute inset-0 bg-[linear-gradient(to_right,color-mix(in_oklab,var(--border)_35%,transparent)_1px,transparent_1px),linear-gradient(to_bottom,color-mix(in_oklab,var(--border)_35%,transparent)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40"
       />
-      <Card className="relative w-full max-w-xl rounded-md border-border/80 bg-card/95 shadow-lg backdrop-blur">
-        <CardHeader className="border-b border-border">
-          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+      <Card className="relative w-full max-w-xl rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)] backdrop-blur">
+        <CardHeader className="border-b border-stone">
+          <div className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-stone bg-warm-taupe px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
             {isLoading ? (
               <Loader2 className="size-3.5 animate-spin" />
             ) : (
@@ -145,7 +145,7 @@ function FullscreenRouteState({
             {isLoading ? (
               description
             ) : (
-              <span className="mt-3 block max-h-48 overflow-auto rounded-md border border-border bg-muted p-3 font-mono text-sm leading-6 text-muted-foreground break-words whitespace-pre-wrap">
+              <span className="mt-3 block max-h-48 overflow-auto rounded-md border border-stone bg-warm-taupe p-3 font-mono text-sm leading-6 text-smoke break-words whitespace-pre-wrap">
                 {description}
               </span>
             )}
@@ -153,14 +153,14 @@ function FullscreenRouteState({
         </CardHeader>
 
         <CardContent>
-          <p className="m-0 text-sm text-muted-foreground">
+          <p className="m-0 text-sm text-smoke">
             {isLoading
               ? 'This should only take a moment.'
               : 'You can reopen onboarding to repair workspace access, or return to your account page.'}
           </p>
         </CardContent>
 
-        <CardFooter className="flex flex-wrap gap-3 border-t border-border">
+        <CardFooter className="flex flex-wrap gap-3 border-t border-stone">
           <Button asChild>
             <Link to={isLoading ? '/' : '/onboarding'} className="no-underline">
               {isLoading ? 'Back to home' : 'Open onboarding'}

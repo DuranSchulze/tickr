@@ -55,12 +55,12 @@ export function TagPicker({
       defaultColor="#14b8a6"
       renderTrigger={(selected) => {
         if (selected.length === 0) {
-          return <span className="text-muted-foreground">No tag</span>
+          return <span className="text-smoke">No tag</span>
         }
         const tag = selected[0]
         return (
           <span
-            className="block max-w-full truncate rounded px-1.5 py-0.5 text-xs font-bold"
+            className="block max-w-full truncate rounded-full px-1.5 py-0.5 text-xs font-bold"
             style={{ backgroundColor: tag.color + '22', color: tag.color }}
             title={tag.name}
           >

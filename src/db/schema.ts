@@ -258,6 +258,16 @@ export const workspaces = pgTable('workspaces', {
   locationTrackingEnabled: boolean('location_tracking_enabled')
     .notNull()
     .default(true),
+  expectedDailyHours: numeric('expected_daily_hours', {
+    precision: 4,
+    scale: 2,
+  })
+    .notNull()
+    .default('8.00'),
+  payrollCutoffDays: jsonb('payroll_cutoff_days')
+    .$type<number[]>()
+    .notNull()
+    .default([15]),
   googleSheetUrl: varchar('google_sheet_url', { length: 500 }),
   googleSheetSyncedAt: timestamp('google_sheet_synced_at', {
     withTimezone: true,

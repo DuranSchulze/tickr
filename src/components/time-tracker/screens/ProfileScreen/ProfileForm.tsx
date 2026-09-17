@@ -348,9 +348,7 @@ export function ProfileForm({
 
   // Department is admin-assigned; show a read-only dropdown of all departments
   // with the member's current one selected (falling back to "Unassigned").
-  const currentDepartmentId = departments.some(
-    (d) => d.id === departmentId,
-  )
+  const currentDepartmentId = departments.some((d) => d.id === departmentId)
     ? departmentId
     : 'NONE'
 
@@ -383,7 +381,7 @@ export function ProfileForm({
                 onChange={handleAvatarChange}
               />
               <details className="mt-1">
-                <summary className="cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground">
+                <summary className="cursor-pointer select-none text-xs text-smoke hover:text-foreground">
                   Or paste a URL instead
                 </summary>
                 <Input
@@ -493,7 +491,7 @@ export function ProfileForm({
           {/* Birthday — always visible, opens a dialog picker */}
           <div className="col-span-full grid gap-2">
             <span className="text-sm font-medium leading-none">Birthday</span>
-            <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+            <div className="flex items-center justify-between rounded-xl border border-stone bg-warm-taupe px-3 py-2.5">
               <span
                 className={cn(
                   'text-sm',
@@ -501,7 +499,7 @@ export function ProfileForm({
                     ? 'text-red-500'
                     : birthDate
                       ? 'text-foreground'
-                      : 'text-muted-foreground italic',
+                      : 'text-smoke italic',
                 )}
               >
                 {errors.birthDate || formatBirthday(birthDate)}
@@ -695,7 +693,7 @@ export function ProfileForm({
         <p
           className={cn(
             'm-0 text-xs font-medium',
-            isDirty ? 'text-amber-600' : 'text-muted-foreground',
+            isDirty ? 'text-amber-600' : 'text-smoke',
           )}
         >
           {isDirty ? 'Unsaved changes' : 'No changes'}
@@ -725,7 +723,7 @@ export function ProfileForm({
       {isDirty && blocker.status === 'blocked' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+          <div className="relative w-full max-w-sm rounded-2xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
             <div className="flex flex-col items-center gap-4 py-6">
               <AlertTriangle className="size-10 text-amber-500" />
               <p className="text-center text-sm text-foreground">

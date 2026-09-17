@@ -9,6 +9,7 @@ import {
   stopTimerSchema,
   updateActiveTimerSchema,
   updateEntrySchema,
+  updateWorkspaceSettingsSchema,
 } from './tracker/shared/schemas'
 import {
   exportSortByValues,
@@ -196,6 +197,20 @@ export const getTrackerStateFn = createServerFn({ method: 'GET' }).handler(
   async () => {
     const { getTrackerState } = await import('./tracker.server')
     return getTrackerState()
+  },
+)
+
+/**
+ * Cross-device sync heartbeat — a per-member change stamp (running entry +
+ * max updated_at + entry count), NOT entry data. Polled by
+ * TaskSyncCoordinator while a task-data route is visible so a page left open
+ * on another device picks up remote starts/stops/edits within one poll
+ * interval. Kept deliberately tiny; do not grow it into a state payload.
+ */
+export const getTrackerPulseFn = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    const { getTrackerPulse } = await import('./tracker/pulse.server')
+    return getTrackerPulse()
   },
 )
 
@@ -969,15 +984,6 @@ export const getImageKitTokenFn = createServerFn({
 
 // ─── Workspace settings ───────────────────────────────────────────────────────
 
-const updateWorkspaceSettingsSchema = z
-  .object({
-    name: z.string().trim().min(1).max(150).optional(),
-    timezone: z.string().trim().min(1).max(80).optional(),
-  })
-  .refine((data) => data.name !== undefined || data.timezone !== undefined, {
-    message: 'At least one setting is required.',
-  })
-
 export const updateWorkspaceSettingsFn = createServerFn({ method: 'POST' })
   .inputValidator((input) => updateWorkspaceSettingsSchema.parse(input))
   .handler(async ({ data }) => {
@@ -1042,6 +1048,14 @@ export const getPublicPerformanceFn = createServerFn({ method: 'GET' })
       await import('./tracker/performance.server')
     return getPublicPerformance(data.token)
   })
+
+export const getWorkspaceLeaderboardFn = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const { getWorkspaceLeaderboard } =
+    await import('./tracker/leaderboard.server')
+  return getWorkspaceLeaderboard()
+})
 
 // ─── Workspace Activity ───────────────────────────────────────────────────────
 

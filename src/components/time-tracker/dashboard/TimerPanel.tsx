@@ -33,7 +33,7 @@ function ActionHint({ label, shortcut }: { label: string; shortcut: string }) {
   return (
     <span
       aria-hidden="true"
-      className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 flex items-center whitespace-nowrap rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
+      className="pointer-events-none absolute bottom-full right-0 z-50 mb-2 flex items-center whitespace-nowrap rounded-lg border border-stone bg-popover px-2.5 py-1.5 text-xs font-medium text-foreground opacity-0 shadow-[var(--shadow-whisper)] transition-opacity duration-150 group-hover:opacity-100"
     >
       {label}
       <Kbd className="ml-1.5">{shortcut}</Kbd>
@@ -69,7 +69,7 @@ function LocationCaptureStatus({
   return (
     <output
       aria-live="polite"
-      className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
+      className="inline-flex items-center gap-1 text-[11px] font-medium text-smoke"
     >
       {content.icon}
       {content.label}
@@ -222,7 +222,11 @@ export function TimerPanel({
           presets | start-stop — one continuous control with thin dividers
           instead of separate boxed inputs. */}
       <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-lg border border-border bg-background transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:h-12">
+        {/* The bar carries the theme's card radius so it matches the entry card
+            it sits in (24px) and the running-entry panel below it (20px) —
+            matching the pill-shaped Start button beside it. Fields are inset
+            by their own padding, so nothing needs clipping. */}
+        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-xl border border-stone bg-eggshell transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:h-12">
           <div className="min-w-0 flex-[1.2]">
             <DescriptionAutocomplete
               value={description}
@@ -236,7 +240,7 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-border sm:block" />
+          <div className="my-2.5 hidden w-px bg-stone sm:block" />
           <div className="hidden min-w-0 flex-[1] sm:flex">
             <ClientProjectPicker
               clients={selectableClients}
@@ -267,7 +271,7 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-border md:block" />
+          <div className="my-2.5 hidden w-px bg-stone md:block" />
           <div className="hidden items-center gap-0.5 px-1.5 md:flex">
             <BillableToggleButton
               pressed={billable}
@@ -299,10 +303,10 @@ export function TimerPanel({
             onClick={activeEntry ? onStop : onStart}
             disabled={activeEntry ? stopPending || stopBlocked : startPending}
             title={stopBlocked ? stopBlockedReason : undefined}
-            className={`inline-flex h-12 items-center justify-center gap-2 rounded-lg px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground min-w-[120px] ${
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke min-w-[120px] ${
               activeEntry
-                ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-                : 'bg-primary text-primary-foreground hover:brightness-110'
+                ? 'bg-destructive text-destructive-foreground'
+                : 'bg-primary-action text-primary-action-foreground hover:bg-primary-action/85'
             }`}
           >
             {activeEntry ? (
@@ -367,7 +371,7 @@ export function TimerPanel({
       )}
 
       {activeEntry && (
-        <div className="min-w-0 rounded-lg border border-primary/30 bg-primary/10 p-3 sm:p-4">
+        <div className="min-w-0 rounded-xl border border-primary/30 bg-primary/10 p-3 sm:p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1 grid gap-1.5">
               <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
@@ -376,12 +380,12 @@ export function TimerPanel({
               <LocationCaptureStatus status={locationStatus} />
               <p className="m-0 font-bold text-foreground truncate">
                 {activeEntry.description || (
-                  <span className="text-muted-foreground">No description</span>
+                  <span className="text-smoke">No description</span>
                 )}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {activeProject && (
-                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 text-xs text-smoke">
                     <span
                       className="inline-block size-2 rounded-full"
                       style={{ backgroundColor: activeProject.color }}
@@ -410,13 +414,13 @@ export function TimerPanel({
               </div>
 
               {/* Editable start time */}
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-smoke">
                 <span>Started at</span>
                 {editStarted ? (
                   <input
                     type="time"
                     step="1"
-                    className="rounded border border-primary bg-background px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="rounded border border-stone bg-eggshell px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
                     value={draftStarted}
                     onChange={(e) => setDraftStarted(e.target.value)}
                     onBlur={commitStartedAt}
@@ -437,7 +441,7 @@ export function TimerPanel({
                     <button
                       type="button"
                       onClick={openStartedEdit}
-                      className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                      className="rounded-full p-0.5 text-smoke transition-colors hover:bg-accent hover:text-foreground"
                       title="Edit start time"
                     >
                       <Pencil className="size-3" />
@@ -458,7 +462,7 @@ export function TimerPanel({
                   onClick={onDiscard}
                   disabled={stopPending}
                   aria-label="Discard timer (Esc)"
-                  className="group relative grid size-8 place-items-center rounded-md border border-destructive/40 text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="group relative grid size-8 place-items-center rounded-full border border-destructive/40 text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 className="size-4" />
                   <ActionHint label="Discard" shortcut="Esc" />
@@ -469,7 +473,7 @@ export function TimerPanel({
                     onClick={onStop}
                     disabled={stopPending}
                     aria-label="Stop timer (Enter)"
-                    className="group relative grid size-8 place-items-center rounded-md bg-destructive text-destructive-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="group relative grid size-8 place-items-center rounded-full bg-destructive text-destructive-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {stopPending ? (
                       <Loader2 className="size-4 animate-spin" />

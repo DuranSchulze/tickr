@@ -37,6 +37,8 @@ interface AccessWorkspace {
   googleSheetUrl: string | null
   googleSheetSyncedAt: Date | null
   locationTrackingEnabled: boolean
+  expectedDailyHours: number | string
+  payrollCutoffDays: number[]
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +298,8 @@ export function buildTrackerStateBase(
         ? workspace.googleSheetSyncedAt.toISOString()
         : null,
       locationTrackingEnabled: workspace.locationTrackingEnabled,
+      expectedDailyHours: Number(workspace.expectedDailyHours),
+      payrollCutoffDays: workspace.payrollCutoffDays,
     },
     currentMemberId: memberId,
     roles: rolesRows.map((role) => ({

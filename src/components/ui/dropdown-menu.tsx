@@ -42,7 +42,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          't-dropdown z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 data-[state=closed]:overflow-hidden',
+          't-dropdown z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-stone bg-popover p-1 text-popover-foreground shadow-[var(--shadow-whisper)] data-[state=closed]:overflow-hidden',
           className,
         )}
         {...props}
@@ -169,7 +169,7 @@ function DropdownMenuLabel({
       data-slot="dropdown-menu-label"
       data-inset={inset}
       className={cn(
-        'px-2 py-1.5 text-xs font-medium text-muted-foreground data-inset:pl-8',
+        'px-2 py-1.5 text-xs font-medium text-smoke data-inset:pl-8',
         className,
       )}
       {...props}
@@ -198,7 +198,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        'ml-auto text-xs tracking-widest text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground',
+        'ml-auto text-xs tracking-widest text-smoke group-focus/dropdown-menu-item:text-accent-foreground',
         className,
       )}
       {...props}
@@ -244,7 +244,7 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        't-dropdown z-50 min-w-[96px] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-md bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10',
+        't-dropdown z-50 min-w-[96px] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-lg border border-stone bg-popover p-1 text-popover-foreground shadow-[var(--shadow-whisper)]',
         className,
       )}
       {...props}

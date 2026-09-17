@@ -189,16 +189,14 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
         <div>
           <Link
             to="/app/workspace/members"
-            className="inline-flex items-center rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground no-underline hover:bg-secondary/80"
+            className="inline-flex items-center rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-graphite no-underline hover:bg-secondary/80"
           >
             Back to members
           </Link>
           <h1 className="m-0 mt-2 text-2xl font-bold tracking-tight text-foreground">
             {detail.member.name}
           </h1>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
-            {detail.member.email}
-          </p>
+          <p className="m-0 mt-1 text-sm text-smoke">{detail.member.email}</p>
         </div>
         <div className="flex items-center gap-3">
           <MemberExportButton
@@ -213,7 +211,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-border">
+      <div className="flex flex-wrap gap-2 border-b border-stone">
         {visibleTabs.map((tab) => (
           <button
             key={tab.id}
@@ -222,7 +220,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
             className={`border-b-2 px-3 py-2 text-sm font-semibold transition-colors ${
               activeTab === tab.id
                 ? 'border-primary text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-transparent text-smoke hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -231,7 +229,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       </div>
 
       {activeTab === 'overview' && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
           <SectionTitle
             icon={<UserRound className="size-4" />}
             title="Overview"
@@ -259,7 +257,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       )}
 
       {activeTab === 'billing' && detail.canManage && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
           <SectionTitle
             icon={<DollarSign className="size-4" />}
             title="Billing"
@@ -292,8 +290,8 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
                 Use workspace default
               </Button>
             </form>
-            <div className="rounded-lg border border-border bg-muted p-4">
-              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-lg border border-stone bg-muted p-4">
+              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
                 Effective rate
               </p>
               <p className="m-0 mt-1 text-2xl font-bold text-foreground">
@@ -303,7 +301,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
                 )}
                 /hr
               </p>
-              <p className="m-0 mt-3 text-sm text-muted-foreground">
+              <p className="m-0 mt-3 text-sm text-smoke">
                 {formatHours(detail.member.billableSeconds)} billable tracked ·{' '}
                 {formatCurrency(
                   detail.member.earningsPreview,
@@ -317,7 +315,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       )}
 
       {activeTab === 'employment' && detail.canManage && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
           <SectionTitle
             icon={<IdCard className="size-4" />}
             title="Employment"
@@ -417,7 +415,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       )}
 
       {activeTab === 'government' && detail.canManage && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
           <SectionTitle
             icon={<IdCard className="size-4" />}
             title="Government IDs"
@@ -476,12 +474,12 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       )}
 
       {activeTab === 'personal' && (
-        <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+        <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
           <SectionTitle
             icon={<UserRound className="size-4" />}
             title="Personal info"
           />
-          <p className="m-0 mt-2 text-sm text-muted-foreground">
+          <p className="m-0 mt-2 text-sm text-smoke">
             Personal fields are self-managed by the member from their profile
             page.
           </p>
@@ -559,7 +557,7 @@ function MemberAvatar({
 
   return (
     <div
-      className="grid size-16 place-items-center rounded-full text-lg font-bold text-primary-foreground ring-4 ring-muted"
+      className="grid size-16 place-items-center rounded-full text-lg font-bold text-primary-action-foreground ring-4 ring-muted"
       style={{ backgroundColor: color }}
     >
       {initials}
@@ -585,7 +583,7 @@ function SectionTitle({
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-smoke">
         {label}
       </dt>
       <dd className="m-0 mt-1 text-sm font-semibold text-foreground">

@@ -101,7 +101,7 @@ function LiveDot({
   if (!active) {
     return (
       <span
-        className={`inline-block rounded-full bg-muted-foreground/60 ${className}`}
+        className={`inline-block rounded-full bg-smoke/60 ${className}`}
         aria-hidden
       />
     )
@@ -131,15 +131,13 @@ function SectionTitle({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-warm-taupe text-smoke">
         {icon}
       </span>
       <div className="min-w-0">
         <h3 className="m-0 text-sm font-bold text-foreground">{title}</h3>
         {subtitle && (
-          <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">
-            {subtitle}
-          </p>
+          <p className="m-0 mt-0.5 truncate text-xs text-smoke">{subtitle}</p>
         )}
       </div>
     </div>
@@ -156,10 +154,10 @@ function SummaryHero({ data }: { data: DepartmentMemberActivitySummary }) {
   return (
     <motion.section
       variants={SECTION_VARIANTS}
-      className="min-w-0 rounded-xl border border-border bg-muted/30 p-4"
+      className="min-w-0 rounded-xl border border-stone bg-warm-taupe p-4"
     >
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="m-0 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-smoke">
           <Timer className="size-3.5" />
           Total tracked
         </p>
@@ -167,7 +165,7 @@ function SummaryHero({ data }: { data: DepartmentMemberActivitySummary }) {
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
             working
               ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-              : 'bg-muted text-muted-foreground'
+              : 'bg-warm-taupe text-smoke'
           }`}
         >
           <LiveDot active={working} />
@@ -175,7 +173,7 @@ function SummaryHero({ data }: { data: DepartmentMemberActivitySummary }) {
         </span>
       </div>
 
-      <p className="m-0 mt-2 text-3xl font-bold tabular-nums tracking-tight text-foreground">
+      <p className="m-0 mt-2 text-3xl font-bold tabular-nums text-foreground">
         {formatDuration(total)}
       </p>
 
@@ -200,7 +198,7 @@ function SummaryHero({ data }: { data: DepartmentMemberActivitySummary }) {
         </div>
       )}
 
-      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-smoke">
         <span className="flex items-center gap-3">
           <span className="inline-flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-primary/70" aria-hidden />
@@ -242,21 +240,19 @@ function ActivityCard({
       className={`min-w-0 rounded-xl border p-3.5 ${
         highlight
           ? 'border-emerald-500/30 bg-emerald-500/[0.06] dark:bg-emerald-500/[0.09]'
-          : 'border-border bg-card'
+          : 'border-stone bg-eggshell'
       }`}
     >
       <div className="flex min-w-0 items-center justify-between gap-3">
         <p
           className={`m-0 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${
-            highlight
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-muted-foreground'
+            highlight ? 'text-emerald-600 dark:text-emerald-400' : 'text-smoke'
           }`}
         >
           {isCurrent ? (
             <LiveDot active={working} />
           ) : (
-            <CheckCircle2 className="size-3.5 text-muted-foreground" />
+            <CheckCircle2 className="size-3.5 text-smoke" />
           )}
           {title}
         </p>
@@ -277,18 +273,18 @@ function ActivityCard({
               className={`w-fit shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
                 working
                   ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-muted text-muted-foreground'
+                  : 'bg-warm-taupe text-smoke'
               }`}
             >
               {working ? 'Working' : 'Ended'}
             </span>
           </div>
           {entry.taskName && entry.description && (
-            <p className="m-0 line-clamp-2 text-xs text-muted-foreground">
+            <p className="m-0 line-clamp-2 text-xs text-smoke">
               {entry.description}
             </p>
           )}
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-smoke">
             <span className="inline-flex min-w-0 items-center gap-1.5">
               <BriefcaseBusiness className="size-3.5 shrink-0" />
               <span className="truncate">
@@ -304,7 +300,7 @@ function ActivityCard({
           </div>
         </div>
       ) : (
-        <p className="m-0 mt-2 text-sm text-muted-foreground">Nothing yet.</p>
+        <p className="m-0 mt-2 text-sm text-smoke">Nothing yet.</p>
       )}
     </div>
   )
@@ -317,7 +313,7 @@ function TransitionArrow() {
     <div className="flex flex-col items-center" aria-hidden>
       <span className="h-2.5 w-px bg-border" />
       <motion.span
-        className="grid size-7 place-items-center rounded-full border border-border bg-card text-primary shadow-sm"
+        className="grid size-7 place-items-center rounded-full border border-stone bg-eggshell text-primary shadow-[var(--shadow-whisper)]"
         animate={{ y: [0, 3, 0] }}
         transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
       >
@@ -369,7 +365,7 @@ function HourlyChart({
   return (
     <motion.section
       variants={SECTION_VARIANTS}
-      className="min-w-0 rounded-xl border border-border bg-card p-4"
+      className="min-w-0 rounded-xl border border-stone bg-eggshell p-4"
     >
       <SectionTitle
         title="Activity by hour"
@@ -385,13 +381,13 @@ function HourlyChart({
               key={row.hour}
               className="grid min-w-0 grid-cols-[44px_minmax(0,1fr)_56px] items-center gap-2"
             >
-              <span className="text-xs font-medium tabular-nums text-muted-foreground">
+              <span className="text-xs font-medium tabular-nums text-smoke">
                 {row.hour}
               </span>
-              <div className="h-2.5 min-w-0 overflow-hidden rounded-full bg-muted">
+              <div className="h-2.5 min-w-0 overflow-hidden rounded-full bg-warm-taupe">
                 <motion.div
                   className={`h-full rounded-full ${
-                    isPeak ? 'bg-primary' : 'bg-primary/55'
+                    isPeak ? 'bg-primary-action' : 'bg-primary/55'
                   }`}
                   initial={{ width: 0 }}
                   animate={{
@@ -406,7 +402,7 @@ function HourlyChart({
               </div>
               <span
                 className={`text-right text-xs tabular-nums ${
-                  isPeak ? 'font-bold text-foreground' : 'text-muted-foreground'
+                  isPeak ? 'font-bold text-foreground' : 'text-smoke'
                 }`}
               >
                 {row.seconds > 0 ? formatDuration(row.seconds) : '–'}
@@ -437,10 +433,10 @@ function TimelineEntry({
   return (
     <div className="grid min-w-0 grid-cols-[64px_20px_minmax(0,1fr)] gap-2.5 px-3 py-3 min-[460px]:grid-cols-[88px_24px_minmax(0,1fr)] min-[460px]:gap-3">
       <div className="pt-0.5">
-        <div className="rounded-md bg-muted px-1 py-1 text-center text-[11px] font-semibold tabular-nums text-foreground min-[460px]:px-1.5 min-[460px]:text-xs">
+        <div className="rounded-xl bg-warm-taupe px-1 py-1 text-center text-[11px] font-semibold tabular-nums text-foreground min-[460px]:px-1.5 min-[460px]:text-xs">
           {formatTime(entry.startedAt, timezone)}
         </div>
-        <div className="mt-1 text-center text-[10px] font-mono tabular-nums text-muted-foreground min-[460px]:text-[11px]">
+        <div className="mt-1 text-center text-[10px] font-mono tabular-nums text-smoke min-[460px]:text-[11px]">
           to {entry.endedAt ? formatTime(entry.endedAt, timezone) : 'Now'}
         </div>
       </div>
@@ -470,7 +466,7 @@ function TimelineEntry({
       <button
         type="button"
         onClick={() => onSelect(entry)}
-        className="min-w-0 rounded-xl border border-border bg-card p-3 text-left shadow-sm transition-colors duration-150 hover:border-primary/40 hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="min-w-0 rounded-xl border border-stone bg-eggshell p-3 text-left shadow-[var(--shadow-whisper)] transition-colors duration-150 hover:border-primary/40 hover:bg-accent/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <div className="flex min-w-0 items-center justify-between gap-2">
           <p className="m-0 min-w-0 truncate text-sm font-semibold text-foreground">
@@ -481,11 +477,11 @@ function TimelineEntry({
           </span>
         </div>
         {entry.taskName && entry.description && (
-          <p className="m-0 mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+          <p className="m-0 mt-0.5 line-clamp-2 text-xs text-smoke">
             {entry.description}
           </p>
         )}
-        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-smoke">
           <span className="min-w-0 truncate">
             {entry.projectName ?? 'No project'}
           </span>
@@ -502,7 +498,7 @@ function TimelineEntry({
             className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${
               working
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-warm-taupe text-smoke'
             }`}
           >
             {working ? 'Working' : 'Ended'}
@@ -524,11 +520,11 @@ function DetailRow({
 }) {
   return (
     <div className="flex min-w-0 items-center gap-3 py-2">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-warm-taupe text-smoke">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
-        <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <dt className="text-[11px] font-semibold uppercase tracking-wide text-smoke">
           {label}
         </dt>
         <dd className="m-0 truncate text-sm font-semibold text-foreground">
@@ -567,8 +563,8 @@ function ActivityEntryDetailsDialog({
 
             <div className="grid gap-4">
               {entry.taskName && entry.description && (
-                <div className="rounded-lg bg-muted/40 p-3">
-                  <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl bg-warm-taupe/40 p-3">
+                  <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-smoke">
                     Description
                   </p>
                   <p className="m-0 mt-1 text-sm text-foreground">
@@ -625,7 +621,7 @@ function ActivityEntryDetailsDialog({
                       className={
                         entry.billable
                           ? 'text-emerald-600 dark:text-emerald-400'
-                          : 'text-muted-foreground'
+                          : 'text-smoke'
                       }
                     >
                       {entry.billable ? 'Billable' : 'Non-billable'}
@@ -691,7 +687,7 @@ export function DepartmentMemberActivitySheet({
               }}
             />
             <motion.aside
-              className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl sm:h-full sm:rounded-none sm:border-y-0 sm:border-r-0"
+              className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)] sm:h-full sm:rounded-xl sm:border-y-0 sm:border-r-0"
               initial={{
                 ...closedPosition,
                 opacity: 0,
@@ -717,7 +713,7 @@ export function DepartmentMemberActivitySheet({
                 },
               }}
             >
-              <header className="flex min-w-0 items-start gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-5">
+              <header className="flex min-w-0 items-start gap-3 border-b border-stone px-4 py-4 sm:gap-4 sm:px-5">
                 <div
                   className={`grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold ${
                     departmentColor ? '' : 'bg-primary/15 text-primary'
@@ -741,10 +737,10 @@ export function DepartmentMemberActivitySheet({
                   <h2 className="m-0 mt-0.5 truncate text-lg font-bold text-foreground sm:text-xl">
                     {memberName ?? 'Loading member'}
                   </h2>
-                  <p className="m-0 mt-0.5 truncate text-sm text-muted-foreground">
+                  <p className="m-0 mt-0.5 truncate text-sm text-smoke">
                     {displayData?.member.email ?? 'Fetching current activity'}
                   </p>
-                  <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  <span className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-full border border-stone bg-eggshell px-2 py-0.5 text-[11px] font-medium text-smoke">
                     {departmentColor && (
                       <span
                         className="size-1.5 shrink-0 rounded-full"
@@ -761,7 +757,7 @@ export function DepartmentMemberActivitySheet({
                   type="button"
                   onClick={onClose}
                   aria-label="Close member activity"
-                  className="grid size-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <X className="size-4" />
                 </button>
@@ -796,7 +792,7 @@ export function DepartmentMemberActivityPanel({
 
   if (isLoading) {
     return (
-      <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
+      <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-smoke">
         <Loader2 className="size-4 animate-spin" />
         Loading activity
       </div>
@@ -834,9 +830,9 @@ export function DepartmentMemberActivityPanel({
 
       <motion.section
         variants={SECTION_VARIANTS}
-        className="min-w-0 overflow-hidden rounded-xl border border-border bg-card"
+        className="min-w-0 overflow-hidden rounded-xl border border-stone bg-eggshell"
       >
-        <div className="border-b border-border px-4 py-3">
+        <div className="border-b border-stone px-4 py-3">
           <SectionTitle
             title="Task timeline"
             subtitle="Earliest start at the top, latest at the bottom"
@@ -844,7 +840,7 @@ export function DepartmentMemberActivityPanel({
           />
         </div>
         {data.entriesToday.length === 0 ? (
-          <p className="m-0 p-4 text-sm text-muted-foreground">
+          <p className="m-0 p-4 text-sm text-smoke">
             No tasks started for this day.
           </p>
         ) : (

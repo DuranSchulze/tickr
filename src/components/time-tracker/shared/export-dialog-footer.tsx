@@ -106,7 +106,7 @@ export function ExportDialogFooter({
             max={startDateMax ?? today}
             onChange={(e) => onStartDateChange(e.target.value)}
             aria-label="Start date"
-            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 w-full rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
         <div className="grid gap-1.5">
@@ -124,7 +124,7 @@ export function ExportDialogFooter({
             max={endDateMax ?? today}
             onChange={(e) => onEndDateChange(e.target.value)}
             aria-label="End date"
-            className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 w-full rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
       </div>

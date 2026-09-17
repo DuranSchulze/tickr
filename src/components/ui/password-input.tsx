@@ -14,7 +14,7 @@ export const PasswordInput = forwardRef<
         ref={ref}
         type={show ? 'text' : 'password'}
         className={cn(
-          'h-11 w-full rounded-lg border border-input bg-background pl-3 pr-11 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20',
+          'h-11 w-full rounded-md border border-stone bg-eggshell pl-3 pr-11 text-sm text-foreground outline-none transition-colors placeholder:text-smoke focus:border-ink focus:ring-2 focus:ring-ink/20',
           className,
         )}
       />
@@ -24,7 +24,7 @@ export const PasswordInput = forwardRef<
         aria-label={show ? 'Hide password' : 'Show password'}
         aria-pressed={show}
         tabIndex={-1}
-        className="absolute inset-y-0 right-0 flex size-11 items-center justify-center rounded-r-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="absolute inset-y-0 right-0 flex size-11 items-center justify-center rounded-r-md text-smoke transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30"
       >
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>

@@ -78,7 +78,7 @@ export function RolesTablePage({
         cell: ({ getValue }) => {
           const level = getValue()
           return (
-            <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-0.5 text-xs font-semibold text-foreground">
+            <span className="inline-flex items-center rounded-full border border-stone bg-warm-taupe px-2.5 py-0.5 text-xs font-semibold text-foreground">
               {PERMISSION_LABELS[level] ?? level}
             </span>
           )
@@ -97,7 +97,7 @@ export function RolesTablePage({
 
           return (
             <div className="flex items-center justify-between gap-3">
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-smoke">
                 {role.permissionLevel === 'OWNER'
                   ? 'Full access'
                   : `${granted} of ${PERMISSION_KEYS.length} permissions`}
@@ -106,7 +106,7 @@ export function RolesTablePage({
                 <button
                   type="button"
                   onClick={() => setActiveRole(role)}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-eggshell px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-warm-taupe"
                 >
                   <ShieldCheck className="size-3.5" />
                   {canManageRoleTarget({

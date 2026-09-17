@@ -16,7 +16,7 @@ export function IconBtn({
   const cls =
     variant === 'danger'
       ? 'text-destructive hover:text-destructive'
-      : 'text-muted-foreground hover:text-foreground'
+      : 'text-smoke hover:text-foreground'
   return (
     <button
       type="button"

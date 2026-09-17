@@ -11,8 +11,8 @@ const PerformanceCharts = lazy(() =>
 
 function ChartSkeleton() {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="h-[200px] animate-pulse rounded-lg bg-muted" />
+    <div className="rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
+      <div className="h-[200px] animate-pulse rounded-xl bg-warm-taupe" />
     </div>
   )
 }
@@ -27,13 +27,13 @@ export function PublicPerformancePage({
   const noEntryCount = data.heatmapMonth.map((c) => ({ ...c, entryCount: 0 }))
 
   return (
-    <div className="min-h-screen bg-background py-10">
+    <div className="min-h-screen bg-eggshell py-10">
       <div className="mx-auto max-w-3xl px-4">
         <div className="mb-8 text-center">
-          <p className="m-0 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <p className="m-0 text-xs font-semibold uppercase tracking-widest text-smoke">
             Performance summary
           </p>
-          <h1 className="m-0 mt-2 text-3xl font-black text-foreground">
+          <h1 className="m-0 font-display text-heading-sm mt-2 text-foreground">
             {data.displayName}
           </h1>
         </div>
@@ -42,6 +42,7 @@ export function PublicPerformancePage({
           <PerformanceBadgeCard
             summary={data.currentMonth}
             label="This month"
+            expectedDailyHours={data.expectedDailyHours}
           />
 
           <PerformanceHeatmap
@@ -55,12 +56,9 @@ export function PublicPerformancePage({
             {chartsInView ? (
               <Suspense fallback={<ChartSkeleton />}>
                 <PerformanceCharts
-                  dailyTotals={data.heatmapMonth.map((c) => ({
-                    date: c.date,
-                    seconds: c.seconds,
-                    entryCount: c.entryCount,
-                  }))}
+                  dailyTotals={data.dailyTotals}
                   projectTotals={data.projectTotals}
+                  expectedDailyHours={data.expectedDailyHours}
                 />
               </Suspense>
             ) : (
@@ -69,7 +67,7 @@ export function PublicPerformancePage({
           </div>
         </div>
 
-        <p className="mt-10 text-center text-xs text-muted-foreground">
+        <p className="mt-10 text-center text-xs text-smoke">
           Powered by {BRAND.name}
         </p>
       </div>

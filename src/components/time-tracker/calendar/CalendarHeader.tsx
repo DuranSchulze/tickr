@@ -53,24 +53,24 @@ export function CalendarHeader({
   }
 
   return (
-    <section className="min-w-0 rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
+    <section className="min-w-0 rounded-xl bg-eggshell shadow-[var(--shadow-whisper)]">
       <div className="p-5 sm:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
+            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">
               <CalendarDays className="size-3.5" />
               {eyebrow}
             </div>
-            <h1 className="m-0 text-3xl font-black tracking-tight text-foreground sm:text-4xl">
+            <h1 className="m-0 font-display text-heading-sm text-foreground">
               {title}
             </h1>
-            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-smoke">
               {description}
             </p>
           </div>
 
           <div className="grid gap-2 sm:flex sm:items-center">
-            <div className="grid grid-cols-2 rounded-md bg-muted p-1">
+            <div className="grid grid-cols-2 rounded-xl bg-warm-taupe p-1">
               {(['month', 'week'] as const).map((option) => (
                 <button
                   key={option}
@@ -78,8 +78,8 @@ export function CalendarHeader({
                   onClick={() => changeView(option)}
                   className={`h-8 rounded px-3 text-sm font-bold capitalize transition-colors ${
                     view === option
-                      ? 'bg-card text-foreground shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-eggshell text-foreground shadow-[var(--shadow-whisper)]'
+                      : 'text-smoke hover:text-foreground'
                   }`}
                 >
                   {option}

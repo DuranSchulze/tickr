@@ -20,18 +20,41 @@ plans/
 │   └── PLAN.md
 ├── landing-page-redesign/             ← example: redesign plan
 │   └── PLAN.md
+│
+├── audit-2026-09-remediation/         ← audit index — START HERE for audit work
+│   └── PLAN.md                        ← TIERS + sequencing for all audit plans
+├── <audit-/fix- plan>/                ← 24 sibling remediation plans; see the index
+│   └── PLAN.md
+│
 └── quick-fix/                         ← exception: multiple tiny fixes
     ├── export-time-separation.md
-    └── update-time-task-track-component.md
+    ├── update-time-task-track-component.md
+    ├── workspace-and-timer-correctness.md
+    ├── client-memory-and-formatting.md
+    └── server-hygiene.md
 ```
+
+### Audit remediation plans (September 2026)
+
+A read-only system audit produced 24 sibling plans. **Do not read them individually at random** — `plans/audit-2026-09-remediation/PLAN.md` is the index: it tiers them by priority, records cross-plan dependencies and edit-order hazards, and lists the findings that are deliberately deferred as latent or policy-dependent.
+
+Conventions specific to this set, layered on top of the standard template:
+
+| Convention                              | Meaning                                                                                                                                                                                                           |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `## Verify First (No Code Change)`      | Placed immediately after `## Status`. Concrete commands, SQL, greps or manual reproductions to confirm, falsify or size the problem **before** writing code. Notes which checks need production/dashboard access. |
+| `[CHECK]` / `[FIX]` labels in Section 3 | Every Scope bullet is one or the other, so verification-only work stays distinguishable from code changes.                                                                                                        |
+| Explicit confidence caveats             | Several findings could not be fully verified without production access. Plans state this rather than asserting a severity.                                                                                        |
+
+Two plans exist partly to **prevent a non-fix**: `service-worker-asset-cache-path` documents that asset caching is already correct (Nitro generates the immutable rule for `/assets/(.*)`), so `vercel.json`'s vestigial `/_build/(.*)` rule should not be "fixed"; and `task-catalog-permission-and-project-validation` records that the missing permission gate may be intentional per `README.md`. Read those before changing related code.
 
 ### Naming Rules
 
-| Rule | Example |
-|------|---------|
-| Folder name is **kebab-case** | `landing-page-redesign`, `fix-overlap-cancel-bug` |
-| Folder name summarizes the plan | `subscription-workspace-access`, not `plan-3` |
-| Plan file is always `PLAN.md` | `plans/landing-page-redesign/PLAN.md` |
+| Rule                                                           | Example                                                                         |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Folder name is **kebab-case**                                  | `landing-page-redesign`, `fix-overlap-cancel-bug`                               |
+| Folder name summarizes the plan                                | `subscription-workspace-access`, not `plan-3`                                   |
+| Plan file is always `PLAN.md`                                  | `plans/landing-page-redesign/PLAN.md`                                           |
 | Exception: `quick-fix/` folder for tiny, single-commit changes | `plans/quick-fix/export-time-separation.md` (multiple `.md` files allowed here) |
 
 ---
@@ -52,12 +75,12 @@ Place immediately after the title, before Section 1:
 
 Valid status values:
 
-| Badge | Meaning | When to Use |
-|-------|---------|-------------|
-| `📋 Planned` | Plan written, not started | Just created the plan; awaiting review or prioritization |
-| `🔴 Not Started` | Plan reviewed, ready, but no code written | Plan is approved; ready for implementation |
-| `🟡 In Progress` | Work actively underway | Someone is implementing this right now |
-| `✅ Done` | Completed and validated | All checkboxes checked, deployed, verified |
+| Badge            | Meaning                                   | When to Use                                              |
+| ---------------- | ----------------------------------------- | -------------------------------------------------------- |
+| `📋 Planned`     | Plan written, not started                 | Just created the plan; awaiting review or prioritization |
+| `🔴 Not Started` | Plan reviewed, ready, but no code written | Plan is approved; ready for implementation               |
+| `🟡 In Progress` | Work actively underway                    | Someone is implementing this right now                   |
+| `✅ Done`        | Completed and validated                   | All checkboxes checked, deployed, verified               |
 
 ### Option B: Milestone Checklist
 
@@ -96,7 +119,7 @@ Use both: a single-line badge for quick scanning plus a checklist for detailed t
 
 ## PLAN.md Template
 
-A complete plan MUST include these sections in this order. Sections marked *(if applicable)* are required only when relevant to the feature.
+A complete plan MUST include these sections in this order. Sections marked _(if applicable)_ are required only when relevant to the feature.
 
 ```markdown
 # Feature Name
@@ -128,19 +151,19 @@ A complete plan MUST include these sections in this order. Sections marked *(if 
 
 [Tree diagram using code block. Mark new files with `(NEW)` and modified files with `(MODIFY)`. Show the full path from the project root.]
 
-## 6. Database Design *(if applicable)*
+## 6. Database Design _(if applicable)_
 
 [New tables, enums, columns. Use Drizzle schema syntax. Include seed data if relevant.]
 
-## 7. Backend Implementation *(if applicable)*
+## 7. Backend Implementation _(if applicable)_
 
 [Server functions, API endpoints, Zod schemas, service logic. Include function signatures and behavior descriptions.]
 
-## 8. Frontend Implementation *(if applicable)*
+## 8. Frontend Implementation _(if applicable)_
 
 [Components, routes, pages, UI behavior. Describe component tree, state management, loading/error states.]
 
-## 9. Access Control *(if applicable)*
+## 9. Access Control _(if applicable)_
 
 [Permission matrix. Who can do what? Use a table with roles as columns.]
 
@@ -148,7 +171,7 @@ A complete plan MUST include these sections in this order. Sections marked *(if 
 
 [How to verify the plan is complete. Include specific commands: `pnpm typecheck`, `pnpm lint`, manual QA steps.]
 
-## 11. Sequencing *(if applicable)*
+## 11. Sequencing _(if applicable)_
 
 [Ordered implementation phases. Each phase should be independently shippable. Use checkboxes for tracking.]
 
@@ -209,9 +232,9 @@ When you (an LLM agent) are asked to create or modify a plan in this directory, 
 
 ## Quick Reference for LLMs
 
-| Task | Action |
-|------|--------|
-| Create a new plan | 1. Explore codebase context. 2. Present discovery questions. 3. Create `plans/<kebab-case>/PLAN.md` following the template. 4. Use `📋 Planned` badge. |
-| Update existing plan | Read the plan, modify the relevant section, update the status checklist. |
-| Mark plan as done | Change badge to `✅ Done`, check all `- [ ]` boxes, add completion date if relevant. |
-| Find unfinished plans | Grep for `📋 Planned`, `🔴 Not Started`, `🟡 In Progress`, or `- [ ]` checkboxes. |
+| Task                  | Action                                                                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Create a new plan     | 1. Explore codebase context. 2. Present discovery questions. 3. Create `plans/<kebab-case>/PLAN.md` following the template. 4. Use `📋 Planned` badge. |
+| Update existing plan  | Read the plan, modify the relevant section, update the status checklist.                                                                               |
+| Mark plan as done     | Change badge to `✅ Done`, check all `- [ ]` boxes, add completion date if relevant.                                                                   |
+| Find unfinished plans | Grep for `📋 Planned`, `🔴 Not Started`, `🟡 In Progress`, or `- [ ]` checkboxes.                                                                      |

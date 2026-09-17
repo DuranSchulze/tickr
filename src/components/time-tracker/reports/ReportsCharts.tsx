@@ -42,10 +42,10 @@ function ChartPanel({
   children: React.ReactNode
 }) {
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+    <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)] sm:p-5">
       <div className="mb-4">
         <h2 className="m-0 text-base font-black text-foreground">{title}</h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        <p className="m-0 mt-1 text-sm text-smoke">{subtitle}</p>
       </div>
       {children}
     </section>
@@ -54,7 +54,7 @@ function ChartPanel({
 
 function EmptyChart({ label }: { label: string }) {
   return (
-    <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-background px-4 text-center text-sm font-semibold text-muted-foreground sm:h-[260px]">
+    <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-stone bg-eggshell px-4 text-center text-sm font-semibold text-smoke sm:h-[260px]">
       {label}
     </div>
   )
@@ -98,17 +98,17 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
             <ClientOnly>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--stone)" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                     minTickGap={16}
                     interval="preserveStartEnd"
                   />
                   <YAxis
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                     width={28}
@@ -165,7 +165,7 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
                 </ResponsiveContainer>
               </ClientOnly>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span className="text-xs font-semibold uppercase tracking-wide text-smoke">
                   Total
                 </span>
                 <span className="font-mono text-lg font-bold tabular-nums text-foreground">
@@ -173,7 +173,7 @@ export function ReportsCharts({ reports }: { reports: ReportsPayload }) {
                 </span>
               </div>
             </div>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-muted-foreground">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-smoke">
               <span className="inline-flex items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-600" />
                 Billable

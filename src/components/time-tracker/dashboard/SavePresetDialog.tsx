@@ -231,10 +231,10 @@ export function SavePresetDialog({
               onClick={() => dispatch({ type: 'billableToggled' })}
               aria-pressed={draft.billable}
               title={draft.billable ? 'Billable' : 'Non-billable'}
-              className={`inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+              className={`inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition-colors ${
                 draft.billable
                   ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                  : 'border-stone bg-eggshell text-smoke hover:text-foreground'
               }`}
             >
               <DollarSign className="size-4" />

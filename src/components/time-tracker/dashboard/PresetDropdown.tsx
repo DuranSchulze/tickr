@@ -121,7 +121,7 @@ export function PresetDropdown({
               type="button"
               title="Presets"
               aria-label="Presets"
-              className="grid size-9 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="grid size-9 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               <Bookmark className="size-4" />
             </button>
@@ -137,15 +137,15 @@ export function PresetDropdown({
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72">
-          <p className="m-0 px-2 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="m-0 px-2 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wide text-smoke">
             Presets
           </p>
           {isLoading ? (
-            <p className="m-0 px-2 pb-2 pt-1 text-sm text-muted-foreground">
+            <p className="m-0 px-2 pb-2 pt-1 text-sm text-smoke">
               Loading presets…
             </p>
           ) : presets.length === 0 ? (
-            <p className="m-0 px-2 pb-2 pt-1 text-sm text-muted-foreground">
+            <p className="m-0 px-2 pb-2 pt-1 text-sm text-smoke">
               No presets yet — create one below.
             </p>
           ) : (
@@ -180,13 +180,13 @@ export function PresetDropdown({
                         {preset.name}
                       </span>
                       {preset.billable && (
-                        <span className="shrink-0 rounded bg-primary/15 px-1 text-[10px] font-bold text-primary">
+                        <span className="shrink-0 rounded-full bg-primary/15 px-1 text-[10px] font-bold text-primary">
                           $
                         </span>
                       )}
                     </div>
                     <div
-                      className="mt-0.5 truncate pl-3.5 text-xs text-muted-foreground"
+                      className="mt-0.5 truncate pl-3.5 text-xs text-smoke"
                       title={`${client?.name || 'Unknown client'}${task ? ` / ${task.name} -` : ' ›'} ${project?.name || 'Unknown project'}${presetTags.length > 0 ? ` · ${presetTags.map((t) => t.name).join(', ')}` : ''}`}
                     >
                       {client?.name || 'Unknown client'}
@@ -201,7 +201,7 @@ export function PresetDropdown({
                     onClick={(e) => handleDeletePreset(e, preset.id)}
                     aria-label={`Delete preset ${preset.name}`}
                     title="Delete preset"
-                    className="shrink-0 rounded p-1 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="shrink-0 rounded-full p-1 text-destructive/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
                     tabIndex={-1}
                   >
                     <Trash2 className="size-3" />

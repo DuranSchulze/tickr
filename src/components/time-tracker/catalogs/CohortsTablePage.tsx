@@ -76,7 +76,7 @@ export function CohortsTablePage({
       col.accessor('departmentName', {
         header: 'Department',
         cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground">{getValue()}</span>
+          <span className="text-sm text-smoke">{getValue()}</span>
         ),
       }),
       ...(canManage
@@ -91,7 +91,7 @@ export function CohortsTablePage({
                     <button
                       type="button"
                       onClick={() => setEditingCohort(cohort)}
-                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                      className="grid size-8 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
                       title="Edit"
                     >
                       <Pencil className="size-3.5" />
@@ -100,7 +100,7 @@ export function CohortsTablePage({
                       type="button"
                       disabled={deletingId === cohort.id}
                       onClick={() => handleDelete(cohort)}
-                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      className="grid size-8 place-items-center rounded-full text-smoke hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       title="Delete"
                     >
                       <Trash2 className="size-3.5" />

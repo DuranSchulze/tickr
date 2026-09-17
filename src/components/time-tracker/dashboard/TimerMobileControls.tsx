@@ -83,7 +83,7 @@ export function TimerMobileControls({
 
   return (
     <div className="grid gap-2 sm:hidden">
-      <div className="grid gap-2 rounded-lg border border-border bg-card p-2">
+      <div className="grid gap-2 rounded-xl border border-stone bg-eggshell p-2">
         <ClientProjectPicker
           clients={selectableClients}
           projects={projects}
@@ -109,7 +109,7 @@ export function TimerMobileControls({
           onCreate={onCreateTag}
           canCreate={canManageCatalog}
         />
-        <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3">
+        <div className="flex h-10 items-center gap-2 rounded-md border border-stone bg-eggshell px-3">
           <span className="min-w-0 text-sm font-semibold text-foreground">
             Billable
           </span>
@@ -140,10 +140,10 @@ export function TimerMobileControls({
         onClick={activeEntry ? onStop : onStart}
         disabled={activeEntry ? stopPending || stopBlocked : startPending}
         title={stopBlocked ? stopBlockedReason : undefined}
-        className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground ${
+        className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke ${
           activeEntry
-            ? 'bg-destructive text-destructive-foreground hover:brightness-110'
-            : 'bg-primary text-primary-foreground hover:brightness-110'
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-primary-action text-primary-action-foreground hover:bg-primary-action/85'
         }`}
       >
         {activeEntry ? (

@@ -36,7 +36,7 @@ function SortButton({
     <button
       type="button"
       onClick={() => onSort(sortKey)}
-      className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-smoke hover:text-foreground"
     >
       {label}
       {active ? (
@@ -90,12 +90,12 @@ export function ReportsMemberBreakdownTable({
   const sortProps = { currentKey: sortKey, ascending, onSort: handleSort }
 
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3">
+    <section className="min-w-0 rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
+      <div className="border-b border-stone px-4 py-3">
         <h2 className="m-0 text-base font-black text-foreground">
           Member Breakdown
         </h2>
-        <p className="m-0 mt-0.5 text-sm text-muted-foreground">
+        <p className="m-0 mt-0.5 text-sm text-smoke">
           {members.length} member{members.length !== 1 ? 's' : ''}
         </p>
       </div>
@@ -103,8 +103,8 @@ export function ReportsMemberBreakdownTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <tr className="border-b border-stone bg-warm-taupe">
+              <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
                 Member
               </th>
               <th className="px-4 py-2.5 text-right">
@@ -121,7 +121,7 @@ export function ReportsMemberBreakdownTable({
                   {...sortProps}
                 />
               </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                 Rate/hr
               </th>
               <th className="px-4 py-2.5 text-right">
@@ -138,10 +138,10 @@ export function ReportsMemberBreakdownTable({
                   {...sortProps}
                 />
               </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                 Utilization
               </th>
-              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                 Action
               </th>
             </tr>
@@ -157,15 +157,13 @@ export function ReportsMemberBreakdownTable({
               return (
                 <tr
                   key={member.memberId}
-                  className="transition-colors hover:bg-muted/20"
+                  className="transition-colors hover:bg-warm-taupe/20"
                 >
                   <td className="px-4 py-3">
                     <p className="m-0 text-sm font-semibold text-foreground">
                       {member.name}
                     </p>
-                    <p className="m-0 text-xs text-muted-foreground">
-                      {member.email}
-                    </p>
+                    <p className="m-0 text-xs text-smoke">{member.email}</p>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono font-semibold text-foreground">
                     {formatHours(member.totalSeconds)}
@@ -173,7 +171,7 @@ export function ReportsMemberBreakdownTable({
                   <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-foreground">
                     {formatHours(member.billableSeconds)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-muted-foreground">
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-xs font-mono text-smoke">
                     {member.effectiveRate > 0
                       ? formatCurrency(member.effectiveRate, currency)
                       : '—'}
@@ -183,7 +181,7 @@ export function ReportsMemberBreakdownTable({
                       ? formatCurrency(member.billableAmount, currency)
                       : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                  <td className="px-4 py-3 text-right text-xs text-smoke">
                     {member.entryCount}
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -193,7 +191,7 @@ export function ReportsMemberBreakdownTable({
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                           : utilization >= 50
                             ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                            : 'bg-muted text-muted-foreground'
+                            : 'bg-warm-taupe text-smoke'
                       }`}
                     >
                       {utilization}%
@@ -203,7 +201,7 @@ export function ReportsMemberBreakdownTable({
                     <button
                       type="button"
                       onClick={() => onViewMember(member.memberId)}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground transition-colors hover:bg-accent"
+                      className="inline-flex h-8 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-xs font-bold text-foreground transition-colors hover:bg-accent"
                     >
                       View
                     </button>
@@ -216,8 +214,8 @@ export function ReportsMemberBreakdownTable({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between border-t border-stone px-4 py-3">
+          <span className="text-xs text-smoke">
             Page {page} of {totalPages}
           </span>
           <div className="flex items-center gap-1">
@@ -225,7 +223,7 @@ export function ReportsMemberBreakdownTable({
               type="button"
               disabled={page <= 1}
               onClick={() => setPage((p) => p - 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-full border border-stone text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -233,7 +231,7 @@ export function ReportsMemberBreakdownTable({
               type="button"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-full border border-stone text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronRight className="size-4" />
             </button>

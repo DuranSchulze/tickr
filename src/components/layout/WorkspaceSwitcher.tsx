@@ -102,24 +102,21 @@ export function WorkspaceSwitcher({
             variant="ghost"
             size="default"
             title="Switch workspace"
-            className="max-w-[240px] shrink-0 gap-2 rounded-full bg-muted/60 px-3 text-foreground hover:bg-muted sm:max-w-[280px]"
+            className="max-w-[240px] shrink-0 gap-2 rounded-full border border-stone bg-eggshell px-3 text-foreground hover:bg-warm-taupe sm:max-w-[280px]"
           >
             <BriefcaseBusiness className="size-4 shrink-0 text-primary" />
             <span className="hidden min-w-0 truncate font-semibold sm:inline">
               {currentWorkspaceName}
             </span>
-            <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-3.5 shrink-0 text-smoke" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-64">
-          <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wide text-smoke">
             Your workspaces
           </DropdownMenuLabel>
           {workspaces.length === 0 && (
-            <DropdownMenuItem
-              disabled
-              className="text-sm text-muted-foreground"
-            >
+            <DropdownMenuItem disabled className="text-sm text-smoke">
               No workspaces yet
             </DropdownMenuItem>
           )}
@@ -133,7 +130,7 @@ export function WorkspaceSwitcher({
                   if (!isCurrentByName) void handleSwitch(ws.slug)
                 }}
                 className={`flex items-start gap-2 ${
-                  isCurrentByName ? 'bg-primary/5' : ''
+                  isCurrentByName ? 'bg-warm-taupe' : ''
                 }`}
               >
                 <div className="flex-1 min-w-0">
@@ -210,7 +207,7 @@ export function WorkspaceSwitcher({
                 placeholder="e.g. Acme Corp"
                 maxLength={150}
                 disabled={creating}
-                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                className="h-9 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               />
             </div>
             <div className="flex justify-end gap-2">

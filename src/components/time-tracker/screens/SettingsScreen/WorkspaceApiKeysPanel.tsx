@@ -137,14 +137,14 @@ export function WorkspaceApiKeysPanel() {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="m-0 flex items-center gap-2 text-base font-bold text-foreground">
             <KeyRound className="size-4 text-primary" />
             API keys
           </h2>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             Create workspace keys for read-only integrations and Swagger tests.
           </p>
         </div>
@@ -162,7 +162,7 @@ export function WorkspaceApiKeysPanel() {
             Copy this key now. It will not be shown again.
           </p>
           <div className="mt-2 flex min-w-0 gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-border bg-background px-2 py-2 text-xs text-foreground">
+            <code className="min-w-0 flex-1 overflow-x-auto rounded-md border border-stone bg-eggshell px-2 py-2 text-xs text-foreground">
               {newApiKey}
             </code>
             <Button
@@ -212,15 +212,15 @@ export function WorkspaceApiKeysPanel() {
           </h3>
         </div>
         {loading ? (
-          <p className="m-0 text-sm text-muted-foreground">Loading keys...</p>
+          <p className="m-0 text-sm text-smoke">Loading keys...</p>
         ) : keys.length === 0 ? (
-          <p className="m-0 text-sm text-muted-foreground">
+          <p className="m-0 text-sm text-smoke">
             No API keys have been created for this workspace.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-border">
+          <div className="overflow-x-auto rounded-md border border-stone">
             <table className="w-full border-collapse text-left text-sm">
-              <thead className="bg-muted/60 text-xs text-muted-foreground">
+              <thead className="bg-warm-taupe text-xs text-smoke">
                 <tr>
                   <th className="px-3 py-2 font-semibold">Name</th>
                   <th className="px-3 py-2 font-semibold">Key</th>
@@ -238,11 +238,11 @@ export function WorkspaceApiKeysPanel() {
                   const status = statusFor(key)
                   const isRevoked = !!key.revokedAt
                   return (
-                    <tr key={key.id} className="border-t border-border">
+                    <tr key={key.id} className="border-t border-stone">
                       <td className="px-3 py-2 font-medium text-foreground">
                         {key.name}
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="px-3 py-2 text-smoke">
                         <code>
                           {key.tokenPrefix}...{key.lastFour}
                         </code>
@@ -254,13 +254,13 @@ export function WorkspaceApiKeysPanel() {
                           {status.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="px-3 py-2 text-smoke">
                         {formatDate(key.lastUsedAt)}
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="px-3 py-2 text-smoke">
                         {key.expiresAt ? formatDate(key.expiresAt) : 'Never'}
                       </td>
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="px-3 py-2 text-smoke">
                         {key.createdByName ?? key.createdByEmail ?? 'Unknown'}
                       </td>
                       <td className="px-3 py-2 text-right">

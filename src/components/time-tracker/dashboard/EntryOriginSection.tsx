@@ -32,7 +32,7 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
 
   return (
     <div className="grid gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
         Logged from
       </span>
 
@@ -40,13 +40,11 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
         {location ? (
           <span className="font-semibold text-foreground">{location}</span>
         ) : (
-          <span className="italic text-muted-foreground">
-            Location unavailable
-          </span>
+          <span className="italic text-smoke">Location unavailable</span>
         )}
 
         {hasCoords && (
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-xs text-smoke">
             {latitude.toFixed(4)}, {longitude.toFixed(4)}{' '}
             <span className="not-italic">
               {isDevice
@@ -59,16 +57,11 @@ export function EntryOriginSection({ entry }: { entry: TimeEntry }) {
         )}
 
         {ipAddress && (
-          <span className="font-mono text-xs text-muted-foreground">
-            {ipAddress}
-          </span>
+          <span className="font-mono text-xs text-smoke">{ipAddress}</span>
         )}
 
         {userAgent && (
-          <span
-            className="block truncate text-xs text-muted-foreground"
-            title={userAgent}
-          >
+          <span className="block truncate text-xs text-smoke" title={userAgent}>
             {userAgent}
           </span>
         )}

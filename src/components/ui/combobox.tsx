@@ -87,19 +87,19 @@ export function Combobox({
           disabled={disabled}
           aria-expanded={open}
           className={cn(
-            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-3 text-left text-sm text-foreground outline-none transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-md border border-stone bg-eggshell px-3 text-left text-sm text-foreground outline-none transition-colors hover:bg-warm-taupe/60 disabled:cursor-not-allowed disabled:opacity-50',
             className,
           )}
         >
           <span
             className={cn(
               'min-w-0 flex-1 truncate',
-              !selectedOption && 'text-muted-foreground',
+              !selectedOption && 'text-smoke',
             )}
           >
             {selectedOption?.label ?? placeholder}
           </span>
-          <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+          <ChevronsUpDown className="size-4 shrink-0 text-smoke" />
         </button>
       </PopoverTrigger>
 
@@ -112,27 +112,25 @@ export function Combobox({
           inputRef.current?.focus()
         }}
         className={cn(
-          'max-h-[min(var(--radix-popover-content-available-height),20rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] gap-0 overflow-hidden rounded-md border border-border bg-popover p-0 shadow-none',
+          'max-h-[min(var(--radix-popover-content-available-height),20rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] gap-0 overflow-hidden rounded-lg border border-stone bg-popover p-0 shadow-[var(--shadow-whisper)]',
           contentClassName,
         )}
       >
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
+        <div className="flex items-center gap-2 border-b border-stone px-3 py-2">
+          <Search className="size-4 shrink-0 text-smoke" />
           <input
             ref={inputRef}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className="h-8 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            className="h-8 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-smoke"
           />
         </div>
 
         <div className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.5rem),16rem)] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
           {filteredOptions.length === 0 ? (
-            <p className="m-0 px-3 py-3 text-sm text-muted-foreground">
-              {emptyText}
-            </p>
+            <p className="m-0 px-3 py-3 text-sm text-smoke">{emptyText}</p>
           ) : (
             filteredOptions.map((option) => {
               const selected = option.value === value
@@ -156,7 +154,7 @@ export function Combobox({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate">{option.label}</span>
                     {option.description && (
-                      <span className="block truncate text-xs font-normal text-muted-foreground">
+                      <span className="block truncate text-xs font-normal text-smoke">
                         {option.description}
                       </span>
                     )}
@@ -166,7 +164,7 @@ export function Combobox({
             })
           )}
           {truncated && (
-            <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+            <p className="m-0 border-t border-stone px-3 py-2 text-xs text-smoke">
               Showing first {maxVisibleOptions}. Type to narrow results.
             </p>
           )}

@@ -364,10 +364,10 @@ export function ClientProjectPicker({
               }
               className={
                 compact
-                  ? 'flex h-9 w-full min-w-0 items-center justify-start overflow-hidden rounded-md px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-muted-foreground'
+                  ? 'flex h-9 w-full min-w-0 items-center justify-start overflow-hidden rounded-full px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-smoke'
                   : bare
-                    ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
-                    : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+                    ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-smoke'
+                    : 'flex h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-stone/80 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke'
               }
             >
               <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
@@ -411,7 +411,7 @@ export function ClientProjectPicker({
                                 Suspended
                               </span>
                             )}
-                            <span className="shrink-0 text-muted-foreground">
+                            <span className="shrink-0 text-smoke">
                               &nbsp;/&nbsp;
                             </span>
                           </>
@@ -421,7 +421,7 @@ export function ClientProjectPicker({
                             <span className="shrink-0 whitespace-nowrap text-foreground">
                               {selectedTask.name}
                             </span>
-                            <span className="shrink-0 text-muted-foreground">
+                            <span className="shrink-0 text-smoke">
                               &nbsp;-&nbsp;
                             </span>
                           </>
@@ -433,13 +433,13 @@ export function ClientProjectPicker({
                     </>
                   )
                 ) : (
-                  <span className="text-muted-foreground">{placeholder}</span>
+                  <span className="text-smoke">{placeholder}</span>
                 )}
               </div>
 
               {!compact && (
                 <div className="flex shrink-0 items-center gap-1">
-                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                  <ChevronDown className="size-3.5 text-smoke" />
                 </div>
               )}
             </button>
@@ -450,7 +450,7 @@ export function ClientProjectPicker({
               type="button"
               onClick={handleClear}
               aria-label="Clear client and project"
-              className="absolute right-7 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="absolute right-7 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="size-3" />
             </button>
@@ -462,8 +462,8 @@ export function ClientProjectPicker({
               aria-hidden="true"
               className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
             >
-              <div className="whitespace-nowrap rounded-lg border border-border bg-popover px-2.5 py-1.5 shadow-md">
-                <p className="text-xs text-muted-foreground">
+              <div className="whitespace-nowrap rounded-lg border border-stone bg-popover px-2.5 py-1.5 shadow-[var(--shadow-whisper)]">
+                <p className="text-xs text-smoke">
                   {selectedClient?.name ? (
                     <>
                       {selectedClient.name}
@@ -481,7 +481,7 @@ export function ClientProjectPicker({
                   </span>
                 </p>
               </div>
-              <div className="absolute left-1/2 top-full -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-border" />
+              <div className="absolute left-1/2 top-full -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-stone" />
               <div className="absolute left-1/2 top-[calc(100%-1px)] -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-popover" />
             </div>
           )}
@@ -496,17 +496,17 @@ export function ClientProjectPicker({
             e.preventDefault()
             inputRef.current?.focus()
           }}
-          className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(24rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+          className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(24rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-stone bg-eggshell p-0 shadow-[var(--shadow-whisper)]"
         >
           {/* Search */}
-          <div className="border-b border-border p-2">
+          <div className="border-b border-stone p-2">
             <input
               ref={inputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search clients, projects or tasks…"
               aria-label="Search clients, projects or tasks"
-              className="h-10 w-full scroll-mt-24 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary sm:h-8"
+              className="h-10 w-full scroll-mt-24 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary sm:h-8"
             />
           </div>
 
@@ -516,7 +516,7 @@ export function ClientProjectPicker({
             className="max-h-[min(22rem,calc(100dvh-10rem))] min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
           >
             {rows.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">
+              <p className="px-3 py-2 text-xs text-smoke">
                 No clients, projects or tasks found
               </p>
             ) : (
@@ -530,8 +530,8 @@ export function ClientProjectPicker({
                       type="button"
                       onClick={() => toggleClient(row.client.id)}
                       className={cn(
-                        'flex w-full items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-accent/50',
-                        i > 0 && 'mt-1 border-t border-border/50 pt-2',
+                        'flex w-full items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-wide text-smoke transition-colors hover:bg-accent/50',
+                        i > 0 && 'mt-1 border-t border-stone/50 pt-2',
                         'min-h-10 sm:min-h-0',
                       )}
                     >
@@ -562,7 +562,7 @@ export function ClientProjectPicker({
                       key={`project-${row.project.id}`}
                       className={cn(
                         'flex min-h-10 w-full items-center gap-0.5 py-1.5 pl-7 pr-2 text-left text-xs transition-colors hover:bg-accent/30 sm:min-h-0',
-                        pActive && 'bg-accent/50',
+                        pActive && 'bg-warm-taupe',
                       )}
                     >
                       {/* Chevron — only when there are tasks to show/hide */}
@@ -573,7 +573,7 @@ export function ClientProjectPicker({
                             e.stopPropagation()
                             toggleProject(row.project.id)
                           }}
-                          className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground hover:bg-accent hover:text-foreground"
+                          className="grid size-5 shrink-0 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
                           aria-label={pCollapsed ? 'Show tasks' : 'Hide tasks'}
                         >
                           {pCollapsed ? (
@@ -597,7 +597,7 @@ export function ClientProjectPicker({
                           'flex flex-1 items-center gap-2 rounded py-0.5 -my-0.5',
                           pActive
                             ? 'font-medium text-foreground'
-                            : 'font-normal text-muted-foreground',
+                            : 'font-normal text-smoke',
                         )}
                       >
                         <span
@@ -618,7 +618,7 @@ export function ClientProjectPicker({
                             e.stopPropagation()
                             openAddTaskFor(row.project.id)
                           }}
-                          className="grid size-6 shrink-0 place-items-center rounded text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                          className="grid size-6 shrink-0 place-items-center rounded-full text-smoke transition-colors hover:bg-primary/10 hover:text-primary"
                           aria-label="Add task"
                           title="Add task"
                         >
@@ -639,8 +639,8 @@ export function ClientProjectPicker({
                       className={cn(
                         'group/task flex min-h-10 w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent sm:min-h-0',
                         tActive
-                          ? 'bg-accent/50 text-foreground'
-                          : 'font-normal text-muted-foreground hover:text-foreground',
+                          ? 'bg-warm-taupe text-foreground'
+                          : 'font-normal text-smoke hover:text-foreground',
                       )}
                     >
                       <button
@@ -671,7 +671,7 @@ export function ClientProjectPicker({
                             e.stopPropagation()
                             setDeleteTarget(row.task)
                           }}
-                          className="grid size-5 shrink-0 place-items-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover/task:opacity-100"
+                          className="grid size-5 shrink-0 place-items-center rounded-full text-smoke opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover/task:opacity-100"
                           aria-label={`Delete task ${row.task.name}`}
                           title="Delete task"
                         >
@@ -697,7 +697,7 @@ export function ClientProjectPicker({
                           onChange={(e) => setNewTaskName(e.target.value)}
                           placeholder="New task name…"
                           aria-label="New task name"
-                          className="h-10 flex-1 scroll-mt-24 rounded border border-border bg-background px-2 text-sm focus:border-primary focus:outline-none sm:h-7 sm:text-xs"
+                          className="h-10 flex-1 scroll-mt-24 rounded-md border border-stone bg-eggshell px-2 text-sm focus:border-primary focus:outline-none sm:h-7 sm:text-xs"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter')
                               handleCreateTask(row.project.id)
@@ -720,7 +720,7 @@ export function ClientProjectPicker({
                             e.preventDefault()
                             handleCreateTask(row.project.id)
                           }}
-                          className="grid size-7 place-items-center rounded text-primary hover:bg-primary/10 disabled:opacity-40"
+                          className="grid size-7 place-items-center rounded-full text-primary hover:bg-primary/10 disabled:opacity-40"
                           aria-label="Create task"
                         >
                           <ChevronRight className="size-3.5" />
@@ -733,7 +733,7 @@ export function ClientProjectPicker({
               })
             )}
             {truncated && (
-              <p className="px-3 py-2 text-xs text-muted-foreground">
+              <p className="px-3 py-2 text-xs text-smoke">
                 Showing first {MAX_VISIBLE_PROJECTS} — type to narrow results.
               </p>
             )}

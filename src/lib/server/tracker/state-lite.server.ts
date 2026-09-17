@@ -213,6 +213,8 @@ export async function getTrackerStateLite(
           ? access.workspace.googleSheetSyncedAt.toISOString()
           : null,
       locationTrackingEnabled: access.workspace.locationTrackingEnabled,
+      expectedDailyHours: Number(access.workspace.expectedDailyHours),
+      payrollCutoffDays: access.workspace.payrollCutoffDays,
     },
     currentMemberId: memberId,
     roles: rolesRows.map((role) => ({

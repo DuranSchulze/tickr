@@ -56,14 +56,14 @@ export function CatalogSearchBar({
 
   return (
     <div className="relative">
-      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+      <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-smoke" />
       <input
         type="text"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-9 w-full rounded-md border border-stone bg-eggshell pl-9 pr-9 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30"
       />
       {inputValue && (
         <button
@@ -72,7 +72,7 @@ export function CatalogSearchBar({
             setInputValue('')
             onChange('')
           }}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-foreground"
         >
           <X className="size-3.5" />
         </button>
@@ -171,7 +171,7 @@ export function CatalogFilterBar({
     <div className="flex flex-wrap items-center gap-3 w-full">
       {/* Search box */}
       <div className="relative w-full max-w-xs">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-smoke" />
         <input
           type="text"
           value={searchValue}
@@ -183,13 +183,13 @@ export function CatalogFilterBar({
           }}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-9 w-full rounded-md border border-stone bg-eggshell pl-9 pr-9 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         {searchValue && (
           <button
             type="button"
             onClick={() => setDraft((d) => ({ ...d, [searchKey]: '' }))}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-foreground"
             aria-label="Clear search text"
           >
             <X className="size-3.5" />
@@ -214,7 +214,7 @@ export function CatalogFilterBar({
               f.searchPlaceholder ?? `Search ${f.label.toLowerCase()}…`
             }
             emptyText={f.emptyText ?? `No ${f.label.toLowerCase()} found.`}
-            className="h-9 w-auto min-w-40 rounded-lg"
+            className="h-9 w-auto min-w-40 rounded-md"
             contentClassName="z-[60]"
           />
         ) : (
@@ -225,7 +225,7 @@ export function CatalogFilterBar({
               setDraft((d) => ({ ...d, [f.key]: e.target.value }))
             }
             aria-label={f.label}
-            className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {f.options.map((o) => (
               <option key={o.value} value={o.value}>
@@ -240,19 +240,17 @@ export function CatalogFilterBar({
       <button
         type="button"
         onClick={apply}
-        className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+        className="inline-flex h-9 items-center gap-2 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors"
       >
         <Search className="size-4" />
         Search
-        {isDirty && (
-          <span className="size-1.5 rounded-full bg-primary-foreground/80" />
-        )}
+        {isDirty && <span className="size-1.5 rounded-full bg-primary/80" />}
       </button>
       {(hasActiveFilters || isDirty) && (
         <button
           type="button"
           onClick={clear}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-stone bg-eggshell px-3 text-sm font-medium text-smoke transition-colors hover:bg-accent hover:text-foreground"
         >
           <X className="size-4" />
           Clear
@@ -284,8 +282,8 @@ function SelectionCheckbox({
       }}
       className={`grid size-5 place-items-center rounded border transition-colors ${
         checked
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-background hover:border-primary/50'
+          ? 'border-primary-action bg-primary-action text-primary-action-foreground'
+          : 'border-stone bg-eggshell hover:border-primary/50'
       }`}
     >
       {checked && <Check className="size-3" />}
@@ -307,14 +305,14 @@ const DEFAULT_BULK_ACTIONS: CatalogBulkAction[] = [
     value: 'activate',
     label: 'Activate',
     icon: <Check className="size-4 text-emerald-500" />,
-    className: 'border-border bg-background text-foreground hover:bg-accent',
+    className: 'border-stone bg-eggshell text-foreground hover:bg-accent',
   },
   {
     value: 'archive',
     label: 'Archive',
     icon: <X className="size-4" />,
     className:
-      'border-destructive/40 bg-background text-destructive hover:bg-destructive/10',
+      'border-destructive/40 bg-eggshell text-destructive hover:bg-destructive/10',
   },
 ]
 
@@ -460,7 +458,7 @@ export function CatalogTablePage<TData>({
       <header>
         <Link
           to={backHref}
-          className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="mb-3 inline-flex items-center gap-1.5 text-sm font-medium text-smoke hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" />
           Catalogs
@@ -470,9 +468,7 @@ export function CatalogTablePage<TData>({
             <h1 className="m-0 text-2xl font-bold tracking-tight text-foreground">
               {title}
             </h1>
-            <p className="m-0 mt-1 text-sm text-muted-foreground">
-              {description}
-            </p>
+            <p className="m-0 mt-1 text-sm text-smoke">{description}</p>
           </div>
           {(headerActions || (canManage && onCreate)) && (
             <div className="flex items-center gap-2">
@@ -481,7 +477,7 @@ export function CatalogTablePage<TData>({
                 <button
                   type="button"
                   onClick={onCreate}
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary-action px-4 py-2 text-sm font-bold text-primary-action-foreground transition-colors"
                 >
                   <Plus className="size-4" />
                   {createLabel}
@@ -493,10 +489,10 @@ export function CatalogTablePage<TData>({
       </header>
 
       {/* Card */}
-      <div className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
+      <div className="min-w-0 rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
         {/* Toolbar */}
         {toolbar && (
-          <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 border-b border-stone px-4 py-3">
             {toolbar}
           </div>
         )}
@@ -530,7 +526,7 @@ export function CatalogTablePage<TData>({
               <TableRow>
                 <TableCell
                   colSpan={allColumns.length}
-                  className="py-10 text-center text-sm text-muted-foreground"
+                  className="py-10 text-center text-sm text-smoke"
                 >
                   {emptyMessage}
                 </TableCell>
@@ -541,7 +537,7 @@ export function CatalogTablePage<TData>({
                   key={row.id}
                   className={
                     getRowId && selectedIds.has(getRowId(row.original))
-                      ? 'bg-primary/5'
+                      ? 'bg-warm-taupe'
                       : undefined
                   }
                 >
@@ -561,8 +557,8 @@ export function CatalogTablePage<TData>({
 
         {/* Footer: count + pagination */}
         {totalCount > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-3">
-            <p className="text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone px-4 py-3">
+            <p className="text-xs text-smoke">
               {start}–{end} of {totalCount}
             </p>
             {totalPages > 1 && (
@@ -600,7 +596,7 @@ export function CatalogTablePage<TData>({
                     if (Math.abs(i - page) === 2) {
                       return (
                         <PaginationItem key={i}>
-                          <span className="px-2 text-muted-foreground">…</span>
+                          <span className="px-2 text-smoke">…</span>
                         </PaginationItem>
                       )
                     }
@@ -628,18 +624,18 @@ export function CatalogTablePage<TData>({
 
       {/* Bulk action bar */}
       {canManage && onBulkAction && selectionCount > 0 && (
-        <div className="sticky bottom-6 z-30 mx-auto flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-3 shadow-lg backdrop-blur-sm">
+        <div className="sticky bottom-6 z-30 mx-auto flex items-center gap-4 rounded-xl border border-stone bg-eggshell px-5 py-3 shadow-[var(--shadow-whisper)] backdrop-blur-sm">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">
             {selectionCount} selected
           </p>
-          <div className="h-5 w-px bg-border" />
+          <div className="h-5 w-px bg-stone" />
           {bulkActions.map((action) => (
             <button
               key={action.value}
               type="button"
               onClick={() => handleBulk(action.value)}
               disabled={bulkPending}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${action.className ?? 'border-border bg-background text-foreground hover:bg-accent'}`}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${action.className ?? 'border-stone bg-eggshell text-foreground hover:bg-accent'}`}
             >
               {action.icon}
               {action.label}
@@ -649,7 +645,7 @@ export function CatalogTablePage<TData>({
             type="button"
             onClick={clearSelection}
             disabled={bulkPending}
-            className="ml-auto text-xs font-semibold text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className="ml-auto text-xs font-semibold text-smoke underline underline-offset-2 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             Clear selection
           </button>

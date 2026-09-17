@@ -58,10 +58,10 @@ function HomePage() {
   const isLoggedIn = !!session?.user
 
   return (
-    <div className="landing-page relative isolate min-h-screen overflow-clip bg-background text-foreground">
+    <div className="landing-page relative isolate min-h-screen overflow-clip bg-eggshell text-foreground">
       <a
         href="#main-content"
-        className="fixed left-4 top-3 z-50 -translate-y-20 border border-primary bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-transform focus:translate-y-0"
+        className="fixed left-4 top-3 z-50 -translate-y-20 rounded-full bg-primary-action px-4 py-2 text-sm font-bold text-primary-action-foreground transition-transform focus:translate-y-0"
       >
         Skip to content
       </a>

@@ -96,7 +96,7 @@ export function MembersFilterBar({
 
   return (
     <form
-      className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3"
+      className="flex flex-wrap items-center gap-2 border-b border-stone px-4 py-3"
       onSubmit={(e) => {
         e.preventDefault()
         commit()
@@ -104,7 +104,7 @@ export function MembersFilterBar({
     >
       <div className="min-w-[180px] flex-1 max-w-xs">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-smoke" />
           <input
             ref={searchInputRef}
             type="text"
@@ -112,7 +112,7 @@ export function MembersFilterBar({
             onChange={(e) => updateStaged({ search: e.target.value })}
             placeholder="Search by name or email…"
             aria-label="Search by name or email"
-            className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 w-full rounded-xl border border-stone bg-eggshell pl-9 pr-9 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {staged.search && (
             <button
@@ -121,7 +121,7 @@ export function MembersFilterBar({
                 updateStaged({ search: '' })
                 searchInputRef.current?.focus()
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-smoke hover:text-foreground"
               aria-label="Clear search text"
             >
               <X className="size-3.5" />
@@ -133,7 +133,7 @@ export function MembersFilterBar({
       <select
         value={staged.role}
         onChange={(e) => updateStaged({ role: e.target.value })}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-9 min-w-[120px] rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All roles</option>
         {state.roles.map((r) => (
@@ -146,7 +146,7 @@ export function MembersFilterBar({
       <select
         value={staged.dept}
         onChange={(e) => updateStaged({ dept: e.target.value })}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-9 min-w-[120px] rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All departments</option>
         {state.departments.map((d) => (
@@ -159,7 +159,7 @@ export function MembersFilterBar({
       <select
         value={staged.cohort}
         onChange={(e) => updateStaged({ cohort: e.target.value })}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-9 min-w-[120px] rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All cohorts</option>
         {cohortFilterOptions.map((cohort) => (
@@ -172,7 +172,7 @@ export function MembersFilterBar({
       <select
         value={staged.status}
         onChange={(e) => updateStaged({ status: e.target.value })}
-        className="h-9 min-w-[120px] rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="h-9 min-w-[120px] rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
       >
         <option value="">All statuses</option>
         <option value="ACTIVE">Active</option>
@@ -189,7 +189,7 @@ export function MembersFilterBar({
         <button
           type="button"
           onClick={handleClear}
-          className="h-9 rounded-lg border border-border px-3 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="h-9 rounded-xl border border-stone px-3 text-sm text-smoke hover:bg-accent hover:text-foreground"
         >
           Clear
         </button>

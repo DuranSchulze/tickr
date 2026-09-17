@@ -261,21 +261,21 @@ export function ClientsTablePage({
             label: 'Activate',
             icon: <Check className="size-4 text-emerald-500" />,
             className:
-              'border-border bg-background text-foreground hover:bg-accent',
+              'border-stone bg-eggshell text-foreground hover:bg-accent',
           },
           {
             value: 'suspend',
             label: 'Suspend',
             icon: <PauseCircle className="size-4" />,
             className:
-              'border-amber-500/40 bg-background text-amber-700 hover:bg-amber-500/10',
+              'border-amber-500/40 bg-eggshell text-amber-700 hover:bg-amber-500/10',
           },
           {
             value: 'archive',
             label: 'Inactive',
             icon: <X className="size-4" />,
             className:
-              'border-destructive/40 bg-background text-destructive hover:bg-destructive/10',
+              'border-destructive/40 bg-eggshell text-destructive hover:bg-destructive/10',
           },
         ]}
         onBulkAction={async (action, ids) => {

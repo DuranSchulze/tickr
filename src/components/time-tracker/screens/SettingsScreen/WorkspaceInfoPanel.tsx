@@ -38,7 +38,7 @@ export function WorkspaceInfoPanel({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
       {editing ? (
         <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-xs font-semibold text-foreground">
@@ -47,7 +47,7 @@ export function WorkspaceInfoPanel({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+              className="h-9 rounded-lg border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
             />
           </label>
           <label className="grid gap-1.5 text-xs font-semibold text-foreground">
@@ -55,14 +55,14 @@ export function WorkspaceInfoPanel({
             <TimezoneSelect
               value={timezone}
               onChange={setTimezone}
-              className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+              className="h-9 rounded-lg border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
             />
           </label>
           <div className="flex gap-2 sm:col-span-2">
             <button
               type="submit"
               disabled={pending}
-              className="h-9 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+              className="h-9 rounded-lg bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors disabled:bg-muted disabled:text-smoke"
             >
               {pending ? 'Saving…' : 'Save'}
             </button>
@@ -73,7 +73,7 @@ export function WorkspaceInfoPanel({
                 setName(workspace.name)
                 setTimezone(workspace.timezone)
               }}
-              className="h-9 rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-accent"
+              className="h-9 rounded-lg border border-stone px-4 text-sm font-semibold text-foreground hover:bg-accent"
             >
               Cancel
             </button>
@@ -93,7 +93,7 @@ export function WorkspaceInfoPanel({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-stone px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
             >
               <Pencil className="size-3.5" />
               Edit settings

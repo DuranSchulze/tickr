@@ -23,7 +23,7 @@ function PricingPage() {
   const { session } = Route.useLoaderData()
   const isLoggedIn = !!session?.user
   return (
-    <div className="landing-page min-h-screen bg-background text-foreground">
+    <div className="landing-page min-h-screen bg-eggshell text-foreground">
       <MarketingNavbar session={session} />
       <main>
         <PricingPreview isLoggedIn={isLoggedIn} />

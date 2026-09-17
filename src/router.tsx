@@ -18,15 +18,15 @@ installPreloadErrorRecovery()
 // oxlint-disable-next-line react/only-export-components
 function DefaultNotFoundComponent() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-eggshell p-4 text-center text-foreground">
       <div className="space-y-2">
-        <h1 className="text-6xl font-bold text-primary">404</h1>
-        <h2 className="text-2xl font-semibold">Page Not Found</h2>
-        <p className="text-muted-foreground">
+        <h1 className="font-display text-display text-foreground">404</h1>
+        <h2 className="text-2xl text-foreground">Page Not Found</h2>
+        <p className="text-smoke">
           The page you're looking for doesn't exist or has been moved.
         </p>
       </div>
-      <Button asChild>
+      <Button asChild variant="outline">
         <Link to="/app/time-tracker">Go to {BRAND.name}</Link>
       </Button>
     </div>
@@ -37,7 +37,7 @@ function DefaultNotFoundComponent() {
 function DefaultPendingComponent() {
   return (
     <div className="flex min-h-[200px] items-center justify-center">
-      <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <Loader2 className="size-6 animate-spin text-smoke" />
     </div>
   )
 }

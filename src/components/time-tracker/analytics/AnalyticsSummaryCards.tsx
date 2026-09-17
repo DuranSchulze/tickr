@@ -54,22 +54,22 @@ export function AnalyticsSummaryCards({
         return (
           <section
             key={card.label}
-            className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-4 shadow-sm"
+            className="flex min-w-0 flex-col rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
                   {card.label}
                 </p>
-                <p className="m-0 mt-2 break-words text-xl font-black tracking-tight text-foreground sm:text-2xl">
+                <p className="m-0 mt-2 break-words text-xl font-black text-foreground sm:text-2xl">
                   {card.value}
                 </p>
               </div>
-              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:size-9">
+              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-9">
                 <Icon className="size-4" />
               </span>
             </div>
-            <p className="m-0 mt-3 text-sm font-medium text-muted-foreground">
+            <p className="m-0 mt-3 text-sm font-medium text-smoke">
               {card.helper}
             </p>
           </section>

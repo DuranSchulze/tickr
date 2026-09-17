@@ -138,14 +138,14 @@ export function CatalogsScreen({
       eyebrow={canManage ? 'Controlled tagging' : 'Read-only access'}
     >
       {canImport && state.workspace.googleSheetUrl && (
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-sm">
-          <p className="m-0 flex-1 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 rounded-xl border border-stone bg-eggshell px-4 py-3 shadow-[var(--shadow-whisper)]">
+          <p className="m-0 flex-1 text-sm text-smoke">
             Sync clients, projects, and tags from your linked Google Sheet.
           </p>
           <button
             type="button"
             onClick={handleImport}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-action px-3 py-1.5 text-sm font-bold text-primary-action-foreground transition-colors"
           >
             <Download className="size-3.5" />
             Import from Sheet

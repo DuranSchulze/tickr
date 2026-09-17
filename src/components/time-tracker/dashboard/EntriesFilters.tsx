@@ -26,13 +26,13 @@ export function EntriesFilters({
   setSortKey: (v: SortKey) => void
 }) {
   return (
-    <div className="mt-3 grid min-w-0 gap-3 rounded-lg border border-border bg-muted p-3 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-muted-foreground">
+    <div className="mt-3 grid min-w-0 gap-3 rounded-xl border border-stone bg-warm-taupe p-3 sm:grid-cols-2 lg:grid-cols-4">
+      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
         Project
         <select
           value={filterProject}
           onChange={(e) => setFilterProject(e.target.value)}
-          className="h-8 min-w-0 rounded border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary"
+          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">All projects</option>
           {projects.map((p) => (
@@ -42,12 +42,12 @@ export function EntriesFilters({
           ))}
         </select>
       </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-muted-foreground">
+      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
         Tag
         <select
           value={filterTag}
           onChange={(e) => setFilterTag(e.target.value)}
-          className="h-8 min-w-0 rounded border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary"
+          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">All tags</option>
           {tags.map((t) => (
@@ -57,19 +57,19 @@ export function EntriesFilters({
           ))}
         </select>
       </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-muted-foreground">
+      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
         Billable
         <select
           value={filterBillable}
           onChange={(e) => setFilterBillable(e.target.value as BillableFilter)}
-          className="h-8 min-w-0 rounded border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary"
+          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="all">All entries</option>
           <option value="yes">Billable only</option>
           <option value="no">Non-billable only</option>
         </select>
       </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-muted-foreground">
+      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
         <span className="inline-flex items-center gap-1">
           <ArrowDownUp className="size-3" />
           Sort by
@@ -77,7 +77,7 @@ export function EntriesFilters({
         <select
           value={sortKey}
           onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="h-8 min-w-0 rounded border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary"
+          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>

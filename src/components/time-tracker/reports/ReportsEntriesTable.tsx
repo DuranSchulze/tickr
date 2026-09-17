@@ -71,8 +71,8 @@ export function ReportsEntriesTable({
 
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-card p-8 text-center">
-        <p className="m-0 text-sm font-semibold text-muted-foreground">
+      <div className="rounded-xl border border-stone bg-eggshell p-8 text-center">
+        <p className="m-0 text-sm font-semibold text-smoke">
           No entries match your current filters
         </p>
       </div>
@@ -80,9 +80,9 @@ export function ReportsEntriesTable({
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-xl border border-stone bg-eggshell">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone px-4 py-3">
         <p className="m-0 text-sm font-semibold text-foreground">
           {entriesTotal} {entriesTotal === 1 ? 'entry' : 'entries'}
         </p>
@@ -103,33 +103,33 @@ export function ReportsEntriesTable({
       {/* Desktop: table */}
       <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[720px]">
-          <thead className="border-b border-border bg-muted/50">
+          <thead className="border-b border-stone bg-warm-taupe">
             <tr>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Date
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Time
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Member
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Project
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Client
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Description
               </th>
-              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left text-xs font-bold uppercase tracking-wide text-smoke">
                 Tags
               </th>
-              <th className="px-4 py-2.5 text-right text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-right text-xs font-bold uppercase tracking-wide text-smoke">
                 Duration
               </th>
-              <th className="px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-center text-xs font-bold uppercase tracking-wide text-smoke">
                 Billable
               </th>
             </tr>
@@ -138,12 +138,12 @@ export function ReportsEntriesTable({
             {entries.map((entry) => (
               <tr
                 key={entry.id}
-                className="border-b border-border/50 last:border-b-0 hover:bg-muted/30"
+                className="border-b border-stone/50 last:border-b-0 hover:bg-warm-taupe"
               >
                 <td className="px-4 py-2.5 text-sm font-medium text-foreground whitespace-nowrap">
                   {entry.date}
                 </td>
-                <td className="px-4 py-2.5 text-sm text-muted-foreground tabular-nums whitespace-nowrap">
+                <td className="px-4 py-2.5 text-sm text-smoke tabular-nums whitespace-nowrap">
                   {formatTimeRange(entry, timezone)}
                 </td>
                 <td className="px-4 py-2.5 text-sm text-foreground whitespace-nowrap">
@@ -163,7 +163,7 @@ export function ReportsEntriesTable({
                     {entry.description || '—'}
                   </div>
                 </td>
-                <td className="px-4 py-2.5 text-sm text-muted-foreground">
+                <td className="px-4 py-2.5 text-sm text-smoke">
                   {entry.tagNames.join(', ') || '—'}
                 </td>
                 <td className="px-4 py-2.5 text-sm text-foreground text-right tabular-nums whitespace-nowrap">
@@ -175,7 +175,7 @@ export function ReportsEntriesTable({
                       Yes
                     </span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
+                    <span className="text-xs text-smoke">—</span>
                   )}
                 </td>
               </tr>
@@ -186,13 +186,13 @@ export function ReportsEntriesTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone px-4 py-3">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Show</span>
+            <span className="text-xs text-smoke">Show</span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="h-8 rounded border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              className="h-8 rounded border border-stone bg-eggshell px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             >
               {pageSizeOptions.map((s) => (
                 <option key={s} value={s}>
@@ -207,7 +207,7 @@ export function ReportsEntriesTable({
               type="button"
               disabled={page <= 1}
               onClick={() => onPageChange(page - 1)}
-              className="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex h-8 items-center rounded-xl px-2 text-xs font-medium text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Previous
             </button>
@@ -215,7 +215,7 @@ export function ReportsEntriesTable({
               p === 'ellipsis' ? (
                 <span
                   key={`ellipsis-${i}`}
-                  className="inline-flex h-8 w-8 items-center justify-center text-xs text-muted-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center text-xs text-smoke"
                 >
                   ...
                 </span>
@@ -224,10 +224,10 @@ export function ReportsEntriesTable({
                   key={p}
                   type="button"
                   onClick={() => onPageChange(p)}
-                  className={`inline-flex h-8 w-8 items-center justify-center rounded-md text-xs font-medium transition-colors ${
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-xs font-medium transition-colors ${
                     p === page
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                      ? 'bg-primary-action text-primary-action-foreground'
+                      : 'text-smoke hover:bg-accent hover:text-foreground'
                   }`}
                 >
                   {p}
@@ -238,7 +238,7 @@ export function ReportsEntriesTable({
               type="button"
               disabled={page >= totalPages}
               onClick={() => onPageChange(page + 1)}
-              className="inline-flex h-8 items-center rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex h-8 items-center rounded-xl px-2 text-xs font-medium text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Next
             </button>
@@ -259,13 +259,13 @@ function EntryMobileCard({
   formatTime: (seconds: number) => string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-3">
+    <div className="rounded-xl border border-stone bg-eggshell p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <p className="m-0 text-sm font-bold text-foreground line-clamp-2">
             {entry.description || 'Untitled entry'}
           </p>
-          <p className="m-0 mt-1 text-xs text-muted-foreground">
+          <p className="m-0 mt-1 text-xs text-smoke">
             {entry.memberName} · {entry.date} ·{' '}
             {formatTimeRange(entry, timezone)}
           </p>
@@ -283,7 +283,7 @@ function EntryMobileCard({
       </div>
 
       {(entry.projectName || entry.clientName) && (
-        <p className="m-0 mt-2 text-xs text-muted-foreground">
+        <p className="m-0 mt-2 text-xs text-smoke">
           {[entry.clientName, entry.projectName].filter(Boolean).join(' › ')}
         </p>
       )}
@@ -293,7 +293,7 @@ function EntryMobileCard({
           {entry.tagNames.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+              className="inline-flex items-center rounded border border-stone px-1.5 py-0.5 text-[10px] font-medium text-smoke"
             >
               {tag}
             </span>

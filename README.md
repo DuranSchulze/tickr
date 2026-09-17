@@ -16,6 +16,7 @@ Internal time tracking platform for Duran File Pino. Designed for professional s
 - Google Sheets sync — export time entries, members, and catalog data via service account
 - Workspace invites — token-based invitations with role assignment and expiry
 - Theme customization — primary color picker and dark/light mode toggle
+- Editorial design system — warm cream canvas, ink type, pill buttons, whisper elevation; see [`docs/ui-design-system.md`](docs/ui-design-system.md)
 - Employee profiles — profile photo upload, employment details, and government ID storage (SSS, PhilHealth, TIN, Pag-IBIG)
 
 ---

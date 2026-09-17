@@ -1,0 +1,2 @@
+ALTER TABLE "workspaces" ADD COLUMN "expected_daily_hours" numeric(4, 2) DEFAULT '8.00' NOT NULL;--> statement-breakpoint
+ALTER TABLE "workspaces" ADD COLUMN "payroll_cutoff_days" jsonb DEFAULT '[15]'::jsonb NOT NULL;

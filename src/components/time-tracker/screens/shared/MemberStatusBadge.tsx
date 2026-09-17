@@ -7,7 +7,7 @@ export function MemberStatusBadge({ status }: { status: string }) {
   }
   return (
     <span
-      className={`rounded-lg px-2 py-1 text-xs font-bold ${styles[status] ?? 'bg-muted text-foreground'}`}
+      className={`rounded-xl px-2 py-1 text-xs font-bold ${styles[status] ?? 'bg-warm-taupe text-foreground'}`}
     >
       {status}
     </span>

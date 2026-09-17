@@ -12,14 +12,14 @@ const productLinks = [
 
 export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <footer className="border-t border-border bg-muted/25">
+    <footer className="border-t border-stone bg-eggshell">
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.6fr_0.6fr]">
           <div className="max-w-sm">
             <Link to="/" className="inline-flex items-center no-underline">
               <AppLogo size="md" />
             </Link>
-            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+            <p className="mt-4 text-sm leading-6 text-smoke">
               A calm, connected workspace for tracking team time and turning it
               into useful context.
             </p>
@@ -28,7 +28,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-foreground">
               Product
             </p>
-            <ul className="mt-4 grid gap-3 p-0 text-sm text-muted-foreground">
+            <ul className="mt-4 grid gap-3 p-0 text-sm text-smoke">
               {productLinks.map((link) => (
                 <li key={link.href}>
                   <a
@@ -45,7 +45,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-foreground">
               Account
             </p>
-            <ul className="mt-4 grid gap-3 p-0 text-sm text-muted-foreground">
+            <ul className="mt-4 grid gap-3 p-0 text-sm text-smoke">
               <li>
                 <Link
                   to="/auth"
@@ -65,7 +65,7 @@ export function Footer({ isLoggedIn }: { isLoggedIn: boolean }) {
             </ul>
           </nav>
         </div>
-        <div className="mt-12 flex flex-col gap-3 border-t border-border pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-stone pt-6 text-xs text-smoke sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} {BRAND.name}. All rights reserved.
           </p>

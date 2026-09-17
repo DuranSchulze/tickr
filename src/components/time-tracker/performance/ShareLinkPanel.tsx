@@ -72,14 +72,14 @@ export function ShareLinkPanel({
   } = useShareLogic({ token, onTokenChange })
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
       <div className="mb-4 flex items-start gap-3">
         <Link2 className="mt-0.5 size-5 shrink-0 text-primary" />
         <div>
-          <h2 className="m-0 font-heading text-base font-black tracking-tight text-foreground">
+          <h2 className="m-0 font-heading text-base font-black text-foreground">
             Public share link
           </h2>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             Share your performance summary with anyone. No login required. The
             link shows your heatmap, grade, and top projects only.
           </p>
@@ -88,7 +88,7 @@ export function ShareLinkPanel({
 
       {shareUrl ? (
         <div className="space-y-3">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+          <div className="flex items-center gap-2 rounded-xl border border-stone bg-eggshell px-3 py-2">
             <span className="min-w-0 flex-1 truncate text-sm font-mono text-foreground">
               {shareUrl}
             </span>
@@ -96,7 +96,7 @@ export function ShareLinkPanel({
               type="button"
               onClick={handleCopy}
               title="Copy link"
-              className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="shrink-0 rounded-xl p-1.5 text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               {copied ? (
                 <Check className="size-4 text-green-500" />
@@ -109,7 +109,7 @@ export function ShareLinkPanel({
               target="_blank"
               rel="noreferrer"
               title="Open link"
-              className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="shrink-0 rounded-xl p-1.5 text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               <ExternalLink className="size-4" />
             </a>
@@ -119,7 +119,7 @@ export function ShareLinkPanel({
               type="button"
               onClick={handleGenerate}
               disabled={!!pending}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending === 'generate' ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -132,7 +132,7 @@ export function ShareLinkPanel({
               type="button"
               onClick={handleRevoke}
               disabled={!!pending}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 bg-background px-3 py-2 text-sm font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-destructive/40 bg-eggshell px-3 py-2 text-sm font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending === 'revoke' ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -148,7 +148,7 @@ export function ShareLinkPanel({
           type="button"
           onClick={handleGenerate}
           disabled={!!pending}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full bg-primary-action px-4 py-2.5 text-sm font-bold text-primary-action-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending === 'generate' ? (
             <Loader2 className="size-4 animate-spin" />
@@ -188,7 +188,7 @@ export function ShareButtonCompact({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         title="Share performance"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="inline-flex items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 py-1.5 text-xs font-bold text-smoke transition-colors hover:bg-accent hover:text-foreground"
       >
         <Share2 className="size-3.5" />
         Share
@@ -204,12 +204,12 @@ export function ShareButtonCompact({
             onClick={() => setOpen(false)}
             aria-label="Close"
           />
-          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-border bg-card p-4 shadow-lg">
+          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
             {/* Close button */}
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="absolute right-2 top-2 rounded-xl p-1 text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="size-3.5" />
             </button>
@@ -220,7 +220,7 @@ export function ShareButtonCompact({
                 <p className="m-0 text-sm font-bold text-foreground">
                   Share performance
                 </p>
-                <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                <p className="m-0 mt-0.5 text-xs text-smoke">
                   Anyone with the link can view your heatmap, grade &amp; top
                   projects.
                 </p>
@@ -229,7 +229,7 @@ export function ShareButtonCompact({
 
             {shareUrl ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1.5">
+                <div className="flex items-center gap-1.5 rounded-xl border border-stone bg-eggshell px-2 py-1.5">
                   <span className="min-w-0 flex-1 truncate text-xs font-mono text-foreground">
                     {shareUrl}
                   </span>
@@ -237,7 +237,7 @@ export function ShareButtonCompact({
                     type="button"
                     onClick={handleCopy}
                     title="Copy link"
-                    className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="shrink-0 rounded p-1 text-smoke transition-colors hover:bg-accent hover:text-foreground"
                   >
                     {copied ? (
                       <Check className="size-3.5 text-green-500" />
@@ -250,7 +250,7 @@ export function ShareButtonCompact({
                     target="_blank"
                     rel="noreferrer"
                     title="Open link"
-                    className="shrink-0 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                    className="shrink-0 rounded p-1 text-smoke transition-colors hover:bg-accent hover:text-foreground"
                   >
                     <ExternalLink className="size-3.5" />
                   </a>
@@ -260,7 +260,7 @@ export function ShareButtonCompact({
                     type="button"
                     onClick={handleGenerate}
                     disabled={!!pending}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-1.5 text-xs font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-full border border-stone bg-eggshell px-2 py-1.5 text-xs font-bold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {pending === 'generate' ? (
                       <Loader2 className="size-3 animate-spin" />
@@ -273,7 +273,7 @@ export function ShareButtonCompact({
                     type="button"
                     onClick={handleRevoke}
                     disabled={!!pending}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-md border border-destructive/40 bg-background px-2 py-1.5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-destructive/40 bg-eggshell px-2 py-1.5 text-xs font-bold text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {pending === 'revoke' ? (
                       <Loader2 className="size-3 animate-spin" />
@@ -289,7 +289,7 @@ export function ShareButtonCompact({
                 type="button"
                 onClick={handleGenerate}
                 disabled={!!pending}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary-action px-3 py-2 text-xs font-bold text-primary-action-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {pending === 'generate' ? (
                   <Loader2 className="size-3.5 animate-spin" />

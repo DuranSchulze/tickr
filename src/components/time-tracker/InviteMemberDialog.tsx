@@ -123,10 +123,10 @@ export function InviteMemberDialog({
               placeholder="employee@company.com&#10;colleague@company.com&#10;another@company.com"
               rows={3}
               required
-              className="h-20 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary resize-none"
+              className="h-20 rounded-lg border border-stone bg-eggshell px-3 py-2 text-sm text-foreground outline-none focus:border-primary resize-none"
             />
             {emailCount > 0 && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-smoke">
                 {emailCount} email{emailCount > 1 ? 's' : ''} detected
               </span>
             )}
@@ -140,7 +140,7 @@ export function InviteMemberDialog({
                 value={workspaceRoleId}
                 onChange={(e) => setWorkspaceRoleId(e.target.value)}
                 required
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                className="h-10 w-full rounded-lg border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
               >
                 {roles.map((role) => (
                   <option key={role.id} value={role.id}>
@@ -154,7 +154,7 @@ export function InviteMemberDialog({
               <select
                 value={departmentId}
                 onChange={(e) => setDepartmentId(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                className="h-10 w-full rounded-lg border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
               >
                 <option value="">Unassigned</option>
                 {departments.map((department) => (

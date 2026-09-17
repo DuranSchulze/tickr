@@ -17,7 +17,7 @@ export function MemberAnalyticsRow({
   state: TrackerState
 }) {
   return (
-    <TableRow className="border-t border-border bg-muted/40">
+    <TableRow className="border-t border-stone bg-muted/40">
       <TableCell colSpan={columnCount} className="px-5 pb-5 pt-3">
         <p className="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-primary">
           Analytics - {member.name}
@@ -45,9 +45,9 @@ export function MemberAnalyticsRow({
           ].map((chip) => (
             <div
               key={chip.label}
-              className="rounded-lg border border-border bg-card px-3 py-2.5"
+              className="rounded-lg border border-stone bg-eggshell px-3 py-2.5"
             >
-              <p className="m-0 text-xs text-muted-foreground">{chip.label}</p>
+              <p className="m-0 text-xs text-smoke">{chip.label}</p>
               <p className="m-0 mt-0.5 text-lg font-bold text-foreground">
                 {chip.value}
               </p>
@@ -57,7 +57,7 @@ export function MemberAnalyticsRow({
 
         {stats && stats.topProjects.length > 0 ? (
           <div>
-            <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-smoke">
               Top projects
             </p>
             <div className="grid gap-2">
@@ -82,10 +82,10 @@ export function MemberAnalyticsRow({
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="w-14 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                    <span className="w-14 shrink-0 text-right text-xs tabular-nums text-smoke">
                       {formatHours(seconds)}
                     </span>
-                    <span className="w-8 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+                    <span className="w-8 shrink-0 text-right text-xs tabular-nums text-smoke">
                       {pct}%
                     </span>
                   </div>
@@ -94,9 +94,7 @@ export function MemberAnalyticsRow({
             </div>
           </div>
         ) : (
-          <p className="m-0 text-sm text-muted-foreground">
-            No tracked entries yet.
-          </p>
+          <p className="m-0 text-sm text-smoke">No tracked entries yet.</p>
         )}
       </TableCell>
     </TableRow>

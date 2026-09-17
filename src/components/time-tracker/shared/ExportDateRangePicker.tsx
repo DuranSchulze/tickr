@@ -133,21 +133,21 @@ export function ExportDateRangePicker({
 
   return (
     <div className="grid gap-3">
-      <div className="grid grid-cols-3 rounded-lg border border-border bg-background p-1">
+      <div className="grid grid-cols-3 rounded-full border border-stone bg-eggshell p-1">
         {presets.map((preset) => (
           <button
             key={preset.kind}
             type="button"
             onClick={() => applyPreset(preset.kind)}
-            className="h-8 rounded-md px-2 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="h-8 rounded-xl px-2 text-xs font-bold text-smoke transition-colors hover:bg-accent hover:text-foreground"
           >
             {preset.label}
           </button>
         ))}
       </div>
 
-      <div className="rounded-lg border border-border bg-background">
-        <div className="flex items-center gap-2 border-b border-border px-3 py-2 text-sm font-bold text-foreground">
+      <div className="rounded-xl border border-stone bg-eggshell">
+        <div className="flex items-center gap-2 border-b border-stone px-3 py-2 text-sm font-bold text-foreground">
           <CalendarDays className="size-4 text-primary" />
           <span className="min-w-0 truncate">{label}</span>
         </div>
@@ -159,7 +159,7 @@ export function ExportDateRangePicker({
           numberOfMonths={isDesktop ? 2 : 1}
           defaultMonth={draft?.from ?? selected?.from}
           disabled={{ after: today }}
-          className="w-full bg-card p-3 [--cell-size:--spacing(10)]"
+          className="w-full bg-eggshell p-3 [--cell-size:--spacing(10)]"
           classNames={{
             root: 'w-full',
             months: 'relative flex flex-col gap-4 sm:flex-row',
@@ -167,7 +167,7 @@ export function ExportDateRangePicker({
             day: 'group/day relative aspect-square size-full rounded-(--cell-radius) p-0 text-center select-none',
           }}
         />
-        <div className="flex items-center gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 border-t border-stone px-3 py-2 text-xs text-smoke">
           <Check className="size-3.5 text-primary" />
           Tap a start date, then an end date to apply.
         </div>

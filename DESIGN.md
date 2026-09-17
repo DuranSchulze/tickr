@@ -1,598 +1,475 @@
-# Trackly Design System
-
-> Design tokens, component conventions, layout structure, and visual language for Trackly (formerly Tickr / Time Tracker).
-
-## The Look: Feel & Idea
-
-The UI is built on **layered neutrals instead of lines**. Surfaces separate by tone, not by borders:
-
-- **Off-white canvas, white surfaces.** The page background (`--background`) is white with a whisper of black (`oklch(0.972 …)`). Cards and the app chrome (navbar, sidebar) stay pure white — so content cards and navigation visibly _lift_ off the canvas without a single divider line.
-- **Borderless chrome.** The navbar and sidebar have no borders and no translucency — they are clean white panels that flow as one, and the slightly darker content canvas behind them does the separation.
-- **Tints over strokes.** Grouping and selection are expressed with background tints — `bg-muted` for neutral hover/resting states, `bg-primary/10` for accent identity (workspace block, active sub-nav). Hairlines (`border-border/70`, `border-primary/15`) appear only _inside_ components where structure needs it, never as chrome outlines.
-- **Sharp corners, deliberately.** `--radius: 0` is an intentional design decision — the whole UI is square-cornered. `rounded-*` classes remain in markup as semantic hooks but render sharp (except `rounded-full` pills/dots and the `+4px` `--radius-xl`).
-- **Accent with restraint.** The primary color marks identity and state — the solid active nav item, the workspace block tint, key numbers — and stays out of the way everywhere else. Quiet grays do the daily work.
-
----
-
-## Table of Contents
-
-1. [Color System](#1-color-system)
-2. [Typography](#2-typography)
-3. [Spacing & Layout](#3-spacing--layout)
-4. [Border Radius](#4-border-radius)
-5. [Shadows](#5-shadows)
-6. [Component Library](#6-component-library)
-7. [Layout Architecture](#7-layout-architecture)
-8. [Icons](#8-icons)
-9. [Charts](#9-charts)
-10. [Print Styles](#10-print-styles)
-11. [Animation](#11-animation)
-12. [Responsive Breakpoints](#12-responsive-breakpoints)
-13. [Interactive States](#13-interactive-states)
-14. [Utility Classes](#14-utility-classes)
-15. [File Organization](#15-file-organization)
-
----
-
-## 1. Color System
-
-### 1.1 Core Palette (CSS Custom Properties)
-
-All colors are defined in `oklch()` color space for perceptual uniformity. Declared in `src/styles.css` at `:root` and overridden in `.dark`.
-
-#### Light mode (`:root`)
-
-| Token                      | Value                        | Purpose                                                                  |
-| -------------------------- | ---------------------------- | ------------------------------------------------------------------------ |
-| `--background`             | `oklch(0.972 0.002 17.2)`    | Page canvas — off-white ("white + a little black") so white surfaces pop |
-| `--foreground`             | `oklch(0.147 0.004 49.3)`    | Primary text                                                             |
-| `--card`                   | `oklch(1 0 0)`               | Card/surface/chrome background (pure white)                              |
-| `--card-foreground`        | `oklch(0.147 0.004 49.3)`    | Card text                                                                |
-| `--popover`                | `oklch(1 0 0)`               | Dropdown/modal background                                                |
-| `--popover-foreground`     | `oklch(0.147 0.004 49.3)`    | Popover text                                                             |
-| `--primary`                | `oklch(0.496 0.265 301.924)` | Accent / CTA (default violet)                                            |
-| `--primary-foreground`     | `oklch(0.977 0.014 308.299)` | Text on primary                                                          |
-| `--secondary`              | `oklch(0.967 0.001 286.375)` | Secondary surfaces                                                       |
-| `--secondary-foreground`   | `oklch(0.21 0.006 285.885)`  | Text on secondary                                                        |
-| `--muted`                  | `oklch(0.96 0.002 17.2)`     | Subtle background                                                        |
-| `--muted-foreground`       | `oklch(0.547 0.021 43.1)`    | Secondary/helper text                                                    |
-| `--accent`                 | `oklch(0.496 0.265 301.924)` | Interactive hover/selected                                               |
-| `--accent-foreground`      | `oklch(0.977 0.014 308.299)` | Text on accent                                                           |
-| `--destructive`            | `oklch(0.577 0.245 27.325)`  | Error/danger actions                                                     |
-| `--destructive-foreground` | `oklch(0.99 0 0)`            | Text on destructive                                                      |
-| `--border`                 | `oklch(0.922 0.005 34.3)`    | Dividers, borders                                                        |
-| `--input`                  | `oklch(0.922 0.005 34.3)`    | Form field borders                                                       |
-| `--ring`                   | `oklch(0.714 0.014 41.2)`    | Focus ring                                                               |
-| `--radius`                 | `0`                          | Global border radius base                                                |
-
-#### Dark mode (`.dark`)
-
-| Token                    | Value                        |
-| ------------------------ | ---------------------------- |
-| `--background`           | `oklch(0.225 0.018 255)`     |
-| `--foreground`           | `oklch(0.94 0.008 255)`      |
-| `--card`                 | `oklch(0.275 0.02 255)`      |
-| `--card-foreground`      | `oklch(0.94 0.008 255)`      |
-| `--popover`              | `oklch(0.29 0.021 255)`      |
-| `--popover-foreground`   | `oklch(0.94 0.008 255)`      |
-| `--primary`              | `oklch(0.438 0.218 303.724)` |
-| `--primary-foreground`   | `oklch(0.977 0.014 308.299)` |
-| `--secondary`            | `oklch(0.325 0.022 255)`     |
-| `--secondary-foreground` | `oklch(0.94 0.008 255)`      |
-| `--muted`                | `oklch(0.315 0.02 255)`      |
-| `--muted-foreground`     | `oklch(0.75 0.018 255)`      |
-| `--accent`               | `oklch(0.438 0.218 303.724)` |
-| `--accent-foreground`    | `oklch(0.977 0.014 308.299)` |
-| `--destructive`          | `oklch(0.704 0.191 22.216)`  |
-| `--border`               | `oklch(0.4 0.025 255)`       |
-| `--input`                | `oklch(0.43 0.026 255)`      |
-| `--ring`                 | `oklch(0.68 0.04 255)`       |
-
-Dark mode keeps the same layering idea: the canvas (`0.225`) sits below cards and chrome (`0.275`), so surfaces separate by tone without borders.
-
-#### Dark mode no-change tokens
-
-Chart colors (`--chart-1` through `--chart-5`) are identical between light and dark modes.
-
-### 1.2 Sidebar Tokens
-
-The sidebar surface is pure white in light mode — it shares the card token's value so navbar, sidebar, and content cards read as one white chrome family against the off-white canvas.
-
-| Token                          | Light                        | Dark                         |
-| ------------------------------ | ---------------------------- | ---------------------------- |
-| `--sidebar`                    | `oklch(1 0 0)`               | `oklch(0.255 0.02 255)`      |
-| `--sidebar-foreground`         | `oklch(0.147 0.004 49.3)`    | `oklch(0.94 0.008 255)`      |
-| `--sidebar-primary`            | `oklch(0.558 0.288 302.321)` | `oklch(0.627 0.265 303.9)`   |
-| `--sidebar-primary-foreground` | `oklch(0.977 0.014 308.299)` | `oklch(0.977 0.014 308.299)` |
-| `--sidebar-accent`             | `oklch(0.96 0.002 17.2)`     | `oklch(0.32 0.022 255)`      |
-| `--sidebar-accent-foreground`  | `oklch(0.214 0.009 43.1)`    | `oklch(0.94 0.008 255)`      |
-| `--sidebar-border`             | `oklch(0.922 0.005 34.3)`    | `oklch(0.39 0.024 255)`      |
-| `--sidebar-ring`               | `oklch(0.714 0.014 41.2)`    | `oklch(0.68 0.04 255)`       |
-
-### 1.3 Chart Colors
+# ElevenLabs — Style Reference
+
+> Warm cream editorial with whispered headlines. A Bauhaus studio notebook — eggshell paper, black ink, a single violet and orange spark for product moments.
+
+**Theme:** light
+
+ElevenLabs runs on a warm-white minimalism: an off-white eggshell canvas (#fdfcfc) holding black type and a single layer of warm taupe surfaces (#f5f3f1). The brand voice is quiet and confident — whisper-weight Waldenburg at 300 carves display headlines with extreme tightness (-0.02em), while Inter at 400/500 carries everything else with calm neutrality. Two accent sparks — vivid violet #0447ff and vivid orange #ff4704 — only ignite inside product visuals (audio spheres, product icons), never as UI chrome. Components stay flat or barely elevated with hairline 1px borders, generous 20px radii on cards, and fully-pilled 9999px buttons. The system feels like a Bauhaus studio on cream paper: restrained, editorial, and technically precise.
+
+## Tokens — Colors
+
+| Name         | Value     | Token                  | Role                                                                                                                                              |
+| ------------ | --------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Eggshell     | `#fdfcfc` | `--color-eggshell`     | Page canvas, button surfaces, card surfaces — warm off-white rather than clinical white avoids digital glare and gives the site a paper-like calm |
+| Warm Taupe   | `#f5f3f1` | `--color-warm-taupe`   | Section bands, feature cards, and secondary surface level — one step deeper than eggshell, creates quiet separation without borders               |
+| Stone        | `#ebe8e4` | `--color-stone`        | Hairline borders, dividers, icon plate backgrounds — warm gray that sits between taupe and mid-gray without feeling cold                          |
+| Ink          | `#000000` | `--color-ink`          | Primary text, filled buttons, nav, links — pure black anchors the otherwise warm palette and creates the system's only hard contrast              |
+| Graphite     | `#44403b` | `--color-graphite`     | Strong secondary text, section labels — barely-warm dark gray for text that needs weight without true-black harshness                             |
+| Smoke        | `#777169` | `--color-smoke`        | Body text, muted descriptions, caption labels — mid warm-gray; the dominant readable-but-quiet voice across cards and feature copy                |
+| Ash          | `#a59f97` | `--color-ash`          | Faintest helper text, tertiary descriptions — the softest gray, used when text should feel like a footnote                                        |
+| Violet Spark | `#0447ff` | `--color-violet-spark` | Product visual accent — appears inside audio sphere illustrations and decorative product icons only; never used for UI chrome                     |
+| Ember Orange | `#ff4704` | `--color-ember-orange` | Product visual accent — second sphere color and product icon highlight; paired with Violet Spark inside artwork, never in buttons or links        |
+
+## Tokens — Typography
+
+### Waldenburg — Display and heading type only. Used at 48/36/32px with weight 300 — the ultra-light weight is anti-convention; most sites use 600-700, this whisper-weight creates authority through restraint. Tight -0.02em tracking pulls letters closer at large sizes. Substitute: "Inter" weight 300, or "Söhne" light as a premium alternative. · `--font-waldenburg`
+
+- **Substitute:** Inter (300) or Söhne Light
+- **Weights:** 300
+- **Sizes:** 32px, 36px, 48px
+- **Line height:** 1.08–1.17
+- **Letter spacing:** -0.96px at 48px, -0.72px at 36px, -0.64px at 32px (-0.0200em throughout)
+- **OpenType features:** `"ss01" on if available`
+- **Role:** Display and heading type only. Used at 48/36/32px with weight 300 — the ultra-light weight is anti-convention; most sites use 600-700, this whisper-weight creates authority through restraint. Tight -0.02em tracking pulls letters closer at large sizes. Substitute: "Inter" weight 300, or "Söhne" light as a premium alternative.
+
+### Inter — Everything outside display: body, nav, buttons, links, captions, inputs, cards. Weight 400 is the default; weight 500 reserved for buttons and emphasized links. Sizes span 10–20px with relaxed line-heights (1.47–1.6) that give paragraphs breathing room. Slight +0.01em tracking (0.0100em) at 14–16px sizes adds legibility at small sizes. · `--font-inter`
+
+- **Substitute:** Inter or system-ui
+- **Weights:** 400, 500
+- **Sizes:** 10px, 12px, 13px, 14px, 15px, 16px, 18px, 20px
+- **Line height:** 1.20–2.06
+- **Letter spacing:** 0.0100em at 14/15/16px sizes, normal elsewhere
+- **Role:** Everything outside display: body, nav, buttons, links, captions, inputs, cards. Weight 400 is the default; weight 500 reserved for buttons and emphasized links. Sizes span 10–20px with relaxed line-heights (1.47–1.6) that give paragraphs breathing room. Slight +0.01em tracking (0.0100em) at 14–16px sizes adds legibility at small sizes.
 
-Consistent across both themes:
+### Geist Mono — Code-adjacent or technical micro-copy at 13px — used sparingly (freq=28) for technical labels or metadata. Single weight, generous 1.69 line-height. · `--font-geist-mono`
 
-| Token       | Value                        |
-| ----------- | ---------------------------- |
-| `--chart-1` | `oklch(0.871 0.15 154.449)`  |
-| `--chart-2` | `oklch(0.723 0.219 149.579)` |
-| `--chart-3` | `oklch(0.627 0.194 149.214)` |
-| `--chart-4` | `oklch(0.527 0.154 150.069)` |
-| `--chart-5` | `oklch(0.448 0.119 151.328)` |
-
-### 1.4 Brand-Specific Colors (Tailwind `@theme`)
-
-Defined in `src/styles.css` under `@theme inline`:
-
-| Token                    | Value                   | Use                |
-| ------------------------ | ----------------------- | ------------------ |
-| `--color-copper`         | `oklch(0.58 0.12 185)`  | Accent elements    |
-| `--color-copper-light`   | `oklch(0.75 0.08 185)`  | Hover/light accent |
-| `--color-copper-dark`    | `oklch(0.42 0.08 185)`  | Dark accent        |
-| `--color-gold`           | `oklch(0.65 0.12 75)`   | Golden elements    |
-| `--color-gold-light`     | `oklch(0.82 0.08 75)`   | Light gold         |
-| `--color-cream`          | `oklch(0.98 0.005 240)` | Cream surface      |
-| `--color-cream-dark`     | `oklch(0.88 0.01 240)`  | Dark cream         |
-| `--color-charcoal`       | `oklch(0.18 0.02 250)`  | Dark text/surface  |
-| `--color-charcoal-light` | `oklch(0.28 0.03 250)`  | Lighter charcoal   |
-
-### 1.5 Primary Color Presets
-
-Users can choose from 7 accent colors. Each preset overrides `--primary`, `--accent`, `--ring`, and `--sidebar-primary` in both light and dark modes. Set via `data-primary` attribute on `<html>`.
-
-| ID                 | Light (L C H)          | Dark (L C H)           |
-| ------------------ | ---------------------- | ---------------------- |
-| `teal`             | `oklch(0.58 0.12 185)` | `oklch(0.7 0.12 185)`  |
-| `violet` (default) | `oklch(0.55 0.22 295)` | `oklch(0.68 0.2 295)`  |
-| `blue`             | `oklch(0.55 0.18 250)` | `oklch(0.7 0.16 245)`  |
-| `emerald`          | `oklch(0.6 0.14 155)`  | `oklch(0.72 0.15 155)` |
-| `rose`             | `oklch(0.62 0.2 15)`   | `oklch(0.72 0.2 15)`   |
-| `amber`            | `oklch(0.72 0.17 75)`  | `oklch(0.82 0.15 75)`  |
-| `pink`             | `oklch(0.72 0.16 350)` | `oklch(0.82 0.14 350)` |
-
-Managed by `src/lib/theme.ts` — `applyPrimaryColor(id)` sets `data-primary` and dispatches a `primary-color-change` custom event.
-
-### 1.6 Decorative CSS Classes
-
-Defined in `src/styles.css`:
-
-- **`.grain-texture`** — Pseudo-element overlay with SVG fractal noise filter at 40% opacity. Applies grain texture over any container.
-- **`.border-gold-accent`** — Gradient border (`oklch(0.72 0.12 85) → oklch(0.65 0.14 55) → oklch(0.72 0.12 85)`) at 135° via `border-image`.
-- **`.glow-copper`** — `box-shadow` with copper-tinted multi-layered glow (`0 0 20px oklch(0.65 0.14 55 / 0.3)`, `0 0 40px oklch(0.65 0.14 55 / 0.1)`).
-- **`.card-hover`** — Card hover effect: `translateY(-4px)` + dark shadow + copper glow on hover.
-
----
-
-## 2. Typography
-
-### 2.1 Font Variables
-
-| Variable         | Default                                                        | Purpose   |
-| ---------------- | -------------------------------------------------------------- | --------- |
-| `--font-sans`    | `'Roboto Variable', system-ui, sans-serif`                     | Body text |
-| `--font-heading` | `'DM Sans Variable', 'Roboto Variable', system-ui, sans-serif` | Headings  |
-
-Fonts are set on `<html>` via the `data-font` attribute. Supported font options (defined in `src/lib/theme.ts`):
-
-| ID                 | Body Font          | Heading Font       |
-| ------------------ | ------------------ | ------------------ |
-| `roboto` (default) | Roboto Variable    | DM Sans Variable   |
-| `dm-sans`          | DM Sans Variable   | DM Sans Variable   |
-| `inter`            | Inter Variable     | Inter Variable     |
-| `nunito`           | Nunito Variable    | Nunito Variable    |
-| `work-sans`        | Work Sans Variable | Work Sans Variable |
-
-All fonts loaded via `@fontsource-variable/*` npm packages.
-
-### 2.2 Tailwind Font Utilities
+- **Substitute:** JetBrains Mono or IBM Plex Mono
+- **Weights:** 400
+- **Sizes:** 13px
+- **Line height:** 1.69
+- **Role:** Code-adjacent or technical micro-copy at 13px — used sparingly (freq=28) for technical labels or metadata. Single weight, generous 1.69 line-height.
 
-- **`font-sans`** → maps to `var(--font-sans)` via the Tailwind `@theme` inline default.
-- **`font-heading`** → maps to `var(--font-heading)` via the Tailwind `@theme` inline custom font family.
-- **`font-mono`** → `source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace`.
-
-### 2.3 Typographic Conventions
-
-| Element                  | Tailwind Classes                                 | Notes                              |
-| ------------------------ | ------------------------------------------------ | ---------------------------------- |
-| Page title (`<h1>`)      | `text-3xl font-black tracking-tight sm:text-4xl` | Responsive, tight tracking         |
-| Section heading (`<h2>`) | `m-0 text-xl font-black tracking-tight`          | No margin, black weight            |
-| Card title               | `m-0 flex items-center gap-2 text-sm font-bold`  | 14px bold with icon                |
-| Eyebrow label            | `text-xs font-bold uppercase tracking-[0.18em]`  | Small caps with wide letterspacing |
-| Body                     | `text-sm leading-6 text-muted-foreground`        | 14px with 24px line-height         |
-| Table cell               | `text-sm`                                        | 14px                               |
-| Small / helper           | `text-xs text-muted-foreground`                  | 12px                               |
-| Time/duration            | `font-mono tracking-tight`                       | Monospace for numerals             |
-
-Headings use `font-heading` and `font-black` (900 weight) consistently. The standard heading hierarchy uses `m-0` (zero margin) and relies on parent spacing.
-
----
-
-## 3. Spacing & Layout
-
-### 3.1 Spacing Scale
-
-Uses Tailwind's default spacing scale (4px base). Common values:
-
-| Class                               | Value         | Use                    |
-| ----------------------------------- | ------------- | ---------------------- |
-| `gap-1`                             | 4px           | Tight icon-text gaps   |
-| `gap-1.5`                           | 6px           | Button icon spacing    |
-| `gap-2`                             | 8px           | Flex/grid gaps         |
-| `gap-3`                             | 12px          | Section element gaps   |
-| `gap-4`                             | 16px          | Card inner spacing     |
-| `gap-6`                             | 24px          | Section spacing        |
-| `gap-10`                            | 40px          | Large section gaps     |
-| `p-3` / `p-4` / `p-5` / `p-6`       | 12–24px       | Card/container padding |
-| `px-6` / `px-4` / `px-3` / `px-2.5` | 24/16/12/10px | Horizontal padding     |
-| `py-1` / `py-1.5` / `py-2` / `py-3` | 4–12px        | Vertical padding       |
-
-### 3.2 Container Max Width
-
-| Context           | Max Width                                 |
-| ----------------- | ----------------------------------------- |
-| App shell content | `max-w-[1600px]` (navbar)                 |
-| Changelog page    | `max-w-3xl`                               |
-| Dashboard cards   | Fluid (flex/grid)                         |
-| Dialog            | `max-w-[calc(100%-2rem)]` → `sm:max-w-md` |
-| Popover dropdown  | `min-w-32` (auto-width via trigger)       |
-
----
-
-## 4. Border Radius
-
-Based on `--radius: 0` (default zero). Computed radii:
-
-| Token          | Value                 |
-| -------------- | --------------------- |
-| `--radius-sm`  | `-4px` → clamped to 0 |
-| `--radius-md`  | `-2px` → clamped to 0 |
-| `--radius-lg`  | `0`                   |
-| `--radius-xl`  | `4px`                 |
-| `--radius-2xl` | `calc(0 * 1.8)` → `0` |
-| `--radius-3xl` | `calc(0 * 2.2)` → `0` |
-| `--radius-4xl` | `calc(0 * 2.6)` → `0` |
-
-**Effective radius:** `--radius: 0` is a deliberate choice — the entire UI is square-cornered. Keep `rounded-*` classes in markup as semantic hooks (they let us re-introduce rounding in one place if ever wanted), but understand they render sharp today. Only two exceptions produce visible rounding:
-
-| Class                                        | Rendered                      | Use                               |
-| -------------------------------------------- | ----------------------------- | --------------------------------- |
-| `rounded-full`                               | always round                  | Avatars, pill chips, status dots  |
-| `rounded-xl`                                 | `+4px` (from `calc(0 + 4px)`) | Rare soft accents                 |
-| `rounded-md` / `rounded-lg` / `rounded-2xl`+ | **0 (square)**                | Buttons, inputs, cards, nav items |
-
----
-
-## 5. Shadows
-
-Consistent shadow strategy using `ring` borders instead of box shadows where possible:
-
-| Pattern             | Implementation                                         |
-| ------------------- | ------------------------------------------------------ |
-| Card                | `shadow-xs ring-1 ring-foreground/10`                  |
-| Dropdown/Popover    | `shadow-md ring-1 ring-foreground/10`                  |
-| Dialog              | `ring-1 ring-foreground/10` (no shadow)                |
-| Active button focus | `focus-visible:ring-3 focus-visible:ring-ring/50`      |
-| Error focus         | `aria-invalid:ring-3 aria-invalid:ring-destructive/20` |
-| Input               | `shadow-xs` (subtle)                                   |
-| Dashboard header    | `shadow-sm`                                            |
-
----
-
-## 6. Component Library
-
-### 6.1 shadcn/ui Primitives (`src/components/ui/`)
-
-All components follow shadcn/ui patterns — `data-slot` attributes, `cn()` for class merging, Radix UI primitives:
-
-| Component                 | Radix Primitive           | Key Styles                                                                                                                                                                                                                    |
-| ------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Button`                  | `Slot.Root` via `asChild` | CVA-based: `default`, `outline`, `ghost`, `secondary`, `destructive`, `link`. Sizes: `default`, `xs`, `sm`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. Active state: `active:translate-y-px`.                             |
-| `Card`                    | Native `<div>`            | `rounded-xl`, `shadow-xs`, `ring-1 ring-foreground/10`. Sizes: `default` (gap-6, py-6) and `sm` (gap-4, py-4). Parts: `CardHeader`, `CardTitle` (font-heading), `CardDescription`, `CardContent`, `CardFooter`, `CardAction`. |
-| `Dialog`                  | `DialogPrimitive`         | Centered modal. Overlay: `bg-black/10 backdrop-blur-xs`. Content: `rounded-xl`, `ring-1 ring-foreground/10`. Close button in top-right.                                                                                       |
-| `Drawer`                  | `vaul`                    | Mobile-side sheet (from Vaul). Same overlay pattern as Dialog.                                                                                                                                                                |
-| `DropdownMenu`            | `DropdownMenuPrimitive`   | `rounded-md`, `shadow-md`, `ring-1 ring-foreground/10`. Item: `focus:bg-accent focus:text-accent-foreground`.                                                                                                                 |
-| `Input`                   | Native `<input>`          | `rounded-md`, `border-input`, `shadow-xs`. Focus: `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`. Error: `aria-invalid:border-destructive`.                                                      |
-| `Label`                   | `LabelPrimitive`          | `text-sm leading-none font-medium`                                                                                                                                                                                            |
-| `Select`                  | Native `<select>`         | `.scroll-my-1 p-1` content area. Parts mirror `DropdownMenu` patterns.                                                                                                                                                        |
-| `Table`                   | Native `<table>`          | `<div>` wrapper for scroll: `overflow-x-auto`. Row: `border-b hover:bg-muted/50`.                                                                                                                                             |
-| `Calendar`                | `react-day-picker`        | `rounded-xl` on cells. Nav: ghost buttons. Custom `captionLayout` support.                                                                                                                                                    |
-| `Pagination`              | Native                    | Standard pagination controls.                                                                                                                                                                                                 |
-| `Popover`                 | `PopoverPrimitive`        | Floating panel.                                                                                                                                                                                                               |
-| `SearchableCreatePopover` | `PopoverPrimitive`        | Combobox with inline creation.                                                                                                                                                                                                |
-| `Kbd`                     | Native `<kbd>`            | Keyboard shortcut display.                                                                                                                                                                                                    |
-| `PasswordInput`           | Native `<input>` + Button | Visible/hidden toggle.                                                                                                                                                                                                        |
-| `TimezoneSelect`          | Native `<select>`         | Timezone picker.                                                                                                                                                                                                              |
-| `ThemeToggle`             | Native `<button>`         | Sun/Moon toggle.                                                                                                                                                                                                              |
-| `AppLogo`                 | Native `<img>`            | Sized containers: `sm` (32px), `md` (44px), `lg` (56px).                                                                                                                                                                      |
-
-### 6.2 Component Slot Attributes
-
-Every shadcn/ui component uses `data-slot` for targeted styling:
-
-| Attribute      | Example Values                                                                                                                                                                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `data-slot`    | `"button"`, `"card"`, `"card-header"`, `"card-title"`, `"dialog"`, `"dialog-content"`, `"dialog-overlay"`, `"dropdown-menu"`, `"dropdown-menu-content"`, `"dropdown-menu-item"`, `"input"`, `"label"`, `"select"`, `"table"`, `"table-container"`, `"drawer"` |
-| `data-variant` | `"default"`, `"outline"`, `"ghost"`, `"secondary"`, `"destructive"`, `"link"`                                                                                                                                                                                 |
-| `data-size`    | `"default"`, `"sm"`, `"icon"` (on card/button)                                                                                                                                                                                                                |
-| `data-inset`   | `"true"` (dropdown items with inset)                                                                                                                                                                                                                          |
-
-### 6.3 State Selectors
-
-Components use `data-*` attributes and Tailwind's `data-*` variant for state styling:
-
-| State          | Selector             | Example                                                      |
-| -------------- | -------------------- | ------------------------------------------------------------ |
-| Disabled       | `data-disabled`      | `data-disabled:pointer-events-none data-disabled:opacity-50` |
-| Open           | `data-open`          | `data-open:animate-in`                                       |
-| Closed         | `data-closed`        | `data-closed:animate-out`                                    |
-| Side (popover) | `data-[side=bottom]` | `data-[side=bottom]:slide-in-from-top-2`                     |
-| Aria invalid   | `aria-invalid`       | `aria-invalid:border-destructive`                            |
-| Aria expanded  | `aria-expanded`      | `aria-expanded:bg-muted`                                     |
-
----
-
-## 7. Layout Architecture
-
-### 7.1 App Shell
-
-```
-┌─────────────────────────────────────────────────┐
-│  Navbar (sticky, z-40, h-[4.5rem])              │
-│  ┌───────────────────────────────────────────┐   │
-│  │ Logo + Name  │ WorkspaceSwitcher │ Avatar │   │
-│  └───────────────────────────────────────────┘   │
-├─────────┬───────────────────────────────────────┤
-│Sidebar  │  Main Content (Outlet)                 │
-│(hidden  │  overflow-y-auto, p-4 sm:p-6           │
-│mobile,  │  max-w-[1600px] mx-auto                │
-│260px or │                                        │
-│60px     │                                        │
-│collapsed)│                                       │
-├─────────┴───────────────────────────────────────┤
-│  (Embed footer — only when embed=1)              │
-└─────────────────────────────────────────────────┘
-```
-
-**Key properties:**
-
-- Full viewport (`h-screen w-full flex flex-col`)
-- Sidebar: `lg:flex` (hidden below lg), `transition-[width] duration-200`
-- Navbar: `sticky top-0 z-40`, backdrop-blur-xl, border-b
-- Main: `min-w-0 flex-1 overflow-y-auto overflow-x-hidden`
-- Embed mode: hides Navbar + Sidebar, adds footer
-
-### 7.2 Navbar (`src/components/time-tracker/Navbar.tsx`)
-
-- `h-[4.5rem]` with `px-4 py-3 sm:px-6`
-- Left: Logo + BRAND.name (hidden on mobile)
-- Right: Workspace live indicator (hidden below lg) → WorkspaceSwitcher → User avatar dropdown
-- User dropdown: Name/email header → Profile settings → What's new → (separator) → Theme mode toggle → Accent color picker → (separator) → Sign out
-
-### 7.3 Sidebar (`src/components/time-tracker/AppSidebar.tsx`)
-
-- Width: `w-[260px]` expanded, `w-[60px]` collapsed
-- Sections: Workspace info box → Timer → Calendar → Analytics (expandable) → Settings (expandable)
-- Collapsed mode: icons only, labels hidden
-- **Active state**: `bg-primary text-primary-foreground`
-- **Inactive**: `text-muted-foreground hover:bg-accent hover:text-foreground`
-- Expandable groups use `ChevronDown` rotation on toggle
-- Nested children indented: `ml-3 border-l border-border`
-
-### 7.4 Mobile Nav (`src/components/time-tracker/MobileNav.tsx`)
-
-- Drawer (Vaul) triggered by hamburger menu
-- Mirrors sidebar structure as a vertical drawer
-
-### 7.5 Page Layout Conventions
-
-| Page           | Layout Pattern                                                                                      |
-| -------------- | --------------------------------------------------------------------------------------------------- |
-| Time Tracker   | `DashboardHeader` → `InputSection` (timer + manual entry) → `AllEntriesSection` (paginated entries) |
-| Analytics      | Tabs/cards with maximize dialogs, `max-w-[1600px]` container                                        |
-| My Performance | Card-based grid with performance badge, heatmap, charts                                             |
-| Members        | Search bar → Table (scrollable)                                                                     |
-| Catalogs       | Navigation cards → Nested content (clients, projects, tags, etc.)                                   |
-| Changelog      | `mx-auto max-w-3xl` — timeline layout with vertical line + dot + release cards                      |
-
----
-
-## 8. Icons
-
-Two icon libraries used simultaneously:
-
-| Library          | Import Path                  | When to Use                                               |
-| ---------------- | ---------------------------- | --------------------------------------------------------- |
-| **Lucide React** | `from 'lucide-react'`        | Primary — nav, actions, general UI                        |
-| **Tabler Icons** | `from '@tabler/icons-react'` | Supplemental — check marks, chevrons, close, calendar nav |
-
-Icon sizing convention: `size-4` (16px) default, `size-3.5` (14px) for compact, `size-3` (12px) for inline. All icons use `shrink-0`.
-
----
-
-## 9. Charts
-
-Powered by **Recharts**. Chart color tokens (5 levels) defined as CSS custom properties `--chart-1` through `--chart-5`.
-
-Chart types used in the app:
-
-- **Pie charts** — department/member analytics
-- **Bar charts** — time breakdowns
-- **Heatmap** — activity intensity (My Performance page)
-- **Line charts** — trends over time
-
----
-
-## 10. Print Styles
-
-Defined in `src/styles.css`:
+### Type Scale
+
+| Role       | Size | Line Height | Letter Spacing | Token               |
+| ---------- | ---- | ----------- | -------------- | ------------------- |
+| caption    | 10px | 1.6         | —              | `--text-caption`    |
+| body-sm    | 14px | 1.5         | 0.14px         | `--text-body-sm`    |
+| body       | 16px | 1.5         | 0.16px         | `--text-body`       |
+| subheading | 18px | 1.6         | —              | `--text-subheading` |
+| body-lg    | 20px | 1.35        | —              | `--text-body-lg`    |
+| heading-sm | 32px | 1.13        | -0.64px        | `--text-heading-sm` |
+| heading    | 36px | 1.17        | -0.72px        | `--text-heading`    |
+| display    | 48px | 1.08        | -0.96px        | `--text-display`    |
+
+## Tokens — Spacing & Shapes
+
+**Base unit:** 4px
+
+**Density:** comfortable
+
+### Spacing Scale
+
+| Name | Value | Token           |
+| ---- | ----- | --------------- |
+| 4    | 4px   | `--spacing-4`   |
+| 8    | 8px   | `--spacing-8`   |
+| 12   | 12px  | `--spacing-12`  |
+| 16   | 16px  | `--spacing-16`  |
+| 20   | 20px  | `--spacing-20`  |
+| 24   | 24px  | `--spacing-24`  |
+| 28   | 28px  | `--spacing-28`  |
+| 32   | 32px  | `--spacing-32`  |
+| 36   | 36px  | `--spacing-36`  |
+| 40   | 40px  | `--spacing-40`  |
+| 48   | 48px  | `--spacing-48`  |
+| 56   | 56px  | `--spacing-56`  |
+| 64   | 64px  | `--spacing-64`  |
+| 72   | 72px  | `--spacing-72`  |
+| 96   | 96px  | `--spacing-96`  |
+| 160  | 160px | `--spacing-160` |
+
+### Border Radius
+
+| Element        | Value  |
+| -------------- | ------ |
+| tags           | 9999px |
+| cards          | 20px   |
+| inputs         | 4px    |
+| buttons        | 9999px |
+| large-cards    | 24px   |
+| small-elements | 4-10px |
+
+### Shadows
+
+| Name     | Value                                                          | Token               |
+| -------- | -------------------------------------------------------------- | ------------------- |
+| subtle   | `rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0...` | `--shadow-subtle`   |
+| subtle-2 | `rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset`                 | `--shadow-subtle-2` |
+| subtle-3 | `rgba(0, 0, 0, 0.1) 0px 0px 0px 0.5px inset`                   | `--shadow-subtle-3` |
+| subtle-4 | `rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset`                     | `--shadow-subtle-4` |
+| subtle-5 | `rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0...` | `--shadow-subtle-5` |
+| subtle-6 | `rgba(255, 255, 255, 0.6) 0px 0px 0px 1px inset`               | `--shadow-subtle-6` |
+| subtle-7 | `rgb(235, 232, 228) 0px 0px 0px 0.5px inset`                   | `--shadow-subtle-7` |
+
+### Layout
+
+- **Page max-width:** 1280px
+- **Section gap:** 96-125px
+- **Card padding:** 32px
+- **Element gap:** 8-16px
+
+## Components
+
+### Filled Pill Button
+
+**Role:** Primary action
+
+Black (#000000) fill, white text, 9999px radius, 16px horizontal padding, Inter 14px/500. 1px solid #e5e5e5 border (legacy support). Used for 'Sign up', 'Create an AI agent', 'Learn more'. The pill shape is the system's most recognizable component.
+
+### Outline Pill Button
+
+**Role:** Secondary action
+
+White (#fdfcfc) fill, black text, 9999px radius, 14px horizontal padding, Inter 14px/500. 1px solid #e5e5e5 border. Used for 'Contact sales', 'Log in'. Lower visual weight than the filled variant — pairs beside it without competing.
+
+### Ghost Link Button
+
+**Role:** Tertiary navigation or in-text action
+
+Transparent fill, black text, 9999px radius, Inter 14px/500. 1px solid #e5e5e5 border. Used for nav items and inline actions. No visible fill until hover.
+
+### Feature Card (Taupe)
+
+**Role:** Feature showcase panel
+
+#f5f3f1 warm taupe fill, 20px radius, 32px horizontal padding, no shadow, no border. The dominant card pattern (22 occurrences). Flat, quiet, sits on the canvas without elevation.
+
+### White Card with Whisper Shadow
+
+**Role:** Elevated content card
+
+White (#fdfcfc) fill, 20px radius, 16px all-side padding, three-layer whisper shadow (1px hard edge + 1px blur + 4px blur at 4% opacity). Used sparingly — only when a card needs to sit above other content with subtle separation.
+
+### Large Feature Card
+
+**Role:** Hero feature block
+
+#f5f3f1 fill, 24px radius (slightly larger than standard 20px), generous internal padding. Used for flagship feature showcases that need more visual breathing room.
+
+### Tab Pill
+
+**Role:** Product switcher in feature panels
+
+White fill, black text, 9999px radius, 1px border. Active state marked by a small colored dot (orange for ElevenCreative, teal for ElevenAgents, gray for ElevenAPI). Tabs sit inline above the card content.
+
+### Hairline Divider
+
+**Role:** Section separation
+
+1px solid #ebe8e4 stone-colored line. Preferred over whitespace when sections need explicit separation. Used 54 times across the page — the most common border pattern.
+
+### Audio Sphere Visual
+
+**Role:** Product showcase graphic
+
+Large circular gradient sphere (roughly 200px diameter) with soft radial gradients blending violet #0447ff, orange #ff4704, pink, and warm tones. Centered play-button overlay. No hard edges — these are the system's signature visual and appear 3x in a carousel row.
+
+### Logo Wordmark
+
+**Role:** Brand identity
+
+Black text reading 'ElevenLabs' in Inter bold/semibold. Consistent across header and footer. No icon mark — the wordmark alone carries the brand.
+
+### Top Nav Bar
+
+**Role:** Primary navigation
+
+Transparent on eggshell canvas, 50px height. Logo left, nav links center-left (Inter 14px), auth buttons right (outline 'Log in' + filled 'Sign up'). No background fill — the nav is invisible until scroll.
+
+### Trust Logo Grid
+
+**Role:** Social proof section
+
+6-column grid of partner logos (Twilio, Disney, KPN, NVIDIA, Meta, etc.) rendered in grayscale at low contrast. Logos sit on the eggshell canvas with generous padding — not boxed in cards. 'Read all stories' outline button top-right.
+
+## Do's and Don'ts
+
+### Do
+
+- Use Waldenburg at weight 300 for all display headlines 32px+; never apply bold or semibold weights to it — the whisper-weight is the brand's signature restraint.
+- Set all buttons, tags, and tab pills to 9999px radius; the pill shape is non-negotiable and defines the system's most recognizable component.
+- Use #000000 filled buttons paired with #fdfcfc outline buttons as the only button hierarchy — do not introduce colored CTA fills.
+- Reserve #0447ff violet and #ff4704 orange exclusively for product visuals (audio spheres, product icons, illustration accents); never apply them to UI text, borders, or interactive elements.
+- Use 1px solid #ebe8e4 hairline borders for section separation; prefer borders over drop shadows for the flat editorial feel.
+- Apply -0.02em letter-spacing on all Waldenburg headlines at 32px+ and +0.01em tracking on Inter body at 14–16px — the opposite tracking directions create a deliberate contrast between display and body.
+- Stack surfaces as eggshell → taupe → stone; never use pure white or pure gray — warmth is the system's defining tonal quality.
+
+### Don't
+
+- Do not bold or semibold Waldenburg — the weight-300 whisper is the brand's most distinctive choice and bolding destroys it.
+- Do not use violet #0447ff or orange #ff4704 for buttons, links, badges, or any interactive UI element; these colors are decoration-only.
+- Do not add heavy drop shadows; the system uses near-invisible 1px shadows only — no blurred elevation effects.
+- Do not introduce new accent colors beyond the two product-visual sparks; the palette is intentionally 97% achromatic.
+- Do not use sharp corners (<8px) on cards or feature panels; the 20–24px radii are a signature.
+- Do not use pure white #ffffff for backgrounds; always use #fdfcfc eggshell to maintain the warm paper-like canvas.
+- Do not use display-weight fonts (anything heavier than Waldenburg 300) for body copy; Inter 400/500 owns everything below 24px.
+
+## Surfaces
+
+| Level | Name            | Value     | Purpose                                                                                           |
+| ----- | --------------- | --------- | ------------------------------------------------------------------------------------------------- |
+| 1     | Eggshell Canvas | `#fdfcfc` | Base page background — warm off-white that reads as paper, not screen                             |
+| 2     | Warm Taupe      | `#f5f3f1` | Section bands and card surfaces that need to sit one step above the canvas without a border       |
+| 3     | Stone Plate     | `#ebe8e4` | Icon plates, subtle elevated backgrounds — slightly deeper than taupe for small isolated elements |
+
+## Elevation
+
+- **Buttons and elevated cards:** `rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0px 1px 1px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px`
+- **Inset borders / focus halos:** `rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset`
+
+## Imagery
+
+Product visuals dominate the imagery language: large soft-edged audio sphere gradients (200px+ circles with radial violet-to-orange-to-pink blends) serve as the hero graphic. Logos in the trust section appear in low-contrast grayscale against the eggshell canvas. Photography is minimal — no lifestyle or product photography detected. Iconography is sparse and monochrome (black outlined or filled icons, no chromatic icons). The visual system feels more like a design publication than a product catalog — editorial restraint over marketing spectacle.
+
+## Layout
+
+Full-width sections flow vertically in a single max-width 1280px centered column with 64px outer gutters. Hero is asymmetric: left-aligned headline at 48px Waldenburg, right-aligned body description, with two pill buttons stacked below the headline. Below the hero, a large feature panel with tab navigation spans the full content width. Sections alternate between eggshell canvas and taupe band backgrounds with 96–125px vertical gaps. Footer is a compact single band. Navigation is a minimal top bar — no sticky behavior, no mega-menu. Content rhythm is editorial: generous whitespace, one major visual per section, no card grids below the trust section.
+
+## Agent Prompt Guide
+
+**Quick Color Reference**
+
+- text: #000000 (primary), #777169 (body), #a59f97 (caption)
+- background: #fdfcfc (canvas), #f5f3f1 (card surface)
+- border: #ebe8e4 (hairline), #e5e5e5 (button border)
+- accent: #0447ff (violet spark — product visuals only)
+- accent: #ff4704 (ember orange — product visuals only)
+- primary action: #000000 (filled action)
+
+**3-5 Example Component Prompts**
+
+1. Create a hero headline: 'Bringing technology to life' at 48px Waldenburg weight 300, color #000000, letter-spacing -0.96px, line-height 1.08. Left-aligned on #fdfcfc canvas.
+
+2. Create a primary button: 'Sign up' — 9999px radius, #000000 fill, white text, Inter 14px/500, 16px horizontal padding, 1px solid #e5e5e5 border.
+
+3. Create a secondary button: 'Contact sales' — 9999px radius, #fdfcfc fill, #000000 text, Inter 14px/500, 14px horizontal padding, 1px solid #e5e5e5 border.
+
+4. Create a feature card: #f5f3f1 fill, 20px radius, 32px horizontal padding, no shadow. Title at 36px Waldenburg 300, description at 16px Inter 400 in #777169.
+
+5. Create an audio sphere visual: 200px circle with radial-gradient blending #0447ff, #ff4704, and pink, no hard edge. Center play icon in white circle 48px diameter.
+
+## Similar Brands
+
+- **Linear** — Same whisper-weight display headlines paired with monochrome UI and pill-shaped buttons; both achieve authority through typographic restraint rather than color.
+- **Vercel** — Same near-white warm canvas with stark black text and pill buttons; both use minimal color and let typography carry the brand.
+- **Stripe** — Same editorial restraint with hairline borders, generous whitespace, and accent colors reserved for illustrations rather than UI chrome.
+- **Notion** — Same warm off-white palette with taupe secondary surfaces and pill-shaped interactive elements; both feel like paper rather than glass.
+- **Framer** — Same Bauhaus-influenced minimalism with whisper-weight headlines and a 97% achromatic palette that lets single accent colors feel significant.
+
+## Quick Start
+
+### CSS Custom Properties
 
 ```css
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  main {
-    overflow: visible !important;
-    padding: 0 !important;
-  }
-  * {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+:root {
+  /* Colors */
+  --color-eggshell: #fdfcfc;
+  --color-warm-taupe: #f5f3f1;
+  --color-stone: #ebe8e4;
+  --color-ink: #000000;
+  --color-graphite: #44403b;
+  --color-smoke: #777169;
+  --color-ash: #a59f97;
+  --color-violet-spark: #0447ff;
+  --color-ember-orange: #ff4704;
+
+  /* Typography — Font Families */
+  --font-waldenburg:
+    'Waldenburg', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  --font-inter:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  --font-geist-mono:
+    'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    monospace;
+
+  /* Typography — Scale */
+  --text-caption: 10px;
+  --leading-caption: 1.6;
+  --text-body-sm: 14px;
+  --leading-body-sm: 1.5;
+  --tracking-body-sm: 0.14px;
+  --text-body: 16px;
+  --leading-body: 1.5;
+  --tracking-body: 0.16px;
+  --text-subheading: 18px;
+  --leading-subheading: 1.6;
+  --text-body-lg: 20px;
+  --leading-body-lg: 1.35;
+  --text-heading-sm: 32px;
+  --leading-heading-sm: 1.13;
+  --tracking-heading-sm: -0.64px;
+  --text-heading: 36px;
+  --leading-heading: 1.17;
+  --tracking-heading: -0.72px;
+  --text-display: 48px;
+  --leading-display: 1.08;
+  --tracking-display: -0.96px;
+
+  /* Typography — Weights */
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+
+  /* Spacing */
+  --spacing-unit: 4px;
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-36: 36px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-56: 56px;
+  --spacing-64: 64px;
+  --spacing-72: 72px;
+  --spacing-96: 96px;
+  --spacing-160: 160px;
+
+  /* Layout */
+  --page-max-width: 1280px;
+  --section-gap: 96-125px;
+  --card-padding: 32px;
+  --element-gap: 8-16px;
+
+  /* Border Radius */
+  --radius-md: 4px;
+  --radius-lg: 10px;
+  --radius-2xl: 16px;
+  --radius-2xl-2: 20px;
+  --radius-3xl: 24px;
+  --radius-3xl-2: 28px;
+  --radius-full: 9999px;
+
+  /* Named Radii */
+  --radius-tags: 9999px;
+  --radius-cards: 20px;
+  --radius-inputs: 4px;
+  --radius-buttons: 9999px;
+  --radius-large-cards: 24px;
+  --radius-small-elements: 4-10px;
+
+  /* Shadows */
+  --shadow-subtle:
+    rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0px 1px 1px 0px,
+    rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  --shadow-subtle-2: rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset;
+  --shadow-subtle-3: rgba(0, 0, 0, 0.1) 0px 0px 0px 0.5px inset;
+  --shadow-subtle-4: rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset;
+  --shadow-subtle-5:
+    rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  --shadow-subtle-6: rgba(255, 255, 255, 0.6) 0px 0px 0px 1px inset;
+  --shadow-subtle-7: rgb(235, 232, 228) 0px 0px 0px 0.5px inset;
+
+  /* Surfaces */
+  --surface-eggshell-canvas: #fdfcfc;
+  --surface-warm-taupe: #f5f3f1;
+  --surface-stone-plate: #ebe8e4;
 }
 ```
 
-- Navbar and Sidebar marked with `print:hidden`
-- Report exports (PDF) use landscape (bulk) or portrait (individual) layouts
-
----
-
-## 11. Animation
-
-### 11.1 Motion Preferences
+### Tailwind v4
 
 ```css
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
+@theme {
+  /* Colors */
+  --color-eggshell: #fdfcfc;
+  --color-warm-taupe: #f5f3f1;
+  --color-stone: #ebe8e4;
+  --color-ink: #000000;
+  --color-graphite: #44403b;
+  --color-smoke: #777169;
+  --color-ash: #a59f97;
+  --color-violet-spark: #0447ff;
+  --color-ember-orange: #ff4704;
+
+  /* Typography */
+  --font-waldenburg:
+    'Waldenburg', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  --font-inter:
+    'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  --font-geist-mono:
+    'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    monospace;
+
+  /* Typography — Scale */
+  --text-caption: 10px;
+  --leading-caption: 1.6;
+  --text-body-sm: 14px;
+  --leading-body-sm: 1.5;
+  --tracking-body-sm: 0.14px;
+  --text-body: 16px;
+  --leading-body: 1.5;
+  --tracking-body: 0.16px;
+  --text-subheading: 18px;
+  --leading-subheading: 1.6;
+  --text-body-lg: 20px;
+  --leading-body-lg: 1.35;
+  --text-heading-sm: 32px;
+  --leading-heading-sm: 1.13;
+  --tracking-heading-sm: -0.64px;
+  --text-heading: 36px;
+  --leading-heading: 1.17;
+  --tracking-heading: -0.72px;
+  --text-display: 48px;
+  --leading-display: 1.08;
+  --tracking-display: -0.96px;
+
+  /* Spacing */
+  --spacing-4: 4px;
+  --spacing-8: 8px;
+  --spacing-12: 12px;
+  --spacing-16: 16px;
+  --spacing-20: 20px;
+  --spacing-24: 24px;
+  --spacing-28: 28px;
+  --spacing-32: 32px;
+  --spacing-36: 36px;
+  --spacing-40: 40px;
+  --spacing-48: 48px;
+  --spacing-56: 56px;
+  --spacing-64: 64px;
+  --spacing-72: 72px;
+  --spacing-96: 96px;
+  --spacing-160: 160px;
+
+  /* Border Radius */
+  --radius-md: 4px;
+  --radius-lg: 10px;
+  --radius-2xl: 16px;
+  --radius-2xl-2: 20px;
+  --radius-3xl: 24px;
+  --radius-3xl-2: 28px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-subtle:
+    rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0px 1px 1px 0px,
+    rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  --shadow-subtle-2: rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset;
+  --shadow-subtle-3: rgba(0, 0, 0, 0.1) 0px 0px 0px 0.5px inset;
+  --shadow-subtle-4: rgba(0, 0, 0, 0.1) 0px 0px 0px 1px inset;
+  --shadow-subtle-5:
+    rgba(0, 0, 0, 0.4) 0px 0px 1px 0px, rgba(0, 0, 0, 0.04) 0px 2px 4px 0px;
+  --shadow-subtle-6: rgba(255, 255, 255, 0.6) 0px 0px 0px 1px inset;
+  --shadow-subtle-7: rgb(235, 232, 228) 0px 0px 0px 0.5px inset;
 }
 ```
-
-### 11.2 Common Animations
-
-| Pattern            | Implementation                                                           |
-| ------------------ | ------------------------------------------------------------------------ |
-| Dropdown entrance  | `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`          |
-| Dropdown exit      | `data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95` |
-| Dialog entrance    | `data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95`          |
-| Sidebar width      | `transition-[width] duration-200 ease-in-out`                            |
-| Collapse indicator | `transition-transform duration-200` (ChevronDown rotation)               |
-| Card hover         | `transition: transform 0.3s ease, box-shadow 0.3s ease`                  |
-| Nav active ping    | `animate-ping` (live indicator dot)                                      |
-| Spinner            | `animate-spin` (loading states)                                          |
-| Reduce motion      | All animations disabled per user preference                              |
-
----
-
-## 12. Responsive Breakpoints
-
-Using Tailwind's default breakpoints:
-
-| Breakpoint | Min Width | Behavior                                                    |
-| ---------- | --------- | ----------------------------------------------------------- |
-| `sm`       | 640px     | Container padding increases, single-column → two-column     |
-| `md`       | 768px     | Text scales to `md:text-sm`                                 |
-| `lg`       | 1024px    | Sidebar becomes visible (`lg:flex`), live indicator visible |
-| `xl`       | 1280px    | Full width utilization                                      |
-| `2xl`      | 1536px    | Not commonly used                                           |
-
-### Mobile-Specific Patterns
-
-- **Sidebar** → Drawer (Vaul) triggered by hamburger
-- **Dialogs** → Full-screen on mobile (`sm:max-w-md` constraint dropped on very small)
-- **Tables** → Horizontal scroll wrapper (`overflow-x-auto`)
-- **Timer** → Streamlined mobile form (no Options sheet)
-- **Touch targets** → Enlarged for thumb interaction
-
----
-
-## 13. Interactive States
-
-| State            | Visual Treatment                                                               |
-| ---------------- | ------------------------------------------------------------------------------ |
-| Default          | `text-muted-foreground` or `bg-background`                                     |
-| Hover            | `hover:bg-accent hover:text-foreground` (nav) or `hover:bg-muted` (table rows) |
-| Active/Pressed   | `active:translate-y-px` (buttons)                                              |
-| Focus (keyboard) | `focus-visible:ring-3 focus-visible:ring-ring/50`                              |
-| Selected/Active  | `bg-primary text-primary-foreground` (nav links)                               |
-| Expanded         | `aria-expanded:bg-muted`                                                       |
-| Disabled         | `disabled:opacity-50 disabled:pointer-events-none`                             |
-| Error            | `aria-invalid:border-destructive`                                              |
-| Loading          | Replaced with spinner or `disabled` state                                      |
-
----
-
-## 14. Utility Classes
-
-### 14.1 Textual
-
-| Class                     | Use                                  |
-| ------------------------- | ------------------------------------ |
-| `font-black`              | 900 weight — headings, totals        |
-| `font-bold`               | 700 weight — button text, labels     |
-| `font-semibold`           | 600 weight — nav items               |
-| `font-medium`             | 500 weight — form labels             |
-| `tracking-tight`          | Closer letter-spacing for headings   |
-| `tracking-[0.18em]`       | Wide caps — eyebrow labels           |
-| `leading-none`            | Tight line-height for headings       |
-| `leading-6` / `leading-7` | Comfortable reading                  |
-| `truncate`                | Text overflow ellipsis               |
-| `whitespace-pre-wrap`     | Preserve whitespace (error messages) |
-| `break-words`             | Word break (long text)               |
-
-### 14.2 Layout
-
-| Class                 | Use                                           |
-| --------------------- | --------------------------------------------- |
-| `m-0`                 | Zero margin on all headings/p                 |
-| `shrink-0`            | Prevent flex child from shrinking             |
-| `min-w-0`             | Allow flex child to shrink below content size |
-| `min-h-0`             | Allow flex container to shrink                |
-| `max-w-full`          | Constrain images/text                         |
-| `inset-0`             | Full cover for overlays/pseudo-elements       |
-| `pointer-events-none` | Decorative/non-interactive elements           |
-
-### 14.3 Accessibility
-
-| Class          | Use                                                     |
-| -------------- | ------------------------------------------------------- |
-| `sr-only`      | Screen-reader only text                                 |
-| `outline-none` | Remove default outline (paired with focus-visible ring) |
-| `select-none`  | Prevent text selection (buttons, draggable items)       |
-| `aria-label`   | Accessible labels on icon-only buttons                  |
-
----
-
-## 15. File Organization
-
-```
-src/
-├── components/
-│   ├── time-tracker/
-│   │   ├── AppShell.tsx           # Root app layout (Navbar + Sidebar + Outlet)
-│   │   ├── AppSidebar.tsx         # Desktop sidebar (260px / 60px collapsed)
-│   │   ├── MobileNav.tsx          # Mobile drawer navigation
-│   │   ├── Navbar.tsx             # Top bar with logo, workspace switcher, user menu
-│   │   ├── dashboard/             # Time tracker home (timer, entries, filters)
-│   │   ├── analytics/             # Analytics screens and charts
-│   │   ├── workspace/             # Members, Catalogs, Settings
-│   │   ├── shared/                # Shared components (export dialogs, grouping)
-│   │   └── performance/           # My Performance page
-│   ├── layout/
-│   │   └── WorkspaceSwitcher.tsx   # Workspace dropdown
-│   ├── marketing/                 # Landing page components
-│   └── ui/                        # shadcn/ui primitives (19 files)
-├── lib/
-│   ├── brand.ts                   # BRAND constants (single source of truth)
-│   ├── theme.ts                   # Theme/color/font management
-│   └── utils.ts                   # cn() class merger
-└── styles.css                     # All design tokens, @theme, animations
-```
-
----
-
-## Design Principles
-
-1. **Single source of truth** — Brand name/tagline/logo come from `src/lib/brand.ts`. Theme state is managed via `data-*` attributes on `<html>` (never component-local). Retheme by editing one file.
-2. **oklch color space** — All colors use `oklch()` for perceptual uniformity across light and dark modes.
-3. **Component-slot model** — shadcn/ui components use `data-slot` attributes for targeted CSS overrides — no deep selector chains.
-4. **Dark mode as overlay** — `.dark` class overrides CSS variables. Components respond automatically via `var(--*)` tokens.
-5. **Accessible by default** — Keyboard focus rings, aria labels, `sr-only` text, reduced-motion support.
-6. **Responsive via Tailwind** — Mobile-first breakpoints, sidebar collapses to drawer on small screens.

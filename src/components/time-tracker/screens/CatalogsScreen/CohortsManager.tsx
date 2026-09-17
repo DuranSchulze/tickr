@@ -94,7 +94,7 @@ export function CohortsManager({
           <button
             type="button"
             onClick={() => dispatch({ showForm: !showForm })}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-action px-3 py-1.5 text-xs font-bold text-primary-action-foreground transition-colors"
           >
             {showForm ? (
               <X className="size-3.5" />
@@ -112,7 +112,7 @@ export function CohortsManager({
             value={departmentId}
             onChange={(e) => dispatch({ departmentId: e.target.value })}
             required
-            className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+            className="h-9 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
           >
             <option value="">Choose department</option>
             {state.departments.map((department) => (
@@ -127,12 +127,12 @@ export function CohortsManager({
             placeholder="Cohort name"
             aria-label="Cohort name"
             required
-            className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+            className="h-9 rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <button
             type="submit"
             disabled={pending}
-            className="h-9 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="h-9 rounded-full bg-primary-action px-3 text-sm font-bold text-primary-action-foreground disabled:bg-warm-taupe disabled:text-smoke"
           >
             {pending ? 'Creating…' : 'Create cohort'}
           </button>
@@ -142,7 +142,7 @@ export function CohortsManager({
         <select
           value={filterDepartmentId}
           onChange={(e) => dispatch({ filterDepartmentId: e.target.value })}
-          className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+          className="h-9 w-full rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">All departments</option>
           {state.departments.map((department) => (
@@ -161,13 +161,13 @@ export function CohortsManager({
           return (
             <div
               key={cohort.id}
-              className="group flex items-center justify-between rounded-lg border border-border px-3 py-2"
+              className="group flex items-center justify-between rounded-full border border-stone px-3 py-2"
             >
               <div>
                 <p className="m-0 text-sm font-semibold text-foreground">
                   {cohort.name}
                 </p>
-                <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                <p className="m-0 mt-0.5 text-xs text-smoke">
                   {department?.name ?? 'Unassigned department'}
                 </p>
               </div>

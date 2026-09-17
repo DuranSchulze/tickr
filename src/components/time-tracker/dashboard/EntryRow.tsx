@@ -137,7 +137,7 @@ const DurationCell = memo(function DurationCell({
         onClick={startEditing}
         disabled={disabled}
         title="Edit duration"
-        className="rounded-md px-1.5 py-1 font-mono text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-full px-1.5 py-1 font-mono text-sm font-bold tabular-nums text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-40"
       >
         {formatTime(entry.durationSeconds)}
       </button>
@@ -168,7 +168,7 @@ const DurationCell = memo(function DurationCell({
         }}
         aria-label="Duration"
         placeholder="1:30 or 1h 30m"
-        className="h-9 w-28 rounded-lg border-2 border-border bg-muted/30 px-2 font-mono text-sm font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15"
+        className="h-9 w-28 rounded-md border-2 border-stone bg-warm-taupe/30 px-2 font-mono text-sm font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15"
       />
       {parseError && (
         <p className="m-0 text-[11px] font-semibold leading-tight text-destructive">
@@ -312,11 +312,9 @@ function EntryTimeCell({
           onBlur={commitTimeChange}
           disabled={disabled}
           aria-label="Start time"
-          className="h-9 w-[6.75rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[6.75rem] rounded-md border-2 border-stone bg-warm-taupe/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-smoke/60 hover:border-stone/80 focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
-        <span className="text-base font-bold text-muted-foreground select-none">
-          —
-        </span>
+        <span className="text-base font-bold text-smoke select-none">—</span>
         <input
           type="time"
           step="60"
@@ -329,7 +327,7 @@ function EntryTimeCell({
           disabled={disabled || isRunning}
           placeholder={isRunning ? 'now' : undefined}
           aria-label="End time"
-          className="h-9 w-[6.75rem] rounded-lg border-2 border-border bg-muted/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 hover:border-border/80 focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-9 w-[6.75rem] rounded-md border-2 border-stone bg-warm-taupe/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors placeholder:text-smoke/60 hover:border-stone/80 focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         <Popover
@@ -345,7 +343,7 @@ function EntryTimeCell({
               disabled={disabled}
               aria-label="Pick dates"
               title="Pick dates"
-              className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-border bg-muted/30 text-muted-foreground transition-colors hover:border-border/80 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-stone bg-warm-taupe/30 text-smoke transition-colors hover:border-stone/80 hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               <CalendarDays className="size-4" />
             </button>
@@ -481,7 +479,7 @@ export const EntryRow = memo(function EntryRow({
             {isSubEntry && (
               <span
                 aria-hidden="true"
-                className="inline-flex shrink-0 items-center text-muted-foreground/60"
+                className="inline-flex shrink-0 items-center text-smoke/60"
               >
                 <CornerDownRight className="size-3.5" />
               </span>
@@ -490,7 +488,7 @@ export const EntryRow = memo(function EntryRow({
               {editDesc ? (
                 <input
                   ref={attachDescInput}
-                  className="w-full rounded border border-border bg-background px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded border border-stone bg-eggshell px-2 py-1 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
                   value={draftDesc}
                   onChange={(e) => setDraftDesc(e.target.value)}
                   onBlur={commitDesc}
@@ -520,7 +518,7 @@ export const EntryRow = memo(function EntryRow({
                   }}
                 >
                   {entry.description || (
-                    <span className="text-muted-foreground font-normal">
+                    <span className="text-smoke font-normal">
                       No description
                     </span>
                   )}
@@ -605,7 +603,7 @@ export const EntryRow = memo(function EntryRow({
                   type="button"
                   onClick={() => onStartEdit(entry)}
                   disabled={actionsDisabled}
-                  className="inline-flex items-center gap-1 rounded border border-current/30 px-2 py-1 font-semibold hover:bg-background/70 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full border border-current/30 px-2 py-1 font-semibold hover:bg-eggshell/70 disabled:opacity-50"
                 >
                   <Pencil className="size-3" />
                   Edit time
@@ -614,7 +612,7 @@ export const EntryRow = memo(function EntryRow({
                   type="button"
                   onClick={() => setShowDeleteDialog(true)}
                   disabled={actionsDisabled}
-                  className="inline-flex items-center gap-1 rounded border border-current/30 px-2 py-1 font-semibold hover:bg-background/70 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full border border-current/30 px-2 py-1 font-semibold hover:bg-eggshell/70 disabled:opacity-50"
                 >
                   <Trash2 className="size-3" />
                   Delete
@@ -657,8 +655,8 @@ export const EntryRow = memo(function EntryRow({
       <TableCell className="py-3 px-4 w-[10%]">
         {isDeleting ? (
           <div className="flex items-center justify-end gap-1.5">
-            <Loader2 className="size-4 animate-spin text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Deleting…</span>
+            <Loader2 className="size-4 animate-spin text-smoke" />
+            <span className="text-xs text-smoke">Deleting…</span>
           </div>
         ) : (
           <div className="flex items-center justify-end gap-1">
@@ -668,7 +666,7 @@ export const EntryRow = memo(function EntryRow({
                 onClick={() => onResume(entry)}
                 disabled={actionsDisabled}
                 title="Resume this task"
-                className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-stone p-1.5 text-primary transition-colors hover:bg-warm-taupe disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Resume entry"
               >
                 <Play className="size-3.5" />
@@ -676,14 +674,14 @@ export const EntryRow = memo(function EntryRow({
             ) : (
               <span
                 aria-hidden="true"
-                className="size-8 shrink-0 rounded-lg border border-transparent"
+                className="size-8 shrink-0 rounded-full border border-transparent"
               />
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger
                 disabled={actionsDisabled}
-                className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-8 w-7 items-center justify-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="More actions"
                 title="More actions"
               >

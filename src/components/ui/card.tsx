@@ -5,14 +5,26 @@ import { cn } from '#/lib/utils'
 function Card({
   className,
   size = 'default',
+  variant = 'elevated',
   ...props
-}: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
+}: React.ComponentProps<'div'> & {
+  size?: 'default' | 'sm'
+  /** Editorial card variants (DESIGN.md §Components).
+   *  - `elevated` (default): eggshell card, stone hairline, whisper elevation
+   *  - `taupe`: Feature Card — #f5f3f1 fill, no border, no shadow
+   *  - `plain`: hairline-separated surface with no elevation */
+  variant?: 'elevated' | 'taupe' | 'plain'
+}) {
   return (
     <div
       data-slot="card"
       data-size={size}
+      data-variant={variant}
       className={cn(
-        'group/card flex flex-col gap-6 overflow-hidden rounded-xl bg-card py-6 text-sm text-card-foreground shadow-xs ring-1 ring-foreground/10 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
+        'group/card flex flex-col gap-6 overflow-hidden rounded-xl border border-stone bg-card py-6 text-sm text-card-foreground shadow-[var(--shadow-whisper)] has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl',
+        variant === 'taupe' &&
+          'border-transparent bg-warm-taupe shadow-none dark:bg-muted',
+        variant === 'plain' && 'bg-transparent shadow-none',
         className,
       )}
       {...props}

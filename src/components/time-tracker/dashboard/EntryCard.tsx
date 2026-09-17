@@ -34,7 +34,7 @@ const CardDuration = memo(function CardDuration({
         {formatTime(seconds)}
       </span>
       {entry.billable && (
-        <p className="m-0 mt-0.5 text-xs font-semibold text-muted-foreground">
+        <p className="m-0 mt-0.5 text-xs font-semibold text-smoke">
           {formatCurrency(
             (seconds / 3600) *
               rateLookup(
@@ -111,21 +111,21 @@ export const EntryCard = memo(function EntryCard({
     return (
       <>
         <div
-          className={`min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
+          className={`min-w-0 rounded-xl border border-stone/50 bg-warm-taupe/20 px-3 py-2 ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
         >
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div
-              className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+              className="flex min-w-0 items-center gap-1.5 text-xs text-smoke"
               suppressHydrationWarning
             >
-              <span className="shrink-0 text-muted-foreground/40">
+              <span className="shrink-0 text-smoke/40">
                 {isDeleting ? <Loader2 className="size-3 animate-spin" /> : '↳'}
               </span>
               <span className="min-w-0 truncate">{timeRange}</span>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {isDeleting ? (
-                <span className="text-xs text-muted-foreground">Deleting…</span>
+                <span className="text-xs text-smoke">Deleting…</span>
               ) : (
                 <CardDuration
                   entry={entry}
@@ -139,7 +139,7 @@ export const EntryCard = memo(function EntryCard({
                   type="button"
                   onClick={() => onStartEdit(entry)}
                   disabled={actionsDisabled}
-                  className="rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                  className="rounded-full border border-stone p-1 text-smoke transition-colors hover:bg-accent disabled:opacity-50"
                   aria-label="Edit entry"
                 >
                   <Pencil className="size-3" />
@@ -165,14 +165,14 @@ export const EntryCard = memo(function EntryCard({
                 <button
                   type="button"
                   onClick={() => onStartEdit(entry)}
-                  className="rounded border border-current/30 px-2 py-1 font-semibold"
+                  className="rounded-full border border-current/30 px-2 py-1 font-semibold"
                 >
                   Edit time
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowDeleteDialog(true)}
-                  className="rounded border border-current/30 px-2 py-1 font-semibold"
+                  className="rounded-full border border-current/30 px-2 py-1 font-semibold"
                 >
                   Delete
                 </button>
@@ -201,12 +201,12 @@ export const EntryCard = memo(function EntryCard({
 
   return (
     <div
-      className={`min-w-0 rounded-lg border bg-background p-3 shadow-sm ${
+      className={`min-w-0 rounded-xl border bg-eggshell p-3 shadow-[var(--shadow-whisper)] ${
         isDeleting
           ? 'opacity-50 pointer-events-none'
           : !entry.endedAt
             ? 'running-glow border-primary/40'
-            : 'border-border'
+            : 'border-stone'
       }`}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
@@ -215,7 +215,7 @@ export const EntryCard = memo(function EntryCard({
           title={entry.description || undefined}
         >
           {entry.description || (
-            <span className="text-muted-foreground">No description</span>
+            <span className="text-smoke">No description</span>
           )}
         </p>
         <CardDuration
@@ -228,7 +228,7 @@ export const EntryCard = memo(function EntryCard({
 
       <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5">
         {project && (
-          <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+          <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-semibold text-foreground">
             <span
               className="size-2 shrink-0 rounded-full"
               style={{ backgroundColor: project.color }}
@@ -239,7 +239,7 @@ export const EntryCard = memo(function EntryCard({
         {entryTags.map((tag) => (
           <span
             key={tag.id}
-            className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
+            className="max-w-full truncate rounded-full border px-2 py-0.5 text-xs font-semibold"
             style={{ color: tag.color, borderColor: `${tag.color}55` }}
             title={tag.name}
           >
@@ -247,19 +247,19 @@ export const EntryCard = memo(function EntryCard({
           </span>
         ))}
         {entry.billable && (
-          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+          <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
             Billable
           </span>
         )}
         {!entry.endedAt && (
-          <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
+          <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-xs font-bold text-destructive">
             <span className="size-1.5 rounded-full bg-destructive animate-pulse" />
             Running now
           </span>
         )}
         {timingIssue && (
           <span
-            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-bold ${
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold ${
               timingIssue === 'needs-repair'
                 ? 'bg-destructive/10 text-destructive'
                 : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
@@ -290,14 +290,14 @@ export const EntryCard = memo(function EntryCard({
             <button
               type="button"
               onClick={() => onStartEdit(entry)}
-              className="rounded border border-current/30 px-2 py-1 font-semibold"
+              className="rounded-full border border-current/30 px-2 py-1 font-semibold"
             >
               Edit time
             </button>
             <button
               type="button"
               onClick={() => setShowDeleteDialog(true)}
-              className="rounded border border-current/30 px-2 py-1 font-semibold"
+              className="rounded-full border border-current/30 px-2 py-1 font-semibold"
             >
               Delete
             </button>
@@ -307,15 +307,13 @@ export const EntryCard = memo(function EntryCard({
 
       <div className="mt-2.5 flex min-w-0 flex-wrap items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="m-0 truncate text-xs text-muted-foreground">
-            {timeRange}
-          </p>
+          <p className="m-0 truncate text-xs text-smoke">{timeRange}</p>
         </div>
         <div className="flex shrink-0 gap-1.5">
           {isDeleting ? (
             <div className="flex items-center gap-1.5">
-              <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Deleting…</span>
+              <Loader2 className="size-3.5 animate-spin text-smoke" />
+              <span className="text-xs text-smoke">Deleting…</span>
             </div>
           ) : (
             <>
@@ -325,7 +323,7 @@ export const EntryCard = memo(function EntryCard({
                   onClick={() => onResume(entry)}
                   disabled={actionsDisabled}
                   title="Resume this task"
-                  className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-full border border-stone p-1.5 text-primary transition-colors hover:bg-warm-taupe disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Resume entry"
                 >
                   <Play className="size-3.5" />
@@ -335,7 +333,7 @@ export const EntryCard = memo(function EntryCard({
                 type="button"
                 onClick={() => onStartEdit(entry)}
                 disabled={actionsDisabled}
-                className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                className="rounded-full border border-stone p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
                 aria-label="Edit entry"
               >
                 <Pencil className="size-3.5" />
@@ -344,7 +342,7 @@ export const EntryCard = memo(function EntryCard({
                 type="button"
                 onClick={() => setShowDuplicateDialog(true)}
                 disabled={actionsDisabled}
-                className="rounded-lg border border-border p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                className="rounded-full border border-stone p-1.5 text-foreground transition-colors hover:bg-accent disabled:opacity-50"
                 aria-label="Duplicate entry"
               >
                 <Copy className="size-3.5" />
@@ -353,7 +351,7 @@ export const EntryCard = memo(function EntryCard({
                 type="button"
                 onClick={() => setShowDeleteDialog(true)}
                 disabled={actionsDisabled}
-                className="rounded-lg border border-destructive/30 p-1.5 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                className="rounded-full border border-destructive/30 p-1.5 text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
                 aria-label="Delete entry"
               >
                 <Trash2 className="size-3.5" />

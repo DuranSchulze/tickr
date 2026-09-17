@@ -75,7 +75,7 @@ export function ExportMenu({
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={disabled || isBusy}
-        className="no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        className="no-print inline-flex h-9 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isBusy ? (
           <Loader2 className="size-4 animate-spin" />
@@ -83,7 +83,7 @@ export function ExportMenu({
           <FileText className="size-4" />
         )}
         Export
-        <ChevronDown className="size-3.5 text-muted-foreground" />
+        <ChevronDown className="size-3.5 text-smoke" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={handleCsv} disabled={isBusy}>

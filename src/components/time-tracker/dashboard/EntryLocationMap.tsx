@@ -28,7 +28,7 @@ export function EntryLocationMap({
   const isDevice = source === 'device'
 
   return (
-    <div className="relative mt-2 overflow-hidden rounded-md border border-border">
+    <div className="relative mt-2 overflow-hidden rounded-md border border-stone">
       <Map
         theme={theme}
         center={[longitude, latitude]}
@@ -39,17 +39,17 @@ export function EntryLocationMap({
       >
         <MapMarker longitude={longitude} latitude={latitude}>
           <MarkerContent>
-            <div className="bg-primary size-4 rounded-full border-2 border-white shadow-lg" />
+            <div className="bg-primary-action size-4 rounded-full border-2 border-white shadow-[var(--shadow-whisper)]" />
           </MarkerContent>
         </MapMarker>
       </Map>
       {location && (
-        <span className="bg-background/80 text-muted-foreground pointer-events-none absolute bottom-1.5 left-1.5 max-w-[calc(100%-3rem)] truncate rounded px-1.5 py-0.5 text-[10px] font-medium">
+        <span className="bg-eggshell/80 text-smoke pointer-events-none absolute bottom-1.5 left-1.5 max-w-[calc(100%-3rem)] truncate rounded px-1.5 py-0.5 text-[10px] font-medium">
           {location}
         </span>
       )}
       {isDevice && accuracyMeters != null && (
-        <span className="bg-background/80 text-muted-foreground pointer-events-none absolute bottom-1.5 right-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium">
+        <span className="bg-eggshell/80 text-smoke pointer-events-none absolute bottom-1.5 right-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium">
           GPS ±{accuracyMeters.toLocaleString('en-US')} m
         </span>
       )}

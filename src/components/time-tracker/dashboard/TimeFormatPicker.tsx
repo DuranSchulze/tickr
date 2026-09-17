@@ -12,7 +12,7 @@ export function TimeFormatPicker({
     <select
       value={format}
       onChange={(e) => onChange(e.target.value as TimeFormat)}
-      className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-semibold text-foreground outline-none focus:border-primary"
+      className="h-8 rounded-md border border-stone bg-eggshell px-2 text-xs font-semibold text-foreground outline-none focus:border-primary"
       aria-label="Time display format"
     >
       {TIME_FORMATS.map((f) => (

@@ -13,6 +13,8 @@ export type Workspace = {
   googleSheetUrl: string | null
   googleSheetSyncedAt: string | null
   locationTrackingEnabled: boolean
+  expectedDailyHours: number
+  payrollCutoffDays: number[]
 }
 
 export type WorkspaceRole = {

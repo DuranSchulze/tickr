@@ -77,22 +77,22 @@ export const MobileNav = memo(function ({
         </Button>
       </DrawerTrigger>
 
-      <DrawerContent className="flex flex-col bg-card p-0">
+      <DrawerContent className="flex flex-col bg-eggshell p-0">
         <DrawerTitle className="sr-only">Mobile navigation</DrawerTitle>
         <DrawerDescription className="sr-only">
           Primary workspace navigation links.
         </DrawerDescription>
         <div className="flex flex-1 flex-col overflow-y-auto px-2 py-3">
-          <div className="mb-3 border border-primary/30 bg-primary/10 px-3 py-2.5">
+          <div className="mb-3 rounded-xl border border-stone bg-warm-taupe px-3 py-2.5">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="m-0 text-xs font-semibold uppercase tracking-wide text-primary">
+                <p className="m-0 text-xs font-semibold uppercase tracking-wide text-graphite">
                   Workspace
                 </p>
                 <p className="m-0 mt-0.5 truncate text-sm font-bold text-foreground">
                   {workspaceName}
                 </p>
-                <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">
+                <p className="m-0 mt-0.5 truncate text-xs text-smoke">
                   {userEmail}
                 </p>
               </div>
@@ -107,10 +107,10 @@ export const MobileNav = memo(function ({
             <Link
               to="/app/time-tracker"
               onClick={close}
-              className={`flex h-10 w-full items-center gap-3 px-3 text-sm font-semibold transition-colors ${
+              className={`flex h-10 w-full items-center gap-3 rounded-full px-3 text-sm font-semibold transition-colors ${
                 timerActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  ? 'bg-stone text-foreground [&_svg]:text-primary'
+                  : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
               }`}
             >
               <Timer className="size-4 shrink-0" />
@@ -120,10 +120,10 @@ export const MobileNav = memo(function ({
             <Link
               to="/app/calendar"
               onClick={close}
-              className={`flex h-10 w-full items-center gap-3 px-3 text-sm font-semibold transition-colors ${
+              className={`flex h-10 w-full items-center gap-3 rounded-full px-3 text-sm font-semibold transition-colors ${
                 calendarActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  ? 'bg-stone text-foreground [&_svg]:text-primary'
+                  : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
               }`}
             >
               <CalendarDays className="size-4 shrink-0" />
@@ -135,12 +135,12 @@ export const MobileNav = memo(function ({
                 <button
                   type="button"
                   onClick={onToggleAnalytics}
-                  className={`mt-1 flex w-full items-center gap-3 px-3 py-2 text-sm font-semibold transition-colors ${
+                  className={`mt-1 flex w-full items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
                     analyticsGroupActive && !analyticsOpen
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-stone text-foreground [&_svg]:text-primary'
                       : analyticsGroupActive
-                        ? 'bg-primary/15 text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-stone/60 text-foreground [&_svg]:text-primary'
+                        : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
                   }`}
                 >
                   <BarChart3 className="size-4 shrink-0" />
@@ -153,7 +153,7 @@ export const MobileNav = memo(function ({
                 </button>
 
                 {analyticsOpen && (
-                  <div className="ml-3 mt-0.5 grid gap-0.5 border-l border-border pl-3">
+                  <div className="ml-3 mt-0.5 grid gap-0.5 border-l border-stone pl-3">
                     {analyticsChildren.map((item) => {
                       const Icon = item.icon
                       return (
@@ -161,10 +161,10 @@ export const MobileNav = memo(function ({
                           key={item.to}
                           to={item.to as '/app/analytics'}
                           onClick={close}
-                          className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-muted-foreground no-underline hover:bg-accent hover:text-foreground"
+                          className="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold text-smoke no-underline hover:bg-warm-taupe hover:text-foreground"
                           activeProps={{
                             className:
-                              'flex items-center gap-3 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground no-underline',
+                              'flex items-center gap-3 rounded-full bg-stone px-3 py-2 text-sm font-semibold text-foreground no-underline [&_svg]:text-primary',
                           }}
                         >
                           <Icon className="size-4" />
@@ -182,12 +182,12 @@ export const MobileNav = memo(function ({
                 <button
                   type="button"
                   onClick={onToggleSettings}
-                  className={`mt-1 flex w-full items-center gap-3 px-3 py-2 text-sm font-semibold transition-colors ${
+                  className={`mt-1 flex w-full items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
                     settingsActive && !settingsOpen
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-stone text-foreground [&_svg]:text-primary'
                       : settingsActive
-                        ? 'bg-primary/15 text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-stone/60 text-foreground [&_svg]:text-primary'
+                        : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
                   }`}
                 >
                   <Cog className="size-4 shrink-0" />
@@ -200,7 +200,7 @@ export const MobileNav = memo(function ({
                 </button>
 
                 {settingsOpen && (
-                  <div className="ml-3 mt-0.5 grid gap-0.5 border-l border-border pl-3">
+                  <div className="ml-3 mt-0.5 grid gap-0.5 border-l border-stone pl-3">
                     {settingsChildren.map((item) => {
                       const Icon = item.icon
                       return (
@@ -208,10 +208,10 @@ export const MobileNav = memo(function ({
                           key={item.to}
                           to={item.to as '/app/workspace/members'}
                           onClick={close}
-                          className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-muted-foreground no-underline hover:bg-accent hover:text-foreground"
+                          className="flex items-center gap-3 rounded-full px-3 py-2 text-sm font-semibold text-smoke no-underline hover:bg-warm-taupe hover:text-foreground"
                           activeProps={{
                             className:
-                              'flex items-center gap-3 bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground no-underline',
+                              'flex items-center gap-3 rounded-full bg-stone px-3 py-2 text-sm font-semibold text-foreground no-underline [&_svg]:text-primary',
                           }}
                         >
                           <Icon className="size-4" />
@@ -226,11 +226,11 @@ export const MobileNav = memo(function ({
           </nav>
         </div>
 
-        <div className="border-t border-border p-2">
+        <div className="border-t border-stone p-2">
           <DrawerClose asChild>
             <button
               type="button"
-              className="flex h-9 w-full items-center justify-center gap-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="flex h-9 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold text-smoke transition-colors hover:bg-warm-taupe hover:text-foreground"
             >
               Close menu
             </button>

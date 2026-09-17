@@ -43,12 +43,12 @@ function KpiCard({
   sub?: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="rounded-xl border border-stone bg-eggshell p-4">
+      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
         {label}
       </p>
       <p className="m-0 mt-1 text-2xl font-bold text-foreground">{value}</p>
-      {sub && <p className="m-0 mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+      {sub && <p className="m-0 mt-0.5 text-xs text-smoke">{sub}</p>}
     </div>
   )
 }
@@ -103,10 +103,10 @@ export function DepartmentDashboardScreen({
           >
             Department Analytics
           </p>
-          <h1 className="m-0 mt-1 text-2xl font-bold text-foreground">
+          <h1 className="m-0 font-display text-heading-sm mt-1 text-foreground">
             {department.name}
           </h1>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             {department.memberCount} member
             {department.memberCount !== 1 ? 's' : ''}
           </p>
@@ -118,12 +118,12 @@ export function DepartmentDashboardScreen({
       </div>
 
       {canFilterDepartments && (
-        <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+        <section className="rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
           <div className="grid gap-3 md:grid-cols-[minmax(180px,260px)_minmax(240px,1fr)] md:items-end">
             <div className="min-w-0 flex flex-col gap-1">
               <label
                 htmlFor="department-analytics-department"
-                className="text-xs font-semibold text-muted-foreground"
+                className="text-xs font-semibold text-smoke"
               >
                 Department
               </label>
@@ -137,7 +137,7 @@ export function DepartmentDashboardScreen({
                     q: undefined,
                   })
                 }
-                className="h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="h-10 w-full min-w-0 rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="">All departments</option>
                 {availableDepartments.map((dept) => (
@@ -149,9 +149,7 @@ export function DepartmentDashboardScreen({
             </div>
 
             <div className="min-w-0 flex flex-col gap-1">
-              <p className="m-0 text-xs font-semibold text-muted-foreground">
-                Member
-              </p>
+              <p className="m-0 text-xs font-semibold text-smoke">Member</p>
               <Combobox
                 value={filters.memberId}
                 options={buildDepartmentMemberOptions(

@@ -48,7 +48,7 @@ export function BirthdayDialog({
         onClick={onClose}
         aria-label="Close"
       />
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div className="relative w-full max-w-sm rounded-2xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Cake className="size-5 text-foreground" />
@@ -59,13 +59,13 @@ export function BirthdayDialog({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-7 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
           >
             <X className="size-4" />
           </button>
         </div>
 
-        <p className="mb-4 text-center text-sm text-muted-foreground">
+        <p className="mb-4 text-center text-sm text-smoke">
           {selected ? formatDate(dateToStr(selected)) : 'Not set'}
         </p>
 

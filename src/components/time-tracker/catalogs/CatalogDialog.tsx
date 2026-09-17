@@ -30,7 +30,7 @@ export function CatalogCard({
     <button
       type="button"
       onClick={onOpen}
-      className="group grid min-h-[180px] gap-4 rounded-lg border border-border bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent/30"
+      className="group grid min-h-[180px] gap-4 rounded-xl border border-transparent bg-warm-taupe p-5 text-left transition-colors hover:bg-stone/40"
     >
       <div className="flex items-start justify-between gap-3">
         <span
@@ -38,15 +38,13 @@ export function CatalogCard({
         >
           {icon}
         </span>
-        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-bold text-muted-foreground">
+        <span className="rounded-full border border-stone px-2.5 py-1 text-xs font-bold text-smoke">
           {count}
         </span>
       </div>
       <div>
         <h2 className="m-0 text-lg font-bold text-foreground">{title}</h2>
-        <p className="m-0 mt-1 text-sm leading-6 text-muted-foreground">
-          {description}
-        </p>
+        <p className="m-0 mt-1 text-sm leading-6 text-smoke">{description}</p>
       </div>
       <div className="mt-auto min-h-7">{preview}</div>
     </button>
@@ -84,9 +82,9 @@ export function CatalogDialog({
         onClick={onClose}
         aria-label="Close"
       />
-      <section className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl sm:rounded-2xl border border-border bg-card shadow-2xl">
+      <section className="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
         {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5 sm:py-4">
+        <div className="flex items-center justify-between gap-3 border-b border-stone px-4 py-3 sm:px-5 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
             <span
               className={`hidden sm:grid size-10 shrink-0 place-items-center rounded-lg border ${accent.border} ${accent.bg} ${accent.text}`}
@@ -94,13 +92,13 @@ export function CatalogDialog({
               {icon}
             </span>
             <div className="min-w-0">
-              <p className="m-0 text-xs font-bold uppercase tracking-wide text-primary">
+              <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
                 {countLabel}
               </p>
               <h2 className="m-0 text-base sm:text-xl font-bold text-foreground leading-tight">
                 {title}
               </h2>
-              <p className="m-0 mt-0.5 hidden sm:block text-sm leading-6 text-muted-foreground">
+              <p className="m-0 mt-0.5 hidden sm:block text-sm leading-6 text-smoke">
                 {description}
               </p>
             </div>
@@ -108,7 +106,7 @@ export function CatalogDialog({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
             aria-label="Close catalog"
           >
             <X className="size-4" />
@@ -125,7 +123,7 @@ export function CatalogDialog({
           <button
             type="button"
             onClick={() => setFormOpen(true)}
-            className="absolute bottom-5 right-5 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
+            className="absolute bottom-5 right-5 flex size-12 items-center justify-center rounded-full bg-primary text-primary-action-foreground shadow-[var(--shadow-whisper)] hover:bg-primary-action/85 transition-colors"
             aria-label="Add new item"
           >
             <Plus className="size-5" />

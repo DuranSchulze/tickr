@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   classifyHistoricalEntrySource,
+  sourceAfterTimeEdit,
   formatManualEntryIndicator,
   formatTimeEntrySource,
 } from './entry-source'
@@ -66,5 +67,46 @@ describe('time-entry source formatting', () => {
     expect(formatManualEntryIndicator('MANUAL')).toBe('X')
     expect(formatManualEntryIndicator('TIMER')).toBe('')
     expect(formatManualEntryIndicator(null)).toBe('')
+  })
+})
+
+describe('sourceAfterTimeEdit', () => {
+  const existing = {
+    entrySource: 'TIMER' as const,
+    startedAt: new Date('2026-09-08T00:00:00Z'),
+    endedAt: new Date('2026-09-08T08:00:00Z'),
+  }
+  it('preserves source for unchanged clock times', () => {
+    expect(sourceAfterTimeEdit(existing, { ...existing })).toBe('TIMER')
+  })
+  it('marks changed starts or ends as manual', () => {
+    expect(
+      sourceAfterTimeEdit(existing, {
+        ...existing,
+        startedAt: new Date('2026-09-07T23:00:00Z'),
+      }),
+    ).toBe('MANUAL')
+    expect(
+      sourceAfterTimeEdit(existing, {
+        ...existing,
+        endedAt: new Date('2026-09-08T09:00:00Z'),
+      }),
+    ).toBe('MANUAL')
+  })
+  it('preserves manual and unknown sources on content-only edits', () => {
+    expect(
+      sourceAfterTimeEdit({ ...existing, entrySource: 'MANUAL' }, existing),
+    ).toBe('MANUAL')
+    expect(
+      sourceAfterTimeEdit({ ...existing, entrySource: null }, existing),
+    ).toBeNull()
+  })
+  it('marks a running timer with a changed start as manual', () => {
+    expect(
+      sourceAfterTimeEdit(
+        { ...existing, endedAt: null },
+        { startedAt: new Date('2026-09-07T23:00:00Z'), endedAt: null },
+      ),
+    ).toBe('MANUAL')
   })
 })

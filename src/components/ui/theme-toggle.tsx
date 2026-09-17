@@ -31,7 +31,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
       }
       className={cn(
-        'inline-flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
+        'inline-flex size-9 items-center justify-center rounded-full text-smoke transition-colors hover:bg-warm-taupe hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/30',
         className,
       )}
     >

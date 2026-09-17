@@ -115,13 +115,13 @@ export function MembersScreen({
 
       {canManage && <PendingInvitesPanel />}
 
-      <section className="min-w-0 overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border p-4">
+      <section className="min-w-0 overflow-x-auto rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-stone p-4">
           <div>
             <h2 className="m-0 text-lg font-bold text-foreground">
               Managed user list
             </h2>
-            <p className="m-0 mt-1 text-sm text-muted-foreground">
+            <p className="m-0 mt-1 text-sm text-smoke">
               Employees join this private workspace when their account email
               matches this list.
             </p>
@@ -132,7 +132,7 @@ export function MembersScreen({
               <button
                 type="button"
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-full bg-primary-action px-4 py-2 text-sm font-bold text-primary-action-foreground transition-colors"
               >
                 <UserPlus className="size-4" />
                 Invite member

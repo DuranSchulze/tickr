@@ -38,7 +38,7 @@ export function DepartmentProjectBreakdown({
       bodyClassName="p-0"
     >
       <>
-        <div className="border-b border-border p-4">
+        <div className="border-b border-stone p-4">
           {chartData.length === 0 ? (
             <EmptyChart label="Projects will appear after entries are completed." />
           ) : (
@@ -61,11 +61,11 @@ export function DepartmentProjectBreakdown({
                           {project.name}
                         </p>
                       </div>
-                      <p className="m-0 truncate pl-4 text-xs text-muted-foreground">
+                      <p className="m-0 truncate pl-4 text-xs text-smoke">
                         {project.clientName}
                       </p>
                     </div>
-                    <div className="h-4 min-w-0 rounded-full bg-muted">
+                    <div className="h-4 min-w-0 rounded-full bg-warm-taupe">
                       <div
                         className="h-full rounded-full"
                         style={{
@@ -88,20 +88,20 @@ export function DepartmentProjectBreakdown({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-sm">
               <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b border-stone bg-warm-taupe">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
                     Project
                   </th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                     Hours
                   </th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                     Billable Hrs
                   </th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                     Amount
                   </th>
-                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
                     Members
                   </th>
                 </tr>
@@ -110,7 +110,7 @@ export function DepartmentProjectBreakdown({
                 {projects.map((project) => (
                   <tr
                     key={project.projectId}
-                    className="transition-colors hover:bg-muted/20"
+                    className="transition-colors hover:bg-warm-taupe/20"
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export function DepartmentProjectBreakdown({
                           {project.name}
                         </span>
                       </div>
-                      <p className="m-0 mt-1 pl-4 text-xs text-muted-foreground">
+                      <p className="m-0 mt-1 pl-4 text-xs text-smoke">
                         {project.clientName}
                       </p>
                     </td>
@@ -137,7 +137,7 @@ export function DepartmentProjectBreakdown({
                         ? formatCurrency(project.billableAmount, currency)
                         : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                    <td className="px-4 py-3 text-right text-xs text-smoke">
                       {project.memberCount}
                     </td>
                   </tr>
@@ -146,14 +146,14 @@ export function DepartmentProjectBreakdown({
             </table>
           </div>
         ) : (
-          <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+          <p className="px-4 py-10 text-center text-sm text-smoke">
             No project rows on this page.
           </p>
         )}
 
         {pagination.total > 0 && (
-          <div className="flex flex-col gap-3 border-t border-border px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-            <span className="text-xs text-muted-foreground">
+          <div className="flex flex-col gap-3 border-t border-stone px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+            <span className="text-xs text-smoke">
               Showing {firstProject.toLocaleString()}-
               {lastProject.toLocaleString()} of{' '}
               {pagination.total.toLocaleString()} · Page {pagination.page} of{' '}
@@ -165,7 +165,7 @@ export function DepartmentProjectBreakdown({
                 disabled={pagination.page <= 1}
                 onClick={() => onPageChange(pagination.page - 1)}
                 aria-label="Previous project page"
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-8 items-center justify-center rounded-full border border-stone text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronLeft className="size-4" />
               </button>
@@ -174,7 +174,7 @@ export function DepartmentProjectBreakdown({
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => onPageChange(pagination.page + 1)}
                 aria-label="Next project page"
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-border text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex size-8 items-center justify-center rounded-full border border-stone text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ChevronRight className="size-4" />
               </button>

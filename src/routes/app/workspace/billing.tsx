@@ -66,26 +66,26 @@ function BillingPage() {
     <div className="mx-auto w-full max-w-6xl pb-12">
       <Link
         to="/app/workspace/settings"
-        className="mb-5 inline-flex items-center gap-2 text-xs font-bold text-muted-foreground no-underline hover:text-foreground"
+        className="mb-5 inline-flex items-center gap-2 text-xs font-bold text-smoke no-underline hover:text-foreground"
       >
         <ArrowLeft className="size-4" /> Workspace settings
       </Link>
-      <header className="border border-border bg-card p-6 shadow-[6px_6px_0_color-mix(in_oklab,var(--border)_65%,transparent)] sm:p-8">
+      <header className="rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)] sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-graphite">
               Owner billing
             </p>
-            <h1 className="mt-2 font-heading text-3xl font-black tracking-[-0.04em] text-foreground sm:text-4xl">
+            <h1 className="mt-2 font-display text-heading-sm text-foreground">
               Plan and payment
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-smoke">
               Plans cover the whole workspace. Checkout is securely hosted by
               Xendit, and only workspace owners can make billing changes.
             </p>
           </div>
-          <div className="min-w-48 border border-border bg-background p-4">
-            <p className="text-[0.65rem] font-black uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="min-w-48 border border-stone bg-eggshell p-4">
+            <p className="text-[0.65rem] font-black uppercase tracking-[0.14em] text-smoke">
               Current plan
             </p>
             <p className="mt-1 text-xl font-black text-foreground">
@@ -120,11 +120,11 @@ function BillingPage() {
             return (
               <article
                 key={plan.id}
-                className={`flex flex-col border p-6 ${isSelected ? 'border-primary bg-primary/[0.05] shadow-[6px_6px_0_color-mix(in_oklab,var(--primary)_22%,transparent)]' : 'border-border bg-card'}`}
+                className={`flex flex-col rounded-xl border p-6 ${isSelected ? 'border-primary bg-primary/[0.05] shadow-[var(--shadow-whisper)]' : 'border-stone bg-eggshell'}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+                    <p className="text-xs font-black uppercase tracking-[0.14em] text-graphite">
                       Monthly workspace plan
                     </p>
                     <h3 className="mt-2 text-2xl font-black text-foreground">
@@ -132,19 +132,17 @@ function BillingPage() {
                     </h3>
                   </div>
                   {isCurrent ? (
-                    <span className="border border-border bg-background px-2 py-1 text-[0.65rem] font-black uppercase text-muted-foreground">
+                    <span className="border border-stone bg-eggshell px-2 py-1 text-[0.65rem] font-black uppercase text-smoke">
                       Current
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                <p className="mt-3 text-sm leading-6 text-smoke">
                   {plan.tagline}
                 </p>
-                <p className="mt-6 text-4xl font-black tracking-tight text-foreground">
+                <p className="mt-6 text-4xl font-black text-foreground">
                   ${(plan.monthlyPriceCents / 100).toFixed(0)}
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    / month
-                  </span>
+                  <span className="ml-2 text-sm text-smoke">/ month</span>
                 </p>
                 <ul className="mt-6 grid flex-1 gap-3 p-0 text-sm text-foreground">
                   {plan.features.map((feature) => (
@@ -160,7 +158,7 @@ function BillingPage() {
                   disabled={
                     loadingPlan !== null || billing.access.reason === 'exempt'
                   }
-                  className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 border border-primary bg-primary px-5 text-sm font-black text-primary-foreground disabled:cursor-wait disabled:opacity-60"
+                  className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-primary bg-primary-action px-5 text-sm font-black text-primary-action-foreground disabled:cursor-wait disabled:opacity-60"
                 >
                   {loadingPlan === plan.slug ? (
                     <Loader2 className="size-4 animate-spin" />
@@ -179,21 +177,21 @@ function BillingPage() {
         </div>
       </section>
 
-      <section className="mt-10 border border-border bg-card">
-        <div className="flex items-center gap-3 border-b border-border p-5">
+      <section className="mt-10 border border-stone bg-eggshell">
+        <div className="flex items-center gap-3 border-b border-stone p-5">
           <ReceiptText className="size-5 text-primary" />
           <h2 className="text-lg font-black text-foreground">
             Billing history
           </h2>
         </div>
         {billing.invoices.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">
+          <p className="p-6 text-sm text-smoke">
             No checkout or payment records yet.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[620px] text-left text-sm">
-              <thead className="bg-muted text-xs uppercase text-muted-foreground">
+              <thead className="bg-warm-taupe text-xs uppercase text-smoke">
                 <tr>
                   <th className="px-5 py-3">Date</th>
                   <th className="px-5 py-3">Reference</th>
@@ -203,7 +201,7 @@ function BillingPage() {
               </thead>
               <tbody>
                 {billing.invoices.map((invoice) => (
-                  <tr key={invoice.id} className="border-t border-border">
+                  <tr key={invoice.id} className="border-t border-stone">
                     <td className="px-5 py-4">
                       {new Date(invoice.createdAt).toLocaleDateString('en-US', {
                         timeZone: 'UTC',

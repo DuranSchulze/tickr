@@ -154,15 +154,13 @@ export function DepartmentsTablePage({
       col.accessor('description', {
         header: 'Description',
         cell: ({ getValue }) => (
-          <span className="text-sm text-muted-foreground">
-            {getValue() || '—'}
-          </span>
+          <span className="text-sm text-smoke">{getValue() || '—'}</span>
         ),
       }),
       col.accessor('memberCount', {
         header: 'Members',
         cell: ({ getValue }) => (
-          <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 text-sm text-smoke">
             <Users className="size-3.5" />
             {getValue()}
           </span>
@@ -180,7 +178,7 @@ export function DepartmentsTablePage({
                     <button
                       type="button"
                       onClick={() => dispatch({ editingDept: dept })}
-                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                      className="grid size-8 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
                       title="Edit"
                     >
                       <Pencil className="size-3.5" />
@@ -189,7 +187,7 @@ export function DepartmentsTablePage({
                       type="button"
                       disabled={deletingId === dept.id}
                       onClick={() => handleDelete(dept)}
-                      className="grid size-8 place-items-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                      className="grid size-8 place-items-center rounded-full text-smoke hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                       title="Delete"
                     >
                       <Trash2 className="size-3.5" />
@@ -215,7 +213,7 @@ export function DepartmentsTablePage({
         }
         aria-label="Google Sheet actions"
         aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

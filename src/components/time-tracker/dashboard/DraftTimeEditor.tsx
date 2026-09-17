@@ -158,16 +158,16 @@ export function DraftTimeEditor({
       <button
         type="button"
         onClick={openEditor}
-        className="inline-flex h-10 w-full items-center justify-start gap-2 rounded-lg border border-border bg-card px-3 text-sm text-foreground transition-colors hover:bg-accent"
+        className="inline-flex h-10 w-full items-center justify-start gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground transition-colors hover:bg-accent"
         title="Edit date and time"
         aria-label="Edit date and time"
       >
-        <CalendarDays className="size-4 shrink-0 text-muted-foreground" />
+        <CalendarDays className="size-4 shrink-0 text-smoke" />
         <span className="grid min-w-0 justify-items-start gap-0.5 text-xs leading-tight tabular-nums">
           <span className="font-semibold text-foreground">
             {formatShortDate(startDate)}
           </span>
-          <span className="text-muted-foreground">
+          <span className="text-smoke">
             {isRunning
               ? 'now'
               : spansDates
@@ -188,7 +188,7 @@ export function DraftTimeEditor({
           className="top-3 flex max-h-[min(90dvh,42rem)] translate-y-0 flex-col gap-0 overflow-hidden p-0 sm:top-1/2 sm:max-w-xl sm:-translate-y-1/2 md:max-w-2xl"
           showCloseButton={false}
         >
-          <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-5 py-4">
+          <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-stone px-5 py-4">
             <DialogTitle>Edit Date & Time</DialogTitle>
             <DialogClose asChild>
               <Button
@@ -205,7 +205,7 @@ export function DraftTimeEditor({
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 [-webkit-overflow-scrolling:touch] sm:p-4">
             <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)]">
-              <div className="rounded-md border border-border p-2">
+              <div className="rounded-md border border-stone p-2">
                 <Calendar
                   mode="range"
                   selected={dateRange}
@@ -213,7 +213,7 @@ export function DraftTimeEditor({
                   onSelect={() => undefined}
                   onDayClick={selectRangeDay}
                   autoFocus
-                  className="w-full bg-card p-2 [--cell-size:--spacing(8)] sm:[--cell-size:--spacing(9)]"
+                  className="w-full bg-eggshell p-2 [--cell-size:--spacing(8)] sm:[--cell-size:--spacing(9)]"
                   classNames={{
                     root: 'w-full',
                     month: 'flex w-full min-w-0 flex-col gap-4',
@@ -224,7 +224,7 @@ export function DraftTimeEditor({
 
               <div className="grid content-start gap-3">
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground">
+                  <div className="rounded-md border border-stone bg-warm-taupe/40 px-3 py-2 text-left text-sm text-smoke">
                     <span className="block text-xs font-semibold uppercase tracking-wide">
                       Start date
                     </span>
@@ -236,7 +236,7 @@ export function DraftTimeEditor({
                       })}
                     </span>
                   </div>
-                  <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-left text-sm text-muted-foreground">
+                  <div className="rounded-md border border-stone bg-warm-taupe/40 px-3 py-2 text-left text-sm text-smoke">
                     <span className="block text-xs font-semibold uppercase tracking-wide">
                       End date
                     </span>
@@ -251,7 +251,7 @@ export function DraftTimeEditor({
                     </span>
                   </div>
                 </div>
-                <p className="m-0 text-xs text-muted-foreground">
+                <p className="m-0 text-xs text-smoke">
                   Select one date for a same-day entry, or select a start and
                   end date for overnight or multi-day work.
                 </p>
@@ -266,7 +266,7 @@ export function DraftTimeEditor({
                       setStartTime(event.target.value)
                       setSaveAttempted(false)
                     }}
-                    className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                    className="h-10 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
                   />
                 </label>
 
@@ -282,12 +282,12 @@ export function DraftTimeEditor({
                     }}
                     disabled={isRunning}
                     placeholder={isRunning ? 'Running timer' : undefined}
-                    className="h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
+                    className="h-10 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary disabled:bg-warm-taupe disabled:text-smoke"
                   />
                 </label>
                 {!isRunning && (
-                  <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div className="rounded-md border border-stone bg-warm-taupe/30 px-3 py-2 text-sm">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-smoke">
                       Duration preview
                     </span>
                     <p className="m-0 mt-1 font-mono font-bold text-foreground">
@@ -307,7 +307,7 @@ export function DraftTimeEditor({
             </div>
           </div>
 
-          <DialogFooter className="shrink-0 border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4 [&_button]:w-full sm:[&_button]:w-auto">
+          <DialogFooter className="shrink-0 border-t border-stone p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4 sm:pb-4 [&_button]:w-full sm:[&_button]:w-auto">
             <DialogClose asChild>
               <Button type="button" variant="outline">
                 Cancel

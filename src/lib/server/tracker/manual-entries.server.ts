@@ -1,3 +1,4 @@
+import { sourceAfterTimeEdit } from '#/lib/time-tracker/entry-source'
 import type { z } from 'zod'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { db } from '#/db'
@@ -190,6 +191,7 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
         endedAt,
         durationSeconds: calculateDuration(startedAt, endedAt),
         notes: data.notes,
+        entrySource: sourceAfterTimeEdit(existingEntry, { startedAt, endedAt }),
       })
       .where(eq(timeEntries.id, existingEntry.id)),
     tagIds.length
@@ -281,6 +283,7 @@ export async function updateWorkspaceMemberEntry(
         endedAt,
         durationSeconds: calculateDuration(startedAt, endedAt),
         notes: data.notes,
+        entrySource: sourceAfterTimeEdit(existingEntry, { startedAt, endedAt }),
       })
       .where(eq(timeEntries.id, existingEntry.id)),
     tagIds.length

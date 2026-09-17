@@ -165,7 +165,7 @@ function DayGroupHeaderRow({
     <button
       type="button"
       onClick={() => void copyDayDtrRow(group, runningEntry)}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-stone px-2.5 text-xs font-semibold text-smoke transition-colors hover:bg-accent hover:text-foreground"
       title="Copy DTR row for Google Sheets"
     >
       <Copy className="size-3.5" />
@@ -175,12 +175,12 @@ function DayGroupHeaderRow({
 
   if (view === 'day') {
     return (
-      <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-muted/30 px-3 py-3 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="min-w-0 truncate text-sm font-bold text-foreground">
             {group.label}
           </span>
-          <span className="shrink-0 text-xs text-muted-foreground">
+          <span className="shrink-0 text-xs text-smoke">
             {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
           </span>
         </div>
@@ -197,7 +197,7 @@ function DayGroupHeaderRow({
   }
 
   return (
-    <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-muted/30 px-3 py-3 transition-colors hover:bg-muted/50 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
+    <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 transition-colors hover:bg-warm-taupe/50 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
       <button
         type="button"
         onClick={onToggle}
@@ -205,18 +205,18 @@ function DayGroupHeaderRow({
       >
         <span className="shrink-0">
           {dayCollapsed ? (
-            <ChevronRight className="size-4 text-muted-foreground" />
+            <ChevronRight className="size-4 text-smoke" />
           ) : (
-            <ChevronDown className="size-4 text-muted-foreground" />
+            <ChevronDown className="size-4 text-smoke" />
           )}
         </span>
         <span className="min-w-0 truncate text-sm font-bold text-foreground">
           {group.label}
         </span>
-        <span className="shrink-0 text-xs text-muted-foreground">
+        <span className="shrink-0 text-xs text-smoke">
           {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
           {group.taskGroups.length > 1 && (
-            <span className="ml-1 text-muted-foreground/60">
+            <span className="ml-1 text-smoke/60">
               · {group.taskGroups.length} tasks
             </span>
           )}
@@ -299,7 +299,7 @@ function GroupTimeSummary({ group }: { group: TaskGroup }) {
   return (
     <div className="grid justify-items-end gap-0.5 text-xs leading-tight tabular-nums">
       <span className="font-semibold text-foreground">{startLabel}</span>
-      <span className="text-muted-foreground">{endLabel}</span>
+      <span className="text-smoke">{endLabel}</span>
     </div>
   )
 }
@@ -326,7 +326,7 @@ function TaskGroupHeaderRow({
 
   return (
     <TableRow
-      className="cursor-pointer bg-muted/30 transition-colors hover:bg-muted/50"
+      className="cursor-pointer bg-warm-taupe/30 transition-colors hover:bg-warm-taupe/50"
       onClick={onToggle}
     >
       {/* Task details + count + expand toggle */}
@@ -338,7 +338,7 @@ function TaskGroupHeaderRow({
               event.stopPropagation()
               onToggle()
             }}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-stone text-smoke transition-colors hover:bg-accent hover:text-foreground"
             aria-label={
               isExpanded ? 'Collapse task group' : 'Expand task group'
             }
@@ -354,13 +354,11 @@ function TaskGroupHeaderRow({
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-sm font-semibold text-foreground">
                 {group.description || (
-                  <span className="text-muted-foreground font-normal">
-                    No description
-                  </span>
+                  <span className="text-smoke font-normal">No description</span>
                 )}
               </span>
               <span
-                className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary"
+                className="shrink-0 rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-bold text-graphite"
                 title={`${group.entries.length} similar records`}
               >
                 ×{group.entries.length}
@@ -378,7 +376,7 @@ function TaskGroupHeaderRow({
                 </button>
               )}
             </div>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-xs text-smoke">
               {project ? (
                 <span className="inline-flex min-w-0 max-w-full items-center gap-1.5">
                   <span
@@ -390,11 +388,11 @@ function TaskGroupHeaderRow({
               ) : (
                 <span>No project</span>
               )}
-              <span className="text-muted-foreground/60">·</span>
+              <span className="text-smoke/60">·</span>
               <span>
                 {group.tagIds.length} tag{group.tagIds.length !== 1 ? 's' : ''}
               </span>
-              <span className="text-muted-foreground/60">·</span>
+              <span className="text-smoke/60">·</span>
               <span>Grouped task</span>
             </div>
           </div>
@@ -429,7 +427,7 @@ function TaskGroupHeaderRow({
             type="button"
             onClick={onResume}
             title="Resume this task"
-            className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-stone p-1.5 text-primary transition-colors hover:bg-warm-taupe disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Resume task"
           >
             <Play className="size-3.5" />
@@ -479,14 +477,14 @@ function TaskGroupHeaderCard({
   }`
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-muted/30">
+    <div className="min-w-0 overflow-hidden rounded-xl border border-stone bg-warm-taupe/30">
       <button
         type="button"
         onClick={onToggle}
         className="flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2.5 text-left"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground">
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-stone text-smoke">
             {isExpanded ? (
               <ChevronDown className="size-4" />
             ) : (
@@ -495,11 +493,11 @@ function TaskGroupHeaderCard({
           </span>
           <span className="truncate font-semibold text-foreground">
             {group.description || (
-              <span className="text-muted-foreground">No description</span>
+              <span className="text-smoke">No description</span>
             )}
           </span>
           <span
-            className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-bold text-primary"
+            className="shrink-0 rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-bold text-graphite"
             title={`${group.entries.length} similar records`}
           >
             ×{group.entries.length}
@@ -515,12 +513,12 @@ function TaskGroupHeaderCard({
         </span>
       </button>
 
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-border/40 px-3 py-2">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-stone/40 px-3 py-2">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <p className="m-0 text-xs text-muted-foreground">{timeSummary}</p>
+          <p className="m-0 text-xs text-smoke">{timeSummary}</p>
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {project && (
-              <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground">
+              <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-semibold text-foreground">
                 <span
                   className="size-2 shrink-0 rounded-full"
                   style={{ backgroundColor: project.color }}
@@ -531,7 +529,7 @@ function TaskGroupHeaderCard({
             {entryTags.map((tag) => (
               <span
                 key={tag.id}
-                className="max-w-full truncate rounded-md border px-2 py-0.5 text-xs font-semibold"
+                className="max-w-full truncate rounded-full border px-2 py-0.5 text-xs font-semibold"
                 style={{ color: tag.color, borderColor: `${tag.color}55` }}
                 title={tag.name}
               >
@@ -539,7 +537,7 @@ function TaskGroupHeaderCard({
               </span>
             ))}
             {group.billable && (
-              <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
+              <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary">
                 Billable
               </span>
             )}
@@ -549,7 +547,7 @@ function TaskGroupHeaderCard({
           type="button"
           onClick={onResume}
           title="Resume this task"
-          className="rounded-lg border border-primary/40 p-1.5 text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-stone p-1.5 text-primary transition-colors hover:bg-warm-taupe disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Resume task"
         >
           <Play className="size-3.5" />
@@ -573,18 +571,18 @@ function toLocalDateKey(iso: string): string {
 // Column header shared by the entries table and the pinned running-now table.
 function EntryTableHeader() {
   return (
-    <TableHeader className="bg-muted/50 [&_tr]:border-b-0">
-      <TableRow className="border-b-0 text-xs uppercase tracking-wide text-muted-foreground hover:bg-transparent">
-        <TableHead className="px-4 py-2.5 w-[56%] text-muted-foreground font-medium">
+    <TableHeader className="bg-warm-taupe/50 [&_tr]:border-b-0">
+      <TableRow className="border-b-0 text-xs uppercase tracking-wide text-smoke hover:bg-transparent">
+        <TableHead className="px-4 py-2.5 w-[56%] text-smoke font-medium">
           Task / Client / Tags
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[5%] text-center text-muted-foreground font-medium">
+        <TableHead className="px-4 py-2.5 w-[5%] text-center text-smoke font-medium">
           Billable
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[22%] text-center text-muted-foreground font-medium">
+        <TableHead className="px-4 py-2.5 w-[22%] text-center text-smoke font-medium">
           Time
         </TableHead>
-        <TableHead className="px-3 py-2.5 w-[7%] text-right text-muted-foreground font-medium">
+        <TableHead className="px-3 py-2.5 w-[7%] text-right text-smoke font-medium">
           Duration
         </TableHead>
         <TableHead className="px-4 py-2.5 w-[10%]" />
@@ -719,7 +717,7 @@ export function DayGroupsList({
     >
       {/* No history at all — keep the running entry visible in its own table. */}
       {groups.length === 0 && activeEntry && (
-        <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card">
+        <div className="min-w-0 overflow-hidden rounded-xl border border-stone bg-eggshell">
           {isDesktop ? (
             <Table className="table-fixed">
               <EntryTableHeader />
@@ -747,7 +745,7 @@ export function DayGroupsList({
         return (
           <div
             key={group.dateKey}
-            className="min-w-0 overflow-hidden rounded-lg border border-border bg-card"
+            className="min-w-0 overflow-hidden rounded-xl border border-stone bg-eggshell"
           >
             {/* Day group header — static in day view, collapsible otherwise */}
             <DayGroupHeaderRow

@@ -108,7 +108,7 @@ export function RolePermissionsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
-        <DialogHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+        <DialogHeader className="shrink-0 border-b border-stone px-6 py-5 pr-14">
           <div className="flex items-start gap-3">
             <span
               className="mt-1 size-3 shrink-0 rounded-full"
@@ -127,9 +127,9 @@ export function RolePermissionsDialog({
         </DialogHeader>
 
         {isReadOnly && (
-          <div className="mx-6 mt-5 flex shrink-0 gap-3 rounded-lg border border-primary/25 bg-primary/5 p-4">
+          <div className="mx-6 mt-5 flex shrink-0 gap-3 rounded-xl border border-stone bg-warm-taupe p-4">
             <LockKeyhole className="mt-0.5 size-4 shrink-0 text-primary" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-smoke">
               {isOwner
                 ? 'Owner always has full access. This cannot be changed, preventing the workspace from being locked out of administration.'
                 : isOwnRole
@@ -145,11 +145,11 @@ export function RolePermissionsDialog({
               <section key={group} aria-labelledby={`permission-${group}`}>
                 <h3
                   id={`permission-${group}`}
-                  className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                  className="mb-2 text-xs font-bold uppercase tracking-wider text-smoke"
                 >
                   {group}
                 </h3>
-                <div className="divide-y divide-border rounded-lg border border-border">
+                <div className="divide-y divide-stone rounded-xl border border-stone">
                   {PERMISSION_KEYS.filter(
                     (key) => PERMISSIONS[key].group === group,
                   ).map((key) => {
@@ -167,7 +167,7 @@ export function RolePermissionsDialog({
                     return (
                       <label
                         key={key}
-                        className={`flex items-start gap-3 p-3.5 ${permissionDisabled ? 'cursor-default opacity-75' : 'cursor-pointer hover:bg-muted/50'}`}
+                        className={`flex items-start gap-3 p-3.5 ${permissionDisabled ? 'cursor-default opacity-75' : 'cursor-pointer hover:bg-warm-taupe/50'}`}
                       >
                         <input
                           type="checkbox"
@@ -178,19 +178,19 @@ export function RolePermissionsDialog({
                             setPermission(key, event.target.checked)
                           }
                         />
-                        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border border-border bg-background text-transparent peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-70">
+                        <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border border-stone bg-eggshell text-transparent peer-checked:border-primary-action peer-checked:bg-primary-action peer-checked:text-primary-action-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:opacity-70">
                           <Check className="size-3.5" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-foreground">
                             {definition.label}
                             {!isReadOnly && inherited && (
-                              <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                              <span className="rounded-full bg-warm-taupe px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-graphite">
                                 Default
                               </span>
                             )}
                           </span>
-                          <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                          <span className="mt-0.5 block text-xs leading-5 text-smoke">
                             {definition.description}
                           </span>
                         </span>
@@ -203,7 +203,7 @@ export function RolePermissionsDialog({
           </div>
         </div>
 
-        <DialogFooter className="shrink-0 flex-col border-t border-border px-6 py-4 sm:flex-row">
+        <DialogFooter className="shrink-0 flex-col border-t border-stone px-6 py-4 sm:flex-row">
           {!isReadOnly && (
             <Button
               type="button"

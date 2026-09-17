@@ -152,10 +152,10 @@ export function TimesheetScreen({
             <CalendarClock className="size-4" />
             Analytics · Weekly attendance
           </p>
-          <h1 className="m-0 mt-1 text-3xl font-black tracking-tight text-foreground">
+          <h1 className="m-0 font-display text-heading-sm mt-1 text-foreground">
             Timesheet
           </h1>
-          <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-smoke">
             Open one member&apos;s weekly DTR directly, or choose a department
             for the wider team view. Times follow {data.timezone}.
           </p>
@@ -176,8 +176,8 @@ export function TimesheetScreen({
           >
             <ChevronLeft />
           </Button>
-          <div className="min-w-44 rounded-md border border-border bg-card px-3 py-2 text-center shadow-xs">
-            <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          <div className="min-w-44 rounded-xl border border-stone bg-eggshell px-3 py-2 text-center shadow-[var(--shadow-whisper)]">
+            <p className="m-0 text-xs font-semibold uppercase tracking-[0.14em] text-smoke">
               Work week
             </p>
             <p className="m-0 mt-0.5 font-mono text-sm font-bold tabular-nums text-foreground">
@@ -269,10 +269,10 @@ export function TimesheetScreen({
               <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
                 <UserRound className="size-6" />
               </div>
-              <h2 className="m-0 mt-5 text-xl font-black tracking-tight text-foreground">
+              <h2 className="m-0 mt-5 text-xl font-black text-foreground">
                 Select a member or department to begin
               </h2>
-              <p className="m-0 mt-2 text-sm leading-6 text-muted-foreground">
+              <p className="m-0 mt-2 text-sm leading-6 text-smoke">
                 Choose one person for a focused DTR, or open a department to see
                 everyone on that team.
               </p>
@@ -281,11 +281,11 @@ export function TimesheetScreen({
         ) : data.members.length === 0 ? (
           <div className="grid min-h-80 place-items-center px-6 py-12 text-center">
             <div className="max-w-sm">
-              <CalendarClock className="mx-auto size-8 text-muted-foreground" />
+              <CalendarClock className="mx-auto size-8 text-smoke" />
               <h2 className="m-0 mt-3 text-lg font-bold text-foreground">
                 No people in this view
               </h2>
-              <p className="m-0 mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="m-0 mt-1 text-sm leading-6 text-smoke">
                 Choose another member or department to review this week&apos;s
                 DTR records.
               </p>
@@ -336,15 +336,15 @@ function TimesheetScopePicker({
         : data.members[0]?.name
 
   return (
-    <div className="grid gap-4 border-b border-border bg-muted/20 px-4 py-4 lg:grid-cols-[minmax(13rem,0.7fr)_minmax(0,1.5fr)_auto] lg:items-end">
+    <div className="grid gap-4 border-b border-stone bg-warm-taupe px-4 py-4 lg:grid-cols-[minmax(13rem,0.7fr)_minmax(0,1.5fr)_auto] lg:items-end">
       <div>
-        <p className="m-0 text-xs font-black uppercase tracking-[0.14em] text-primary">
+        <p className="m-0 text-xs font-black uppercase tracking-[0.14em] text-graphite">
           Timesheet focus
         </p>
         <p className="m-0 mt-1 truncate text-base font-bold text-foreground">
           {viewLabel}
         </p>
-        <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+        <p className="m-0 mt-0.5 text-xs text-smoke">
           {selectedMember
             ? selectedMember.email
             : selectedDepartment
@@ -358,7 +358,7 @@ function TimesheetScopePicker({
       {canChooseScope && (
         <div className="grid min-w-0 gap-2 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
+            <label className="text-xs font-semibold text-smoke">
               Find a member
             </label>
             <Combobox
@@ -391,7 +391,7 @@ function TimesheetScopePicker({
 
           {data.departments.length > 0 && (
             <div className="grid gap-1.5">
-              <label className="text-xs font-semibold text-muted-foreground">
+              <label className="text-xs font-semibold text-smoke">
                 View department
               </label>
               <Select
@@ -406,7 +406,7 @@ function TimesheetScopePicker({
                 }
               >
                 <SelectTrigger>
-                  <Building2 className="size-4 text-muted-foreground" />
+                  <Building2 className="size-4 text-smoke" />
                   <SelectValue placeholder="View department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -466,12 +466,12 @@ function SummaryStat({
   live?: boolean
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-card px-4 py-3 shadow-xs ring-1 ring-foreground/10">
-      <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+    <div className="flex items-center gap-3 rounded-xl bg-eggshell px-4 py-3 shadow-[var(--shadow-whisper)]">
+      <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
         <Icon className="size-4" />
       </div>
       <div className="min-w-0">
-        <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        <p className="m-0 text-xs font-semibold uppercase tracking-[0.12em] text-smoke">
           {label}
         </p>
         <p className="m-0 mt-0.5 flex items-center gap-2 truncate font-mono text-base font-black tabular-nums text-foreground">
@@ -503,12 +503,12 @@ export function TimesheetGrid({
     >
       <table className="w-full min-w-[1180px] border-collapse text-sm sm:min-w-[1260px] xl:min-w-[1400px]">
         <thead>
-          <tr className="border-b border-border bg-muted/45">
+          <tr className="border-b border-stone bg-warm-taupe">
             <th
               scope="col"
-              className="sticky left-0 z-30 w-40 min-w-40 bg-muted px-3 py-3 text-left shadow-[1px_0_0_var(--border)] sm:w-52 sm:min-w-52 sm:px-4"
+              className="sticky left-0 z-30 w-40 min-w-40 bg-warm-taupe px-3 py-3 text-left shadow-[1px_0_0_var(--stone)] sm:w-52 sm:min-w-52 sm:px-4"
             >
-              <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-smoke">
                 Member
               </span>
             </th>
@@ -521,16 +521,16 @@ export function TimesheetGrid({
                 <span className="block text-xs font-black uppercase tracking-[0.14em] text-foreground">
                   {date.dayLabel}
                 </span>
-                <span className="mt-0.5 block font-mono text-xs font-medium text-muted-foreground">
+                <span className="mt-0.5 block font-mono text-xs font-medium text-smoke">
                   {date.shortLabel}
                 </span>
               </th>
             ))}
             <th
               scope="col"
-              className="w-28 min-w-28 bg-muted px-3 py-3 text-right sm:w-32 sm:min-w-32 lg:sticky lg:right-0 lg:z-30 lg:shadow-[-1px_0_0_var(--border)]"
+              className="w-28 min-w-28 bg-warm-taupe px-3 py-3 text-right sm:w-32 sm:min-w-32 lg:sticky lg:right-0 lg:z-30 lg:shadow-[-1px_0_0_var(--stone)]"
             >
-              <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-smoke">
                 Week total
               </span>
             </th>
@@ -545,21 +545,21 @@ export function TimesheetGrid({
             return (
               <tr
                 key={member.id}
-                className="border-b border-border last:border-b-0 hover:bg-muted/20"
+                className="border-b border-stone last:border-b-0 hover:bg-warm-taupe/20"
               >
                 <th
                   scope="row"
-                  className="sticky left-0 z-20 max-w-40 bg-card px-3 py-4 text-left shadow-[1px_0_0_var(--border)] sm:max-w-52 sm:px-4"
+                  className="sticky left-0 z-20 max-w-40 bg-eggshell px-3 py-4 text-left shadow-[1px_0_0_var(--stone)] sm:max-w-52 sm:px-4"
                 >
                   <div className="min-w-0">
                     <p className="m-0 truncate font-bold text-foreground">
                       {member.name}
                     </p>
-                    <p className="m-0 mt-0.5 truncate text-xs font-normal text-muted-foreground">
+                    <p className="m-0 mt-0.5 truncate text-xs font-normal text-smoke">
                       {member.email}
                     </p>
                     {member.departmentName && (
-                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-warm-taupe px-2 py-0.5 text-[11px] font-semibold text-smoke">
                         <span
                           className="size-1.5 rounded-full"
                           style={{
@@ -580,7 +580,7 @@ export function TimesheetGrid({
                     <DayCell day={day} timezone={data.timezone} nowMs={nowMs} />
                   </td>
                 ))}
-                <td className="bg-card px-3 py-4 text-right sm:px-4 lg:sticky lg:right-0 lg:z-20 lg:shadow-[-1px_0_0_var(--border)]">
+                <td className="bg-eggshell px-3 py-4 text-right sm:px-4 lg:sticky lg:right-0 lg:z-20 lg:shadow-[-1px_0_0_var(--stone)]">
                   <p className="m-0 font-mono text-base font-black tabular-nums text-foreground">
                     {formatTimesheetDuration(weeklySeconds)}
                   </p>
@@ -591,10 +591,10 @@ export function TimesheetGrid({
         </tbody>
         {data.members.length > 1 && (
           <tfoot>
-            <tr className="border-t border-border bg-muted/55">
+            <tr className="border-t border-stone bg-warm-taupe">
               <th
                 scope="row"
-                className="sticky left-0 z-30 bg-muted px-3 py-4 text-left shadow-[1px_0_0_var(--border)] sm:px-4"
+                className="sticky left-0 z-30 bg-warm-taupe px-3 py-4 text-left shadow-[1px_0_0_var(--stone)] sm:px-4"
               >
                 <span className="text-xs font-black uppercase tracking-[0.12em] text-foreground">
                   Department total
@@ -607,7 +607,7 @@ export function TimesheetGrid({
                   </span>
                 </td>
               ))}
-              <td className="bg-muted px-3 py-4 text-right sm:px-4 lg:sticky lg:right-0 lg:z-30 lg:shadow-[-1px_0_0_var(--border)]">
+              <td className="bg-warm-taupe px-3 py-4 text-right sm:px-4 lg:sticky lg:right-0 lg:z-30 lg:shadow-[-1px_0_0_var(--stone)]">
                 <span className="font-mono text-base font-black tabular-nums text-primary">
                   {formatTimesheetDuration(
                     dailyTotals.reduce((sum, seconds) => sum + seconds, 0),
@@ -632,14 +632,14 @@ function DayCell({
   nowMs: number
 }) {
   if (day.status === 'NO_TIME') {
-    return <span className="text-lg text-muted-foreground/45">—</span>
+    return <span className="text-lg text-smoke/45">—</span>
   }
   const seconds = getLiveCellSeconds(day, nowMs)
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg bg-muted/35 px-2 py-2.5 ring-1 ring-border/70 sm:px-2.5">
+    <div className="min-w-0 overflow-hidden rounded-xl bg-warm-taupe px-2 py-2.5 ring-1 ring-border/70 sm:px-2.5">
       <dl className="m-0 grid min-w-0 gap-2 text-[10px] leading-4 sm:text-[11px]">
         <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-          <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:tracking-wide">
+          <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-smoke sm:tracking-wide">
             Time in
           </dt>
           <dd className="m-0 min-w-0 font-mono font-semibold tabular-nums text-foreground">
@@ -647,7 +647,7 @@ function DayCell({
           </dd>
         </div>
         <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-          <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:tracking-wide">
+          <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-smoke sm:tracking-wide">
             Duration
           </dt>
           <dd className="m-0 min-w-0 font-mono font-black tabular-nums text-foreground">
@@ -656,7 +656,7 @@ function DayCell({
         </div>
         {day.status === 'RUNNING' ? (
           <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
-            <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:tracking-wide">
+            <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-smoke sm:tracking-wide">
               Status
             </dt>
             <dd className="m-0 flex max-w-full min-w-0 justify-end">
@@ -668,7 +668,7 @@ function DayCell({
           </div>
         ) : (
           <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-            <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:tracking-wide">
+            <dt className="shrink-0 font-semibold uppercase tracking-[0.08em] text-smoke sm:tracking-wide">
               Time out
             </dt>
             <dd className="m-0 min-w-0 font-mono font-semibold tabular-nums text-foreground">
@@ -691,8 +691,8 @@ function TimesheetPagination({
   const start = data.totalCount === 0 ? 0 : (data.page - 1) * data.pageSize + 1
   const end = Math.min(data.page * data.pageSize, data.totalCount)
   return (
-    <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="m-0 text-xs text-muted-foreground">
+    <div className="flex flex-col gap-3 border-t border-stone px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="m-0 text-xs text-smoke">
         Showing {start}–{end} of {data.totalCount} people
       </p>
       <div className="flex flex-wrap items-center gap-2">
@@ -722,7 +722,7 @@ function TimesheetPagination({
         >
           Previous
         </Button>
-        <span className="px-1 font-mono text-xs font-semibold tabular-nums text-muted-foreground">
+        <span className="px-1 font-mono text-xs font-semibold tabular-nums text-smoke">
           {data.page} / {data.totalPages}
         </span>
         <Button

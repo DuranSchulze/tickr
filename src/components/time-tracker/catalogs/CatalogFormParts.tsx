@@ -1,7 +1,7 @@
 import { Combobox } from '#/components/ui/combobox'
 
 export const inputClass =
-  'h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50'
+  'h-11 w-full min-w-0 rounded-md border border-stone bg-eggshell px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-smoke focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50'
 
 export const catalogFormClass = 'grid gap-4'
 export const catalogFormActionsClass = 'grid grid-cols-2 gap-3 pt-1'
@@ -19,7 +19,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={pending}
-      className="h-11 w-full rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+      className="h-11 w-full rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke"
     >
       {pending ? pendingLabel : label}
     </button>
@@ -31,7 +31,7 @@ export function CancelButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="h-11 w-full rounded-lg border border-border bg-background px-4 text-sm font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+      className="h-11 w-full rounded-full border border-stone bg-eggshell px-4 text-sm font-semibold text-smoke transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       Cancel
     </button>
@@ -68,7 +68,7 @@ export function ClientSelect({
       placeholder="Choose a client"
       searchPlaceholder="Search clients…"
       emptyText="No clients match."
-      className="h-11 rounded-lg bg-background"
+      className="h-11 rounded-md bg-eggshell"
       contentClassName="z-[60]"
     />
   )
@@ -76,7 +76,7 @@ export function ClientSelect({
 
 export function SuspendedClientWarning({ clientName }: { clientName: string }) {
   return (
-    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
+    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
       <span className="font-semibold">{clientName} is suspended.</span> Time
       entries will still be saved, but this client may be on hold.
     </div>
@@ -91,13 +91,13 @@ export function ColorInput({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="flex h-11 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3.5 text-sm font-semibold text-foreground">
+    <label className="flex h-11 items-center justify-between gap-3 rounded-md border border-stone bg-eggshell px-3.5 text-sm font-semibold text-foreground">
       <span>Color</span>
       <input
         type="color"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-7 w-12 cursor-pointer rounded-md border border-border bg-transparent p-0.5"
+        className="h-7 w-12 cursor-pointer rounded-md border border-stone bg-transparent p-0.5"
       />
     </label>
   )
@@ -111,14 +111,14 @@ export function ModeToggle({
   onChange: (m: 'single' | 'bulk') => void
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm font-semibold">
+    <div className="grid grid-cols-2 gap-1 rounded-full bg-warm-taupe p-1 text-sm font-semibold">
       <button
         type="button"
         onClick={() => onChange('single')}
-        className={`h-9 rounded-md px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+        className={`h-9 rounded-full px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
           mode === 'single'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-background/70'
+            ? 'bg-primary-action text-primary-action-foreground'
+            : 'text-smoke hover:bg-eggshell/70'
         }`}
       >
         Single
@@ -126,10 +126,10 @@ export function ModeToggle({
       <button
         type="button"
         onClick={() => onChange('bulk')}
-        className={`h-9 rounded-md px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+        className={`h-9 rounded-full px-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
           mode === 'bulk'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-background/70'
+            ? 'bg-primary-action text-primary-action-foreground'
+            : 'text-smoke hover:bg-eggshell/70'
         }`}
       >
         Bulk
@@ -153,7 +153,7 @@ export function BulkNamesInput({
       aria-label="Names (one per line)"
       rows={5}
       required
-      className="min-h-32 w-full resize-y rounded-lg border border-border bg-background px-3.5 py-3 text-sm leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
+      className="min-h-32 w-full resize-y rounded-md border border-stone bg-eggshell px-3.5 py-3 text-sm leading-6 text-foreground outline-none transition-colors placeholder:text-smoke focus:border-primary focus:ring-2 focus:ring-primary/15"
     />
   )
 }

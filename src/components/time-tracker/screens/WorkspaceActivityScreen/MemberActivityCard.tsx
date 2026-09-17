@@ -61,7 +61,7 @@ export function MemberActivityCard({
   const timerStatus = getTimerStatusLabel(member)
 
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 transition-colors">
+    <div className="flex items-start gap-3 rounded-xl border border-stone bg-eggshell p-4 transition-colors">
       <Link
         to="/app/workspace/members/$memberId"
         params={{ memberId: member.memberId }}
@@ -73,7 +73,7 @@ export function MemberActivityCard({
         <span
           aria-hidden="true"
           className={`absolute -bottom-0.5 -right-0.5 size-3.5 rounded-full border-2 border-card ${
-            isTimerRunning ? 'bg-emerald-500' : 'bg-muted-foreground/40'
+            isTimerRunning ? 'bg-emerald-500' : 'bg-smoke/40'
           }`}
         />
       </Link>
@@ -93,19 +93,19 @@ export function MemberActivityCard({
             className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
               isTimerRunning
                 ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                : 'bg-muted text-muted-foreground'
+                : 'bg-warm-taupe text-smoke'
             }`}
           >
             {timerStatus}
           </span>
         </div>
-        <p className="m-0 mt-0.5 truncate text-xs text-muted-foreground">
+        <p className="m-0 mt-0.5 truncate text-xs text-smoke">
           {member.departmentName ?? 'No department'}
         </p>
 
         {isTimerRunning && member.activeEntry ? (
           <div className="mt-1.5 space-y-1">
-            <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5 truncate text-xs text-smoke">
               <Briefcase className="size-3 shrink-0" />
               <span className="truncate">
                 {member.activeEntry.projectName ?? 'No project'}
@@ -114,13 +114,13 @@ export function MemberActivityCard({
             <p className="truncate text-xs text-foreground/80">
               {member.activeEntry.description || 'No description'}
             </p>
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="flex items-center gap-1.5 text-xs text-smoke">
               <Clock className="size-3 shrink-0" />
               <ElapsedTimer startedAt={member.activeEntry.startedAt} />
             </p>
           </div>
         ) : (
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-smoke">
             No task is currently being tracked.
           </p>
         )}

@@ -76,14 +76,14 @@ function ResetPasswordPage() {
   if (invalidLink) {
     return (
       <AuthSplitLayout>
-        <div className="mt-8">
+        <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
           <div className="flex size-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400">
             <AlertTriangle className="size-6" />
           </div>
-          <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
+          <h1 className="m-0 mt-5 font-display text-heading-sm text-foreground">
             Link expired or invalid
           </h1>
-          <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+          <p className="m-0 mt-2 text-sm leading-6 text-smoke">
             This password reset link is no longer valid. Reset links expire 15
             minutes after they're sent and can only be used once.
           </p>
@@ -91,13 +91,13 @@ function ResetPasswordPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               to="/auth/forgot-password"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-[var(--primary)] px-5 text-sm font-bold text-[var(--primary-foreground)] no-underline shadow-sm transition-all hover:brightness-110"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-primary-action px-5 text-sm font-bold text-primary-action-foreground no-underline shadow-[var(--shadow-whisper)] transition-colors hover:bg-primary-action/85"
             >
               Request a new link
             </Link>
             <Link
               to="/auth"
-              className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800 no-underline transition-colors hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-stone bg-eggshell px-5 text-sm font-semibold text-foreground no-underline transition-colors hover:bg-warm-taupe"
             >
               Back to sign in
             </Link>
@@ -111,14 +111,14 @@ function ResetPasswordPage() {
   if (success) {
     return (
       <AuthSplitLayout>
-        <div className="mt-8">
-          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+        <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
+          <div className="flex size-12 items-center justify-center rounded-full bg-warm-taupe text-graphite">
             <CheckCircle2 className="size-6" />
           </div>
-          <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
+          <h1 className="m-0 mt-5 font-display text-heading-sm text-foreground">
             Password updated
           </h1>
-          <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+          <p className="m-0 mt-2 text-sm leading-6 text-smoke">
             Your password has been changed. You can now sign in with your new
             password.
           </p>
@@ -126,7 +126,7 @@ function ResetPasswordPage() {
           <button
             type="button"
             onClick={() => void navigate({ to: '/auth' })}
-            className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-[var(--primary)] px-5 text-sm font-bold text-[var(--primary-foreground)] shadow-sm transition-all hover:brightness-110"
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-primary-action px-5 text-sm font-bold text-primary-action-foreground shadow-[var(--shadow-whisper)] transition-colors hover:bg-primary-action/85"
           >
             Sign in
           </button>
@@ -138,14 +138,14 @@ function ResetPasswordPage() {
   // ── Form ──────────────────────────────────────────────────────────────────
   return (
     <AuthSplitLayout>
-      <div className="mt-8">
-        <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+      <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
+        <div className="flex size-12 items-center justify-center rounded-full bg-warm-taupe text-graphite">
           <KeyRound className="size-6" />
         </div>
-        <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
+        <h1 className="m-0 mt-5 font-display text-heading-sm text-foreground">
           Set a new password
         </h1>
-        <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+        <p className="m-0 mt-2 text-sm leading-6 text-smoke">
           Choose a strong password you haven't used before.
         </p>
 
@@ -153,7 +153,7 @@ function ResetPasswordPage() {
           <div className="grid gap-2">
             <label
               htmlFor="reset-password-new"
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+              className="text-sm font-semibold text-foreground"
             >
               New password
             </label>
@@ -170,7 +170,7 @@ function ResetPasswordPage() {
           <div className="grid gap-2">
             <label
               htmlFor="reset-password-confirm"
-              className="text-sm font-semibold text-slate-700 dark:text-slate-300"
+              className="text-sm font-semibold text-foreground"
             >
               Confirm password
             </label>
@@ -186,7 +186,7 @@ function ResetPasswordPage() {
           {formError && (
             <p
               role="alert"
-              className="m-0 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-950 dark:bg-red-950/50 dark:text-red-300"
+              className="m-0 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:border-red-950 dark:bg-red-950/50 dark:text-red-300"
             >
               {formError}
             </p>
@@ -195,7 +195,7 @@ function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading || !allPasswordRulesPass(password)}
-            className="mt-2 h-11 rounded-lg bg-[var(--primary)] text-sm font-bold text-[var(--primary-foreground)] shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 h-11 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground shadow-[var(--shadow-whisper)] transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Updating…' : 'Update password'}
           </button>

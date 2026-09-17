@@ -37,7 +37,7 @@ export function WorkspaceActivityMapScreen({
   const runningTimerCount = countRunningTimers(mappedMembers)
   const idleCount = mappedMembers.length - runningTimerCount
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-card">
+    <main className="relative h-dvh w-full overflow-hidden bg-eggshell">
       <h1 className="sr-only">Member locations</h1>
       <Link
         to="/app/workspace/activity"
@@ -45,20 +45,20 @@ export function WorkspaceActivityMapScreen({
           departmentId: currentFilters.departmentId,
           q: currentFilters.q,
         }}
-        className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-background/95 px-3 text-sm font-bold text-foreground no-underline shadow-lg backdrop-blur transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:left-6 sm:top-6"
+        className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-stone bg-eggshell/95 px-3 text-sm font-bold text-foreground no-underline shadow-[var(--shadow-whisper)] backdrop-blur transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 sm:left-6 sm:top-6"
       >
         <ArrowLeft className="size-4" aria-hidden="true" />
         Back to team activity
       </Link>
 
-      <aside className="absolute bottom-4 left-4 z-20 max-w-[calc(100%-2rem)] rounded-lg border border-border bg-background/95 p-4 shadow-lg backdrop-blur sm:bottom-6 sm:left-6 sm:max-w-md">
+      <aside className="absolute bottom-4 left-4 z-20 max-w-[calc(100%-2rem)] rounded-xl border border-stone bg-eggshell/95 p-4 shadow-[var(--shadow-whisper)] backdrop-blur sm:bottom-6 sm:left-6 sm:max-w-md">
         <div className="flex items-center gap-2">
           <MapPinned className="size-5 text-primary" aria-hidden="true" />
           <h2 className="m-0 text-base font-bold text-foreground">
             Member locations
           </h2>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-smoke">
           Drag to explore, scroll to zoom, and select a pin to see the member.
         </p>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs font-medium">
@@ -69,9 +69,9 @@ export function WorkspaceActivityMapScreen({
             />
             {runningTimerCount} with running timers
           </span>
-          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 text-smoke">
             <span
-              className="size-2 rounded-full bg-muted-foreground/50"
+              className="size-2 rounded-full bg-smoke/50"
               aria-hidden="true"
             />
             {idleCount} without running timers
@@ -87,13 +87,13 @@ export function WorkspaceActivityMapScreen({
           <div className="flex size-full items-center justify-center px-6 text-center">
             <div className="max-w-md">
               <MapPinned
-                className="mx-auto size-8 text-muted-foreground"
+                className="mx-auto size-8 text-smoke"
                 aria-hidden="true"
               />
               <h2 className="mt-3 text-base font-bold text-foreground">
                 No mapped members yet
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-smoke">
                 Locations appear after members log entries while location
                 tracking is enabled.
               </p>

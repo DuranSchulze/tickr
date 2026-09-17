@@ -736,10 +736,10 @@ export function TimeTrackerDashboard({
               : 'Stop timer'
             : 'Start timer'
         }
-        className={`fixed bottom-20 right-4 z-50 flex size-14 items-center justify-center rounded-full shadow-xl transition-colors sm:hidden ${
+        className={`fixed bottom-20 right-4 z-50 flex size-14 items-center justify-center rounded-full shadow-[var(--shadow-whisper)] transition-colors sm:hidden ${
           activeEntry
             ? 'bg-destructive text-destructive-foreground'
-            : 'bg-primary text-primary-foreground'
+            : 'bg-primary-action text-primary-action-foreground'
         }`}
       >
         {activeEntry ? (
@@ -752,7 +752,7 @@ export function TimeTrackerDashboard({
       {/* Mobile: full-screen dialog for timer / manual entry */}
       <Dialog open={mobileTimerOpen} onOpenChange={setMobileTimerOpen}>
         <DialogContent
-          className="sm:hidden fixed inset-0 z-50 m-0 flex flex-col max-w-none translate-x-0 translate-y-0 gap-0 rounded-none bg-card p-0 duration-200 outline-none data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
+          className="sm:hidden fixed inset-0 z-50 m-0 flex flex-col max-w-none translate-x-0 translate-y-0 gap-0 bg-eggshell p-0 duration-200 outline-none data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom"
           showCloseButton={false}
         >
           <DialogTitle className="sr-only">
@@ -764,14 +764,14 @@ export function TimeTrackerDashboard({
               : 'Start a timer or create a manual time entry.'}
           </DialogDescription>
           {/* Header */}
-          <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex shrink-0 items-center justify-between border-b border-stone px-4 py-3">
             <h2 className="text-lg font-bold text-foreground">
               {activeEntry ? 'Timer running' : 'Track time'}
             </h2>
             <button
               type="button"
               onClick={() => setMobileTimerOpen(false)}
-              className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="grid size-9 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
               aria-label="Close"
             >
               <X className="size-5" />

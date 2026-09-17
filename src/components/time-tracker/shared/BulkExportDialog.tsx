@@ -211,7 +211,7 @@ export function BulkExportButton({
           setScopeState((prev) => ({ ...prev, open: true }))
           setOpen(true)
         }}
-        className={`no-print inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
+        className={`no-print inline-flex h-9 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent ${className}`}
       >
         <Layers className="size-4" />
         Export
@@ -325,10 +325,10 @@ function ScopeSelector({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`h-9 rounded-lg border px-3 text-sm font-semibold transition-colors ${
+            className={`h-9 rounded-xl border px-3 text-sm font-semibold transition-colors ${
               scopeType === opt.value
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background text-muted-foreground hover:bg-accent'
+                : 'border-stone bg-eggshell text-smoke hover:bg-accent'
             }`}
           >
             {opt.label}
@@ -363,13 +363,11 @@ function ScopeValueSelector({
         searchPlaceholder={`Search ${scopeType}s...`}
         emptyText={`No ${scopeType}s found.`}
         disabled={!hasEntities}
-        className="h-9 rounded-lg"
+        className="h-9 rounded-xl"
         contentClassName="z-[60]"
       />
       {!hasEntities && (
-        <span className="text-xs text-muted-foreground">
-          No {scopeType}s available.
-        </span>
+        <span className="text-xs text-smoke">No {scopeType}s available.</span>
       )}
     </div>
   )
@@ -401,7 +399,7 @@ function ReportFilters({
   onSortOrderChange: (value: ExportSortOrder) => void
 }) {
   return (
-    <div className="grid gap-3 rounded-lg border border-border bg-background p-3">
+    <div className="grid gap-3 rounded-xl border border-stone bg-eggshell p-3">
       <div className="min-w-0">
         <p className="m-0 text-xs font-semibold text-foreground">Filters</p>
       </div>
@@ -459,7 +457,7 @@ function FilterCombobox({
         onValueChange={onValueChange}
         searchPlaceholder={searchPlaceholder}
         emptyText={emptyText}
-        className="h-9 rounded-lg"
+        className="h-9 rounded-xl"
         contentClassName="z-[60]"
       />
     </div>

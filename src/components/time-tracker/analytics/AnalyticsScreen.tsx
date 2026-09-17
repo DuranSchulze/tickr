@@ -141,17 +141,17 @@ function AnalyticsScreenContent({
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
       {/* Header */}
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)] sm:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
               <BarChart3 className="size-3.5" />
               {copy.eyebrow}
             </div>
-            <h1 className="m-0 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+            <h1 className="m-0 font-display text-heading-sm text-foreground">
               {copy.title}
             </h1>
-            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-smoke">
               {copy.description}
             </p>
             <p className="m-0 mt-3 text-sm font-bold leading-6 text-foreground">
@@ -162,7 +162,7 @@ function AnalyticsScreenContent({
 
           <div className="flex min-w-0 flex-col gap-3 sm:items-start xl:items-end">
             {analytics.availableScopes.length > 1 && (
-              <div className="no-print grid w-full grid-cols-1 gap-1 rounded-lg border border-border bg-background p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
+              <div className="no-print grid w-full grid-cols-1 gap-1 rounded-full border border-stone bg-eggshell p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
                 {analytics.availableScopes.map((scope) => (
                   <button
                     key={scope}
@@ -170,10 +170,10 @@ function AnalyticsScreenContent({
                     onClick={() =>
                       onChangeQuery({ ...currentQuery, scope, page: undefined })
                     }
-                    className={`h-9 rounded-md px-2.5 text-sm font-bold transition-colors sm:px-3 ${
+                    className={`h-9 rounded-xl px-2.5 text-sm font-bold transition-colors sm:px-3 ${
                       analytics.selectedScope === scope
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-primary-action text-primary-action-foreground'
+                        : 'text-smoke hover:bg-accent hover:text-foreground'
                     }`}
                   >
                     {scopeLabels[scope]}
@@ -238,7 +238,7 @@ function AnalyticsScreenContent({
       </div>
 
       {analytics.notice && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-foreground">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-foreground">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" />
           <p className="m-0">{analytics.notice}</p>
         </div>
@@ -295,7 +295,7 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
         <h2 className="m-0 text-lg font-bold">
           {analytics.scopeLabel}: Time Entries
         </h2>
-        <p className="m-0 mt-1 text-xs text-muted-foreground">
+        <p className="m-0 mt-1 text-xs text-smoke">
           {formatRange(analytics.startDate, analytics.endDate)} ·{' '}
           {analytics.entriesTotal} entr
           {analytics.entriesTotal === 1 ? 'y' : 'ies'}
@@ -303,7 +303,7 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
       </div>
       <table className="w-full border-collapse text-xs">
         <thead>
-          <tr className="border-b border-border">
+          <tr className="border-b border-stone">
             <th className="px-2 py-1.5 text-left font-bold">Date</th>
             <th className="px-2 py-1.5 text-left font-bold">Start</th>
             <th className="px-2 py-1.5 text-left font-bold">End</th>
@@ -320,7 +320,7 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
         </thead>
         <tbody>
           {analytics.entries.map((entry) => (
-            <tr key={entry.id} className="border-b border-border/50">
+            <tr key={entry.id} className="border-b border-stone/50">
               <td className="px-2 py-1.5 whitespace-nowrap">{entry.date}</td>
               <td className="px-2 py-1.5 whitespace-nowrap">
                 {formatClockTime(entry.startedAt, analytics.timezone)}
@@ -367,7 +367,7 @@ function PrintEntriesTable({ analytics }: { analytics: AnalyticsPayload }) {
         </tbody>
       </table>
       {analytics.entries.length === 0 && (
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className="mt-4 text-center text-sm text-smoke">
           No entries match your current filters
         </p>
       )}
@@ -403,8 +403,8 @@ function ClientAnalyticsCharts({
   if (!Charts) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-[320px] rounded-lg border border-border bg-card" />
-        <div className="h-[320px] rounded-lg border border-border bg-card" />
+        <div className="h-[320px] rounded-xl border border-stone bg-eggshell" />
+        <div className="h-[320px] rounded-xl border border-stone bg-eggshell" />
       </div>
     )
   }

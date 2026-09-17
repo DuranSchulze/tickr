@@ -73,7 +73,7 @@ export function EntryDraftForm({
           placeholder="Task description"
           aria-label="Task description"
           onFocus={keepFocusedFieldVisible}
-          className="h-10 w-full scroll-mt-28 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+          className="h-10 w-full scroll-mt-28 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
         />
       </div>
 
@@ -117,7 +117,7 @@ export function EntryDraftForm({
           isRunning={isRunning}
           onChange={(patch) => setDraft({ ...draft, ...patch })}
         />
-        <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground">
+        <label className="inline-flex h-10 items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground">
           <input
             type="checkbox"
             checked={draft.billable}
@@ -136,7 +136,7 @@ export function EntryDraftForm({
           placeholder="Notes (optional)"
           aria-label="Notes"
           onFocus={keepFocusedFieldVisible}
-          className="h-10 scroll-mt-28 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+          className="h-10 scroll-mt-28 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
         />
       )}
     </div>

@@ -32,6 +32,8 @@ export const trackerKeys = {
   calendar: (deps: unknown) => ['calendar', deps] as const,
   /** Current member's performance page (getMyPerformanceFn). */
   myPerformance: ['my-performance'] as const,
+  /** Workspace KPI leaderboard standings (getWorkspaceLeaderboardFn). */
+  workspaceLeaderboard: ['workspace-leaderboard'] as const,
   /** Current member's saved timer presets in a workspace. */
   timerPresets: (workspaceId: string) =>
     ['timer-presets', workspaceId] as const,

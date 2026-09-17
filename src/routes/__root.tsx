@@ -58,15 +58,15 @@ function ServiceWorkerRegistrar() {
 // oxlint-disable-next-line react/only-export-components
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-eggshell p-4 text-center text-foreground">
       <div className="space-y-2">
-        <h1 className="text-6xl font-bold text-primary">404</h1>
-        <h2 className="text-2xl font-semibold">Page Not Found</h2>
-        <p className="text-muted-foreground">
+        <h1 className="font-display text-display text-foreground">404</h1>
+        <h2 className="text-2xl text-foreground">Page Not Found</h2>
+        <p className="text-smoke">
           The page you're looking for doesn't exist or has been moved.
         </p>
       </div>
-      <Button asChild>
+      <Button asChild variant="outline">
         <Link to="/app/time-tracker">Go to {BRAND.name}</Link>
       </Button>
     </div>
@@ -181,7 +181,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
         <HeadContent />
       </head>
-      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-primary/20 selection:text-foreground">
+      <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-ink/15 selection:text-foreground">
         {children}
         <Monitoring />
         <ServiceWorkerRegistrar />

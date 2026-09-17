@@ -3,11 +3,13 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { TrackerPulse } from '#/lib/time-tracker/tracker-pulse'
 
 const mocks = vi.hoisted(() => ({
   invalidateQueries: vi.fn(() => Promise.resolve()),
   routerInvalidate: vi.fn(() => Promise.resolve()),
   captureException: vi.fn(),
+  getPulse: vi.fn(),
 }))
 
 vi.mock('@tanstack/react-query', () => ({
@@ -22,9 +24,30 @@ vi.mock('@sentry/react', () => ({
   captureException: mocks.captureException,
 }))
 
+vi.mock('#/lib/server/tracker', () => ({
+  getTrackerPulseFn: mocks.getPulse,
+}))
+
 // Mocks must be registered before loading the component under test.
 // eslint-disable-next-line import/first
 import { TaskSyncCoordinator } from './TaskSyncCoordinator'
+
+const POLL_INTERVAL = 30_000
+const REFRESH_COALESCE = 1_000
+
+const PULSE_IDLE: TrackerPulse = {
+  activeEntryId: null,
+  activeEntryUpdatedAt: null,
+  latestEntryUpdatedAt: '2026-09-10T00:00:00.000Z',
+  entryCount: 10,
+}
+
+const PULSE_RUNNING: TrackerPulse = {
+  activeEntryId: 'entry-1',
+  activeEntryUpdatedAt: '2026-09-10T01:00:00.000Z',
+  latestEntryUpdatedAt: '2026-09-10T01:00:00.000Z',
+  entryCount: 10,
+}
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
 
@@ -62,6 +85,7 @@ describe('TaskSyncCoordinator', () => {
     mocks.invalidateQueries.mockReset().mockResolvedValue(undefined)
     mocks.routerInvalidate.mockReset().mockResolvedValue(undefined)
     mocks.captureException.mockReset()
+    mocks.getPulse.mockReset().mockResolvedValue(PULSE_IDLE)
     MockBroadcastChannel.instances = []
     Object.defineProperty(window, 'BroadcastChannel', {
       configurable: true,
@@ -186,5 +210,42 @@ describe('TaskSyncCoordinator', () => {
 
     expect(mocks.invalidateQueries).toHaveBeenCalledTimes(2)
     expect(mocks.routerInvalidate).toHaveBeenCalledTimes(2)
+  })
+
+  it('refreshes when the cross-device pulse changes between polls', async () => {
+    await renderCoordinator()
+
+    // Mount poll adopts the baseline stamp matching the loader data.
+    await act(async () => {})
+
+    // Unchanged stamp on the next tick → no refresh.
+    await act(async () => vi.advanceTimersByTimeAsync(POLL_INTERVAL))
+    expect(mocks.invalidateQueries).not.toHaveBeenCalled()
+    expect(mocks.routerInvalidate).not.toHaveBeenCalled()
+
+    // Another device starts a timer → stamp changes → coalesced refresh.
+    mocks.getPulse.mockResolvedValue(PULSE_RUNNING)
+    await act(async () =>
+      vi.advanceTimersByTimeAsync(POLL_INTERVAL + REFRESH_COALESCE),
+    )
+
+    expect(mocks.invalidateQueries).toHaveBeenCalledTimes(1)
+    expect(mocks.routerInvalidate).toHaveBeenCalledTimes(1)
+
+    // Post-refresh re-baseline means the following tick stays quiet.
+    await act(async () => vi.advanceTimersByTimeAsync(POLL_INTERVAL))
+    expect(mocks.routerInvalidate).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not poll the pulse while the tab is hidden', async () => {
+    await renderCoordinator()
+    await act(async () => {})
+
+    setVisibility('hidden')
+    mocks.getPulse.mockClear()
+    await act(async () => vi.advanceTimersByTimeAsync(POLL_INTERVAL * 2))
+
+    expect(mocks.getPulse).not.toHaveBeenCalled()
+    expect(mocks.routerInvalidate).not.toHaveBeenCalled()
   })
 })

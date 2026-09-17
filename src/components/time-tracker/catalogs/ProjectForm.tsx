@@ -157,7 +157,7 @@ export function ProjectForm({
       <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
 
       {activeClients.length === 0 && !addingClient ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-smoke">
           No clients yet.{' '}
           <button
             type="button"
@@ -199,7 +199,7 @@ export function ProjectForm({
                 type="button"
                 disabled={newClientPending}
                 onClick={() => void handleCreateClient()}
-                className="h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                className="h-11 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground disabled:opacity-50"
               >
                 {newClientPending ? '…' : 'Add'}
               </button>
@@ -208,7 +208,7 @@ export function ProjectForm({
                 onClick={() =>
                   dispatch({ addingClient: false, newClientName: '' })
                 }
-                className="h-11 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-muted-foreground hover:bg-accent"
+                className="h-11 rounded-full border border-stone bg-eggshell px-4 text-sm font-semibold text-smoke hover:bg-accent"
               >
                 Cancel
               </button>

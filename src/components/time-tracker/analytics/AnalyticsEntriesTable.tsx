@@ -132,8 +132,8 @@ function EntryMobileCard({
 
   return (
     <div
-      className={`min-w-0 rounded-lg border bg-background p-3 ${
-        bulkSelected ? 'border-primary/50' : 'border-border'
+      className={`min-w-0 rounded-xl border bg-eggshell p-3 ${
+        bulkSelected ? 'border-primary/50' : 'border-stone'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -151,7 +151,7 @@ function EntryMobileCard({
             <p className="m-0 truncate text-sm font-semibold text-foreground">
               {entry.description || 'Untitled'}
             </p>
-            <p className="m-0 mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <p className="m-0 mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-smoke">
               <MemberAvatar
                 name={entry.memberName}
                 avatarUrl={entry.memberImage}
@@ -161,7 +161,7 @@ function EntryMobileCard({
                 {entry.memberName} · {entry.date}
               </span>
             </p>
-            <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            <p className="m-0 mt-0.5 text-xs text-smoke">
               {formatTimeRange(entry, timezone)}
             </p>
           </div>
@@ -174,7 +174,7 @@ function EntryMobileCard({
       </div>
 
       {(entry.projectName || entry.clientName) && (
-        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1 text-xs text-smoke">
           {entry.projectName && (
             <span className="min-w-0 max-w-full truncate font-medium text-foreground">
               {entry.projectName}
@@ -195,7 +195,7 @@ function EntryMobileCard({
             </span>
           ))
         ) : (
-          <span className="text-xs text-muted-foreground">No tags</span>
+          <span className="text-xs text-smoke">No tags</span>
         )}
         {entry.billable && (
           <span className="inline-block shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -210,7 +210,7 @@ function EntryMobileCard({
             <button
               type="button"
               onClick={() => onEditEntry(entry)}
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-stone bg-eggshell px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
             >
               <Pencil className="size-3.5" />
               Edit
@@ -220,7 +220,7 @@ function EntryMobileCard({
             <button
               type="button"
               onClick={() => onDeleteEntry(entry)}
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-destructive/40 bg-eggshell px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
             >
               <Trash2 className="size-3.5" />
               Delete
@@ -258,13 +258,13 @@ function EntriesTableHeader({
   onPageSizeChange?: (pageSize: number) => void
 }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-border px-4 py-3">
+    <div className="flex flex-col gap-3 border-b border-stone px-4 py-3">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="m-0 text-base font-bold text-foreground">
             Time entries
           </h2>
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+          <p className="m-0 mt-0.5 text-xs text-smoke">
             {filteredCount !== entriesTotal
               ? `${filteredCount.toLocaleString()} of ${entriesTotal.toLocaleString()} entries match`
               : `${entriesTotal.toLocaleString()} entr${
@@ -281,14 +281,14 @@ function EntriesTableHeader({
           />
 
           {onPageSizeChange && (
-            <label className="flex w-fit items-center gap-2 text-xs font-semibold text-muted-foreground">
+            <label className="flex w-fit items-center gap-2 text-xs font-semibold text-smoke">
               Rows
               <select
                 value={pageSize}
                 onChange={(event) =>
                   onPageSizeChange(Number(event.target.value))
                 }
-                className="h-8 rounded-md border border-border bg-background px-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-8 rounded-xl border border-stone bg-eggshell px-2 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/30"
               >
                 {pageSizeOptions.map((option) => (
                   <option key={option} value={option}>
@@ -303,13 +303,13 @@ function EntriesTableHeader({
 
       {onBulkDeleteEntries && selectedVisibleCount > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-muted-foreground">
+          <span className="text-xs font-semibold text-smoke">
             {selectedVisibleCount} selected
           </span>
           <button
             type="button"
             onClick={() => onBulkDeleteEntries(selectedEntries)}
-            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-destructive/40 bg-background px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-destructive/40 bg-eggshell px-2.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
           >
             <Trash2 className="size-3.5" />
             Delete selected
@@ -317,7 +317,7 @@ function EntriesTableHeader({
           <button
             type="button"
             onClick={onClearSelection}
-            className="inline-flex h-8 items-center justify-center rounded-md border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+            className="inline-flex h-8 items-center justify-center rounded-full border border-stone bg-eggshell px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
           >
             Clear
           </button>
@@ -361,7 +361,7 @@ function DesktopEntriesTable({
     >
       <table className="w-full min-w-[1480px] table-fixed text-sm">
         <thead>
-          <tr className="border-b border-border bg-muted/30">
+          <tr className="border-b border-stone bg-warm-taupe">
             {hasBulkDelete && (
               <th className="w-[44px] whitespace-nowrap px-4 py-2.5 text-left">
                 <input
@@ -377,32 +377,32 @@ function DesktopEntriesTable({
                 />
               </th>
             )}
-            <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Date
             </th>
-            <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Start – End
             </th>
-            <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Member
             </th>
-            <th className="w-[190px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[190px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Project / Client
             </th>
-            <th className="w-[180px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[180px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Tags
             </th>
-            <th className="w-[320px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[320px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Description
             </th>
-            <th className="w-[130px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[130px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
               Duration
             </th>
-            <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-smoke">
               Billable
             </th>
             {hasActions && (
-              <th className="sticky right-0 z-20 w-[104px] whitespace-nowrap border-l border-border bg-muted px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)]">
+              <th className="sticky right-0 z-20 w-[104px] whitespace-nowrap border-l border-stone bg-warm-taupe px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)]">
                 Actions
               </th>
             )}
@@ -451,7 +451,7 @@ function DesktopEntryRow({
   onDeleteEntry?: (entry: AnalyticsTimeEntryRow) => void
 }) {
   return (
-    <tr className="group transition-colors hover:bg-muted/20">
+    <tr className="group transition-colors hover:bg-warm-taupe/20">
       {hasBulkDelete && (
         <td className="whitespace-nowrap px-4 py-2.5">
           <input
@@ -463,7 +463,7 @@ function DesktopEntryRow({
           />
         </td>
       )}
-      <td className="whitespace-nowrap px-4 py-2.5 text-xs text-muted-foreground">
+      <td className="whitespace-nowrap px-4 py-2.5 text-xs text-smoke">
         {entry.date}
       </td>
       <td className="whitespace-nowrap px-4 py-2.5 text-xs font-medium text-foreground">
@@ -471,10 +471,7 @@ function DesktopEntryRow({
       </td>
       <td className="px-4 py-2.5 text-xs font-medium text-foreground">
         <div className="flex min-w-0 items-center gap-2">
-          <MemberAvatar
-            name={entry.memberName}
-            avatarUrl={entry.memberImage}
-          />
+          <MemberAvatar name={entry.memberName} avatarUrl={entry.memberImage} />
           <span className="truncate" title={entry.memberName}>
             {entry.memberName}
           </span>
@@ -490,13 +487,13 @@ function DesktopEntryRow({
           >
             {entry.projectName}
             {entry.clientName && (
-              <span className="ml-1 font-normal text-muted-foreground">
+              <span className="ml-1 font-normal text-smoke">
                 · {entry.clientName}
               </span>
             )}
           </div>
         ) : (
-          <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-0.5 text-xs text-smoke">
             <Hash className="size-2.5" />
           </span>
         )}
@@ -514,7 +511,7 @@ function DesktopEntryRow({
             ))}
           </div>
         ) : (
-          <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-0.5 text-xs text-smoke">
             <Hash className="size-2.5" />
           </span>
         )}
@@ -526,9 +523,7 @@ function DesktopEntryRow({
           aria-label={`Description for ${entry.memberName} on ${entry.date}`}
           tabIndex={0}
         >
-          {entry.description || (
-            <span className="text-muted-foreground">Untitled</span>
-          )}
+          {entry.description || <span className="text-smoke">Untitled</span>}
         </div>
       </td>
       <td className="whitespace-nowrap px-4 py-2.5 text-right text-xs font-mono font-semibold text-foreground">
@@ -540,17 +535,17 @@ function DesktopEntryRow({
             Billable
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">-</span>
+          <span className="text-xs text-smoke">-</span>
         )}
       </td>
       {hasActions && (
-        <td className="sticky right-0 z-10 whitespace-nowrap border-l border-border bg-card px-4 py-2.5 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)] transition-colors group-hover:bg-muted/20">
+        <td className="sticky right-0 z-10 whitespace-nowrap border-l border-stone bg-eggshell px-4 py-2.5 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.45)] transition-colors group-hover:bg-warm-taupe/20">
           <div className="inline-flex items-center justify-end gap-1.5">
             {onEditEntry && (
               <button
                 type="button"
                 onClick={() => onEditEntry(entry)}
-                className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent"
+                className="inline-flex size-8 items-center justify-center rounded-full border border-stone bg-eggshell text-foreground transition-colors hover:bg-accent"
                 aria-label={`Edit entry ${entry.description || entry.date}`}
                 title="Edit entry"
               >
@@ -561,7 +556,7 @@ function DesktopEntryRow({
               <button
                 type="button"
                 onClick={() => onDeleteEntry(entry)}
-                className="inline-flex size-8 items-center justify-center rounded-md border border-destructive/40 bg-background text-destructive transition-colors hover:bg-destructive/10"
+                className="inline-flex size-8 items-center justify-center rounded-xl border border-destructive/40 bg-eggshell text-destructive transition-colors hover:bg-destructive/10"
                 aria-label={`Delete entry ${entry.description || entry.date}`}
                 title="Delete entry"
               >
@@ -687,7 +682,7 @@ export function AnalyticsEntriesTable({
   }
 
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
       <EntriesTableHeader
         key={activeQuery}
         entriesTotal={entriesTotal}
@@ -704,7 +699,7 @@ export function AnalyticsEntriesTable({
       />
 
       {filteredEntries.length === 0 ? (
-        <div className="flex items-center justify-center px-4 py-12 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center px-4 py-12 text-sm text-smoke">
           {activeQuery.trim()
             ? `No entries match "${activeQuery.trim()}"`
             : 'No entries match your current filters'}
@@ -746,8 +741,8 @@ export function AnalyticsEntriesTable({
       )}
 
       {entriesTotal > 0 && (
-        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
-          <span className="text-xs text-muted-foreground">
+        <div className="flex flex-col gap-3 border-t border-stone px-4 py-3 min-[420px]:flex-row min-[420px]:items-center min-[420px]:justify-between">
+          <span className="text-xs text-smoke">
             Showing {firstEntry.toLocaleString()}-{lastEntry.toLocaleString()}{' '}
             of {entriesTotal.toLocaleString()}
           </span>

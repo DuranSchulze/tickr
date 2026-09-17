@@ -160,7 +160,7 @@ export function MemberExportDialog({
               />
             </div>
 
-            <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+            <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
               <ExportSortControls
                 sortBy={sortBy}
                 sortOrder={sortOrder}
@@ -222,7 +222,7 @@ export function MemberExportButton({
         onClick={() => {
           setOpen(true)
         }}
-        className={`no-print inline-flex items-center gap-1.5 rounded-lg border border-border bg-background font-semibold text-foreground transition-colors hover:bg-accent ${sizeClasses} ${className}`}
+        className={`no-print inline-flex items-center gap-1.5 rounded-full border border-stone bg-eggshell font-semibold text-foreground transition-colors hover:bg-accent ${sizeClasses} ${className}`}
       >
         <FileDown className={iconClasses} />
         {label}

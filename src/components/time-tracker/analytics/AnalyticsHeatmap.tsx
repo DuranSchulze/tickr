@@ -3,11 +3,11 @@ import { formatDurationDdhms } from '#/lib/time-tracker/store'
 import { formatChartDate } from './analytics.utils'
 
 const intensityStyles = [
-  'bg-muted',
-  'bg-primary/20',
-  'bg-primary/35',
-  'bg-primary/55',
-  'bg-primary/80',
+  'bg-warm-taupe',
+  'bg-ink/20',
+  'bg-ink/35',
+  'bg-ink/55',
+  'bg-ink/80',
 ]
 
 export function AnalyticsHeatmap({
@@ -57,12 +57,12 @@ export function AnalyticsHeatmap({
 
   return (
     <div className="grid min-w-0 gap-4">
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
         <div className="mb-4">
           <h2 className="m-0 text-base font-black text-foreground">
             Activity heatmap
           </h2>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             Darker cells mean more completed tracked time.
           </p>
         </div>
@@ -71,18 +71,18 @@ export function AnalyticsHeatmap({
             <div
               key={day.date}
               title={`${formatChartDate(day.date)}: ${formatDurationDdhms(day.seconds)}`}
-              className={`aspect-square rounded-[4px] border border-border/60 ${
+              className={`aspect-square rounded-[4px] border border-stone/60 ${
                 intensityStyles[day.intensity] ?? intensityStyles[0]
               }`}
             />
           ))}
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-end gap-1 text-xs font-semibold text-muted-foreground">
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-1 text-xs font-semibold text-smoke">
           <span>Less</span>
           {intensityStyles.map((_, index) => (
             <span
               key={`intensity-${index}`}
-              className={`size-3 rounded-[3px] border border-border/60 ${intensityStyles[index]}`}
+              className={`size-3 rounded-[3px] border border-stone/60 ${intensityStyles[index]}`}
               title={`Level ${index}`}
             />
           ))}
@@ -148,10 +148,12 @@ function RankingPanel({
   className?: string
 }) {
   return (
-    <section className={`min-w-0 rounded-lg bg-card p-4 ${className ?? ''}`}>
+    <section
+      className={`min-w-0 rounded-xl bg-eggshell p-4 ${className ?? ''}`}
+    >
       <div className="mb-4">
         <h2 className="m-0 text-base font-semibold text-foreground">{title}</h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        <p className="m-0 mt-1 text-sm text-smoke">{subtitle}</p>
       </div>
       <RankingRows emptyLabel={emptyLabel} items={items} />
     </section>
@@ -167,7 +169,7 @@ function RankingRows({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg bg-background p-6 text-center text-sm font-medium text-muted-foreground">
+      <div className="rounded-xl bg-eggshell p-6 text-center text-sm font-medium text-smoke">
         {emptyLabel}
       </div>
     )
@@ -180,7 +182,7 @@ function RankingRows({
       {items.map((item, index) => (
         <div
           key={item.id}
-          className="grid min-w-0 gap-2 rounded-lg bg-background px-4 py-3"
+          className="grid min-w-0 gap-2 rounded-xl bg-eggshell px-4 py-3"
         >
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
@@ -197,15 +199,13 @@ function RankingRows({
               >
                 {item.name}
               </p>
-              <p className="m-0 mt-0.5 text-xs text-muted-foreground">
-                {item.meta}
-              </p>
+              <p className="m-0 mt-0.5 text-xs text-smoke">{item.meta}</p>
             </div>
             <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
               {formatDurationDdhms(item.seconds)}
             </span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-muted">
+          <div className="h-3 overflow-hidden rounded-full bg-warm-taupe">
             <div
               className="h-full rounded-full bg-primary"
               style={{

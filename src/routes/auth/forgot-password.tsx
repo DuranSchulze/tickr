@@ -37,23 +37,23 @@ function ForgotPasswordPage() {
   return (
     <AuthSplitLayout>
       {submitted ? (
-        <div className="mt-8">
-          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+        <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
+          <div className="flex size-12 items-center justify-center rounded-full bg-warm-taupe text-graphite">
             <CheckCircle2 className="size-6" />
           </div>
-          <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
+          <h1 className="m-0 mt-5 font-display text-heading-sm text-foreground">
             Check your inbox
           </h1>
-          <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+          <p className="m-0 mt-2 text-sm leading-6 text-smoke">
             If an account exists for <strong>{email}</strong>, we've sent a link
             to reset your password. The link expires in 15 minutes.
           </p>
-          <p className="m-0 mt-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="m-0 mt-2 text-xs text-smoke">
             Didn't see it? Check your spam folder, or{' '}
             <button
               type="button"
               onClick={() => setSubmitted(false)}
-              className="font-semibold text-[var(--primary)] underline-offset-2 hover:underline"
+              className="font-semibold text-foreground underline-offset-2 hover:underline"
             >
               try a different email
             </button>
@@ -62,27 +62,27 @@ function ForgotPasswordPage() {
 
           <Link
             to="/auth"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 no-underline hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
+            className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-foreground no-underline hover:text-graphite"
           >
             <ArrowLeft className="size-4" />
             Back to sign in
           </Link>
         </div>
       ) : (
-        <div className="mt-8">
-          <div className="flex size-12 items-center justify-center rounded-full bg-[var(--primary)]/10 text-[var(--primary)]">
+        <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
+          <div className="flex size-12 items-center justify-center rounded-full bg-warm-taupe text-graphite">
             <Mail className="size-6" />
           </div>
-          <h1 className="m-0 mt-5 text-3xl font-black tracking-tight">
+          <h1 className="m-0 mt-5 font-display text-heading-sm text-foreground">
             Forgot your password?
           </h1>
-          <p className="m-0 mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+          <p className="m-0 mt-2 text-sm leading-6 text-smoke">
             Enter the email you use for Trackly and we'll send you a link to
             reset it.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+            <label className="grid gap-2 text-sm font-semibold text-foreground">
               Email
               <input
                 type="email"
@@ -90,14 +90,14 @@ function ForgotPasswordPage() {
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
                 required
-                className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none transition-colors focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 dark:border-input dark:bg-background dark:text-foreground"
+                className="h-11 rounded-md border border-input bg-eggshell px-3 text-sm text-foreground outline-none transition-colors focus:border-ink focus:ring-2 focus:ring-ink/20"
               />
             </label>
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-2 h-11 rounded-lg bg-[var(--primary)] text-sm font-bold text-[var(--primary-foreground)] shadow-sm transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 h-11 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground shadow-[var(--shadow-whisper)] transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Sending…' : 'Send reset link'}
             </button>
@@ -105,7 +105,7 @@ function ForgotPasswordPage() {
 
           <Link
             to="/auth"
-            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-700 no-underline hover:text-slate-950 dark:text-slate-300 dark:hover:text-slate-50"
+            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground no-underline hover:text-graphite"
           >
             <ArrowLeft className="size-4" />
             Back to sign in

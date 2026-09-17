@@ -58,11 +58,11 @@ export function DashboardHeader({
   const initials = getInitials(userName)
 
   return (
-    <section className="rounded-lg border border-border bg-card">
+    <section className="rounded-xl border border-stone bg-eggshell">
       <div className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-primary">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-stone bg-warm-taupe text-primary">
               <Building2 className="size-4" />
             </span>
             <h1 className="m-0 min-w-0 truncate text-2xl font-bold tracking-tight text-foreground">
@@ -73,7 +73,7 @@ export function DashboardHeader({
             {initials && (
               <span
                 aria-hidden="true"
-                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary"
+                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-warm-taupe text-[11px] font-bold text-graphite"
               >
                 {initials}
               </span>
@@ -82,7 +82,7 @@ export function DashboardHeader({
               {userName}
             </span>
             <span
-              className="inline-flex max-w-full shrink-0 items-center truncate whitespace-nowrap rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary"
+              className="inline-flex max-w-full shrink-0 items-center truncate whitespace-nowrap rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-bold text-graphite"
               title={userRoleName}
             >
               {userRoleName}
@@ -90,15 +90,15 @@ export function DashboardHeader({
           </div>
         </div>
         <div className="w-full shrink-0 sm:w-auto">
-          <div className="w-full min-w-56 rounded-lg border border-border bg-muted px-3 py-3 sm:w-auto">
+          <div className="w-full min-w-56 rounded-xl border border-stone bg-warm-taupe px-3 py-3 sm:w-auto">
             <div className="text-center font-mono tracking-tight">
-              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
                 Today total
               </p>
               <HeaderTotal entries={entries} formatTime={formatTime} />
             </div>
             {trailing && (
-              <div className="mt-3 flex justify-center border-t border-border pt-3">
+              <div className="mt-3 flex justify-center border-t border-stone pt-3">
                 {trailing}
               </div>
             )}

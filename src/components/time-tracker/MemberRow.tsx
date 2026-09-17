@@ -79,7 +79,7 @@ const RATE_SOURCE_LABELS: Record<RateSource, string> = {
 const CLIENT_STATUS_BADGES: Record<string, string> = {
   SUSPENDED:
     'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
-  INACTIVE: 'bg-muted text-muted-foreground',
+  INACTIVE: 'bg-muted text-smoke',
 }
 
 const RATE_INPUT_CLASS =
@@ -279,12 +279,12 @@ function MemberRateDialog({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
-          <section className="shrink-0 rounded-lg border border-border bg-muted/40 p-4">
+          <section className="shrink-0 rounded-lg border border-stone bg-muted/40 p-4">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <h3 className="m-0 text-sm font-bold text-foreground">
                 Default rate
               </h3>
-              <p className="m-0 text-xs text-muted-foreground">
+              <p className="m-0 text-xs text-smoke">
                 Effective{' '}
                 <span className="font-semibold tabular-nums text-foreground">
                   {formatCurrency(effectiveDefaultRate, currency)}/hr
@@ -305,31 +305,31 @@ function MemberRateDialog({
                   aria-invalid={defaultRateInvalid}
                   className={`${RATE_INPUT_CLASS} pr-11`}
                 />
-                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-muted-foreground">
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-smoke">
                   /hr
                 </span>
               </span>
             </label>
-            <p className="m-0 mt-2 text-xs text-muted-foreground">
+            <p className="m-0 mt-2 text-xs text-smoke">
               Applies to clients without a specific rate. Leave empty to use the
               workspace default (
               {formatCurrency(workspaceDefaultRate, currency)}/hr).
             </p>
           </section>
 
-          <section className="shrink-0 overflow-hidden rounded-lg border border-border">
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-border px-4 py-3">
+          <section className="shrink-0 overflow-hidden rounded-lg border border-stone">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-stone px-4 py-3">
               <h3 className="m-0 text-sm font-bold text-foreground">
                 Client rates
               </h3>
               {rows.length > 0 && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-smoke">
                   {overrideCount} of {rows.length} overridden
                 </span>
               )}
             </div>
             {rows.length === 0 ? (
-              <p className="m-0 px-4 py-6 text-sm text-muted-foreground">
+              <p className="m-0 px-4 py-6 text-sm text-smoke">
                 No clients yet. Client-specific rates will appear here once
                 clients are added.
               </p>
@@ -351,7 +351,7 @@ function MemberRateDialog({
                           <span
                             className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
                               CLIENT_STATUS_BADGES[row.client.clientStatus] ??
-                              'bg-muted text-muted-foreground'
+                              'bg-muted text-smoke'
                             }`}
                           >
                             {row.client.clientStatus}
@@ -362,7 +362,7 @@ function MemberRateDialog({
                         className={`m-0 mt-0.5 truncate text-xs tabular-nums ${
                           row.source === 'override'
                             ? 'text-primary'
-                            : 'text-muted-foreground'
+                            : 'text-smoke'
                         }`}
                       >
                         {formatCurrency(row.effectiveRate, currency)}/hr ·{' '}
@@ -481,7 +481,7 @@ export const MemberRow = memo(function MemberRow({
 
   return (
     <>
-      <TableRow className="border-t border-border">
+      <TableRow className="border-t border-stone">
         {/* Member — links to detail page */}
         <TableCell className="overflow-hidden px-5 py-4 align-middle">
           <Link
@@ -491,9 +491,7 @@ export const MemberRow = memo(function MemberRow({
           >
             {member.name}
           </Link>
-          <p className="m-0 mt-1 truncate text-xs text-muted-foreground">
-            {member.email}
-          </p>
+          <p className="m-0 mt-1 truncate text-xs text-smoke">{member.email}</p>
         </TableCell>
 
         {/* Role — inline editable for canManage */}
@@ -509,7 +507,7 @@ export const MemberRow = memo(function MemberRow({
               }}
               onBlur={() => setEditingField(null)}
               disabled={pending}
-              className="h-8 w-full rounded border border-border bg-card px-2 text-xs text-foreground outline-none focus:border-primary"
+              className="h-8 w-full rounded border border-stone bg-eggshell px-2 text-xs text-foreground outline-none focus:border-primary"
             >
               <option value="">No role</option>
               {assignableRoles.map((r) => (
@@ -563,7 +561,7 @@ export const MemberRow = memo(function MemberRow({
               }}
               onBlur={() => setEditingField(null)}
               disabled={pending}
-              className="h-8 w-full rounded border border-border bg-card px-2 text-xs text-foreground outline-none focus:border-primary"
+              className="h-8 w-full rounded border border-stone bg-eggshell px-2 text-xs text-foreground outline-none focus:border-primary"
             >
               <option value="">Unassigned</option>
               {manageableDepartments.map((d) => (
@@ -594,7 +592,7 @@ export const MemberRow = memo(function MemberRow({
           {editingField === 'cohorts' && canManage ? (
             <div className="grid gap-2">
               {assignableCohorts.length === 0 ? (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-smoke">
                   {deptId
                     ? 'No cohorts in this department'
                     : 'Select a department first'}
@@ -625,14 +623,14 @@ export const MemberRow = memo(function MemberRow({
                     void saveMemberFields({ cohortIds })
                   }}
                   disabled={pending}
-                  className="h-6 rounded bg-primary px-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                  className="h-6 rounded bg-primary-action px-2 text-xs font-bold text-primary-action-foreground disabled:opacity-50"
                 >
                   {pending ? '...' : 'Save'}
                 </button>
                 <button
                   type="button"
                   onClick={cancelEdit}
-                  className="h-6 rounded border border-border px-2 text-xs text-muted-foreground hover:bg-accent"
+                  className="h-6 rounded border border-stone px-2 text-xs text-smoke hover:bg-accent"
                 >
                   Cancel
                 </button>
@@ -677,7 +675,7 @@ export const MemberRow = memo(function MemberRow({
                 className={`group flex w-full cursor-pointer items-center justify-end gap-2 rounded-lg border px-3 py-1.5 text-right transition-colors ${
                   memberClientRateCount > 0
                     ? 'border-primary/30 bg-primary/10 text-primary hover:bg-primary/15'
-                    : 'border-border bg-muted/60 text-foreground hover:bg-accent'
+                    : 'border-stone bg-muted/60 text-foreground hover:bg-accent'
                 }`}
               >
                 <span className="min-w-0">
@@ -696,13 +694,13 @@ export const MemberRow = memo(function MemberRow({
             </TableCell>
 
             {/* Stats */}
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-smoke">
               {formatHours(stats?.thisWeekSeconds ?? 0)}
             </TableCell>
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-smoke">
               {formatHours(stats?.totalSeconds ?? 0)}
             </TableCell>
-            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap px-5 py-4 text-right align-middle text-sm tabular-nums text-smoke">
               {formatHours(stats?.billableSeconds ?? 0)}
             </TableCell>
 
@@ -712,7 +710,7 @@ export const MemberRow = memo(function MemberRow({
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     disabled={pending}
-                    className="grid size-9 place-items-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                    className="grid size-9 place-items-center rounded-lg border border-stone bg-eggshell text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                     aria-label="Member actions"
                   >
                     <MoreHorizontal className="size-5" />

@@ -59,7 +59,7 @@ export function DateTimePicker({
           variant="outline"
           className={cn(
             'h-10 w-full justify-start text-left font-normal',
-            !date && 'text-muted-foreground',
+            !date && 'text-smoke',
           )}
         >
           <CalendarIcon className="mr-2 size-4" />
@@ -83,7 +83,7 @@ export function DateTimePicker({
             initialFocus
           />
           <div className="mt-3 border-t pt-3">
-            <Label className="text-xs text-muted-foreground">Time</Label>
+            <Label className="text-xs text-smoke">Time</Label>
             <Input
               type="time"
               step="1"

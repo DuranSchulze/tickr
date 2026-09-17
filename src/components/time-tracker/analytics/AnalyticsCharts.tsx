@@ -37,7 +37,7 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 
 function EmptyPanel({ label }: { label: string }) {
   return (
-    <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed border-border bg-background px-4 text-center text-sm font-semibold text-muted-foreground sm:h-[260px]">
+    <div className="flex h-[220px] items-center justify-center rounded-xl border border-dashed border-stone bg-eggshell px-4 text-center text-sm font-semibold text-smoke sm:h-[260px]">
       {label}
     </div>
   )
@@ -56,11 +56,11 @@ function ChartShell({
 }) {
   return (
     <section
-      className={`min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm ${className ?? ''}`}
+      className={`min-w-0 rounded-xl bg-warm-taupe p-4 ${className ?? ''}`}
     >
       <div className="mb-4">
         <h2 className="m-0 text-base font-black text-foreground">{title}</h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">{subtitle}</p>
+        <p className="m-0 mt-1 text-sm text-smoke">{subtitle}</p>
       </div>
       {children}
     </section>
@@ -141,17 +141,17 @@ export function AnalyticsCharts({
                       />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--stone)" />
                   <XAxis
                     dataKey="label"
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                     minTickGap={16}
                     interval="preserveStartEnd"
                   />
                   <YAxis
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                     width={28}
@@ -226,17 +226,17 @@ export function AnalyticsCharts({
                   layout="vertical"
                   margin={{ left: 0, right: 12 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--stone)" />
                   <XAxis
                     type="number"
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 12 }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                    tick={{ fill: 'var(--smoke)', fontSize: 11 }}
                     tickLine={false}
                     axisLine={false}
                     width={88}
