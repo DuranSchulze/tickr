@@ -50,7 +50,8 @@ html {
   z-index: 60;
   height: 2px;
   pointer-events: none;
-  background: var(--primary);
+  /* Accent is banned from UI chrome — the progress bar is ink at low alpha. */
+  background: color-mix(in oklab, var(--ink) 70%, transparent);
   transform: scaleX(0);
   transform-origin: left center;
 }
@@ -103,8 +104,10 @@ html {
 .landing-ambient-dot {
   position: absolute;
   display: block;
-  border: 1px solid color-mix(in oklab, var(--primary) 50%, transparent);
-  background: color-mix(in oklab, var(--primary) 16%, transparent);
+  /* Decorative ambience, not product chrome — ink at low alpha instead of the
+     accent (DESIGN.md §Don't: accent is decoration-only, never UI chrome). */
+  border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
   opacity: 0.7;
   animation: landing-ambient-drift 11s ease-in-out infinite alternate;
 }
@@ -219,15 +222,19 @@ code {
     source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+/* ─── Font presets ──────────────────────────────────────────────────────── */
+/* Inter is the editorial default face (A5): DESIGN.md's Waldenburg substitute.
+   Every preset still works; the fallback chain keeps Inter in front so the
+   system default is editorial rather than a generic sans. */
 :root,
 [data-font='roboto'] {
-  --font-sans: 'Roboto Variable', system-ui, sans-serif;
-  --font-heading: 'DM Sans Variable', 'Roboto Variable', system-ui, sans-serif;
+  --font-sans: 'Roboto Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
 }
 
 [data-font='dm-sans'] {
-  --font-sans: 'DM Sans Variable', system-ui, sans-serif;
-  --font-heading: 'DM Sans Variable', system-ui, sans-serif;
+  --font-sans: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
 }
 
 [data-font='inter'] {
@@ -236,13 +243,13 @@ code {
 }
 
 [data-font='nunito'] {
-  --font-sans: 'Nunito Variable', system-ui, sans-serif;
-  --font-heading: 'Nunito Variable', system-ui, sans-serif;
+  --font-sans: 'Nunito Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'Nunito Variable', 'Inter Variable', system-ui, sans-serif;
 }
 
 [data-font='work-sans'] {
-  --font-sans: 'Work Sans Variable', system-ui, sans-serif;
-  --font-heading: 'Work Sans Variable', system-ui, sans-serif;
+  --font-sans: 'Work Sans Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'Work Sans Variable', 'Inter Variable', system-ui, sans-serif;
 }
 
 :root {
@@ -297,50 +304,131 @@ code {
   --acc-chevron: var(--duration-fast);
   --acc-ease: var(--ease-smooth-out);
 
-  --background: oklch(0.972 0.002 17.2);
-  --foreground: oklch(0.147 0.004 49.3);
+  /* Sliding tab pill — sourced from the shared motion scale so the segmented
+     control tweens on the same curve as the rest of the app. */
+  --tabs-dur: var(--duration-fast);
+  --tabs-ease: var(--ease-smooth-out);
+  --tabs-pill-bg: var(--eggshell); /* overridden per theme below */
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.3);
+  /* Staggered text reveal */
+  --stagger-dur: var(--duration-slow);
+  --stagger-delay: var(--duration-stagger);
+  --stagger-ease: var(--ease-smooth-out);
 
+  /* ─── Editorial raw palette (DESIGN.md §Tokens—Colors) ─────────────────── */
+  /* Warm cream paper stack: eggshell → taupe → stone. Never pure white.     */
+  --eggshell: #fdfcfc;
+  --warm-taupe: #f5f3f1;
+  --stone: #ebe8e4;
+  --ink: #000000;
+  --graphite: #44403b;
+  --smoke: #777169;
+  --ash: #a59f97;
+  --hairline: #e5e5e5; /* button borders, per DESIGN.md §Components */
+  /* Product-visual sparks. Decoration only — never buttons, links, or badges. */
+  --violet-spark: #0447ff;
+  --ember-orange: #ff4704;
+
+  /* Ink is the only CTA fill in the editorial hierarchy (DESIGN.md §Do). */
+  --primary-action: var(--ink);
+  --primary-action-foreground: var(--eggshell);
+
+  --background: var(--eggshell);
+  --foreground: var(--ink);
+
+  --card: var(--eggshell);
+  --card-foreground: var(--ink);
+
+  /* Accent presets (html[data-primary]) override these; accent drives rings,
+     active states, links, running glow, and charts — not CTA fills. */
   --primary: oklch(0.496 0.265 301.924);
   --primary-foreground: oklch(0.977 0.014 308.299);
 
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: var(--warm-taupe);
+  --secondary-foreground: var(--graphite);
 
-  --muted: oklch(0.96 0.002 17.2);
-  --muted-foreground: oklch(0.547 0.021 43.1);
+  --muted: var(--warm-taupe);
+  --muted-foreground: var(--smoke);
 
-  --accent: oklch(0.496 0.265 301.924);
-  --accent-foreground: oklch(0.977 0.014 308.299);
+  /* Accent is the *surface* companion to --primary: shadcn pairs them as
+     bg-accent / text-accent-foreground, which the app uses 160+ times as a
+     hover and active wash. A saturated accent fill would make the palette
+     ~97% achromatic everywhere else and unreadable in dark mode, so the
+     surface stays a quiet warm wash while --primary (preset) carries the
+     spark: rings, active indicators, links, running glow, charts. */
+  --accent: var(--warm-taupe);
+  --accent-foreground: var(--ink);
 
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.922 0.005 34.3);
-  --input: oklch(0.922 0.005 34.3);
-  --ring: oklch(0.714 0.014 41.2);
+  --border: var(--stone);
+  --input: var(--stone);
+  --ring: var(--ink);
 
-  --chart-1: oklch(0.871 0.15 154.449);
-  --chart-2: oklch(0.723 0.219 149.579);
-  --chart-3: oklch(0.627 0.194 149.214);
-  --chart-4: oklch(0.527 0.154 150.069);
-  --chart-5: oklch(0.448 0.119 151.328);
+  /* Charts are the sanctioned "product visual" colour exception (A9): kept
+     chromatic so series stay legible, re-tuned toward warmer editorial hues.
+     Ordered light → deep so sequential ramps still read as a ramp. */
+  --chart-1: oklch(0.78 0.09 168);
+  --chart-2: oklch(0.66 0.11 196);
+  --chart-3: oklch(0.55 0.13 249);
+  --chart-4: oklch(0.58 0.154 35);
+  --chart-5: oklch(0.46 0.13 302);
 
-  --radius: 0;
+  /* ─── Editorial radius (DESIGN.md §Spacing & Shapes) ──────────────────── */
+  /* Named radii drive intent; the standard radius scale is re-pointed at the
+     editorial values so existing `rounded-md/lg/xl` call sites land on the
+     right shape without editing 700+ sites.
+       inputs / small elements  4px  → rounded-md, rounded-sm
+       small elements          10px  → rounded-lg
+       cards / dialogs         20px  → rounded-card, rounded-xl
+       large feature cards     24px  → rounded-card-lg, rounded-3xl
+       buttons / tags / pills  9999px */
+  --radius-xs: 2px;
+  --radius-input: 4px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+  --radius-button: 9999px;
+  /* Legacy base kept for compatibility; derived radii below are explicit. */
+  --radius: 0.25rem;
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.3);
+  /* ─── Editorial elevation (DESIGN.md §Shadows / §Elevation) ───────────── */
+  /* Buttons + elevated cards: 1px hard edge + 1px blur + 4px blur @ 4%.     */
+  --elevation-whisper:
+    rgba(0, 0, 0, 0.4) 0 0 1px 0, rgba(0, 0, 0, 0.04) 0 1px 1px 0,
+    rgba(0, 0, 0, 0.04) 0 2px 4px 0;
+  /* Inset hairline used for focus halos and quiet plates. */
+  --elevation-hairline: rgba(0, 0, 0, 0.075) 0 0 0 0.5px inset;
+  --elevation-plate: rgba(0, 0, 0, 0.1) 0 0 0 1px inset;
+  /* Legacy Tailwind shadow utilities are re-pointed at whisper elevation so
+     heavy drop shadows cannot survive anywhere in the app. */
+  --shadow-xs: var(--elevation-whisper);
+  --shadow-sm: var(--elevation-whisper);
+  --shadow-md: var(--elevation-whisper);
+  --shadow-lg: var(--elevation-whisper);
+  --shadow-xl: var(--elevation-whisper);
+  --shadow-2xl: var(--elevation-whisper);
+  --shadow-subtle: var(--elevation-whisper);
+  --shadow-subtle-2: var(--elevation-hairline);
+  --shadow-subtle-3: rgba(0, 0, 0, 0.1) 0 0 0 0.5px inset;
+  --shadow-subtle-4: var(--elevation-plate);
+  --shadow-subtle-5: var(--elevation-whisper);
+  --shadow-subtle-6: rgba(255, 255, 255, 0.6) 0 0 0 1px inset;
+  --shadow-subtle-7: var(--stone) 0 0 0 0.5px inset;
+  --shadow-glow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
 
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.147 0.004 49.3);
+  --popover: var(--eggshell);
+  --popover-foreground: var(--ink);
+
+  /* Sidebar sits one step deeper than the canvas. */
+  --sidebar: var(--warm-taupe);
+  --sidebar-foreground: var(--ink);
   --sidebar-primary: oklch(0.558 0.288 302.321);
   --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
-  --sidebar-accent: oklch(0.96 0.002 17.2);
-  --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
-  --sidebar-border: oklch(0.922 0.005 34.3);
-  --sidebar-ring: oklch(0.714 0.014 41.2);
+  --sidebar-accent: var(--stone);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--stone);
+  --sidebar-ring: var(--ink);
 }
 
 /* Anchored surfaces: dropdowns, popovers, and select menus. */
@@ -611,13 +699,13 @@ code {
   100% {
     box-shadow: inset 0 0 0 1px
       color-mix(in oklab, var(--primary) 0%, transparent);
-    background-color: color-mix(in oklab, var(--primary) 5%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 7%, transparent);
   }
   50% {
     box-shadow:
-      inset 0 0 0 1px color-mix(in oklab, var(--primary) 50%, transparent),
-      inset 0 0 20px 4px color-mix(in oklab, var(--primary) 25%, transparent);
-    background-color: color-mix(in oklab, var(--primary) 11%, transparent);
+      inset 0 0 0 1px color-mix(in oklab, var(--primary) 60%, transparent),
+      inset 0 0 24px 6px color-mix(in oklab, var(--primary) 30%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 13%, transparent);
   }
 }
 
@@ -650,6 +738,8 @@ code {
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-action: var(--primary-action);
+  --color-primary-action-foreground: var(--primary-action-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -661,15 +751,24 @@ code {
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Editorial palette exposed as utilities: bg-eggshell, text-smoke, etc. */
+  --color-eggshell: var(--eggshell);
+  --color-warm-taupe: var(--warm-taupe);
+  --color-stone: var(--stone);
+  --color-ink: var(--ink);
+  --color-graphite: var(--graphite);
+  --color-smoke: var(--smoke);
+  --color-ash: var(--ash);
+  --color-hairline: var(--hairline);
+  --color-violet-spark: var(--violet-spark);
+  --color-ember-orange: var(--ember-orange);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -679,19 +778,54 @@ code {
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-copper: oklch(0.58 0.12 185);
-  --color-copper-light: oklch(0.75 0.08 185);
-  --color-copper-dark: oklch(0.42 0.08 185);
-  --color-gold: oklch(0.65 0.12 75);
-  --color-gold-light: oklch(0.82 0.08 75);
-  --color-cream: oklch(0.98 0.005 240);
-  --color-cream-dark: oklch(0.88 0.01 240);
-  --color-charcoal: oklch(0.18 0.02 250);
-  --color-charcoal-light: oklch(0.28 0.03 250);
-  /* Fonts are set via [data-font] attribute — see above */
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* ─── Fonts ────────────────────────────────────────────────────────────── */
+  /* --font-sans / --font-heading are set by the [data-font] presets above.   */
+  --font-display: var(--font-heading);
+  --font-inter:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+
+  /* ─── Type scale (DESIGN.md §Type Scale) ──────────────────────────────── */
+  --text-display: 48px;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+  --text-heading: 36px;
+  --text-heading--line-height: 1.17;
+  --text-heading--letter-spacing: -0.02em;
+  --text-heading-sm: 32px;
+  --text-heading-sm--line-height: 1.13;
+  --text-heading-sm--letter-spacing: -0.02em;
+  --text-subheading: 18px;
+  --text-subheading--line-height: 1.6;
+  --text-body-lg: 20px;
+  --text-body-lg--line-height: 1.35;
+  --font-weight-light: 300;
+
+  /* ─── Editorial radius + elevation utilities ──────────────────────────── */
+  --radius-sm: 4px; /* small elements, kbd, menu items          */
+  --radius-md: 4px; /* inputs, textareas, combobox triggers     */
+  --radius-lg: 10px; /* small-elements upper bound              */
+  --radius-xl: 20px; /* cards, dialogs, drawers, popovers       */
+  --radius-2xl: 16px; /* medium plates                           */
+  --radius-3xl: 24px; /* large feature cards                     */
+  --radius-4xl: 28px;
+  /* --shadow-* are set in :root / .dark. */
+  --shadow-whisper: var(--elevation-whisper);
+  --shadow-inset-hairline: var(--elevation-hairline);
+  --shadow-inset-plate: var(--elevation-plate);
+}
+
+/* ─── Editorial display voice ───────────────────────────────────────────── */
+/* DESIGN.md §Typography: Waldenburg 300 substitutes to Inter 300 at -0.02em.
+   Apply to page, section, and hero titles — never to body copy.            */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 @layer base {
@@ -703,6 +837,84 @@ code {
   }
   html {
     @apply font-sans;
+  }
+
+  /* Editorial display voice at the document level. Component titles that set
+     their own font-weight keep it; this only sets the default for headings. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ─── t-tabs: sliding segmented control ─────────────────────────────────── */
+/* Two mutually-exclusive options with a pill that slides between them.
+   JS writes the active tab's offsetLeft / offsetWidth onto the pill; CSS owns
+   the tween. The layout (grid/flex, sizing) stays with the component utility
+   classes — these rules own the pill and the stacking. */
+.t-tabs {
+  position: relative;
+}
+.t-tab {
+  position: relative;
+  z-index: 1;
+}
+/* The pill sits behind the labels and is measured from the real DOM, so the
+   transition always tweens between the previous and next positions. */
+.t-tabs-pill {
+  position: absolute;
+  /* The track's p-1 is 4px; the tab is h-9 (36px). These are the pill's own
+     box because Tailwind never sees this aria-hidden, childless span. */
+  top: 4px;
+  left: 0;
+  width: 0;
+  height: 36px;
+  background: var(--tabs-pill-bg);
+  border-radius: var(--radius-button);
+  box-shadow: var(--shadow-whisper);
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ─── t-stagger: staggered cross-blur for stacked text ──────────────────── */
+/* Each direct child re-enters with a blurred rise, offset by its index. The
+   component sets --stagger-i on each child and re-keys/mounts the group to
+   replay. Used for the auth form when the mode switches. */
+.t-stagger > * {
+  opacity: 0;
+  transform: translateY(var(--distance-medium));
+  filter: blur(var(--blur-medium));
+  animation: t-stagger-in var(--stagger-dur) var(--stagger-ease) forwards;
+  animation-delay: calc(var(--stagger-i, 0) * var(--stagger-delay));
+}
+
+@keyframes t-stagger-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tab,
+  .t-tabs-pill {
+    transition: none !important;
+  }
+  .t-stagger > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }
 
@@ -728,84 +940,88 @@ code {
   }
 }
 
-/* Elegant grain texture overlay */
-.grain-texture {
-  position: relative;
-}
-
-.grain-texture::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
-  pointer-events: none;
-  opacity: 0.4;
-}
-
-/* Golden border accent */
-.border-gold-accent {
-  border-image: linear-gradient(
-      135deg,
-      oklch(0.72 0.12 85),
-      oklch(0.65 0.14 55),
-      oklch(0.72 0.12 85)
-    )
-    1;
-}
-
-/* Copper glow effect */
-.glow-copper {
-  box-shadow:
-    0 0 20px oklch(0.65 0.14 55 / 0.3),
-    0 0 40px oklch(0.65 0.14 55 / 0.1);
-}
-
-/* Elegant card hover effect */
+/* ─── Editorial hover lift ──────────────────────────────────────────────── */
+/* DESIGN.md §Don't: no heavy drop shadows. A 2px lift plus whisper elevation. */
 .card-hover {
   transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
+    transform var(--duration-fast) var(--ease-smooth-out),
+    box-shadow var(--duration-fast) var(--ease-smooth-out);
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 12px 40px oklch(0 0 0 / 0.4),
-    0 0 20px oklch(0.65 0.14 55 / 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-whisper);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* ─── Dark palette — "graphite editorial" ───────────────────────────────── */
+/* DESIGN.md is light-only; this is the Trackly adaptation (PLAN.md §3.2).   */
+/* Same warm hue family as the light palette, but surfaces step *up* from the */
+/* canvas into the light instead of down.                                     */
 .dark {
-  --background: oklch(0.225 0.018 255);
-  --foreground: oklch(0.94 0.008 255);
-  --card: oklch(0.275 0.02 255);
-  --card-foreground: oklch(0.94 0.008 255);
-  --popover: oklch(0.29 0.021 255);
-  --popover-foreground: oklch(0.94 0.008 255);
+  /* The palette names are SURFACE names, so they flip with the mode:
+     `bg-eggshell` is always "the paper", `bg-ink` is always "the filled-ink
+     chip". Text uses the semantic tokens (text-foreground / text-muted-
+     foreground) or the raw text tones below, which lift for legibility. */
+  --eggshell: #1d1a18; /* "paper" is the warm near-black card in dark   */
+  --warm-taupe: #262220;
+  --stone: #35302b;
+  --ink: #f5f3f1; /* filled-ink chip becomes the light chip in dark */
+  /* Text tones lift so they stay legible on the dark warm surfaces. */
+  --graphite: #cfc9c1;
+  --smoke: #a8a29a;
+  --ash: #6f6a63;
+  --hairline: #35302b;
+
+  --primary-action: #f5f3f1;
+  --primary-action-foreground: #161412;
+
+  --background: #161412;
+  --foreground: #f5f3f1;
+  --card: #1d1a18;
+  --card-foreground: #f5f3f1;
+  --popover: #1d1a18;
+  --popover-foreground: #f5f3f1;
   --primary: oklch(0.438 0.218 303.724);
   --primary-foreground: oklch(0.977 0.014 308.299);
-  --secondary: oklch(0.325 0.022 255);
-  --secondary-foreground: oklch(0.94 0.008 255);
-  --muted: oklch(0.315 0.02 255);
-  --muted-foreground: oklch(0.75 0.018 255);
-  --accent: oklch(0.438 0.218 303.724);
-  --accent-foreground: oklch(0.977 0.014 308.299);
+  --secondary: #262220;
+  --secondary-foreground: #f5f3f1;
+  --muted: #262220;
+  --muted-foreground: #a59f97;
+  --accent: #2a2523;
+  --accent-foreground: #f5f3f1;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.4 0.025 255);
-  --input: oklch(0.43 0.026 255);
-  --ring: oklch(0.68 0.04 255);
-  --chart-1: oklch(0.871 0.15 154.449);
-  --chart-2: oklch(0.723 0.219 149.579);
-  --chart-3: oklch(0.627 0.194 149.214);
-  --chart-4: oklch(0.527 0.154 150.069);
-  --chart-5: oklch(0.448 0.119 151.328);
-  --sidebar: oklch(0.255 0.02 255);
-  --sidebar-foreground: oklch(0.94 0.008 255);
+  --border: #35302b;
+  --input: #35302b;
+  --ring: #f5f3f1;
+  /* Same warm hues, lifted for the dark canvas. */
+  --chart-1: oklch(0.82 0.1 168);
+  --chart-2: oklch(0.74 0.12 196);
+  --chart-3: oklch(0.68 0.13 249);
+  --chart-4: oklch(0.7 0.16 38);
+  --chart-5: oklch(0.62 0.14 302);
+  /* Shadows must read on a dark canvas. */
+  --elevation-whisper:
+    rgba(0, 0, 0, 0.5) 0 0 1px 0, rgba(0, 0, 0, 0.25) 0 2px 4px 0;
+  --elevation-hairline: rgba(255, 255, 255, 0.08) 0 0 0 0.5px inset;
+  --elevation-plate: rgba(255, 255, 255, 0.1) 0 0 0 1px inset;
+  --shadow-subtle-3: rgba(255, 255, 255, 0.1) 0 0 0 0.5px inset;
+  --shadow-subtle-6: rgba(255, 255, 255, 0.06) 0 0 0 1px inset;
+  --shadow-subtle-7: #35302b 0 0 0 0.5px inset;
+  /* Sidebar sits deeper than the canvas (inverted vs light). */
+  --sidebar: #12100e;
+  --sidebar-foreground: #f5f3f1;
   --sidebar-primary: oklch(0.627 0.265 303.9);
   --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
-  --sidebar-accent: oklch(0.32 0.022 255);
-  --sidebar-accent-foreground: oklch(0.94 0.008 255);
-  --sidebar-border: oklch(0.39 0.024 255);
-  --sidebar-ring: oklch(0.68 0.04 255);
+  --sidebar-accent: #262220;
+  --sidebar-accent-foreground: #f5f3f1;
+  --sidebar-border: #35302b;
+  --sidebar-ring: #f5f3f1;
 }
 
 /* ─── Print styles ───────────────────────────────────────────────────────── */
@@ -981,6 +1197,15 @@ html[data-primary='pink'].dark {
   --ring: oklch(0.82 0.14 350);
   --sidebar-primary: oklch(0.82 0.14 350);
   --sidebar-primary-foreground: oklch(0.15 0.05 350);
+}
+
+/* Accent *surfaces* always resolve to the quiet warm wash; only the preset
+   `--primary`/`--ring`/`--sidebar-primary` carry the user's chosen hue. This
+   rule follows every preset block so it wins on equal specificity, in both
+   light and dark mode ([data-primary] presets also set `.dark` variants). */
+html[data-primary] {
+  --accent: var(--warm-taupe);
+  --accent-foreground: var(--ink);
 }
 
 /* ── MapLibre (mapcn) theme overrides ───────────────────────────────────── */

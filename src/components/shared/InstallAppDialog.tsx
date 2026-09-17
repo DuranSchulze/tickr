@@ -62,7 +62,7 @@ export function InstallAppDialog({
 
         {canPrompt ? (
           <div className="flex flex-col gap-3">
-            <p className="m-0 text-sm text-muted-foreground">
+            <p className="m-0 text-sm text-smoke">
               Your browser supports one-tap install. The timer keeps running
               even when you switch apps.
             </p>
@@ -78,14 +78,14 @@ export function InstallAppDialog({
         ) : isIos ? (
           <ol className="m-0 grid list-none gap-3 p-0">
             <li className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warm-taupe text-sm font-bold text-graphite">
                 1
               </span>
               <div className="flex flex-col gap-1 pt-0.5">
                 <p className="m-0 text-sm font-semibold text-foreground">
                   Open the Share menu
                 </p>
-                <p className="m-0 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="m-0 flex items-center gap-1.5 text-sm text-smoke">
                   Tap the
                   <Share className="inline size-4 shrink-0 text-foreground" />
                   icon in Safari's toolbar.
@@ -93,14 +93,14 @@ export function InstallAppDialog({
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warm-taupe text-sm font-bold text-graphite">
                 2
               </span>
               <div className="flex flex-col gap-1 pt-0.5">
                 <p className="m-0 text-sm font-semibold text-foreground">
                   Choose “Add to Home Screen”
                 </p>
-                <p className="m-0 flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="m-0 flex items-center gap-1.5 text-sm text-smoke">
                   Scroll down and tap
                   <Plus className="inline size-4 shrink-0 text-foreground" />
                   Add to Home Screen.
@@ -108,21 +108,21 @@ export function InstallAppDialog({
               </div>
             </li>
             <li className="flex items-start gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warm-taupe text-sm font-bold text-graphite">
                 3
               </span>
               <div className="flex flex-col gap-1 pt-0.5">
                 <p className="m-0 text-sm font-semibold text-foreground">
                   Confirm
                 </p>
-                <p className="m-0 text-sm text-muted-foreground">
+                <p className="m-0 text-sm text-smoke">
                   Tap “Add” — {BRAND.name} appears alongside your other apps.
                 </p>
               </div>
             </li>
           </ol>
         ) : (
-          <p className="m-0 text-sm text-muted-foreground">
+          <p className="m-0 text-sm text-smoke">
             Open your browser's menu and look for “Install app” or “Add to Home
             Screen”. If it's not there, your browser doesn't support installing
             web apps yet.

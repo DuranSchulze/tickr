@@ -20,7 +20,7 @@ export const CalendarEntryChip = memo(function CalendarEntryChip({
       type="button"
       title={description}
       onClick={() => onSelect(entry)}
-      className="group flex min-w-0 items-center justify-between gap-2 rounded-md border border-border/70 px-2 py-1 text-left text-xs font-semibold text-foreground transition-colors hover:border-primary/45 hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30"
+      className="group flex min-w-0 items-center justify-between gap-2 rounded-full border border-stone/70 px-2 py-1 text-left text-xs font-semibold text-foreground transition-colors hover:border-primary/45 hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30"
       style={
         projectColor
           ? {
@@ -40,7 +40,7 @@ export const CalendarEntryChip = memo(function CalendarEntryChip({
       {entry.endedAt === null ? (
         <RunningLabel entry={entry} formatTime={formatTime} />
       ) : (
-        <span className="shrink-0 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-black text-muted-foreground">
+        <span className="shrink-0 rounded bg-eggshell/80 px-1.5 py-0.5 text-[10px] font-black text-smoke">
           {formatTime(entry.durationSeconds)}
         </span>
       )}

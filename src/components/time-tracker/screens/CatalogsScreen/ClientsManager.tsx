@@ -127,7 +127,7 @@ export function ClientsManager({
           <button
             type="button"
             onClick={() => dispatch({ showForm: !showForm })}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-action px-3 py-1.5 text-xs font-bold text-primary-action-foreground transition-colors"
           >
             {showForm ? (
               <X className="size-3.5" />
@@ -150,9 +150,9 @@ export function ClientsManager({
             placeholder="Client name"
             aria-label="Client name"
             required
-            className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+            className="h-9 rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
           />
-          <label className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground">
+          <label className="inline-flex items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-xs font-semibold text-foreground">
             <span className="sr-only">Client status</span>
             <select
               value={status}
@@ -169,14 +169,14 @@ export function ClientsManager({
           <button
             type="submit"
             disabled={pending}
-            className="h-9 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="h-9 rounded-full bg-primary-action px-3 text-sm font-bold text-primary-action-foreground disabled:bg-warm-taupe disabled:text-smoke"
           >
             {pending ? '…' : 'Add'}
           </button>
         </form>
       )}
       {state.clients.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">
+        <p className="mt-4 text-sm text-smoke">
           No clients yet. Create one before adding projects.
         </p>
       ) : (
@@ -184,19 +184,19 @@ export function ClientsManager({
           {state.clients.map((c) => (
             <div
               key={c.id}
-              className="group flex items-center gap-1.5 rounded-lg border border-border px-3 py-2"
+              className="group flex items-center gap-1.5 rounded-full border border-stone px-3 py-2"
             >
-              <Building2 className="size-3.5 text-muted-foreground" />
+              <Building2 className="size-3.5 text-smoke" />
               <span className="text-sm font-semibold text-foreground">
                 {c.name}
               </span>
               {c.clientStatus === 'INACTIVE' && (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                <span className="rounded-full bg-warm-taupe px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-graphite">
                   Inactive
                 </span>
               )}
               {c.clientStatus === 'SUSPENDED' && (
-                <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
                   Suspended
                 </span>
               )}

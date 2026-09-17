@@ -38,12 +38,12 @@ type AppShellWorkspace = Pick<Workspace, 'id' | 'name' | 'timezone'>
 
 function EmbedFooter() {
   return (
-    <div className="sticky bottom-0 mt-2 flex items-center justify-center border-t border-border/50 bg-background/80 py-1.5 backdrop-blur-sm">
+    <div className="sticky bottom-0 mt-2 flex items-center justify-center border-t border-stone/50 bg-eggshell/80 py-1.5 backdrop-blur-sm">
       <a
         href="/app/time-tracker"
         target="_blank"
         rel="noreferrer"
-        className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="flex items-center gap-1 text-xs text-smoke transition-colors hover:text-foreground"
       >
         Open in full app
         <ExternalLink className="size-3" />
@@ -234,7 +234,7 @@ export function AppShell({
 
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex h-screen w-full flex-col overflow-hidden bg-eggshell text-foreground">
         {showAppChrome && (
           <div className="print:hidden">
             <Navbar

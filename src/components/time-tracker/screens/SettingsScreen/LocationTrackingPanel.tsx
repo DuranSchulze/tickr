@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
-import { DatabaseZap, MapPin, ShieldCheck, Trash2 } from 'lucide-react'
+import {
+  DatabaseZap,
+  MapPin,
+  ShieldCheck,
+  Trash2,
+  Check,
+  Copy,
+} from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
@@ -35,6 +42,7 @@ export function LocationTrackingPanel({
   const queryClient = useQueryClient()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [confirmation, setConfirmation] = useState('')
+  const [copied, setCopied] = useState(false)
 
   async function refreshLocationData() {
     await Promise.all([
@@ -85,6 +93,18 @@ export function LocationTrackingPanel({
   const pending = trackingMutation.isPending || purgeMutation.isPending
   const confirmationMatches = confirmation.trim() === workspaceName
 
+  async function copyConfirmationPhrase() {
+    try {
+      await navigator.clipboard.writeText(workspaceName)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      gooeyToast.error('Could not copy', {
+        description: `Type "${workspaceName}" manually instead.`,
+      })
+    }
+  }
+
   function handleDialogChange(open: boolean) {
     if (purgeMutation.isPending) return
     setDialogOpen(open)
@@ -92,7 +112,7 @@ export function LocationTrackingPanel({
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <section className="overflow-hidden rounded-lg border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
       <div className="p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -100,7 +120,7 @@ export function LocationTrackingPanel({
               <MapPin className="size-4 text-primary" />
               Location tracking
             </h2>
-            <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
+            <p className="m-0 mt-1 max-w-2xl text-sm text-smoke">
               Add network or device location details to new time entries. This
               helps authorized workspace members review where work was logged.
             </p>
@@ -111,7 +131,7 @@ export function LocationTrackingPanel({
                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
                 locationTrackingEnabled
                   ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                  : 'bg-muted text-muted-foreground',
+                  : 'bg-muted text-smoke',
               )}
             >
               <span
@@ -134,7 +154,7 @@ export function LocationTrackingPanel({
               className={cn(
                 'relative h-6 w-11 shrink-0 rounded-full outline-none transition-colors motion-reduce:transition-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
                 locationTrackingEnabled
-                  ? 'bg-primary'
+                  ? 'bg-primary-action'
                   : 'bg-muted-foreground/30',
               )}
             >
@@ -148,14 +168,14 @@ export function LocationTrackingPanel({
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 border-y border-border py-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
+        <div className="mt-5 grid gap-4 border-y border-stone py-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
           <div className="flex gap-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
             <div>
               <p className="m-0 text-sm font-semibold text-foreground">
                 Future entries
               </p>
-              <p className="m-0 mt-0.5 text-xs leading-5 text-muted-foreground">
+              <p className="m-0 mt-0.5 text-xs leading-5 text-smoke">
                 {locationTrackingEnabled
                   ? 'New entries can receive location details.'
                   : 'New entries are saved without origin details.'}
@@ -168,7 +188,7 @@ export function LocationTrackingPanel({
               <p className="m-0 text-sm font-semibold text-foreground">
                 Recorded history
               </p>
-              <p className="m-0 mt-0.5 text-xs leading-5 text-muted-foreground">
+              <p className="m-0 mt-0.5 text-xs leading-5 text-smoke">
                 {isOwner
                   ? `${taggedEntryCount.toLocaleString()} ${taggedEntryCount === 1 ? 'entry has' : 'entries have'} origin data.`
                   : 'Existing location details are retained.'}
@@ -178,7 +198,7 @@ export function LocationTrackingPanel({
         </div>
 
         {!isOwner && (
-          <p className="m-0 mt-4 text-xs text-muted-foreground">
+          <p className="m-0 mt-4 text-xs text-smoke">
             Only the workspace Owner can change location privacy settings.
           </p>
         )}
@@ -191,7 +211,7 @@ export function LocationTrackingPanel({
               <h3 className="m-0 text-sm font-bold text-foreground">
                 Erase recorded location history
               </h3>
-              <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
+              <p className="m-0 mt-1 max-w-2xl text-sm text-smoke">
                 Permanently remove IP, location, coordinates, and browser
                 details. Time entries and their work data remain unchanged.
               </p>
@@ -239,21 +259,44 @@ export function LocationTrackingPanel({
             }}
             className="grid gap-2"
           >
-            <label
-              htmlFor="purge-location-confirmation"
-              className="text-sm font-semibold text-foreground"
-            >
-              Type <span className="font-mono">{workspaceName}</span> to confirm
-            </label>
-            <Input
-              id="purge-location-confirmation"
-              value={confirmation}
-              onChange={(event) => setConfirmation(event.target.value)}
-              autoComplete="off"
-              autoFocus
-              disabled={purgeMutation.isPending}
-              aria-invalid={confirmation.length > 0 && !confirmationMatches}
-            />
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="purge-location-confirmation"
+                className="text-sm font-semibold text-foreground"
+              >
+                Type this workspace name to confirm
+              </label>
+              {/* The exact phrase gets its own surface and a copy affordance so
+                  there is no ambiguity about what has to be typed. */}
+              <div className="flex items-center gap-2 rounded-md border border-stone bg-warm-taupe px-2.5 py-1.5">
+                <code className="min-w-0 flex-1 truncate font-mono text-sm font-semibold text-foreground">
+                  {workspaceName}
+                </code>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={`Copy the workspace name "${workspaceName}"`}
+                  onClick={() => void copyConfirmationPhrase()}
+                >
+                  {copied ? (
+                    <Check className="text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <Copy />
+                  )}
+                </Button>
+              </div>
+              <Input
+                id="purge-location-confirmation"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                placeholder={workspaceName}
+                autoComplete="off"
+                autoFocus
+                disabled={purgeMutation.isPending}
+                aria-invalid={confirmation.length > 0 && !confirmationMatches}
+              />
+            </div>
           </form>
 
           <DialogFooter>

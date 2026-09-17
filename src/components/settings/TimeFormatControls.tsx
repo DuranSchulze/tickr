@@ -20,7 +20,7 @@ export function TimeFormatControls() {
 
   return (
     <div>
-      <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-smoke">
         Time display format
       </p>
       <div
@@ -38,19 +38,17 @@ export function TimeFormatControls() {
               aria-checked={isActive}
               onClick={() => setFormat(f)}
               className={cn(
-                'flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
+                'flex items-center justify-between rounded-full border px-4 py-3 text-left text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                 isActive
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border text-foreground hover:bg-accent',
+                  ? 'border-primary-action bg-primary-action text-primary-action-foreground'
+                  : 'border-stone text-foreground hover:bg-warm-taupe',
               )}
             >
               <span>{FORMAT_LABELS[f]}</span>
               <span
                 className={cn(
                   'font-mono text-xs tabular-nums',
-                  isActive
-                    ? 'text-primary-foreground/70'
-                    : 'text-muted-foreground',
+                  isActive ? 'text-primary-action-foreground/70' : 'text-smoke',
                 )}
               >
                 {FORMAT_EXAMPLES[f]}

@@ -50,7 +50,7 @@ export function PerformanceScoreCalculation({
       : []
 
   return (
-    <details className="group mt-5 min-w-0 border-t border-border pt-4">
+    <details className="group mt-5 min-w-0 border-t border-stone pt-4">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded text-sm font-semibold text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
         How this score is calculated
         <ChevronDown
@@ -59,13 +59,13 @@ export function PerformanceScoreCalculation({
         />
       </summary>
       {!calculation || !components ? (
-        <p className="m-0 mt-4 text-sm text-muted-foreground">
+        <p className="m-0 mt-4 text-sm text-smoke">
           No expected workdays in this period yet. There is no score to
           calculate.
         </p>
       ) : (
         <div className="mt-4 grid min-w-0 gap-5 text-sm">
-          <p className="m-0 text-muted-foreground">
+          <p className="m-0 text-smoke">
             {periodLabel} · {summary.workingDays} expected weekdays through{' '}
             {summary.inProgress ? 'today' : 'the end of the period'}, starting
             from your join date.
@@ -74,7 +74,7 @@ export function PerformanceScoreCalculation({
             <h3 className="m-0 text-sm font-semibold">
               Your hours → grading credit
             </h3>
-            <p className="m-0 mt-2 break-words rounded-lg bg-muted/50 p-3 font-medium leading-6 tabular-nums">
+            <p className="m-0 mt-2 break-words rounded-xl bg-warm-taupe p-3 font-medium leading-6 tabular-nums">
               {hours(summary.timerSeconds)} timer × 100% +{' '}
               {hours(summary.manualSeconds)} manual ×{' '}
               {MANUAL_CREDIT_RATIO * 100}%
@@ -83,14 +83,14 @@ export function PerformanceScoreCalculation({
                 : ''}{' '}
               = {hours(summary.creditedSeconds)} grading credit
             </p>
-            <p className="m-0 mt-2 text-xs leading-5 text-muted-foreground">
+            <p className="m-0 mt-2 text-xs leading-5 text-smoke">
               {hours(summary.totalSeconds)} actually tracked ·{' '}
               {number(creditPercent)}% credit overall. Actual hours are
               unchanged. Each day's manual share reduces its day-length and
               consistency credit.
             </p>
             {unknownSeconds > 0 && (
-              <p className="m-0 mt-1 text-xs leading-5 text-muted-foreground">
+              <p className="m-0 mt-1 text-xs leading-5 text-smoke">
                 Unknown is legacy data with no recording method. It keeps its
                 existing credit; it is not verified timer time.
               </p>
@@ -102,7 +102,7 @@ export function PerformanceScoreCalculation({
                 How the points add up
               </caption>
               <thead>
-                <tr className="border-b border-border text-muted-foreground">
+                <tr className="border-b border-stone text-smoke">
                   {['Measure', 'Result', 'Weight', 'Points'].map((label) => (
                     <th
                       key={label}
@@ -118,7 +118,7 @@ export function PerformanceScoreCalculation({
                 {items.map((item) => (
                   <tr
                     key={item.key}
-                    className="border-b border-border/60 tabular-nums"
+                    className="border-b border-stone/60 tabular-nums"
                   >
                     <th scope="row" className="py-2 pr-3 font-medium">
                       {item.label}
@@ -146,12 +146,12 @@ export function PerformanceScoreCalculation({
                 : ` + ${number(calculation.points.timeliness)}`}{' '}
               = {number(calculation.unroundedScore)} → {summary.score}/100
             </p>
-            <p className="m-0 mt-1 text-xs leading-5 text-muted-foreground">
+            <p className="m-0 mt-1 text-xs leading-5 text-smoke">
               Calculated at full precision, rounded to a whole point, and capped
               at 100. Displayed values are rounded for readability.
             </p>
           </div>
-          <div className="grid gap-3 text-xs leading-5 text-muted-foreground">
+          <div className="grid gap-3 text-xs leading-5 text-smoke">
             <p className="m-0">
               <strong className="text-foreground">Day length:</strong> Each
               day's first-to-last span ÷{' '}
@@ -181,7 +181,7 @@ export function PerformanceScoreCalculation({
                 : `${hours(calculation.sameDayTimerSeconds)} same-day timer hours ÷ ${hours(summary.timerSeconds)} timer hours × ${number(creditPercent)}% overall credit = ${number(components.timeliness)}%. Same-day means the entry was created on its local start date. Entry count does not affect this calculation.`}
             </p>
           </div>
-          <p className="m-0 text-xs leading-5 text-muted-foreground">
+          <p className="m-0 text-xs leading-5 text-smoke">
             {GRADE_THRESHOLDS.map(
               ({ grade, minimum }) => `${grade} ≥ ${minimum}`,
             ).join(' · ')}{' '}

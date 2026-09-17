@@ -128,7 +128,7 @@ export function AnalyticsDateRange({
 
   return (
     <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
-      <div className="grid grid-cols-3 rounded-lg border border-border bg-card p-1 sm:inline-flex">
+      <div className="grid grid-cols-3 rounded-full border border-stone bg-eggshell p-1 sm:inline-flex">
         {presets.map((preset) => (
           <button
             key={preset.label}
@@ -145,7 +145,7 @@ export function AnalyticsDateRange({
               }
               onChangeRange(next)
             }}
-            className="h-8 px-3 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="h-8 px-3 text-xs font-bold text-smoke transition-colors hover:bg-accent hover:text-foreground"
           >
             {preset.label}
           </button>
@@ -156,14 +156,14 @@ export function AnalyticsDateRange({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent sm:min-w-[220px] sm:justify-start"
+            className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-full border border-stone bg-eggshell px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent sm:min-w-[220px] sm:justify-start"
           >
             <CalendarDays className="size-4 shrink-0 text-primary" />
             <span className="min-w-0 truncate">
               {formatRange(range.startDate, range.endDate)}
             </span>
             <ChevronDown
-              className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+              className={`size-4 shrink-0 text-smoke transition-transform ${
                 open ? 'rotate-180' : ''
               }`}
             />
@@ -173,15 +173,13 @@ export function AnalyticsDateRange({
         <PopoverContent
           align={isDesktop ? 'end' : 'center'}
           sideOffset={8}
-          className="max-h-[min(82vh,680px)] w-[calc(100vw-1rem)] max-w-[430px] gap-0 overflow-hidden rounded-lg p-0 shadow-2xl sm:w-auto sm:max-w-[760px]"
+          className="max-h-[min(82vh,680px)] w-[calc(100vw-1rem)] max-w-[430px] gap-0 overflow-hidden rounded-xl p-0 shadow-[var(--shadow-whisper)] sm:w-auto sm:max-w-[760px]"
         >
-          <div className="border-b border-border px-4 py-3">
+          <div className="border-b border-stone px-4 py-3">
             <p className="m-0 text-sm font-bold text-foreground">
               Custom range
             </p>
-            <p className="m-0 mt-1 text-xs text-muted-foreground">
-              {draftLabel}
-            </p>
+            <p className="m-0 mt-1 text-xs text-smoke">{draftLabel}</p>
           </div>
 
           <div className="max-h-[min(58vh,500px)] overflow-y-auto">
@@ -192,7 +190,7 @@ export function AnalyticsDateRange({
               onDayClick={selectDraftDay}
               numberOfMonths={isDesktop ? 2 : 1}
               defaultMonth={draft?.from ?? selected?.from}
-              className="w-full bg-card p-3 [--cell-size:--spacing(11)]"
+              className="w-full bg-eggshell p-3 [--cell-size:--spacing(11)]"
               classNames={{
                 root: 'w-full',
                 months: 'relative flex flex-col gap-4 sm:flex-row',
@@ -202,8 +200,8 @@ export function AnalyticsDateRange({
             />
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex flex-col gap-3 border-t border-stone bg-eggshell p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 text-xs text-smoke">
               <span className="inline-flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-primary" />
                 Selected
@@ -211,26 +209,26 @@ export function AnalyticsDateRange({
               <span>Tap start date, then end date to apply</span>
             </div>
             <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="h-9 rounded-lg border border-border px-3 text-sm font-semibold text-foreground hover:bg-accent"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onPointerDown={(event) => {
-                event.preventDefault()
-                applyRange()
-              }}
-              onClick={applyRange}
-              disabled={!draft?.from || !draft.to}
-              className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
-            >
-              <Check className="size-4" />
-              Apply
-            </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="h-9 rounded-xl border border-stone px-3 text-sm font-semibold text-foreground hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onPointerDown={(event) => {
+                  event.preventDefault()
+                  applyRange()
+                }}
+                onClick={applyRange}
+                disabled={!draft?.from || !draft.to}
+                className="inline-flex h-9 items-center gap-2 rounded-full bg-primary-action px-3 text-sm font-bold text-primary-action-foreground disabled:bg-warm-taupe disabled:text-smoke"
+              >
+                <Check className="size-4" />
+                Apply
+              </button>
             </div>
           </div>
         </PopoverContent>

@@ -59,7 +59,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
         onClick={onClose}
         aria-label="Close"
       />
-      <div className="relative w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div className="relative w-full max-w-sm rounded-2xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <KeyRound className="size-5 text-foreground" />
@@ -70,7 +70,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={onClose}
-            className="grid size-7 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="grid size-7 place-items-center rounded-full text-smoke hover:bg-accent hover:text-foreground"
           >
             <X className="size-4" />
           </button>
@@ -138,7 +138,7 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
           <button
             type="submit"
             disabled={submitDisabled}
-            className="mt-1 h-9 w-full rounded-lg bg-primary text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="mt-1 h-9 w-full rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground transition-colors disabled:bg-warm-taupe disabled:text-smoke"
           >
             {pending ? 'Updating…' : 'Update password'}
           </button>

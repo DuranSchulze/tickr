@@ -118,13 +118,13 @@ export function EntriesDateRangeFilter({
 
   return (
     <div className="grid min-w-0 gap-2 sm:flex sm:flex-wrap sm:items-center">
-      <div className="grid grid-cols-3 rounded-lg border border-border bg-card p-1 sm:inline-flex">
+      <div className="grid grid-cols-3 rounded-full border border-stone bg-warm-taupe p-1 sm:inline-flex">
         {presets.map((preset) => (
           <button
             key={preset.label}
             type="button"
             onClick={() => applyPreset(preset.days)}
-            className="h-8 px-3 text-xs font-bold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="h-8 rounded-full px-3 text-xs font-bold text-smoke transition-colors hover:bg-stone hover:text-foreground"
           >
             {preset.label}
           </button>
@@ -135,13 +135,13 @@ export function EntriesDateRangeFilter({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent sm:min-w-56 sm:justify-start"
+            className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-bold text-foreground transition-colors hover:bg-accent sm:min-w-56 sm:justify-start"
           >
             <CalendarDays className="size-4 shrink-0 text-primary" />
             <span className="min-w-0 flex-1 truncate text-left">
               {formatRange(range)}
             </span>
-            <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+            <ChevronDown className="size-4 shrink-0 text-smoke" />
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -155,7 +155,7 @@ export function EntriesDateRangeFilter({
             onDayClick={selectDay}
             numberOfMonths={isDesktop ? 2 : 1}
             defaultMonth={draft?.from ?? selected?.from}
-            className="w-full bg-card p-3 [--cell-size:--spacing(10)]"
+            className="w-full bg-eggshell p-3 [--cell-size:--spacing(10)]"
             classNames={{
               root: 'w-full',
               months: 'relative flex flex-col gap-4 sm:flex-row',
@@ -163,7 +163,7 @@ export function EntriesDateRangeFilter({
               day: 'group/day relative aspect-square size-full rounded-(--cell-radius) p-0 text-center select-none',
             }}
           />
-          <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+          <p className="m-0 border-t border-stone px-3 py-2 text-xs text-smoke">
             Select a start date, then an end date.
           </p>
         </PopoverContent>
@@ -173,7 +173,7 @@ export function EntriesDateRangeFilter({
         <button
           type="button"
           onClick={() => onChange(null)}
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-stone px-3 text-xs font-semibold text-smoke hover:bg-accent hover:text-foreground"
         >
           <X className="size-3.5" />
           All dates

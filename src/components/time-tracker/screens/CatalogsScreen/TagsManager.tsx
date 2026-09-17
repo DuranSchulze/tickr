@@ -76,7 +76,7 @@ export function TagsManager({
           <button
             type="button"
             onClick={() => dispatch({ showForm: !showForm })}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-action px-3 py-1.5 text-xs font-bold text-primary-action-foreground transition-colors"
           >
             {showForm ? (
               <X className="size-3.5" />
@@ -96,20 +96,20 @@ export function TagsManager({
             placeholder="Tag name"
             aria-label="Tag name"
             required
-            className="h-9 flex-1 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+            className="h-9 flex-1 rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <input
             type="color"
             value={color}
             onChange={(e) => dispatch({ color: e.target.value })}
-            className="h-9 w-12 cursor-pointer rounded-lg border border-border p-1"
+            className="h-9 w-12 cursor-pointer rounded-md border border-stone p-1"
             title="Tag color"
             aria-label="Tag color"
           />
           <button
             type="submit"
             disabled={pending}
-            className="h-9 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="h-9 rounded-full bg-primary-action px-3 text-sm font-bold text-primary-action-foreground disabled:bg-warm-taupe disabled:text-smoke"
           >
             {pending ? '…' : 'Add'}
           </button>
@@ -119,7 +119,7 @@ export function TagsManager({
         {state.tags.map((t) => (
           <div
             key={t.id}
-            className="group flex items-center gap-1.5 rounded-lg border border-border px-3 py-2"
+            className="group flex items-center gap-1.5 rounded-full border border-stone px-3 py-2"
           >
             <span
               className="inline-block size-2.5 flex-shrink-0 rounded-full"

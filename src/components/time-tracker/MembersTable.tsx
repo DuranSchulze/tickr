@@ -90,7 +90,7 @@ export function MembersTable({
   return (
     <div className="min-w-0 overflow-x-auto">
       <Table className="min-w-[900px]">
-        <TableHeader className="whitespace-nowrap bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+        <TableHeader className="whitespace-nowrap bg-muted/60 text-xs uppercase tracking-wide text-smoke">
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -115,7 +115,7 @@ export function MembersTable({
             <TableRow>
               <TableCell
                 colSpan={columnCount}
-                className="px-5 py-8 text-center text-sm text-muted-foreground"
+                className="px-5 py-8 text-center text-sm text-smoke"
               >
                 No members match your search.
               </TableCell>
@@ -146,8 +146,8 @@ export function MembersTable({
       </Table>
 
       {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3">
-          <span className="text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stone px-4 py-3">
+          <span className="text-sm text-smoke">
             Showing {firstItem}-{lastItem} of {totalCount} members
           </span>
           <Pagination className="mx-0 w-auto justify-end">

@@ -54,9 +54,7 @@ export function SubscriptionStatusBanner({
           <ArrowRight className="size-3.5" aria-hidden="true" />
         </Link>
       ) : (
-        <span className="text-muted-foreground">
-          Contact a workspace owner.
-        </span>
+        <span className="text-smoke">Contact a workspace owner.</span>
       )}
     </div>
   )

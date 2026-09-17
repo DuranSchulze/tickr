@@ -19,16 +19,16 @@ import { cn } from '#/lib/utils'
 
 export function ThemeSection() {
   return (
-    <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <section className="rounded-3xl border border-stone bg-eggshell p-6">
       <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-stone text-graphite">
           <Palette className="size-4" />
         </div>
         <div className="flex-1">
           <h3 className="m-0 text-base font-bold text-foreground">
             Appearance
           </h3>
-          <p className="m-0 mt-0.5 text-sm text-muted-foreground">
+          <p className="m-0 mt-0.5 text-sm text-smoke">
             Pick the theme and accent color that fit you best. Saved on this
             device.
           </p>
@@ -95,13 +95,13 @@ export function ThemeControls() {
   return (
     <div className="grid gap-5">
       <div>
-        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-smoke">
           Mode
         </p>
         <div
           role="radiogroup"
           aria-label="Theme mode"
-          className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-muted/50 p-1"
+          className="grid grid-cols-2 gap-2 rounded-full border border-stone bg-warm-taupe p-1"
         >
           <ModeButton
             active={mode === 'light'}
@@ -119,7 +119,7 @@ export function ThemeControls() {
       </div>
 
       <div>
-        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-smoke">
           Accent color
         </p>
         <div
@@ -141,7 +141,7 @@ export function ThemeControls() {
                 className={cn(
                   'relative size-10 rounded-full border-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card',
                   isActive
-                    ? 'border-foreground scale-110'
+                    ? 'border-ink scale-110'
                     : 'border-transparent hover:scale-105',
                 )}
                 style={{ backgroundColor: c.swatch }}
@@ -156,7 +156,7 @@ export function ThemeControls() {
             )
           })}
         </div>
-        <p className="m-0 mt-2 text-xs text-muted-foreground">
+        <p className="m-0 mt-2 text-xs text-smoke">
           Current:{' '}
           <span className="font-semibold text-foreground">
             {PRIMARY_COLORS.find((c) => c.id === color)?.label}
@@ -165,7 +165,7 @@ export function ThemeControls() {
       </div>
 
       <div>
-        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-smoke">
           <Type className="mr-1 inline size-3 align-middle" />
           Font
         </p>
@@ -173,7 +173,7 @@ export function ThemeControls() {
           aria-label="Font"
           value={font}
           onChange={(e) => selectFont(e.target.value as FontId)}
-          className="h-9 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+          className="h-9 w-full rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
         >
           {FONT_OPTIONS.map((f) => (
             <option key={f.id} value={f.id} style={{ fontFamily: f.body }}>
@@ -204,10 +204,10 @@ function ModeButton({
       aria-checked={active}
       onClick={onClick}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-md py-2 text-sm font-semibold transition-colors',
+        'inline-flex items-center justify-center gap-2 rounded-full py-2 text-sm font-semibold transition-colors',
         active
-          ? 'bg-card text-foreground shadow-sm'
-          : 'text-muted-foreground hover:text-foreground',
+          ? 'bg-eggshell text-foreground shadow-[var(--shadow-whisper)]'
+          : 'text-smoke hover:text-foreground',
       )}
     >
       {icon}

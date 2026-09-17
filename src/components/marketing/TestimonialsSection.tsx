@@ -27,18 +27,18 @@ const testimonials: Testimonial[] = []
 
 export function TestimonialsSection() {
   return (
-    <section className="landing-section border-b border-border bg-muted/25">
+    <section className="landing-section border-b border-stone bg-eggshell">
       <div className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-24">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div className="max-w-2xl">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-primary">
+            <p className="text-sm font-bold uppercase tracking-[0.18em] text-graphite">
               Customer stories
             </p>
-            <h2 className="mt-4 text-balance font-heading text-4xl font-black tracking-[-0.04em] text-foreground sm:text-5xl">
+            <h2 className="mt-4 text-balance font-display text-heading text-foreground sm:text-5xl">
               Real reviews, when they’re ready.
             </h2>
           </div>
-          <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+          <p className="max-w-sm text-sm leading-6 text-smoke">
             We’ll only publish feedback from real Trackly users after it has
             been reviewed and approved.
           </p>
@@ -54,18 +54,18 @@ export function TestimonialsSection() {
             ))}
           </div>
         ) : (
-          <div className="mt-12 grid border border-border bg-card md:grid-cols-[8rem_1fr]">
-            <div className="flex min-h-28 items-center justify-center border-b border-border bg-primary/10 text-primary md:border-b-0 md:border-r">
+          <div className="mt-12 grid overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)] md:grid-cols-[8rem_1fr]">
+            <div className="flex min-h-28 items-center justify-center border-b border-stone bg-warm-taupe text-graphite md:border-b-0 md:border-r">
               <MessageSquareQuote className="size-10" aria-hidden="true" />
             </div>
             <div className="p-6 sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-graphite">
                 Reviews coming soon
               </p>
-              <h3 className="mt-3 text-xl font-black tracking-tight text-foreground sm:text-2xl">
+              <h3 className="mt-3 text-xl font-medium tracking-tight text-foreground sm:text-2xl">
                 We’re currently looking for customer reviews.
               </h3>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-smoke">
                 Genuine Trackly stories will appear here as soon as they’re
                 ready. Stay tuned.
               </p>

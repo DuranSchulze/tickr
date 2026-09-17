@@ -91,7 +91,7 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
   return (
     <div className="grid min-w-0 gap-6">
       <header>
-        <p className="m-0 text-sm font-semibold text-primary">
+        <p className="m-0 text-sm font-semibold text-smoke">
           Controlled workspace setup
         </p>
         <h1 className="m-0 mt-1 text-2xl font-bold tracking-tight text-foreground">
@@ -99,18 +99,18 @@ export function CatalogsScreen({ state }: { state: TrackerState }) {
         </h1>
       </header>
 
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="rounded-xl border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="m-0 text-lg font-bold text-foreground">
               Workspace options
             </h2>
-            <p className="m-0 mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="m-0 mt-1 max-w-2xl text-sm leading-6 text-smoke">
               Open a catalog to browse, search, and manage its records in a
               dedicated table view.
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-bold text-foreground">
+          <div className="rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-bold text-foreground">
             {totalCount} total
           </div>
         </div>
@@ -129,7 +129,7 @@ function CatalogNavCard({ catalog }: { catalog: CatalogNav }) {
   return (
     <Link
       to={catalog.href}
-      className="group grid min-h-[180px] gap-4 rounded-lg border border-border bg-card p-5 text-left shadow-sm transition-colors hover:border-primary/40 hover:bg-accent/30"
+      className="group grid min-h-[180px] gap-4 rounded-xl border border-transparent bg-warm-taupe p-5 text-left transition-colors hover:bg-stone/40"
     >
       <div className="flex items-start justify-between gap-3">
         <span
@@ -137,7 +137,7 @@ function CatalogNavCard({ catalog }: { catalog: CatalogNav }) {
         >
           {catalog.icon}
         </span>
-        <span className="rounded-full border border-border px-2.5 py-1 text-xs font-bold text-muted-foreground">
+        <span className="rounded-full border border-stone px-2.5 py-1 text-xs font-bold text-smoke">
           {catalog.count}
         </span>
       </div>
@@ -145,7 +145,7 @@ function CatalogNavCard({ catalog }: { catalog: CatalogNav }) {
         <h2 className="m-0 text-lg font-bold text-foreground">
           {catalog.title}
         </h2>
-        <p className="m-0 mt-1 text-sm leading-6 text-muted-foreground">
+        <p className="m-0 mt-1 text-sm leading-6 text-smoke">
           {catalog.description}
         </p>
       </div>
@@ -157,9 +157,7 @@ function CatalogNavCard({ catalog }: { catalog: CatalogNav }) {
 function Preview({ names }: { names: string[] }) {
   const preview = names.slice(0, 3)
   if (preview.length === 0) {
-    return (
-      <span className="text-xs font-semibold text-muted-foreground">Empty</span>
-    )
+    return <span className="text-xs font-semibold text-smoke">Empty</span>
   }
 
   return (
@@ -167,7 +165,7 @@ function Preview({ names }: { names: string[] }) {
       {preview.map((name) => (
         <span
           key={name}
-          className="max-w-[140px] truncate rounded-md border border-border bg-background px-2 py-1 text-xs font-semibold text-foreground"
+          className="max-w-[140px] truncate rounded-full border border-stone bg-eggshell px-2 py-1 text-xs font-semibold text-foreground"
         >
           {name}
         </span>

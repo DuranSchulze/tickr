@@ -28,7 +28,7 @@ export function PasswordStrengthChecklist({ password }: Props) {
   const strength = getPasswordStrength(password)
 
   return (
-    <div className="mt-2 grid max-h-24 gap-2 overflow-y-auto rounded-lg border border-border bg-muted/30 p-2 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="mt-2 grid max-h-24 gap-2 overflow-y-auto rounded-md border border-stone bg-warm-taupe p-2 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {/* Strength bar — one segment per requirement */}
       <div className="flex items-center gap-2">
         <div className="flex flex-1 gap-1">
@@ -39,14 +39,14 @@ export function PasswordStrengthChecklist({ password }: Props) {
                 role="none"
                 className={cn(
                   'h-1.5 flex-1 rounded-full transition-colors duration-300',
-                  strength >= level ? STRENGTH_COLORS[strength] : 'bg-muted',
+                  strength >= level ? STRENGTH_COLORS[strength] : 'bg-stone',
                 )}
               />
             ),
           )}
         </div>
         {strength > 0 && (
-          <span className="w-20 shrink-0 text-right text-xs font-medium text-muted-foreground">
+          <span className="w-20 shrink-0 text-right text-xs font-medium text-smoke">
             {STRENGTH_LABELS[strength]}
           </span>
         )}
@@ -66,9 +66,7 @@ export function PasswordStrengthChecklist({ password }: Props) {
               <span
                 className={cn(
                   'transition-colors',
-                  passed
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-muted-foreground',
+                  passed ? 'text-green-600 dark:text-green-400' : 'text-smoke',
                 )}
               >
                 {rule.label}

@@ -17,9 +17,7 @@ export function DayGroupHeader({
   return (
     <div className="flex items-center justify-between px-4 py-2">
       <p className="m-0 text-sm font-semibold text-foreground">{group.label}</p>
-      <p className="m-0 text-xs font-mono text-muted-foreground">
-        {formatTime(total)}
-      </p>
+      <p className="m-0 text-xs font-mono text-smoke">{formatTime(total)}</p>
     </div>
   )
 }

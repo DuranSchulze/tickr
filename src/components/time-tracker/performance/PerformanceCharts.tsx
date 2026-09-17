@@ -42,14 +42,14 @@ const CHART_COLORS = [
 
 const TOOLTIP_STYLE = {
   backgroundColor: 'var(--popover)',
-  border: '1px solid var(--border)',
-  borderRadius: '0.5rem',
+  border: '1px solid var(--stone)',
+  borderRadius: '10px',
   color: 'var(--popover-foreground)',
   fontSize: '12px',
-  boxShadow: '0 4px 12px rgb(0 0 0 / 0.15)',
+  boxShadow: 'var(--shadow-whisper)',
 } as const
 
-const AXIS_TICK = { fontSize: 11, fill: 'var(--muted-foreground)' }
+const AXIS_TICK = { fontSize: 11, fill: 'var(--smoke)' }
 
 function toHours(seconds: number) {
   return Math.round((seconds / 3600) * 10) / 10
@@ -69,18 +69,21 @@ function ChartCard({
   className?: string
 }) {
   return (
-    <section className={cn('min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm', className)}>
+    <section
+      className={cn(
+        'min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]',
+        className,
+      )}
+    >
       <div className="mb-3 flex items-start gap-2.5">
-        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
           <Icon className="size-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h2 className="m-0 font-heading text-base font-black tracking-tight text-foreground">
+          <h2 className="m-0 font-heading text-base font-black text-foreground">
             {title}
           </h2>
-          <p className="m-0 mt-0.5 text-xs leading-4 text-muted-foreground">
-            {subtitle}
-          </p>
+          <p className="m-0 mt-0.5 text-xs leading-4 text-smoke">{subtitle}</p>
         </div>
       </div>
       {children}
@@ -98,7 +101,7 @@ function LegendChip({
   dashed?: boolean
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-smoke">
       {dashed ? (
         <span
           className="h-0 w-4 border-t-2 border-dashed"
@@ -117,7 +120,7 @@ function LegendChip({
 
 function EmptyChart({ label }: { label: string }) {
   return (
-    <div className="flex h-[180px] items-center justify-center rounded-lg border border-dashed border-border px-4 text-center text-sm font-semibold text-muted-foreground sm:h-[200px]">
+    <div className="flex h-[180px] items-center justify-center rounded-xl border border-dashed border-stone px-4 text-center text-sm font-semibold text-smoke sm:h-[200px]">
       {label}
     </div>
   )
@@ -125,13 +128,7 @@ function EmptyChart({ label }: { label: string }) {
 
 type TooltipRow = { name: string; value: string; color: string }
 
-function TooltipShell({
-  label,
-  rows,
-}: {
-  label: string
-  rows: TooltipRow[]
-}) {
+function TooltipShell({ label, rows }: { label: string; rows: TooltipRow[] }) {
   return (
     <div style={TOOLTIP_STYLE} className="grid gap-1 px-3 py-2">
       <p className="m-0 text-xs font-black text-foreground">{label}</p>
@@ -144,7 +141,7 @@ function TooltipShell({
             className="size-2 shrink-0 rounded-[2px]"
             style={{ backgroundColor: row.color }}
           />
-          <span className="text-muted-foreground">{row.name}:</span>
+          <span className="text-smoke">{row.name}:</span>
           <span className="ml-auto pl-3 font-black text-foreground">
             {row.value}
           </span>
@@ -172,7 +169,10 @@ function formatTick(minute: number) {
 
 function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
   const withSpan = days
-    .filter((day) => day.firstStartedAt && day.lastEndedAt && (day.spanSeconds ?? 0) > 0)
+    .filter(
+      (day) =>
+        day.firstStartedAt && day.lastEndedAt && (day.spanSeconds ?? 0) > 0,
+    )
     .slice(-14)
   const [selectedDate, setSelectedDate] = useState<string | null>(
     withSpan.at(-1)?.date ?? null,
@@ -186,15 +186,25 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
 
   const domainStart = Math.max(
     4 * 60,
-    Math.floor(Math.min(...withSpan.map((d) => minutesOfDay(d.firstStartedAt!))) / 60) * 60 - 60,
+    Math.floor(
+      Math.min(...withSpan.map((d) => minutesOfDay(d.firstStartedAt!))) / 60,
+    ) *
+      60 -
+      60,
   )
   const domainEnd = Math.min(
     MINUTES_PER_DAY,
-    Math.ceil(Math.max(...withSpan.map((d) => minutesOfDay(d.lastEndedAt!))) / 60) * 60 + 60,
+    Math.ceil(
+      Math.max(...withSpan.map((d) => minutesOfDay(d.lastEndedAt!))) / 60,
+    ) *
+      60 +
+      60,
   )
   const domain = domainEnd - domainStart
   const pct = (minute: number) =>
-    ((Math.min(Math.max(minute, domainStart), domainEnd) - domainStart) / domain) * 100
+    ((Math.min(Math.max(minute, domainStart), domainEnd) - domainStart) /
+      domain) *
+    100
 
   const ticks: number[] = []
   for (
@@ -209,7 +219,7 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
 
   return (
     <div className="min-w-0">
-      <div className="mb-1 flex justify-end pl-[4.5rem] text-[10px] font-bold text-muted-foreground">
+      <div className="mb-1 flex justify-end pl-[4.5rem] text-[10px] font-bold text-smoke">
         {ticks.map((tick) => (
           <span
             key={tick}
@@ -232,11 +242,11 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
               aria-pressed={active}
               onClick={() => setSelectedDate(day.date)}
               className={cn(
-                'group flex items-center gap-2 rounded-md px-1 py-0.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/50',
+                'group flex items-center gap-2 rounded-xl px-1 py-0.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/50',
                 active ? 'bg-primary/8' : 'hover:bg-accent/60',
               )}
             >
-              <span className="w-16 shrink-0 text-right text-[11px] font-bold text-muted-foreground tabular-nums">
+              <span className="w-16 shrink-0 text-right text-[11px] font-bold text-smoke tabular-nums">
                 {formatDayLabel(day.date)}
               </span>
               <span className="relative h-5 min-w-0 flex-1 rounded-sm">
@@ -256,12 +266,12 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
                   }}
                 />
                 <span
-                  className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-400 bg-card"
+                  className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-400 bg-eggshell"
                   style={{ left: `${pct(start)}%` }}
                   title={`Time in ${formatTimeOfDay(day.firstStartedAt!)}`}
                 />
                 <span
-                  className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-card"
+                  className="absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-eggshell"
                   style={{ left: `${pct(end)}%` }}
                   title={`Time out ${formatTimeOfDay(day.lastEndedAt!)}`}
                 />
@@ -273,7 +283,7 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 pl-1">
         <LegendChip color="#fbbf24" label="Time in" />
         <LegendChip color="#2563eb" label="Time out" />
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-smoke">
           <span className="h-2 w-6 rounded-full bg-gradient-to-r from-sky-400/70 to-primary" />
           Day span (first → last activity)
         </span>
@@ -281,17 +291,17 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
       {selected && (
         <div
           key={selected.date}
-          className="mt-3 grid min-w-0 gap-2 rounded-lg border border-border bg-background p-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 sm:grid-cols-4"
+          className="mt-3 grid min-w-0 gap-2 rounded-xl border border-stone bg-eggshell p-3 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 sm:grid-cols-4"
         >
-          <RhythmValue
-            label="Day"
-            value={formatDayLabel(selected.date)}
-          />
+          <RhythmValue label="Day" value={formatDayLabel(selected.date)} />
           <RhythmValue
             label="Time in → out"
             value={`${formatTimeOfDay(selected.firstStartedAt!)} → ${formatTimeOfDay(selected.lastEndedAt!)}`}
           />
-          <RhythmValue label="Span" value={formatHours(selected.spanSeconds ?? 0)} />
+          <RhythmValue
+            label="Span"
+            value={formatHours(selected.spanSeconds ?? 0)}
+          />
           <RhythmValue label="Tracked" value={formatHours(selected.seconds)} />
         </div>
       )}
@@ -302,7 +312,7 @@ function DailyRhythmChart({ days }: { days: PerformanceDailyCell[] }) {
 function RhythmValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+      <p className="m-0 text-[11px] font-bold uppercase tracking-wide text-smoke">
         {label}
       </p>
       <p className="m-0 mt-0.5 truncate text-sm font-black text-foreground tabular-nums">
@@ -354,7 +364,11 @@ function WeekdayTooltip({ active, label, payload }: WeekdayTooltipProps) {
     <TooltipShell
       label={String(label ?? '')}
       rows={[
-        { name: 'Avg tracked', value: `${entry.value}h`, color: 'var(--primary)' },
+        {
+          name: 'Avg tracked',
+          value: `${entry.value}h`,
+          color: 'var(--primary)',
+        },
       ]}
     />
   )
@@ -400,7 +414,8 @@ export const PerformanceCharts = memo(function ({
       sum += day.seconds
       const windowStart = Math.max(0, index - 6)
       const window = dailyTotals.slice(windowStart, index + 1)
-      const avg = window.reduce((total, d) => total + d.seconds, 0) / window.length
+      const avg =
+        window.reduce((total, d) => total + d.seconds, 0) / window.length
       return {
         label: formatDayLabel(day.date).replace(/^\S+ /, ''),
         tracked: toHours(day.seconds),
@@ -445,10 +460,7 @@ export const PerformanceCharts = memo(function ({
       : null
     return weekendAvg == null
       ? usable
-      : [
-          ...usable,
-          { label: 'Sat/Sun', hours: weekendAvg },
-        ]
+      : [...usable, { label: 'Sat/Sun', hours: weekendAvg }]
   }, [dailyTotals])
 
   const bestWeekday = weekdayData.reduce(
@@ -494,12 +506,29 @@ export const PerformanceCharts = memo(function ({
                   margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
                 >
                   <defs>
-                    <linearGradient id="trackedFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.9} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.55} />
+                    <linearGradient
+                      id="trackedFill"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor="var(--primary)"
+                        stopOpacity={0.9}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--primary)"
+                        stopOpacity={0.55}
+                      />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-stone"
+                  />
                   <XAxis
                     dataKey="label"
                     tick={AXIS_TICK}
@@ -508,7 +537,9 @@ export const PerformanceCharts = memo(function ({
                   <YAxis tick={AXIS_TICK} unit="h" />
                   <Tooltip
                     content={(props) => (
-                      <HoursTooltip {...(props as unknown as HoursTooltipProps)} />
+                      <HoursTooltip
+                        {...(props as unknown as HoursTooltipProps)}
+                      />
                     )}
                   />
                   <ReferenceLine
@@ -569,16 +600,23 @@ export const PerformanceCharts = memo(function ({
                 data={weekdayData}
                 margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
               >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-stone" />
                 <XAxis dataKey="label" tick={AXIS_TICK} />
                 <YAxis tick={AXIS_TICK} unit="h" />
                 <Tooltip
-                  cursor={{ fill: 'var(--accent)' }}
+                  cursor={{ fill: 'var(--warm-taupe)' }}
                   content={(props) => (
-                    <WeekdayTooltip {...(props as unknown as WeekdayTooltipProps)} />
+                    <WeekdayTooltip
+                      {...(props as unknown as WeekdayTooltipProps)}
+                    />
                   )}
                 />
-                <Bar dataKey="hours" name="Avg tracked" radius={[6, 6, 0, 0]} maxBarSize={40}>
+                <Bar
+                  dataKey="hours"
+                  name="Avg tracked"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={40}
+                >
                   {weekdayData.map((day) => (
                     <Cell
                       key={day.label}
@@ -610,7 +648,7 @@ export const PerformanceCharts = memo(function ({
                 data={hoursData}
                 margin={{ top: 4, right: 8, bottom: 0, left: -22 }}
               >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-stone" />
                 <XAxis
                   dataKey="label"
                   tick={AXIS_TICK}
@@ -618,9 +656,11 @@ export const PerformanceCharts = memo(function ({
                 />
                 <YAxis tick={AXIS_TICK} allowDecimals={false} />
                 <Tooltip
-                  cursor={{ fill: 'var(--accent)' }}
+                  cursor={{ fill: 'var(--warm-taupe)' }}
                   content={(props) => (
-                    <EntriesTooltip {...(props as unknown as EntriesTooltipProps)} />
+                    <EntriesTooltip
+                      {...(props as unknown as EntriesTooltipProps)}
+                    />
                   )}
                 />
                 <Bar
@@ -675,7 +715,7 @@ export const PerformanceCharts = memo(function ({
                   <p className="m-0 font-heading text-2xl font-black leading-none text-foreground tabular-nums">
                     {Math.round(pieTotal)}h
                   </p>
-                  <p className="m-0 mt-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  <p className="m-0 mt-1 text-[10px] font-bold uppercase tracking-wide text-smoke">
                     total
                   </p>
                 </div>
@@ -688,7 +728,7 @@ export const PerformanceCharts = memo(function ({
                 return (
                   <div
                     key={slice.name}
-                    className="rounded-lg border border-border bg-background px-3 py-2"
+                    className="rounded-xl border border-stone bg-eggshell px-3 py-2"
                   >
                     <div className="flex min-w-0 items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
@@ -702,22 +742,25 @@ export const PerformanceCharts = memo(function ({
                       </div>
                       <span className="shrink-0 text-sm font-black text-foreground tabular-nums">
                         {slice.value}h
-                        <span className="ml-1.5 text-xs font-bold text-muted-foreground">
+                        <span className="ml-1.5 text-xs font-bold text-smoke">
                           {share}%
                         </span>
                       </span>
                     </div>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-warm-taupe">
                       <div
                         className="h-full rounded-full"
-                        style={{ width: `${share}%`, backgroundColor: slice.color }}
+                        style={{
+                          width: `${share}%`,
+                          backgroundColor: slice.color,
+                        }}
                       />
                     </div>
                   </div>
                 )
               })}
               {projectTotals.length > 6 && (
-                <p className="m-0 text-xs text-muted-foreground">
+                <p className="m-0 text-xs text-smoke">
                   +{projectTotals.length - 6} more projects
                 </p>
               )}

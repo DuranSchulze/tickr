@@ -33,7 +33,7 @@ export function DepartmentTopTagsChart({ tags }: { tags: TopTag[] }) {
                     {tag.name}
                   </p>
                 </div>
-                <div className="h-4 min-w-0 rounded-full bg-muted">
+                <div className="h-4 min-w-0 rounded-full bg-warm-taupe">
                   <div
                     className="h-full rounded-full"
                     style={{

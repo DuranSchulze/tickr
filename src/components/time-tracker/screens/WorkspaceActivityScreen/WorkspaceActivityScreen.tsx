@@ -101,7 +101,7 @@ export function WorkspaceActivityScreen({
     <Page title="Team Activity" eyebrow="Analytics">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-smoke">
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {runningTimerCount} running{' '}
               {runningTimerCount === 1 ? 'timer' : 'timers'}
@@ -109,14 +109,14 @@ export function WorkspaceActivityScreen({
             {' · '}
             {total} visible {total === 1 ? 'member' : 'members'}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-smoke">
             A running timer means a member is tracking time. It does not
             indicate login status.
           </p>
         </div>
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
           {trackerState && <BulkExportButton state={trackerState} />}
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 text-xs text-smoke">
             <RefreshCw
               className={`size-3 ${isFetching ? 'animate-spin' : ''}`}
               aria-hidden="true"
@@ -126,7 +126,7 @@ export function WorkspaceActivityScreen({
         </div>
       </div>
 
-      <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
         <div
           className={`grid gap-3 ${
             canFilterDepartments
@@ -138,7 +138,7 @@ export function WorkspaceActivityScreen({
             <div className="min-w-0 flex flex-col gap-1">
               <label
                 htmlFor="activity-department-filter"
-                className="text-xs font-semibold text-muted-foreground"
+                className="text-xs font-semibold text-smoke"
               >
                 Department
               </label>
@@ -151,7 +151,7 @@ export function WorkspaceActivityScreen({
                     q: filters.q || undefined,
                   })
                 }
-                className="h-10 w-full min-w-0 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className="h-10 w-full min-w-0 rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="">All departments</option>
                 {activity.departments.map((department) => (
@@ -170,20 +170,20 @@ export function WorkspaceActivityScreen({
           >
             <label
               htmlFor="activity-member-search"
-              className="text-xs font-semibold text-muted-foreground"
+              className="text-xs font-semibold text-smoke"
             >
               Name or email
             </label>
             <div className="flex min-w-0 gap-2">
               <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-smoke" />
                 <input
                   id="activity-member-search"
                   name="q"
                   type="search"
                   defaultValue={filters.q}
                   placeholder="Search members"
-                  className="h-10 w-full min-w-0 rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="h-10 w-full min-w-0 rounded-xl border border-stone bg-eggshell pl-9 pr-3 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
               {filters.q && (
@@ -192,14 +192,14 @@ export function WorkspaceActivityScreen({
                   onClick={clearSearch}
                   title="Clear search"
                   aria-label="Clear search"
-                  className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-stone text-smoke transition-colors hover:bg-accent hover:text-foreground"
                 >
                   <X className="size-4" />
                 </button>
               )}
               <button
                 type="submit"
-                className="h-10 shrink-0 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+                className="h-10 shrink-0 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85"
               >
                 Search
               </button>
@@ -209,7 +209,7 @@ export function WorkspaceActivityScreen({
       </section>
 
       {total === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-smoke">
           No members match the current filters.
         </p>
       ) : (
@@ -229,7 +229,7 @@ export function WorkspaceActivityScreen({
                         ? (member.departmentId ?? undefined)
                         : undefined,
                     }}
-                    className="inline-flex h-8 items-center justify-center rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent"
+                    className="inline-flex h-8 items-center justify-center rounded-full border border-stone bg-eggshell px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent"
                   >
                     View Data
                   </Link>

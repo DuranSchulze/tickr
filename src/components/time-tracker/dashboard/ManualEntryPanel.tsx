@@ -54,7 +54,7 @@ export function ManualEntryPanel({
 }) {
   return (
     <div className="grid gap-3">
-      <p className="m-0 text-sm text-muted-foreground">
+      <p className="m-0 text-sm text-smoke">
         Add time when work was tracked outside the timer.
       </p>
       <EntryDraftForm
@@ -83,7 +83,7 @@ export function ManualEntryPanel({
             !draft.projectId ||
             calculateManualSeconds(draft) <= 0
           }
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-action px-4 py-2.5 text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke"
         >
           <Plus className="size-4" />
           Add entry

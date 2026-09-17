@@ -78,7 +78,7 @@ export function CreateWorkspaceDialog({
               placeholder="e.g. Acme Corp"
               maxLength={150}
               disabled={creating}
-              className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+              className="h-9 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
             />
           </div>
           <div className="flex justify-end gap-2">

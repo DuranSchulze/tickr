@@ -63,12 +63,12 @@ function showOverlapConfirmation(
             {conflicts.slice(0, 5).map((conflict) => (
               <div
                 key={conflict.id}
-                className="rounded-lg border border-border bg-muted/30 p-3"
+                className="rounded-lg border border-stone bg-muted/30 p-3"
               >
                 <p className="m-0 text-sm font-semibold text-foreground">
                   {conflict.description || 'Untitled'}
                 </p>
-                <p className="m-0 mt-1 text-xs text-muted-foreground">
+                <p className="m-0 mt-1 text-xs text-smoke">
                   {formatConflictTime(conflict.startedAt)} –{' '}
                   {conflict.endedAt
                     ? formatConflictTime(conflict.endedAt)

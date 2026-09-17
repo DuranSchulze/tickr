@@ -67,19 +67,19 @@ function StatCard({
   subtitle?: string
 }) {
   return (
-    <div className="flex min-h-28 min-w-0 flex-col rounded-lg border border-border bg-card p-3 sm:min-h-32 sm:p-4">
-      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="flex min-h-28 min-w-0 flex-col rounded-xl border border-stone bg-eggshell p-3 sm:min-h-32 sm:p-4">
+      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
         {label}
       </p>
       {durationSeconds === undefined ? (
-        <span className="mt-2 min-w-0 break-words text-[clamp(1.5rem,6vw,1.875rem)] font-black leading-tight tracking-tight text-foreground tabular-nums [overflow-wrap:anywhere]">
+        <span className="mt-2 min-w-0 break-words text-[clamp(1.5rem,6vw,1.875rem)] font-black leading-tight text-foreground tabular-nums [overflow-wrap:anywhere]">
           {value}
         </span>
       ) : (
         <DurationValue seconds={durationSeconds} />
       )}
       {subtitle && (
-        <p className="m-0 mt-auto min-w-0 break-words pt-3 text-xs font-medium leading-5 text-muted-foreground tabular-nums [overflow-wrap:anywhere] sm:text-sm">
+        <p className="m-0 mt-auto min-w-0 break-words pt-3 text-xs font-medium leading-5 text-smoke tabular-nums [overflow-wrap:anywhere] sm:text-sm">
           {subtitle}
         </p>
       )}
@@ -100,10 +100,10 @@ function DurationValue({ seconds }: { seconds: number }) {
     >
       {segments.map((segment, index) => (
         <div key={durationLabels[index]} className="min-w-0 text-center">
-          <span className="block min-w-0 break-words font-mono text-[clamp(1.125rem,5vw,1.875rem)] font-black leading-none tracking-tight text-foreground tabular-nums [overflow-wrap:anywhere]">
+          <span className="block min-w-0 break-words font-mono text-[clamp(1.125rem,5vw,1.875rem)] font-black leading-none text-foreground tabular-nums [overflow-wrap:anywhere]">
             {segment}
           </span>
-          <span className="mt-1 block text-[8px] font-bold uppercase leading-none tracking-normal text-muted-foreground sm:text-[9px] sm:tracking-wide">
+          <span className="mt-1 block text-[8px] font-bold uppercase leading-none tracking-normal text-smoke sm:text-[9px] sm:tracking-wide">
             {durationLabels[index]}
           </span>
         </div>

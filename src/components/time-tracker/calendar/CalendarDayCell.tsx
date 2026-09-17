@@ -25,29 +25,29 @@ export const CalendarDayCell = memo(function CalendarDayCell({
 
   return (
     <div
-      className={`flex h-[152px] min-w-0 flex-col border-r border-b border-border/70 bg-card transition-colors hover:bg-muted/40 ${
-        isCurrentMonth ? '' : 'bg-muted/30 text-muted-foreground'
+      className={`flex h-[152px] min-w-0 flex-col border-r border-b border-stone/70 bg-eggshell transition-colors hover:bg-warm-taupe/40 ${
+        isCurrentMonth ? '' : 'bg-warm-taupe/30 text-smoke'
       } ${isToday ? 'ring-2 ring-inset ring-primary/50' : ''}`}
     >
       <button
         type="button"
         onClick={() => onSelectDay(dateKey)}
-        className="flex items-center justify-between gap-2 border-b border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
+        className="flex items-center justify-between gap-2 border-b border-stone/50 px-2 py-1.5 text-left transition-colors hover:bg-warm-taupe/40 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/30"
         aria-label={`Open ${dateKey} activity`}
       >
         <span
           className={`flex size-7 items-center justify-center rounded-full text-sm font-black ${
             isToday
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary-action text-primary-action-foreground'
               : isCurrentMonth
                 ? 'text-foreground'
-                : 'text-muted-foreground'
+                : 'text-smoke'
           }`}
         >
           {dayNumber}
         </span>
         {entries.length > 0 && (
-          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
+          <span className="shrink-0 rounded-full bg-warm-taupe px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-smoke">
             {entryLabel}
           </span>
         )}

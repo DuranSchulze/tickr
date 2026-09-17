@@ -202,7 +202,7 @@ function absoluteTime(value: Date | string): string {
 function ActionBadge({ action }: { action: string }) {
   const meta = ACTION_META[action] ?? {
     label: action.replace(/_/g, ' '),
-    color: 'bg-muted text-muted-foreground',
+    color: 'bg-warm-taupe text-smoke',
   }
   return (
     <span
@@ -249,18 +249,18 @@ export function AuditLogsScreen({
     <Page title="Audit Log" eyebrow="Owner / Admin">
       <div className="flex flex-col gap-5">
         {/* Stats strip */}
-        <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-card px-5 py-3 text-sm">
+        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-stone bg-eggshell px-5 py-3 text-sm">
           <div className="flex items-center gap-2">
             <ClipboardList className="size-4 text-primary" />
             <span className="font-semibold text-foreground">
               {result.totalCount}
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-smoke">
               {hasFilters ? 'matching events' : 'total events'}
             </span>
           </div>
           {result.totalPages > 1 && (
-            <span className="text-muted-foreground">
+            <span className="text-smoke">
               Page {currentPage + 1} of {result.totalPages}
             </span>
           )}
@@ -269,10 +269,10 @@ export function AuditLogsScreen({
         <AuditLogsFilterBar filters={filters} onChange={applyFilters} />
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="overflow-x-auto rounded-xl border border-stone">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <tr className="border-b border-stone bg-warm-taupe text-left text-xs font-semibold uppercase tracking-wide text-smoke">
                 <th className="px-4 py-3 whitespace-nowrap">Time</th>
                 <th className="px-4 py-3 whitespace-nowrap">Event</th>
                 <th className="px-4 py-3 whitespace-nowrap">Who</th>
@@ -284,7 +284,7 @@ export function AuditLogsScreen({
               {result.logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-16 text-center">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <div className="flex flex-col items-center gap-2 text-smoke">
                       <ClipboardList className="size-8 opacity-30" />
                       <p className="font-medium">No events found</p>
                       {hasFilters && (
@@ -299,7 +299,7 @@ export function AuditLogsScreen({
                 result.logs.map((log) => (
                   <tr
                     key={log.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                    className="border-b border-stone last:border-0 hover:bg-warm-taupe transition-colors"
                   >
                     {/* Time */}
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -309,7 +309,7 @@ export function AuditLogsScreen({
                       >
                         {relativeTime(log.createdAt)}
                       </span>
-                      <p className="text-[11px] text-muted-foreground">
+                      <p className="text-[11px] text-smoke">
                         {absoluteTime(log.createdAt)}
                       </p>
                     </td>
@@ -326,19 +326,19 @@ export function AuditLogsScreen({
                           {log.actorEmail}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">System</span>
+                        <span className="text-smoke">System</span>
                       )}
                     </td>
 
                     {/* Target */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-muted-foreground">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-smoke">
                       {log.targetType ? (
                         <span className="inline-flex items-center gap-1">
                           <span className="text-xs font-medium text-foreground">
                             {TARGET_LABELS[log.targetType] ?? log.targetType}
                           </span>
                           {log.targetId && (
-                            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
+                            <code className="rounded bg-warm-taupe px-1 py-0.5 font-mono text-[10px] text-smoke">
                               {log.targetId.slice(-6)}
                             </code>
                           )}
@@ -350,7 +350,7 @@ export function AuditLogsScreen({
 
                     {/* Details */}
                     <td
-                      className="max-w-[260px] truncate px-4 py-3 text-muted-foreground"
+                      className="max-w-[260px] truncate px-4 py-3 text-smoke"
                       title={log.details ?? undefined}
                     >
                       {log.details ?? '—'}
@@ -365,7 +365,7 @@ export function AuditLogsScreen({
         {/* Pagination */}
         {result.totalPages > 1 && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-smoke">
               Showing {currentPage * 25 + 1}–
               {Math.min((currentPage + 1) * 25, result.totalCount)} of{' '}
               {result.totalCount} events
@@ -375,7 +375,7 @@ export function AuditLogsScreen({
                 type="button"
                 disabled={currentPage === 0}
                 onClick={() => goToPage(0)}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-stone px-3 py-1.5 text-sm text-smoke hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 First
               </button>
@@ -383,7 +383,7 @@ export function AuditLogsScreen({
                 type="button"
                 disabled={currentPage === 0}
                 onClick={() => goToPage(currentPage - 1)}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-stone px-3 py-1.5 text-sm text-smoke hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Previous
               </button>
@@ -394,7 +394,7 @@ export function AuditLogsScreen({
                 type="button"
                 disabled={currentPage >= result.totalPages - 1}
                 onClick={() => goToPage(currentPage + 1)}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-stone px-3 py-1.5 text-sm text-smoke hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -402,7 +402,7 @@ export function AuditLogsScreen({
                 type="button"
                 disabled={currentPage >= result.totalPages - 1}
                 onClick={() => goToPage(result.totalPages - 1)}
-                className="rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-stone px-3 py-1.5 text-sm text-smoke hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Last
               </button>

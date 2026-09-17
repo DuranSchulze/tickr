@@ -105,7 +105,7 @@ export function SettingsTabList({
   return (
     <div
       className={cn(
-        'flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/35 p-2 shadow-sm sm:grid',
+        'flex gap-2 overflow-x-auto rounded-xl border border-stone bg-muted/35 p-2 shadow-[var(--shadow-whisper)] sm:grid',
         gridClass,
       )}
       role="tablist"
@@ -132,16 +132,16 @@ export function SettingsTabList({
             className={cn(
               'group flex min-w-40 shrink-0 items-center gap-3 rounded-lg border px-3 py-3 text-left outline-none transition-[color,background-color,border-color,box-shadow] motion-reduce:transition-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-0',
               selected
-                ? 'border-border bg-card text-foreground shadow-xs'
-                : 'border-transparent text-muted-foreground hover:bg-card/60 hover:text-foreground',
+                ? 'border-stone bg-eggshell text-foreground shadow-[var(--shadow-whisper)]'
+                : 'border-transparent text-smoke hover:bg-eggshell/60 hover:text-foreground',
             )}
           >
             <span
               className={cn(
                 'grid size-9 shrink-0 place-items-center rounded-md transition-colors',
                 selected
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground group-hover:text-foreground',
+                  ? 'bg-primary-action text-primary-action-foreground'
+                  : 'bg-eggshell text-smoke group-hover:text-foreground',
               )}
             >
               <Icon className="size-4" aria-hidden="true" />
@@ -150,7 +150,7 @@ export function SettingsTabList({
               <span className="block truncate text-sm font-bold">
                 {tab.label}
               </span>
-              <span className="mt-0.5 hidden truncate text-xs text-muted-foreground lg:block">
+              <span className="mt-0.5 hidden truncate text-xs text-smoke lg:block">
                 {tab.description}
               </span>
             </span>

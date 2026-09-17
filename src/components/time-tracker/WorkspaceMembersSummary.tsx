@@ -73,8 +73,8 @@ function AnalyticCard({
   value: string
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-2 flex items-center gap-2 text-muted-foreground">
+    <div className="rounded-lg border border-stone bg-eggshell p-4">
+      <div className="mb-2 flex items-center gap-2 text-smoke">
         {icon}
         <span className="text-xs font-semibold uppercase tracking-wide">
           {label}

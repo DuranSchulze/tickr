@@ -40,7 +40,7 @@ function StepIcon({ status }: { status: StepStatus }) {
   if (status === 'done')
     return <CheckCircle2 className="size-4 text-emerald-500" />
   if (status === 'error') return <XCircle className="size-4 text-destructive" />
-  return <Circle className="size-4 text-muted-foreground/50" />
+  return <Circle className="size-4 text-smoke/50" />
 }
 
 export function CatalogImportDialog({
@@ -76,15 +76,15 @@ export function CatalogImportDialog({
 
         <div className="space-y-4 py-1">
           {isRunning && (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-smoke">
               You can close this dialog; the import continues in the background.
             </p>
           )}
 
           {/* Progress bar */}
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-warm-taupe">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${hasError ? 'bg-destructive' : 'bg-primary'}`}
+              className={`h-full rounded-full transition-all duration-500 ${hasError ? 'bg-destructive' : 'bg-primary-action'}`}
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -100,7 +100,7 @@ export function CatalogImportDialog({
                   <p className="text-sm font-medium leading-tight">
                     {step.label}
                     {step.status === 'done' && step.count !== undefined && (
-                      <span className="ml-1.5 font-normal text-muted-foreground">
+                      <span className="ml-1.5 font-normal text-smoke">
                         ({step.count} {step.count === 1 ? 'record' : 'records'})
                       </span>
                     )}
@@ -120,7 +120,7 @@ export function CatalogImportDialog({
 
           {/* Error banner */}
           {hasError && failedStep?.error && (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2.5">
+            <div className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2.5">
               <p className="text-xs font-semibold text-destructive">
                 {failedStep.label} step failed
               </p>

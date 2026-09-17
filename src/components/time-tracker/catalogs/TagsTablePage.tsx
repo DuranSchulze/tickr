@@ -191,15 +191,13 @@ export function TagsTablePage({
       col.accessor('color', {
         header: 'Color',
         cell: ({ getValue }) => (
-          <span className="font-mono text-xs text-muted-foreground">
-            {getValue()}
-          </span>
+          <span className="font-mono text-xs text-smoke">{getValue()}</span>
         ),
       }),
       col.accessor('totalSeconds', {
         header: 'Total Hours',
         cell: ({ getValue }) => (
-          <span className="text-sm tabular-nums text-muted-foreground">
+          <span className="text-sm tabular-nums text-smoke">
             {formatSeconds(getValue())}
           </span>
         ),
@@ -209,7 +207,7 @@ export function TagsTablePage({
         cell: ({ getValue }) => {
           const count = getValue()
           return (
-            <span className="text-sm tabular-nums text-muted-foreground">
+            <span className="text-sm tabular-nums text-smoke">
               {count === 0
                 ? '—'
                 : `${count} ${count === 1 ? 'entry' : 'entries'}`}
@@ -229,7 +227,7 @@ export function TagsTablePage({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         disabled={archivingId === tag.id}
-                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         aria-label="Row actions"
                       >
                         <MoreHorizontal className="size-4" />
@@ -279,7 +277,7 @@ export function TagsTablePage({
         }
         aria-label="Google Sheet actions"
         aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

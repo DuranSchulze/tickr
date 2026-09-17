@@ -132,7 +132,7 @@ export function InputSection({
 
   const modeToggle = (
     <div
-      className="flex shrink-0 flex-row items-center justify-center gap-1 border-border/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
+      className="flex shrink-0 flex-row items-center justify-center gap-1 border-stone/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
       role="tablist"
       aria-label="Entry mode"
     >
@@ -142,10 +142,10 @@ export function InputSection({
         role="tab"
         aria-selected={effectiveMode === 'timer'}
         title="Timer"
-        className={`grid size-8 place-items-center rounded-md transition-colors ${
+        className={`grid size-8 place-items-center rounded-full transition-colors ${
           effectiveMode === 'timer'
             ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
         }`}
       >
         <Play className="size-4" />
@@ -157,12 +157,12 @@ export function InputSection({
         aria-selected={effectiveMode === 'manual'}
         title={activeEntry ? 'Stop the timer first' : 'Manual entry'}
         disabled={!!activeEntry}
-        className={`grid size-8 place-items-center rounded-md transition-colors ${
+        className={`grid size-8 place-items-center rounded-full transition-colors ${
           activeEntry
-            ? 'cursor-not-allowed text-muted-foreground/40'
+            ? 'cursor-not-allowed text-smoke/40'
             : effectiveMode === 'manual'
               ? 'bg-primary/10 text-primary'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
         }`}
       >
         <Pencil className="size-4" />
@@ -174,7 +174,7 @@ export function InputSection({
     // Elevated above the rest of the page (shadow + ring) so the entry point
     // for tracking time is the first thing the eye lands on — Clockify-style
     // single bar with a compact timer/manual toggle on the right edge.
-    <section className="min-w-0 rounded-xl border border-border bg-card p-3 shadow-lg shadow-black/[0.06] ring-1 ring-black/[0.03] dark:shadow-black/30 dark:ring-white/[0.04]">
+    <section className="min-w-0 rounded-3xl border border-stone bg-eggshell p-3 shadow-[var(--shadow-whisper)]">
       <div className="flex min-w-0 gap-2 max-sm:flex-col sm:items-stretch">
         {/* justify-center keeps the h-12 bar vertically centered against the
             taller mode-toggle column instead of pinned to the card's top. */}

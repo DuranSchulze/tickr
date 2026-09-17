@@ -52,7 +52,7 @@ export function ExportOngoingTasksDialog({
         </DialogHeader>
 
         {summary?.examples.length ? (
-          <div className="grid gap-2 rounded-lg border border-border bg-muted/30 p-3">
+          <div className="grid gap-2 rounded-xl border border-stone bg-warm-taupe p-3">
             <p className="m-0 text-xs font-semibold text-foreground">
               Active tasks
             </p>
@@ -60,23 +60,23 @@ export function ExportOngoingTasksDialog({
               {summary.examples.map((entry) => (
                 <div
                   key={entry.id}
-                  className="grid gap-1 rounded-md bg-background p-2 text-xs"
+                  className="grid gap-1 rounded-xl bg-eggshell p-2 text-xs"
                 >
                   <div className="flex min-w-0 items-center justify-between gap-2">
                     <span className="truncate font-semibold text-foreground">
                       {entry.memberName}
                     </span>
-                    <span className="shrink-0 text-muted-foreground">
+                    <span className="shrink-0 text-smoke">
                       {formatStartedAt(entry.startedAt)}
                     </span>
                   </div>
-                  <span className="truncate text-muted-foreground">
+                  <span className="truncate text-smoke">
                     {[entry.projectName, entry.clientName, entry.taskName]
                       .filter(Boolean)
                       .join(' / ') || 'No project or task selected'}
                   </span>
                   {entry.description ? (
-                    <span className="line-clamp-2 text-muted-foreground">
+                    <span className="line-clamp-2 text-smoke">
                       {entry.description}
                     </span>
                   ) : null}

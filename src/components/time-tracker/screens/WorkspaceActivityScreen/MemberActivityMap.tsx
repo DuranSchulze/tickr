@@ -35,13 +35,13 @@ export function MemberActivityMap({
   const idleLocatedCount = pinned.length - runningLocatedCount
 
   return (
-    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex flex-col items-start justify-between gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center">
+    <section className="overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
+      <div className="flex flex-col items-start justify-between gap-3 border-b border-stone px-4 py-3 sm:flex-row sm:items-center">
         <div className="min-w-0">
           <h2 className="text-sm font-bold text-foreground">
             Member locations
           </h2>
-          <p className="truncate text-xs text-muted-foreground">
+          <p className="truncate text-xs text-smoke">
             Fixed overview of approximate locations · mapped members only
           </p>
         </div>
@@ -54,9 +54,9 @@ export function MemberActivityMap({
               />
               {runningLocatedCount} with running timers
             </span>
-            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 text-smoke">
               <span
-                className="size-2 rounded-full bg-muted-foreground/50"
+                className="size-2 rounded-full bg-smoke/50"
                 aria-hidden="true"
               />
               {idleLocatedCount} without running timers
@@ -71,7 +71,7 @@ export function MemberActivityMap({
               }}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-xs font-bold text-foreground no-underline transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               View maps full screen
               <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -81,7 +81,7 @@ export function MemberActivityMap({
       </div>
 
       {pinned.length === 0 ? (
-        <p className="px-4 py-6 text-sm text-muted-foreground">
+        <p className="px-4 py-6 text-sm text-smoke">
           No location data yet. Pins appear once entries are logged with
           location tracking enabled.
         </p>
@@ -234,10 +234,10 @@ export function MemberLocationMap({
               <button
                 type="button"
                 onClick={() => onSelectMember?.(member)}
-                className={`relative flex size-9 items-center justify-center rounded-full border-2 bg-card text-[10px] font-bold shadow-lg transition-transform hover:scale-110 ${
+                className={`relative flex size-9 items-center justify-center rounded-full border-2 bg-eggshell text-[10px] font-bold shadow-[var(--shadow-whisper)] transition-transform hover:scale-110 ${
                   isTimerRunning
                     ? 'border-emerald-500 text-emerald-700 ring-4 ring-emerald-500/20 dark:text-emerald-300'
-                    : 'border-muted-foreground/50 text-muted-foreground'
+                    : 'border-muted-foreground/50 text-smoke'
                 }`}
                 title={`${onSelectMember ? 'View activity for' : 'View'} ${member.name} · ${timerStatus}`}
                 aria-label={`${onSelectMember ? 'View activity for' : 'View'} ${member.name}, ${timerStatus.toLowerCase()}`}
@@ -253,7 +253,7 @@ export function MemberLocationMap({
                 )}
                 <span
                   className={`absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card ${
-                    isTimerRunning ? 'bg-emerald-500' : 'bg-muted-foreground/50'
+                    isTimerRunning ? 'bg-emerald-500' : 'bg-smoke/50'
                   }`}
                   aria-hidden="true"
                 />
@@ -264,9 +264,7 @@ export function MemberLocationMap({
                 <div className="flex items-center gap-2">
                   <span
                     className={`size-2 shrink-0 rounded-full ${
-                      isTimerRunning
-                        ? 'bg-emerald-500'
-                        : 'bg-muted-foreground/50'
+                      isTimerRunning ? 'bg-emerald-500' : 'bg-smoke/50'
                     }`}
                     aria-hidden="true"
                   />
@@ -274,9 +272,7 @@ export function MemberLocationMap({
                     <p className="m-0 break-words text-sm font-semibold text-foreground">
                       {member.name}
                     </p>
-                    <p className="m-0 text-[11px] text-muted-foreground">
-                      {timerStatus}
-                    </p>
+                    <p className="m-0 text-[11px] text-smoke">{timerStatus}</p>
                   </div>
                 </div>
               </MarkerPopup>

@@ -20,10 +20,10 @@ export function FeedbackFloatingPanel() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close feedback' : 'Give feedback'}
         title={open ? 'Close feedback' : 'Give feedback'}
-        className={`fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
+        className={`fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full shadow-[var(--shadow-whisper)] transition-all duration-200 hover:scale-105 active:scale-95 ${
           open
-            ? 'bg-muted text-muted-foreground shadow-none ring-1 ring-border'
-            : 'bg-primary text-primary-foreground shadow-primary/25'
+            ? 'bg-warm-taupe text-smoke shadow-none ring-1 ring-stone'
+            : 'bg-primary-action text-primary-action-foreground'
         }`}
       >
         {open ? <X className="size-5" /> : <MessageSquare className="size-5" />}
@@ -49,10 +49,10 @@ export function FeedbackFloatingPanel() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-md flex-col border-l border-border bg-card shadow-2xl"
+              className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-md flex-col border-l border-stone bg-eggshell shadow-[var(--shadow-whisper)]"
             >
               {/* Header */}
-              <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+              <div className="flex shrink-0 items-center justify-between border-b border-stone px-4 py-3">
                 <div className="flex items-center gap-2 text-base font-semibold text-foreground">
                   <MessageSquare className="size-5 text-primary" />
                   Feedback
@@ -60,7 +60,7 @@ export function FeedbackFloatingPanel() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="grid size-9 place-items-center rounded-full text-smoke transition-colors hover:bg-warm-taupe hover:text-foreground"
                   aria-label="Close feedback form"
                 >
                   <X className="size-5" />

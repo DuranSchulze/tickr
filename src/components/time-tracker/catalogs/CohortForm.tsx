@@ -95,7 +95,7 @@ export function CohortForm({
         placeholder="Choose a department"
         searchPlaceholder="Search departments…"
         emptyText="No departments match."
-        className="h-11 rounded-lg bg-background"
+        className="h-11 rounded-md bg-eggshell"
         contentClassName="z-[60]"
       />
       {mode === 'single' ? (

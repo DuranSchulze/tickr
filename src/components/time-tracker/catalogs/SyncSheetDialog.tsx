@@ -292,7 +292,7 @@ export function SyncSheetDialog({
         showCloseButton={false}
       >
         {!result && !error && (
-          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 mx-6 mt-4">
+          <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-300 mx-6 mt-4">
             <AlertTriangle className="size-3.5 shrink-0" />
             Do not close this tab while sync is in progress.
           </div>
@@ -359,11 +359,9 @@ function ProgressState({
           <span className="font-semibold text-foreground">
             Overall progress
           </span>
-          <span className="text-muted-foreground tabular-nums">
-            {overallPercent}%
-          </span>
+          <span className="text-smoke tabular-nums">{overallPercent}%</span>
         </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-warm-taupe">
           <div
             className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
             style={{ width: `${overallPercent}%` }}
@@ -392,8 +390,8 @@ function ProgressState({
 
       {/* Live items feed */}
       {activeState && activeState.items.length > 0 && (
-        <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border">
-          <div className="border-b border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+        <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-stone">
+          <div className="border-b border-stone bg-warm-taupe/50 px-3 py-1.5 text-xs font-semibold text-smoke">
             Importing{' '}
             {(activePhase
               ? PHASE_LABELS[activePhase]
@@ -419,12 +417,10 @@ function ProgressState({
                   <span className="truncate font-medium text-foreground">
                     {item.name}
                   </span>
-                  <span className="shrink-0 text-muted-foreground">
-                    {actionDef.label}
-                  </span>
+                  <span className="shrink-0 text-smoke">{actionDef.label}</span>
                   {item.detail && (
                     <span
-                      className="shrink-0 truncate text-muted-foreground/70 max-w-50"
+                      className="shrink-0 truncate text-smoke/70 max-w-50"
                       title={item.detail}
                     >
                       ({item.detail})
@@ -438,7 +434,7 @@ function ProgressState({
       )}
 
       {!activeState && (
-        <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+        <div className="flex items-center justify-center py-8 text-sm text-smoke">
           <Loader2 className="mr-2 size-4 animate-spin" />
           Starting import…
         </div>
@@ -465,12 +461,12 @@ function PhaseRow({
 
   return (
     <div
-      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
         isActive
-          ? 'border-primary/40 bg-primary/5'
+          ? 'border-stone bg-warm-taupe'
           : isDone
             ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20'
-            : 'border-border bg-card'
+            : 'border-stone bg-eggshell'
       }`}
     >
       {/* Status icon */}
@@ -480,7 +476,7 @@ function PhaseRow({
         ) : isActive ? (
           <Loader2 className="size-4 animate-spin text-primary" />
         ) : (
-          <Circle className="size-4 text-muted-foreground/40" />
+          <Circle className="size-4 text-smoke/40" />
         )}
       </div>
 
@@ -491,7 +487,7 @@ function PhaseRow({
             ? 'text-primary'
             : isDone
               ? 'text-emerald-700 dark:text-emerald-300'
-              : 'text-muted-foreground'
+              : 'text-smoke'
         }`}
       >
         {label}
@@ -500,13 +496,13 @@ function PhaseRow({
       {/* Progress bar (active phase only) */}
       {isActive && state && state.total > 0 && (
         <div className="flex flex-1 items-center gap-2">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-warm-taupe">
             <div
               className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
               style={{ width: `${percent}%` }}
             />
           </div>
-          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          <span className="shrink-0 text-xs tabular-nums text-smoke">
             {state.current}/{state.total}
           </span>
         </div>
@@ -514,7 +510,7 @@ function PhaseRow({
 
       {/* Count for completed phase */}
       {isDone && state && (
-        <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+        <span className="ml-auto text-xs tabular-nums text-smoke">
           {state.total} record{state.total !== 1 ? 's' : ''}
           {state.warnings.length > 0 && (
             <span className="ml-1 text-amber-500">
@@ -539,7 +535,7 @@ function CompleteState({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
+      <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/20">
         <CheckCircle2 className="size-6 shrink-0 text-emerald-500" />
         <div>
           <p className="font-semibold text-emerald-800 dark:text-emerald-200">
@@ -567,7 +563,7 @@ function CompleteState({
       </div>
 
       {hasWarnings && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/20">
           <p className="mb-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
             {result.warnings.length} warning
             {result.warnings.length !== 1 ? 's' : ''}
@@ -583,7 +579,7 @@ function CompleteState({
       <button
         type="button"
         onClick={onClose}
-        className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+        className="mt-2 inline-flex h-9 items-center justify-center rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors"
       >
         Done
       </button>
@@ -600,7 +596,7 @@ function ErrorState({
 }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+      <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
         <XCircle className="size-6 shrink-0 text-red-500" />
         <div>
           <p className="font-semibold text-red-800 dark:text-red-200">
@@ -612,7 +608,7 @@ function ErrorState({
       <button
         type="button"
         onClick={onClose}
-        className="mt-2 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110"
+        className="mt-2 inline-flex h-9 items-center justify-center rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors"
       >
         Close
       </button>

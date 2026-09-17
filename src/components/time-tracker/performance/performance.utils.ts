@@ -74,8 +74,8 @@ export const BADGE_COLORS: Record<
   },
   Starter: {
     bg: 'bg-muted',
-    text: 'text-muted-foreground',
-    border: 'border-border',
+    text: 'text-smoke',
+    border: 'border-stone',
   },
 }
 

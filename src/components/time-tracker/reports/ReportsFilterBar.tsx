@@ -45,14 +45,12 @@ const FilterSelect = memo(function FilterSelect({
 }) {
   return (
     <div className="min-w-0 flex flex-col gap-1">
-      <label className="text-xs font-semibold text-muted-foreground">
-        {label}
-      </label>
+      <label className="text-xs font-semibold text-smoke">{label}</label>
       <div className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-full cursor-pointer appearance-none rounded-lg border border-border bg-background pl-2.5 pr-8 text-sm text-foreground transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          className="h-9 w-full cursor-pointer appearance-none rounded-xl border border-stone bg-eggshell pl-2.5 pr-8 text-sm text-foreground transition-colors hover:bg-warm-taupe/40 focus:outline-none focus:ring-2 focus:ring-primary/40"
         >
           {options.map((o) => (
             <option key={o.value} value={o.value}>
@@ -60,7 +58,7 @@ const FilterSelect = memo(function FilterSelect({
             </option>
           ))}
         </select>
-        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+        <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-smoke" />
       </div>
     </div>
   )
@@ -112,25 +110,23 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
 
   return (
     <div className="min-w-0 flex flex-col gap-1">
-      <span className="text-xs font-semibold text-muted-foreground">
-        Client / Project
-      </span>
+      <span className="text-xs font-semibold text-smoke">Client / Project</span>
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <button
             type="button"
             aria-expanded={open}
-            className="flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-sm text-foreground outline-none transition-colors hover:bg-muted/50 focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-muted/50"
+            className="flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-xl border border-stone bg-eggshell px-2.5 text-left text-sm text-foreground outline-none transition-colors hover:bg-warm-taupe focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-warm-taupe"
           >
             <span
               className={cn(
                 'min-w-0 flex-1 truncate',
-                !selectedClient && 'text-muted-foreground',
+                !selectedClient && 'text-smoke',
               )}
             >
               {triggerLabel}
             </span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+            <ChevronsUpDown className="size-3.5 shrink-0 text-smoke" />
           </button>
         </PopoverTrigger>
         <PopoverContent
@@ -141,24 +137,24 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
             event.preventDefault()
             inputRef.current?.focus()
           }}
-          className="z-[60] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(22rem,calc(100vw-2rem))] gap-0 overflow-hidden rounded-md border border-border bg-popover p-0 shadow-none"
+          className="z-[60] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(22rem,calc(100vw-2rem))] gap-0 overflow-hidden rounded-xl border border-stone bg-eggshell p-0 shadow-none"
         >
-          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <Search className="size-4 shrink-0 text-muted-foreground" />
+          <div className="flex items-center gap-2 border-b border-stone px-3 py-2">
+            <Search className="size-4 shrink-0 text-smoke" />
             <input
               ref={inputRef}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search clients or projects..."
               aria-label="Search clients or projects"
-              className="h-8 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              className="h-8 min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-smoke"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Clear search"
-                className="text-muted-foreground transition-colors hover:text-foreground"
+                className="text-smoke transition-colors hover:text-foreground"
               >
                 <X className="size-3.5" />
               </button>
@@ -171,7 +167,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
                 type="button"
                 onClick={() => handleSelect('', '')}
                 className={cn(
-                  'flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted',
+                  'flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-warm-taupe',
                   !clientId && !projectId && 'font-semibold text-foreground',
                 )}
               >
@@ -186,7 +182,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
             )}
 
             {rows.length === 0 ? (
-              <p className="m-0 px-3 py-4 text-center text-sm text-muted-foreground">
+              <p className="m-0 px-3 py-4 text-center text-sm text-smoke">
                 No clients or projects found.
               </p>
             ) : (
@@ -199,7 +195,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
                       type="button"
                       onClick={() => handleSelect(row.client.id, '')}
                       className={cn(
-                        'mt-1 flex min-h-10 w-full items-center gap-2 border-t border-border/60 px-3 py-2 text-left text-sm font-semibold transition-colors first:mt-0 first:border-t-0 hover:bg-muted',
+                        'mt-1 flex min-h-10 w-full items-center gap-2 border-t border-stone/60 px-3 py-2 text-left text-sm font-semibold transition-colors first:mt-0 first:border-t-0 hover:bg-warm-taupe',
                         selected && 'text-foreground',
                       )}
                     >
@@ -209,11 +205,11 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
                           !selected && 'opacity-0',
                         )}
                       />
-                      <Building2 className="size-4 shrink-0 text-muted-foreground" />
+                      <Building2 className="size-4 shrink-0 text-smoke" />
                       <span className="min-w-0 flex-1 truncate">
                         {row.client.name}
                       </span>
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Client
                       </span>
                     </button>
@@ -227,7 +223,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
                     type="button"
                     onClick={() => handleSelect(row.client.id, row.project.id)}
                     className={cn(
-                      'flex min-h-9 w-full items-center gap-2 py-1.5 pl-9 pr-3 text-left text-sm transition-colors hover:bg-muted',
+                      'flex min-h-9 w-full items-center gap-2 py-1.5 pl-9 pr-3 text-left text-sm transition-colors hover:bg-warm-taupe',
                       selected && 'font-semibold text-foreground',
                     )}
                   >
@@ -249,7 +245,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
               })
             )}
             {truncated && (
-              <p className="m-0 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+              <p className="m-0 border-t border-stone px-3 py-2 text-xs text-smoke">
                 Showing first projects. Search to narrow results.
               </p>
             )}
@@ -295,9 +291,7 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
 
   return (
     <div className="min-w-0 flex flex-col gap-1">
-      <span className="text-xs font-semibold text-muted-foreground">
-        {label}
-      </span>
+      <span className="text-xs font-semibold text-smoke">{label}</span>
       <Popover
         open={open}
         onOpenChange={(nextOpen) => {
@@ -309,20 +303,20 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
           <button
             type="button"
             aria-expanded={open}
-            className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background px-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent"
+            className="inline-flex h-9 w-full min-w-0 items-center justify-between gap-2 rounded-full border border-stone bg-eggshell px-2.5 text-left text-sm text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/40 data-[state=open]:bg-accent"
           >
             <span className="truncate">{buttonLabel}</span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
+            <ChevronsUpDown className="size-3.5 shrink-0 text-smoke" />
           </button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
           sideOffset={4}
           collisionPadding={8}
-          className="z-[60] max-h-[min(var(--radix-popover-content-available-height),20rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-md border border-border bg-popover p-0 shadow-none"
+          className="z-[60] max-h-[min(var(--radix-popover-content-available-height),20rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-stone bg-eggshell p-0 shadow-none"
         >
-          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-            <Search className="size-3.5 shrink-0 text-muted-foreground" />
+          <div className="flex items-center gap-2 border-b border-stone px-3 py-2">
+            <Search className="size-3.5 shrink-0 text-smoke" />
             <input
               type="text"
               value={query}
@@ -330,13 +324,13 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
               onKeyDown={(e) => e.stopPropagation()}
               placeholder={`Search ${label.toLowerCase()}...`}
               aria-label={`Search ${label.toLowerCase()}`}
-              className="h-8 w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              className="h-8 w-full bg-transparent text-sm text-foreground placeholder:text-smoke focus:outline-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-smoke hover:text-foreground"
               >
                 <X className="size-3" />
               </button>
@@ -345,7 +339,7 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
 
           <div className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.5rem),16rem)] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
             {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+              <div className="px-3 py-4 text-center text-sm text-smoke">
                 No results
               </div>
             ) : (
@@ -356,14 +350,14 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
                     key={o.value}
                     type="button"
                     onClick={() => toggle(o.value)}
-                    className="flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
+                    className="flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-warm-taupe"
                   >
                     <span
                       className={cn(
                         'flex size-4 shrink-0 items-center justify-center rounded border',
                         selected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border',
+                          ? 'border-primary bg-primary-action text-primary-action-foreground'
+                          : 'border-stone',
                       )}
                     >
                       {selected && <Check className="size-3" />}
@@ -382,14 +376,14 @@ const MultiSelectCombobox = memo(function MultiSelectCombobox({
           </div>
 
           {values.length > 0 && (
-            <div className="flex items-center justify-between border-t border-border px-3 py-2">
-              <span className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between border-t border-stone px-3 py-2">
+              <span className="text-xs text-smoke">
                 {values.length} selected
               </span>
               <button
                 type="button"
                 onClick={() => onChange([])}
-                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="text-xs font-medium text-smoke hover:text-foreground"
               >
                 Clear
               </button>
@@ -602,11 +596,11 @@ export function ReportsFilterBar({
   )
 
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-xs">
+    <div className="min-w-0 overflow-hidden rounded-xl bg-warm-taupe">
       {/* Bar header — title + active count, actions on the right */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/30 px-4 py-2.5 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone px-4 py-2.5 sm:px-5">
         <div className="flex min-w-0 items-center gap-2">
-          <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
+          <SlidersHorizontal className="size-4 shrink-0 text-smoke" />
           <h2 className="m-0 text-sm font-bold text-foreground">Filters</h2>
           {activeFilterCount > 0 && (
             <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -619,7 +613,7 @@ export function ReportsFilterBar({
             <button
               type="button"
               onClick={onClear}
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              className="inline-flex h-8 items-center gap-1.5 rounded-xl px-2.5 text-xs font-semibold text-smoke transition-colors hover:bg-accent hover:text-foreground"
             >
               <X className="size-3.5" />
               Clear
@@ -628,7 +622,7 @@ export function ReportsFilterBar({
           <button
             type="button"
             onClick={onSearch}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:brightness-110 active:translate-y-px"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-primary-action px-3.5 text-sm font-bold text-primary-action-foreground shadow-[var(--shadow-whisper)] transition-all active:translate-y-px"
           >
             <Search className="size-3.5" />
             Search
@@ -640,11 +634,11 @@ export function ReportsFilterBar({
       <div className="grid min-w-0 grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
         {/* Description — full width */}
         <div className="min-w-0 flex flex-col gap-1 sm:col-span-2 lg:col-span-3">
-          <label className="text-xs font-semibold text-muted-foreground">
+          <label className="text-xs font-semibold text-smoke">
             Description
           </label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-smoke" />
             <input
               type="text"
               value={filters.description ?? ''}
@@ -653,14 +647,14 @@ export function ReportsFilterBar({
                 if (e.key === 'Enter') onSearch()
               }}
               placeholder="Search by description…"
-              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-8 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="h-9 w-full rounded-xl border border-stone bg-eggshell pl-9 pr-8 text-sm text-foreground placeholder:text-smoke transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             {filters.description && (
               <button
                 type="button"
                 onClick={() => handleDescriptionChange('')}
                 aria-label="Clear description search"
-                className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground"
               >
                 <X className="size-3.5" />
               </button>

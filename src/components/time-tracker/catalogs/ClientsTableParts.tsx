@@ -70,7 +70,7 @@ export function useClientColumns({
               ? 'bg-emerald-500'
               : status === 'SUSPENDED'
                 ? 'bg-amber-500'
-                : 'bg-muted-foreground'
+                : 'bg-smoke'
           const label =
             status === 'ACTIVE'
               ? 'Active'
@@ -88,7 +88,7 @@ export function useClientColumns({
       col.accessor('totalSeconds', {
         header: 'Total Hours',
         cell: ({ getValue }) => (
-          <span className="text-sm tabular-nums text-muted-foreground">
+          <span className="text-sm tabular-nums text-smoke">
             {formatSeconds(getValue())}
           </span>
         ),
@@ -100,7 +100,7 @@ export function useClientColumns({
               cell: ({ getValue }) => {
                 const amount = getValue()
                 return (
-                  <span className="text-sm tabular-nums text-muted-foreground">
+                  <span className="text-sm tabular-nums text-smoke">
                     {amount == null
                       ? 'Workspace/member fallback'
                       : formatCurrency(amount, currency)}
@@ -113,7 +113,7 @@ export function useClientColumns({
               cell: ({ getValue }) => {
                 const amount = getValue()
                 return (
-                  <span className="text-sm tabular-nums text-muted-foreground">
+                  <span className="text-sm tabular-nums text-smoke">
                     {amount === 0 ? '—' : formatCurrency(amount, currency)}
                   </span>
                 )
@@ -133,7 +133,7 @@ export function useClientColumns({
                     <DropdownMenu>
                       <DropdownMenuTrigger
                         disabled={archivingId === client.id}
-                        className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+                        className="grid size-8 place-items-center rounded-full text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                         aria-label="Row actions"
                       >
                         <MoreHorizontal className="size-4" />
@@ -237,7 +237,7 @@ export function ClientSheetMenu({
         }
         aria-label="Google Sheet actions"
         aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
       >
         {sheetLoading ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

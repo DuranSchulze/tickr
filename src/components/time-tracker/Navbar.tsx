@@ -66,7 +66,7 @@ export function Navbar({
   }
 
   return (
-    <header className="sticky top-0 z-40 overflow-hidden bg-card">
+    <header className="sticky top-0 z-40 overflow-hidden border-b border-stone bg-eggshell">
       <div className="relative mx-auto flex h-[4.5rem] max-w-[1600px] items-center gap-4 px-4 py-3 sm:px-6">
         {birthdayCelebration}
 
@@ -76,7 +76,7 @@ export function Navbar({
         </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground lg:inline-flex">
+          <div className="hidden items-center gap-2 rounded-full bg-warm-taupe px-3 py-1.5 text-xs font-medium text-smoke lg:inline-flex">
             <span className="relative flex size-2.5">
               <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--primary)] opacity-70" />
               <span className="relative inline-flex size-2.5 rounded-full bg-[var(--primary)]" />
@@ -95,7 +95,7 @@ export function Navbar({
                 variant="outline"
                 size="icon"
                 title="Account & appearance"
-                className="rounded-full border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground overflow-hidden"
+                className="rounded-full border border-stone bg-eggshell text-smoke hover:bg-warm-taupe hover:text-foreground overflow-hidden"
               >
                 {user.image ? (
                   <img
@@ -113,7 +113,7 @@ export function Navbar({
                 <p className="m-0 text-sm font-semibold text-foreground">
                   {user.name}
                 </p>
-                <p className="m-0 text-xs font-normal text-muted-foreground truncate">
+                <p className="m-0 text-xs font-normal text-smoke truncate">
                   {user.email}
                 </p>
               </DropdownMenuLabel>

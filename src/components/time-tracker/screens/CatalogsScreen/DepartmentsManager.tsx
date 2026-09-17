@@ -80,7 +80,7 @@ export function DepartmentsManager({
           <button
             type="button"
             onClick={() => dispatch({ showForm: !showForm })}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition-colors hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary-action px-3 py-1.5 text-xs font-bold text-primary-action-foreground transition-colors"
           >
             {showForm ? (
               <X className="size-3.5" />
@@ -101,13 +101,13 @@ export function DepartmentsManager({
               placeholder="Department name"
               aria-label="Department name"
               required
-              className="h-9 flex-1 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+              className="h-9 flex-1 rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
             />
             <input
               type="color"
               value={color}
               onChange={(e) => dispatch({ color: e.target.value })}
-              className="h-9 w-12 cursor-pointer rounded-lg border border-border p-1"
+              className="h-9 w-12 cursor-pointer rounded-md border border-stone p-1"
               title="Department color"
               aria-label="Department color"
             />
@@ -117,12 +117,12 @@ export function DepartmentsManager({
             onChange={(e) => dispatch({ description: e.target.value })}
             placeholder="Description (optional)"
             aria-label="Description"
-            className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+            className="h-9 rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
           />
           <button
             type="submit"
             disabled={pending}
-            className="h-9 rounded-lg bg-primary text-sm font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="h-9 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground disabled:bg-warm-taupe disabled:text-smoke"
           >
             {pending ? 'Creating…' : 'Create department'}
           </button>
@@ -132,7 +132,7 @@ export function DepartmentsManager({
         {state.departments.map((dept) => (
           <div
             key={dept.id}
-            className="group flex items-center justify-between rounded-lg border border-border px-3 py-2"
+            className="group flex items-center justify-between rounded-full border border-stone px-3 py-2"
           >
             <span className="text-sm font-semibold text-foreground">
               {dept.name}

@@ -148,7 +148,7 @@ export function MyWorkspacesPage({
     <div className="mx-auto max-w-2xl space-y-8 py-2">
       <div>
         <h1 className="text-2xl font-bold text-foreground">My Workspaces</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-smoke">
           Manage all workspaces you belong to. You can delete workspaces you own
           or leave ones you've joined.
         </p>
@@ -158,13 +158,13 @@ export function MyWorkspacesPage({
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Crown className="size-4 text-amber-500" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-smoke">
             Owned by you ({owned.length})
           </h2>
         </div>
 
         {owned.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-smoke">
             You don't own any workspaces yet.
           </p>
         ) : (
@@ -198,14 +198,14 @@ export function MyWorkspacesPage({
       {/* Joined workspaces */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
-          <Users className="size-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <Users className="size-4 text-smoke" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-smoke">
             Joined workspaces ({joined.length})
           </h2>
         </div>
 
         {joined.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-smoke">
             You haven't joined any workspaces.
           </p>
         ) : (
@@ -223,7 +223,7 @@ export function MyWorkspacesPage({
                     onClick={() =>
                       setPendingAction({ type: 'leave', workspace: ws })
                     }
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground gap-1.5"
+                    className="text-smoke hover:bg-accent hover:text-foreground gap-1.5"
                     title="Leave workspace"
                   >
                     <LogOut className="size-4" />
@@ -238,13 +238,13 @@ export function MyWorkspacesPage({
 
       {/* Create new workspace */}
       {canCreate && (
-        <section className="border-t border-border pt-6">
+        <section className="border-t border-stone pt-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-foreground">
                 Create a new workspace
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-smoke">
                 You'll be the owner with full control.
               </p>
             </div>
@@ -296,7 +296,7 @@ export function MyWorkspacesPage({
                 placeholder="e.g. Acme Corp"
                 maxLength={150}
                 disabled={creating}
-                className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                className="h-9 rounded-lg border border-stone bg-eggshell px-3 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -406,11 +406,13 @@ const WorkspaceCard = memo(function WorkspaceCard({
   return (
     <li
       className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
-        isCurrent ? 'border-primary/40 bg-primary/5' : 'border-border bg-card'
+        isCurrent
+          ? 'border-primary/40 bg-primary/5'
+          : 'border-stone bg-eggshell'
       }`}
     >
       <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-        <BriefcaseBusiness className="size-4 text-muted-foreground" />
+        <BriefcaseBusiness className="size-4 text-smoke" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -445,7 +447,7 @@ const WorkspaceCard = memo(function WorkspaceCard({
             variant="ghost"
             size="sm"
             onClick={onSwitch}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-smoke hover:text-foreground"
           >
             Switch
           </Button>

@@ -139,7 +139,7 @@ export function BirthdayCelebration({
                 triggerSideCelebration()
               }
             }}
-            className="pointer-events-auto flex max-w-[min(32rem,calc(100vw-1.5rem))] items-center gap-3 rounded-full border border-amber-200/70 bg-background/95 px-3 py-2 text-left shadow-lg backdrop-blur transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="pointer-events-auto flex max-w-[min(32rem,calc(100vw-1.5rem))] items-center gap-3 rounded-full border border-amber-200/70 bg-eggshell/95 px-3 py-2 text-left shadow-[var(--shadow-whisper)] backdrop-blur transition-colors hover:bg-eggshell focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="grid size-8 shrink-0 place-items-center rounded-full bg-amber-100 text-amber-700">
               <Cake className="size-4" />
@@ -148,7 +148,7 @@ export function BirthdayCelebration({
               <p className="m-0 truncate text-sm font-bold text-foreground">
                 Happy birthday, {userName}!
               </p>
-              <p className="m-0 truncate text-xs text-muted-foreground">
+              <p className="m-0 truncate text-xs text-smoke">
                 Enjoy the little celebration.
               </p>
             </div>

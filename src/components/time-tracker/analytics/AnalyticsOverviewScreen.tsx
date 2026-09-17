@@ -36,7 +36,7 @@ function formatPercent(value: number | null) {
 function DeltaIcon({ value }: { value: number }) {
   if (value > 0) return <ArrowUpRight className="size-4 text-emerald-600" />
   if (value < 0) return <ArrowDownRight className="size-4 text-rose-600" />
-  return <Minus className="size-4 text-muted-foreground" />
+  return <Minus className="size-4 text-smoke" />
 }
 
 function MetricCard({
@@ -51,23 +51,21 @@ function MetricCard({
   icon: typeof Clock3
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="flex min-w-0 flex-col rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
             {label}
           </p>
-          <p className="m-0 mt-2 break-words text-xl font-black tracking-tight text-foreground sm:text-2xl">
+          <p className="m-0 mt-2 break-words text-xl font-black text-foreground sm:text-2xl">
             {value}
           </p>
         </div>
-        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary sm:size-9">
+        <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:size-9">
           <Icon className="size-4" />
         </span>
       </div>
-      <p className="m-0 mt-3 text-sm font-medium text-muted-foreground">
-        {helper}
-      </p>
+      <p className="m-0 mt-3 text-sm font-medium text-smoke">{helper}</p>
     </section>
   )
 }
@@ -142,37 +140,37 @@ export function AnalyticsOverviewScreen({
 
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)] sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
               <BarChart3 className="size-3.5" />
               Analytics overview
             </div>
-            <h1 className="m-0 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+            <h1 className="m-0 font-display text-heading-sm text-foreground">
               Simplified analytics
             </h1>
-            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-smoke">
               {overview.scopeLabel} · {overview.asOfDate}
             </p>
             <p className="m-0 mt-3 inline-flex items-center gap-2 text-sm font-bold text-foreground">
-              <CalendarDays className="size-4 text-muted-foreground" />
+              <CalendarDays className="size-4 text-smoke" />
               Updated {lastUpdated}
             </p>
           </div>
 
           <div className="flex min-w-0 flex-col gap-3 sm:items-start lg:items-end">
             {overview.availableScopes.length > 1 && (
-              <div className="grid w-full grid-cols-1 gap-1 rounded-lg border border-border bg-background p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
+              <div className="grid w-full grid-cols-1 gap-1 rounded-full border border-stone bg-eggshell p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
                 {overview.availableScopes.map((scope) => (
                   <button
                     key={scope}
                     type="button"
                     onClick={() => onChangeScope(scope)}
-                    className={`h-9 rounded-md px-2.5 text-sm font-bold transition-colors sm:px-3 ${
+                    className={`h-9 rounded-xl px-2.5 text-sm font-bold transition-colors sm:px-3 ${
                       overview.selectedScope === scope
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                        ? 'bg-primary-action text-primary-action-foreground'
+                        : 'text-smoke hover:bg-accent hover:text-foreground'
                     }`}
                   >
                     {scopeLabels[scope]}
@@ -193,7 +191,7 @@ export function AnalyticsOverviewScreen({
       </section>
 
       {overview.notice && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-foreground">
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm font-medium text-foreground">
           {overview.notice}
         </div>
       )}
@@ -204,12 +202,12 @@ export function AnalyticsOverviewScreen({
         ))}
       </div>
 
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
         <div className="mb-4">
           <h2 className="m-0 text-base font-black text-foreground">
             Last 30 days
           </h2>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             Hours and entries by day.
           </p>
         </div>
@@ -220,18 +218,18 @@ export function AnalyticsOverviewScreen({
         {overview.comparisons.map((comparison) => (
           <section
             key={comparison.id}
-            className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm"
+            className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]"
           >
             <div className="mb-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="m-0 text-base font-black text-foreground">
                   {comparison.label}
                 </h2>
-                <p className="m-0 mt-1 text-sm text-muted-foreground">
+                <p className="m-0 mt-1 text-sm text-smoke">
                   {comparison.currentLabel} vs {comparison.previousLabel}
                 </p>
               </div>
-              <div className="flex items-center gap-1 rounded-lg bg-background px-2 py-1 text-sm font-black">
+              <div className="flex items-center gap-1 rounded-xl bg-eggshell px-2 py-1 text-sm font-black">
                 <DeltaIcon value={comparison.delta.totalSeconds} />
                 {formatPercent(comparison.percentChange.totalSeconds)}
               </div>
@@ -249,13 +247,19 @@ export function AnalyticsOverviewScreen({
                 label="Hours"
                 current={formatDurationDdhms(comparison.current.totalSeconds)}
                 previous={formatDurationDdhms(comparison.previous.totalSeconds)}
-                delta={formatDurationDdhms(Math.abs(comparison.delta.totalSeconds))}
+                delta={formatDurationDdhms(
+                  Math.abs(comparison.delta.totalSeconds),
+                )}
                 percent={comparison.percentChange.totalSeconds}
               />
               <ComparisonValue
                 label="Billable"
-                current={formatDurationDdhms(comparison.current.billableSeconds)}
-                previous={formatDurationDdhms(comparison.previous.billableSeconds)}
+                current={formatDurationDdhms(
+                  comparison.current.billableSeconds,
+                )}
+                previous={formatDurationDdhms(
+                  comparison.previous.billableSeconds,
+                )}
                 delta={formatDurationDdhms(
                   Math.abs(comparison.delta.billableSeconds),
                 )}
@@ -301,7 +305,7 @@ function TrendBars({
 
   return (
     <div className="min-w-0 overflow-x-auto">
-      <div className="grid h-[260px] min-w-[720px] grid-cols-[repeat(30,minmax(14px,1fr))] items-end gap-2 border-b border-border pb-7 sm:h-[320px]">
+      <div className="grid h-[260px] min-w-[720px] grid-cols-[repeat(30,minmax(14px,1fr))] items-end gap-2 border-b border-stone pb-7 sm:h-[320px]">
         {data.map((day, index) => {
           const totalHeight = Math.max(4, (day.totalSeconds / maxSeconds) * 100)
           const billableHeight =
@@ -316,7 +320,7 @@ function TrendBars({
               title={`${day.date}: ${formatDurationDdhms(day.totalSeconds)}, ${day.entries.toLocaleString()} entries`}
             >
               <div
-                className="flex w-full min-w-0 flex-col justify-end overflow-hidden rounded-t-md bg-muted"
+                className="flex w-full min-w-0 flex-col justify-end overflow-hidden rounded-t-[10px] bg-warm-taupe"
                 style={{ height: `${totalHeight}%` }}
               >
                 <div
@@ -331,7 +335,7 @@ function TrendBars({
               {(index === 0 ||
                 index === data.length - 1 ||
                 index % 7 === 0) && (
-                <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] font-bold text-muted-foreground">
+                <span className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] font-bold text-smoke">
                   {day.label}
                 </span>
               )}
@@ -339,7 +343,7 @@ function TrendBars({
           )
         })}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-bold text-muted-foreground">
+      <div className="mt-3 flex flex-wrap items-center gap-4 text-xs font-bold text-smoke">
         <span className="inline-flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-600" />
           Billable
@@ -368,9 +372,9 @@ function ComparisonValue({
 }) {
   const direction = percent == null ? 1 : percent > 0 ? 1 : percent < 0 ? -1 : 0
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+    <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
           {label}
         </p>
         <span className="inline-flex items-center gap-1 text-xs font-black">
@@ -381,7 +385,7 @@ function ComparisonValue({
       <p className="m-0 mt-2 truncate text-xl font-black text-foreground">
         {current}
       </p>
-      <p className="m-0 mt-1 truncate text-xs font-semibold text-muted-foreground">
+      <p className="m-0 mt-1 truncate text-xs font-semibold text-smoke">
         {delta} change · {previous} before
       </p>
     </div>

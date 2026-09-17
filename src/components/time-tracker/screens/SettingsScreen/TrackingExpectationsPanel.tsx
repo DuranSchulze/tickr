@@ -115,14 +115,14 @@ export function TrackingExpectationsPanel({
   )
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
       <div className="flex items-start gap-2">
         <Target className="mt-0.5 size-4 text-primary" aria-hidden="true" />
         <div>
           <h2 className="m-0 text-base font-bold text-foreground">
             Working hours & payroll
           </h2>
-          <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
+          <p className="m-0 mt-1 max-w-2xl text-sm text-smoke">
             Set what a full working day looks like and when pay periods close.
             Used for consistency and KPI grading. Same for all members.
           </p>
@@ -141,7 +141,7 @@ export function TrackingExpectationsPanel({
                 onClick={() => stepHours(-0.5)}
                 disabled={pending}
                 aria-label="Decrease expected hours by half an hour"
-                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-foreground hover:bg-accent disabled:opacity-50"
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-stone text-foreground hover:bg-accent disabled:opacity-50"
               >
                 <Minus className="size-4" aria-hidden="true" />
               </button>
@@ -155,8 +155,8 @@ export function TrackingExpectationsPanel({
                 aria-invalid={!hoursValid}
                 aria-describedby="expected-hours-hint"
                 className={cn(
-                  'h-9 w-20 rounded-lg border bg-card px-3 text-center text-sm text-foreground outline-none focus:border-primary',
-                  hoursValid ? 'border-border' : 'border-destructive',
+                  'h-9 w-20 rounded-lg border bg-eggshell px-3 text-center text-sm text-foreground outline-none focus:border-primary',
+                  hoursValid ? 'border-stone' : 'border-destructive',
                 )}
               />
               <button
@@ -164,11 +164,11 @@ export function TrackingExpectationsPanel({
                 onClick={() => stepHours(0.5)}
                 disabled={pending}
                 aria-label="Increase expected hours by half an hour"
-                className="grid size-9 shrink-0 place-items-center rounded-lg border border-border text-foreground hover:bg-accent disabled:opacity-50"
+                className="grid size-9 shrink-0 place-items-center rounded-lg border border-stone text-foreground hover:bg-accent disabled:opacity-50"
               >
                 <Plus className="size-4" aria-hidden="true" />
               </button>
-              <span className="text-sm text-muted-foreground">hours / day</span>
+              <span className="text-sm text-smoke">hours / day</span>
             </div>
             <div className="flex items-center gap-1.5">
               {HOUR_PRESETS.map((preset) => (
@@ -181,8 +181,8 @@ export function TrackingExpectationsPanel({
                   className={cn(
                     'rounded-full px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-50',
                     hoursValid && hours === preset
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-accent',
+                      ? 'bg-primary-action text-primary-action-foreground'
+                      : 'bg-muted text-smoke hover:bg-accent',
                   )}
                 >
                   {preset}h
@@ -193,7 +193,7 @@ export function TrackingExpectationsPanel({
               id="expected-hours-hint"
               className={cn(
                 'm-0 text-xs',
-                hoursValid ? 'text-muted-foreground' : 'text-destructive',
+                hoursValid ? 'text-smoke' : 'text-destructive',
               )}
             >
               {hoursValid
@@ -217,8 +217,8 @@ export function TrackingExpectationsPanel({
                   className={cn(
                     'rounded-full px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-50',
                     activePreset?.id === preset.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-accent',
+                      ? 'bg-primary-action text-primary-action-foreground'
+                      : 'bg-muted text-smoke hover:bg-accent',
                   )}
                 >
                   {preset.label}
@@ -248,8 +248,8 @@ export function TrackingExpectationsPanel({
                       className={cn(
                         'h-8 rounded-md border text-xs font-semibold transition-colors disabled:opacity-50',
                         selected
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-border bg-card text-muted-foreground hover:bg-accent',
+                          ? 'border-primary bg-primary-action text-primary-action-foreground'
+                          : 'border-stone bg-eggshell text-smoke hover:bg-accent',
                       )}
                     >
                       {day}
@@ -261,7 +261,7 @@ export function TrackingExpectationsPanel({
             <p
               className={cn(
                 'm-0 text-xs',
-                cutoffCountValid ? 'text-muted-foreground' : 'text-destructive',
+                cutoffCountValid ? 'text-smoke' : 'text-destructive',
               )}
             >
               {cutoffDays.length === 0
@@ -273,17 +273,14 @@ export function TrackingExpectationsPanel({
           </fieldset>
         </div>
 
-        <div className="rounded-lg border border-border bg-muted/35 p-4">
+        <div className="rounded-lg border border-stone bg-muted/35 p-4">
           <div className="flex items-center gap-2">
-            <CalendarRange
-              className="size-4 text-primary"
-              aria-hidden="true"
-            />
+            <CalendarRange className="size-4 text-primary" aria-hidden="true" />
             <h3 className="m-0 text-sm font-bold text-foreground">
               Payroll period preview
             </h3>
           </div>
-          <p className="m-0 mt-1 text-xs text-muted-foreground">
+          <p className="m-0 mt-1 text-xs text-smoke">
             The periods this configuration produces for the current month in{' '}
             {workspace.timezone}.
           </p>
@@ -294,7 +291,7 @@ export function TrackingExpectationsPanel({
               return (
                 <li
                   key={period.startDate}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-2"
+                  className="flex items-center justify-between gap-2 rounded-lg border border-stone bg-eggshell px-3 py-2"
                 >
                   <span className="text-sm font-semibold text-foreground">
                     {period.label}
@@ -305,7 +302,7 @@ export function TrackingExpectationsPanel({
                       isCurrent
                         ? 'bg-primary/10 text-primary'
                         : period.closed
-                          ? 'bg-muted text-muted-foreground'
+                          ? 'bg-muted text-smoke'
                           : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
                     )}
                   >
@@ -321,7 +318,7 @@ export function TrackingExpectationsPanel({
           <button
             type="submit"
             disabled={!canSave}
-            className="h-9 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+            className="h-9 rounded-lg bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors disabled:bg-muted disabled:text-smoke"
           >
             {pending ? 'Saving…' : 'Save'}
           </button>
@@ -329,7 +326,7 @@ export function TrackingExpectationsPanel({
             type="button"
             onClick={resetForm}
             disabled={pending || (!dirty && hoursValid)}
-            className="h-9 rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
+            className="h-9 rounded-lg border border-stone px-4 text-sm font-semibold text-foreground hover:bg-accent disabled:opacity-50"
           >
             Reset
           </button>

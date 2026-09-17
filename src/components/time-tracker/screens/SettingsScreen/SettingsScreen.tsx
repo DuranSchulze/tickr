@@ -108,14 +108,14 @@ export function SettingsScreen({
         )}
       >
         {canImportCatalogs && (
-          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+          <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="m-0 flex items-center gap-2 text-base font-bold text-foreground">
                   <RefreshCw className="size-4 text-primary" />
                   Sync time entries
                 </h2>
-                <p className="m-0 mt-1 max-w-2xl text-sm text-muted-foreground">
+                <p className="m-0 mt-1 max-w-2xl text-sm text-smoke">
                   {hasSheet
                     ? 'Push all time entries to the linked Google Sheet. Time entries are also synced automatically every two hours.'
                     : 'Link a Google Sheet below to start syncing workspace time entries.'}
@@ -126,7 +126,7 @@ export function SettingsScreen({
                   'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
                   hasSheet
                     ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-muted text-muted-foreground',
+                    : 'bg-muted text-smoke',
                 )}
               >
                 {hasSheet ? (
@@ -143,9 +143,7 @@ export function SettingsScreen({
                 lastSyncedAt={lastSyncedAt}
               />
               {hasSheet && !lastSyncedAt && (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Never synced
-                </p>
+                <p className="mt-2 text-xs text-smoke">Never synced</p>
               )}
             </div>
           </section>

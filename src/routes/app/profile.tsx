@@ -61,7 +61,7 @@ function ProfileUnavailable() {
         <h1 className="m-0 text-2xl font-bold text-foreground">
           We couldn&apos;t load your profile
         </h1>
-        <p className="m-0 mt-2 text-sm text-muted-foreground">
+        <p className="m-0 mt-2 text-sm text-smoke">
           Your account loaded, but the profile details didn&apos;t come through.
           This is usually a temporary hiccup. Try again.
         </p>

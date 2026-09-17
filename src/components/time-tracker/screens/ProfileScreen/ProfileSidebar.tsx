@@ -40,7 +40,7 @@ export function ProfileSidebar({
 
   return (
     <div className="grid h-fit gap-4">
-      <section className="rounded-lg border border-border bg-card p-6 text-center shadow-sm">
+      <section className="rounded-xl border border-stone bg-eggshell p-6 text-center shadow-[var(--shadow-whisper)]">
         <div className="mb-4 flex justify-center">
           {avatarUrl ? (
             <img
@@ -50,7 +50,7 @@ export function ProfileSidebar({
             />
           ) : (
             <div
-              className="flex size-24 items-center justify-center rounded-full text-2xl font-bold text-primary-foreground ring-4 ring-muted"
+              className="flex size-24 items-center justify-center rounded-full text-2xl font-bold text-primary-action-foreground ring-4 ring-muted"
               style={{ backgroundColor: roleColor }}
             >
               {initials}
@@ -58,10 +58,10 @@ export function ProfileSidebar({
           )}
         </div>
         <h2 className="m-0 text-2xl font-bold text-foreground">{name}</h2>
-        <p className="m-0 mt-1 text-sm text-muted-foreground">{email}</p>
+        <p className="m-0 mt-1 text-sm text-smoke">{email}</p>
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-primary-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-primary-action-foreground"
             style={{ backgroundColor: roleColor }}
           >
             {roleName}

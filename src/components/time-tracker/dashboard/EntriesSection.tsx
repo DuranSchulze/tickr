@@ -139,19 +139,19 @@ export function EntriesSection({
   }
 
   return (
-    <section className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
       {/* Section header */}
-      <div className="border-b border-border p-3 sm:p-4">
+      <div className="border-b border-stone p-3 sm:p-4">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="m-0 text-base sm:text-lg font-bold text-foreground">
               Entries
             </h2>
-            <p className="m-0 mt-0.5 sm:mt-1 text-xs sm:text-sm text-muted-foreground truncate sm:whitespace-normal">
+            <p className="m-0 mt-0.5 sm:mt-1 text-xs sm:text-sm text-smoke truncate sm:whitespace-normal">
               {range.start.toLocaleDateString()} –{' '}
               {new Date(range.end.getTime() - 1).toLocaleDateString()}
               {filteredEntries.length !== baseFiltered.length && (
-                <span className="ml-2 font-semibold text-primary">
+                <span className="ml-2 font-semibold text-graphite">
                   {filteredEntries.length} of {baseFiltered.length} shown
                 </span>
               )}
@@ -163,7 +163,7 @@ export function EntriesSection({
               <button
                 type="button"
                 onClick={toggleAll}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
               >
                 {allCollapsed ? (
                   <>
@@ -182,7 +182,7 @@ export function EntriesSection({
               <button
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
+                className="inline-flex items-center gap-1 rounded-full border border-destructive/30 px-2.5 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/10"
               >
                 <X className="size-3" />
                 Clear ({activeFilterCount})
@@ -191,16 +191,16 @@ export function EntriesSection({
             <button
               type="button"
               onClick={() => setShowFilters((p) => !p)}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${
                 showFilters || activeFilterCount > 0
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border text-foreground hover:bg-accent'
+                  ? 'border-primary-action bg-primary-action text-primary-action-foreground hover:bg-primary-action/85'
+                  : 'border-stone text-foreground hover:bg-accent'
               }`}
             >
               <Filter className="size-3.5" />
               Filter / Sort
               {activeFilterCount > 0 && (
-                <span className="ml-0.5 rounded-full bg-card px-1.5 text-xs font-bold text-foreground">
+                <span className="ml-0.5 rounded-full bg-eggshell px-1.5 text-xs font-bold text-foreground">
                   {activeFilterCount}
                 </span>
               )}
@@ -215,7 +215,7 @@ export function EntriesSection({
 
       {/* Empty state */}
       {groups.length === 0 && (
-        <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="px-4 py-10 text-center text-sm text-smoke">
           {baseFiltered.length === 0
             ? 'No entries in this period yet.'
             : 'No entries match your filters.'}
@@ -248,16 +248,16 @@ export function EntriesSection({
 
       {/* Load more days — not relevant in single-day view */}
       {hiddenGroupCount > 0 && view !== 'day' && (
-        <div className="border-t border-border p-4 text-center">
+        <div className="border-t border-stone p-4 text-center">
           <button
             type="button"
             onClick={() => setVisibleGroupCount((c) => c + GROUPS_PER_PAGE)}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center gap-2 rounded-full border border-stone px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
           >
             <ChevronDown className="size-4" />
             Show {Math.min(GROUPS_PER_PAGE, hiddenGroupCount)} more{' '}
             {Math.min(GROUPS_PER_PAGE, hiddenGroupCount) === 1 ? 'day' : 'days'}
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-smoke">
               ({hiddenGroupCount} remaining)
             </span>
           </button>

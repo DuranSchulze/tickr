@@ -512,7 +512,7 @@ function MemberFilterBar({
           <button
             type="button"
             onClick={onClearRange}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-2.5 text-xs font-semibold text-smoke transition-colors hover:bg-accent hover:text-foreground"
           >
             <X className="size-3.5" />
             Clear filter
@@ -520,13 +520,13 @@ function MemberFilterBar({
         </>
       ) : (
         <>
-          <span className="text-xs font-semibold text-muted-foreground">
+          <span className="text-xs font-semibold text-smoke">
             Showing all records
           </span>
           <button
             type="button"
             onClick={applyDefaultRange}
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
           >
             <CalendarDays className="size-3.5" />
             Filter by date
@@ -552,7 +552,7 @@ function MemberDetailHeader({
         <button
           type="button"
           onClick={onBack}
-          className="mb-3 inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+          className="mb-3 inline-flex h-9 items-center gap-2 rounded-full border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
         >
           <ArrowLeft className="size-4" />
           Back
@@ -565,10 +565,10 @@ function MemberDetailHeader({
         >
           Member Analytics
         </p>
-        <h1 className="m-0 mt-1 truncate text-2xl font-bold text-foreground">
+        <h1 className="m-0 font-display text-heading-sm mt-1 truncate text-foreground">
           {detail.activity.member.name}
         </h1>
-        <p className="m-0 mt-1 truncate text-sm text-muted-foreground">
+        <p className="m-0 mt-1 truncate text-sm text-smoke">
           {detail.activity.member.email}
         </p>
       </div>
@@ -583,7 +583,7 @@ function MemberDetailHeader({
         <button
           type="button"
           onClick={onViewCalendar}
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
         >
           <CalendarDays className="size-4" />
           Calendar
@@ -638,22 +638,20 @@ function CurrentActivityPanel({
     : 'Open as a sheet without changing the entries table'
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-border bg-card px-3 py-2 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 flex-col gap-2 rounded-xl border border-stone bg-eggshell px-3 py-2 shadow-[var(--shadow-whisper)] sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-2">
         <Timer className="size-4 shrink-0 text-primary" />
         <div className="min-w-0">
           <p className="m-0 truncate text-sm font-bold text-foreground">
             Current Activity
           </p>
-          <p className="m-0 truncate text-xs text-muted-foreground">
-            {activeLabel}
-          </p>
+          <p className="m-0 truncate text-xs text-smoke">{activeLabel}</p>
         </div>
       </div>
       <button
         type="button"
         onClick={onOpen}
-        className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent sm:w-auto"
+        className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-stone bg-eggshell px-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent sm:w-auto"
       >
         <PanelRightOpen className="size-3.5" />
         Open
@@ -702,14 +700,14 @@ function MemberTimeSummary({
   helper: string
 }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+    <section className="rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)]">
+      <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
         {label}
       </p>
       <p className="m-0 mt-1 font-mono text-xl font-black text-foreground">
         {value}
       </p>
-      <p className="m-0 mt-1 text-xs text-muted-foreground">{helper}</p>
+      <p className="m-0 mt-1 text-xs text-smoke">{helper}</p>
     </section>
   )
 }

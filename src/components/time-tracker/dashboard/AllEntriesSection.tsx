@@ -156,7 +156,7 @@ export function AllEntriesSection({
             </h2>
             {activeFilterCount > 0 && (
               <>
-                <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                <span className="shrink-0 rounded-full bg-warm-taupe px-2 py-0.5 text-xs font-semibold text-graphite">
                   {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''}{' '}
                   active
                 </span>
@@ -176,7 +176,7 @@ export function AllEntriesSection({
               <button
                 type="button"
                 onClick={toggleAll}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
+                className="inline-flex items-center gap-1.5 rounded-full border border-stone px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent"
               >
                 {allCollapsed ? (
                   <>
@@ -194,7 +194,7 @@ export function AllEntriesSection({
             <button
               type="button"
               onClick={() => setShowFilters((s) => !s)}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="text-xs font-semibold text-smoke hover:text-foreground"
             >
               {showFilters ? 'Hide filters' : 'Filters'}
             </button>
@@ -202,9 +202,9 @@ export function AllEntriesSection({
         </div>
 
         {showFilters && (
-          <div className="mt-3 grid gap-3 rounded-lg border border-border bg-muted p-3">
+          <div className="mt-3 grid gap-3 rounded-xl border border-stone bg-warm-taupe p-3">
             <div className="grid gap-1.5">
-              <span className="text-xs font-semibold text-muted-foreground">
+              <span className="text-xs font-semibold text-smoke">
                 Date range
               </span>
               <EntriesDateRangeFilter
@@ -225,7 +225,7 @@ export function AllEntriesSection({
 
       {/* Empty state */}
       {groups.length === 0 && !activeEntry && (
-        <p className="px-4 py-10 text-center text-sm text-muted-foreground">
+        <p className="px-4 py-10 text-center text-sm text-smoke">
           {activeFilterCount > 0
             ? 'No entries match your current filters.'
             : 'No entries found. Start tracking time to see them here.'}
@@ -260,7 +260,7 @@ export function AllEntriesSection({
 
       {/* Load more */}
       {hasMore && (
-        <div className="flex justify-center border-t border-border py-4">
+        <div className="flex justify-center border-t border-stone py-4">
           <Button
             variant="outline"
             size="sm"

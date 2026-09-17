@@ -155,17 +155,17 @@ function ReportsScreenContent({
 
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-4 sm:gap-5">
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)] sm:p-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-primary">
               <FileText className="size-3.5" />
               Reports
             </div>
-            <h1 className="m-0 text-2xl font-black tracking-tight text-foreground sm:text-3xl">
+            <h1 className="m-0 font-display text-heading-sm text-foreground">
               Time reports
             </h1>
-            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            <p className="m-0 mt-2 max-w-2xl text-sm leading-6 text-smoke">
               Filter and export detailed time reports across your workspace.
             </p>
             <p className="m-0 mt-3 text-sm font-bold leading-6 text-foreground">
@@ -276,7 +276,9 @@ function ClientReportsCharts({
   }, [])
 
   if (!Charts) {
-    return <div className="h-[320px] rounded-lg border border-border bg-card" />
+    return (
+      <div className="h-[320px] rounded-xl border border-stone bg-eggshell" />
+    )
   }
 
   return <Charts reports={reports} />
@@ -651,13 +653,13 @@ function MemberDetailView({
       <button
         type="button"
         onClick={() => onChangeQuery({ memberIds: undefined, page: undefined })}
-        className="inline-flex h-9 w-fit items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+        className="inline-flex h-9 w-fit items-center gap-2 rounded-full border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
       >
         <ArrowLeft className="size-4" />
         Back to reports
       </button>
 
-      <section className="min-w-0 rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
+      <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 shadow-[var(--shadow-whisper)] sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <p
@@ -668,10 +670,10 @@ function MemberDetailView({
             >
               Member Reports
             </p>
-            <h1 className="m-0 mt-1 truncate text-2xl font-bold text-foreground">
+            <h1 className="m-0 font-display text-heading-sm mt-1 truncate text-foreground">
               {activity.member.name}
             </h1>
-            <p className="m-0 mt-1 truncate text-sm text-muted-foreground">
+            <p className="m-0 mt-1 truncate text-sm text-smoke">
               {activity.member.email}
             </p>
           </div>
@@ -811,15 +813,15 @@ function StatPill({
   subtitle?: string
 }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
-      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
+      <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
         {label}
       </p>
       <p className="m-0 mt-1 truncate font-mono text-base font-bold tabular-nums text-foreground">
         {seconds === undefined ? value : formatDurationDdhms(seconds)}
       </p>
       {subtitle && (
-        <p className="m-0 mt-0.5 truncate text-xs font-medium tabular-nums text-muted-foreground">
+        <p className="m-0 mt-0.5 truncate text-xs font-medium tabular-nums text-smoke">
           {subtitle}
         </p>
       )}
@@ -837,23 +839,23 @@ function CurrentActivityPanel({
   const isActive = !!activity.activeEntry
 
   return (
-    <div className="mt-4 min-w-0 rounded-lg border bg-card p-3 sm:p-4">
+    <div className="mt-4 min-w-0 rounded-xl border bg-eggshell p-3 sm:p-4">
       <div className="flex items-center gap-3">
         <span
           className={`size-2.5 shrink-0 rounded-full ${
             isActive
               ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]'
-              : 'bg-muted-foreground/30'
+              : 'bg-smoke/30'
           }`}
         />
-        <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
           {isActive ? 'Currently tracking' : 'Not tracking'}
         </p>
 
         <button
           type="button"
           onClick={onOpen}
-          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition-all hover:brightness-110"
+          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-primary-action px-3 text-xs font-bold text-primary-action-foreground transition-all"
         >
           <PanelRightOpen className="size-3.5" />
           View activity
@@ -939,7 +941,9 @@ function EntriesTableWrapper(props: TableProps): React.ReactNode {
   }, [])
 
   if (!Table) {
-    return <div className="h-[200px] rounded-lg border border-border bg-card" />
+    return (
+      <div className="h-[200px] rounded-xl border border-stone bg-eggshell" />
+    )
   }
 
   return <Table {...props} />
@@ -1005,10 +1009,10 @@ function WeeklyPresets({
               endDate: preset.endDate,
             })
           }
-          className={`inline-flex h-8 items-center rounded-md px-3 text-xs font-semibold transition-colors ${
+          className={`inline-flex h-8 items-center rounded-xl px-3 text-xs font-semibold transition-colors ${
             activeLabel === preset.label
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+              ? 'bg-primary-action text-primary-action-foreground'
+              : 'bg-warm-taupe text-smoke hover:bg-accent hover:text-foreground'
           }`}
         >
           {preset.label}

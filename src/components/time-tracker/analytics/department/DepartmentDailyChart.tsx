@@ -42,11 +42,9 @@ export function DepartmentDailyChart({
                 <p className="m-0 text-xs font-bold text-foreground">
                   {formatDateLabel(day.date)}
                 </p>
-                <p className="m-0 text-[11px] text-muted-foreground">
-                  {day.date}
-                </p>
+                <p className="m-0 text-[11px] text-smoke">{day.date}</p>
               </div>
-              <div className="h-4 min-w-0 overflow-hidden rounded-full bg-muted">
+              <div className="h-4 min-w-0 overflow-hidden rounded-full bg-warm-taupe">
                 <div
                   className="flex h-full overflow-hidden rounded-full"
                   style={{ width: `${totalWidth}%` }}

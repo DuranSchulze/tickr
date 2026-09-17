@@ -92,7 +92,7 @@ export function EditEntryDrawer({
       >
         {entry && (
           <>
-            <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-border px-5 py-4">
+            <DialogHeader className="flex-row items-center justify-between gap-3 border-b border-stone px-5 py-4">
               <DialogTitle>Edit</DialogTitle>
               <DialogClose asChild>
                 <Button
@@ -108,7 +108,7 @@ export function EditEntryDrawer({
             </DialogHeader>
 
             <div className="max-h-[calc(100dvh-11rem)] overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch] sm:max-h-[calc(92vh-9rem)]">
-              <div className="mb-0 rounded-none bg-muted/50 p-3 text-sm text-muted-foreground sm:mx-5 sm:mt-4 sm:rounded-md">
+              <div className="mb-0 bg-warm-taupe/50 p-3 text-sm text-smoke sm:mx-5 sm:mt-4 sm:rounded-md">
                 {!entry.endedAt ? (
                   <p className="m-0">
                     Timer is currently running. Changes will be saved without
@@ -165,22 +165,22 @@ export function EditEntryDrawer({
                 </div>
 
                 {/* Right: Selection preview */}
-                <div className="border-t border-border bg-muted/30 p-4 sm:border-l sm:border-t-0 sm:p-5">
-                  <h3 className="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <div className="border-t border-stone bg-warm-taupe/30 p-4 sm:border-l sm:border-t-0 sm:p-5">
+                  <h3 className="m-0 mb-3 text-xs font-bold uppercase tracking-wide text-smoke">
                     Selection Preview
                   </h3>
 
                   <div className="grid gap-4">
                     {/* Client */}
                     <div className="grid gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Client
                       </span>
                       {selectedClient ? (
                         <span
                           className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
                             selectedClient.clientStatus === 'INACTIVE'
-                              ? 'text-muted-foreground line-through'
+                              ? 'text-smoke line-through'
                               : selectedClient.clientStatus === 'SUSPENDED'
                                 ? 'text-amber-700'
                                 : 'text-foreground'
@@ -192,13 +192,13 @@ export function EditEntryDrawer({
                               Suspended
                             </span>
                           ) : selectedClient.clientStatus === 'INACTIVE' ? (
-                            <span className="rounded bg-muted px-1 text-[10px] font-normal text-muted-foreground no-underline">
+                            <span className="rounded bg-warm-taupe px-1 text-[10px] font-normal text-smoke no-underline">
                               Inactive
                             </span>
                           ) : null}
                         </span>
                       ) : (
-                        <span className="text-sm italic text-muted-foreground">
+                        <span className="text-sm italic text-smoke">
                           None selected
                         </span>
                       )}
@@ -211,7 +211,7 @@ export function EditEntryDrawer({
 
                     {/* Project */}
                     <div className="grid gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Project
                       </span>
                       {selectedProject ? (
@@ -225,7 +225,7 @@ export function EditEntryDrawer({
                           {selectedProject.name}
                         </span>
                       ) : (
-                        <span className="text-sm italic text-muted-foreground">
+                        <span className="text-sm italic text-smoke">
                           None selected
                         </span>
                       )}
@@ -233,7 +233,7 @@ export function EditEntryDrawer({
 
                     {/* Project Task */}
                     <div className="grid gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Task
                       </span>
                       {selectedTask ? (
@@ -241,7 +241,7 @@ export function EditEntryDrawer({
                           {selectedTask.name}
                         </span>
                       ) : (
-                        <span className="text-sm italic text-muted-foreground">
+                        <span className="text-sm italic text-smoke">
                           None selected
                         </span>
                       )}
@@ -249,7 +249,7 @@ export function EditEntryDrawer({
 
                     {/* Tags */}
                     <div className="grid gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Tags
                       </span>
                       {selectedTags.length > 0 ? (
@@ -273,7 +273,7 @@ export function EditEntryDrawer({
                           ))}
                         </div>
                       ) : (
-                        <span className="text-sm italic text-muted-foreground">
+                        <span className="text-sm italic text-smoke">
                           None selected
                         </span>
                       )}
@@ -281,14 +281,14 @@ export function EditEntryDrawer({
 
                     {/* Billable */}
                     <div className="grid gap-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-smoke">
                         Billing
                       </span>
                       <span
                         className={`inline-flex items-center gap-1.5 text-sm font-semibold ${
                           editingDraft.billable
                             ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-muted-foreground'
+                            : 'text-smoke'
                         }`}
                       >
                         {editingDraft.billable ? (
@@ -309,7 +309,7 @@ export function EditEntryDrawer({
               </div>
             </div>
 
-            <DialogFooter className="border-t border-border p-4 sm:justify-between sm:px-5">
+            <DialogFooter className="border-t border-stone p-4 sm:justify-between sm:px-5">
               <DialogClose asChild>
                 <Button
                   variant="outline"

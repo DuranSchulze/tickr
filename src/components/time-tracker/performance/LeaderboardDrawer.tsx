@@ -46,16 +46,16 @@ function LeaderboardRow({
   return (
     <li
       className={cn(
-        'flex items-center gap-3 rounded-lg border px-3 py-2.5',
+        'flex items-center gap-3 rounded-xl border px-3 py-2.5',
         highlight
           ? 'border-primary/60 bg-primary/8'
-          : 'border-border bg-background',
+          : 'border-stone bg-eggshell',
       )}
     >
       <span
         className={cn(
           'grid size-8 shrink-0 place-items-center rounded-full border text-sm font-black tabular-nums',
-          RANK_STYLES[entry.rank] ?? 'border-border bg-muted text-muted-foreground',
+          RANK_STYLES[entry.rank] ?? 'border-stone bg-warm-taupe text-smoke',
         )}
       >
         {entry.rank}
@@ -79,15 +79,15 @@ function LeaderboardRow({
             {entry.displayName}
           </span>
           {highlight && (
-            <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-black uppercase text-primary-foreground">
+            <span className="shrink-0 rounded-full bg-primary-action px-1.5 py-0.5 text-[10px] font-black uppercase text-primary-action-foreground">
               You
             </span>
           )}
         </div>
-        <p className="m-0 mt-0.5 text-xs text-muted-foreground tabular-nums">
+        <p className="m-0 mt-0.5 text-xs text-smoke tabular-nums">
           {entry.activeDays}/{entry.elapsedWorkdays} active days
         </p>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-warm-taupe">
           <div
             className="h-full rounded-full bg-primary transition-[width] duration-300 motion-reduce:transition-none"
             style={{ width: `${Math.min(100, entry.score)}%` }}
@@ -100,7 +100,7 @@ function LeaderboardRow({
         </p>
         <span
           className={cn(
-            'mt-1 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-black',
+            'mt-1 inline-flex rounded-xl border px-1.5 py-0.5 text-[10px] font-black',
             badgeStyle.bg,
             badgeStyle.text,
             badgeStyle.border,
@@ -118,7 +118,7 @@ export function LeaderboardList({ data }: { data: WorkspaceLeaderboard }) {
   if (data.top.length === 0) {
     return (
       <div className="px-4">
-        <p className="m-0 py-8 text-center text-sm font-semibold text-muted-foreground">
+        <p className="m-0 py-8 text-center text-sm font-semibold text-smoke">
           No members with tracked time in this pay period yet.
         </p>
       </div>
@@ -137,7 +137,7 @@ export function LeaderboardList({ data }: { data: WorkspaceLeaderboard }) {
       </ul>
       {data.you && data.you.rank > data.top.length && (
         <>
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-smoke">
             <span className="h-px flex-1 bg-border" />
             Your standing
             <span className="h-px flex-1 bg-border" />
@@ -147,9 +147,10 @@ export function LeaderboardList({ data }: { data: WorkspaceLeaderboard }) {
           </ul>
         </>
       )}
-      <p className="m-0 text-center text-xs text-muted-foreground tabular-nums">
-        Ranked {data.totalRanked} {data.totalRanked === 1 ? 'member' : 'members'}{' '}
-        with tracked time in this pay period.
+      <p className="m-0 text-center text-xs text-smoke tabular-nums">
+        Ranked {data.totalRanked}{' '}
+        {data.totalRanked === 1 ? 'member' : 'members'} with tracked time in
+        this pay period.
       </p>
     </div>
   )
@@ -170,7 +171,7 @@ export function LeaderboardDrawer() {
       <DrawerTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="inline-flex h-9 items-center gap-1.5 rounded-full border border-stone px-3 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-primary/50"
         >
           <Trophy className="size-4 text-primary" aria-hidden="true" />
           Leaderboard
@@ -178,7 +179,7 @@ export function LeaderboardDrawer() {
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2 font-heading text-lg font-black tracking-tight">
+          <DrawerTitle className="flex items-center gap-2 font-heading text-lg font-black">
             <Trophy className="size-5 text-primary" aria-hidden="true" />
             Workspace leaderboard
           </DrawerTitle>
@@ -191,19 +192,19 @@ export function LeaderboardDrawer() {
 
         <div className="min-h-0 flex-1 overflow-y-auto pb-2">
           {query.isPending ? (
-            <div className="flex flex-col items-center gap-2 px-4 py-10 text-sm font-semibold text-muted-foreground">
+            <div className="flex flex-col items-center gap-2 px-4 py-10 text-sm font-semibold text-smoke">
               <Loader2 className="size-5 animate-spin text-primary motion-reduce:animate-none" />
               Crunching the pay period&apos;s standings…
             </div>
           ) : query.isError ? (
             <div className="grid gap-3 px-4 py-8 text-center">
-              <p className="m-0 text-sm font-semibold text-muted-foreground">
+              <p className="m-0 text-sm font-semibold text-smoke">
                 Could not load the leaderboard.
               </p>
               <button
                 type="button"
                 onClick={() => void query.refetch()}
-                className="mx-auto h-9 rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-accent"
+                className="mx-auto h-9 rounded-xl border border-stone px-4 text-sm font-semibold text-foreground hover:bg-accent"
               >
                 Try again
               </button>
@@ -214,16 +215,15 @@ export function LeaderboardDrawer() {
         </div>
 
         <DrawerFooter>
-          <p className="m-0 flex items-start gap-1.5 text-xs leading-4 text-muted-foreground">
+          <p className="m-0 flex items-start gap-1.5 text-xs leading-4 text-smoke">
             <CircleHelp className="mt-0.5 size-3.5 shrink-0 text-primary" />
-            Same KPI as your performance page: day span, consistency, and
-            timely logging. It measures tracking health — not productivity or
-            worth.
+            Same KPI as your performance page: day span, consistency, and timely
+            logging. It measures tracking health — not productivity or worth.
           </p>
           <DrawerClose asChild>
             <button
               type="button"
-              className="h-9 rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-accent"
+              className="h-9 rounded-xl border border-stone px-4 text-sm font-semibold text-foreground hover:bg-accent"
             >
               Close
             </button>

@@ -32,11 +32,11 @@ export function SmtpTestPanel({ defaultEmail }: { defaultEmail: string }) {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
       <h2 className="m-0 text-base font-bold text-foreground">
         Test email (SMTP)
       </h2>
-      <p className="m-0 mt-1 text-sm text-muted-foreground">
+      <p className="m-0 mt-1 text-sm text-smoke">
         Send a one-off test email through the configured SMTP provider to
         confirm delivery is working. The link/status is also printed to the
         server logs.
@@ -54,13 +54,13 @@ export function SmtpTestPanel({ defaultEmail }: { defaultEmail: string }) {
             onChange={(e) => setEmail(e.target.value)}
             required
             placeholder="you@example.com"
-            className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary"
+            className="h-9 rounded-lg border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-primary"
           />
         </label>
         <button
           type="submit"
           disabled={pending || !email.trim()}
-          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors disabled:bg-muted disabled:text-smoke"
         >
           <Send className="size-4" />
           {pending ? 'Sending…' : 'Send test email'}

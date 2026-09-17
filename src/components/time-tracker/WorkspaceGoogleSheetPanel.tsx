@@ -65,12 +65,12 @@ export function WorkspaceGoogleSheetPanel({
 
   return (
     <>
-      <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+      <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
         <header className="mb-4">
           <h2 className="m-0 text-base font-bold text-foreground">
             Google Sheets sync
           </h2>
-          <p className="m-0 mt-1 text-sm text-muted-foreground">
+          <p className="m-0 mt-1 text-sm text-smoke">
             Link a Google Sheet so owners, admins, and managers can push the
             workspace's time entries with one click.
           </p>
@@ -86,14 +86,14 @@ export function WorkspaceGoogleSheetPanel({
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://docs.google.com/spreadsheets/d/…"
-                className="h-9 rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary"
+                className="h-9 rounded-lg border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary"
               />
             </label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="submit"
                 disabled={pending || !dirty}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-bold text-primary-foreground transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-action px-3 py-1.5 text-sm font-bold text-primary-action-foreground transition-colors disabled:cursor-not-allowed disabled:bg-muted disabled:text-smoke"
               >
                 <Save className="size-3.5" />
                 {pending ? 'Saving…' : 'Save URL'}
@@ -103,7 +103,7 @@ export function WorkspaceGoogleSheetPanel({
                   href={workspace.googleSheetUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-stone px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
                 >
                   <ExternalLink className="size-3.5" />
                   Open sheet
@@ -113,27 +113,27 @@ export function WorkspaceGoogleSheetPanel({
           </form>
         ) : canImportCatalogs && workspace.googleSheetUrl ? (
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <p className="m-0 flex-1 text-sm text-muted-foreground">
+            <p className="m-0 flex-1 text-sm text-smoke">
               Sheet linked by the workspace Owner.
             </p>
             <a
               href={workspace.googleSheetUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-stone px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-accent"
             >
               <ExternalLink className="size-3.5" />
               Open sheet
             </a>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
+          <p className="mt-4 text-sm text-smoke">
             You do not have permission to change the Google Sheet URL.
           </p>
         )}
 
         {workspace.googleSheetSyncedAt && (
-          <p className="mt-4 text-xs text-muted-foreground">
+          <p className="mt-4 text-xs text-smoke">
             Last synced{' '}
             {new Date(workspace.googleSheetSyncedAt).toLocaleString()}.
           </p>
@@ -161,7 +161,7 @@ function ServiceAccountHint({
   }
   if (!email) {
     return (
-      <div className="rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
+      <div className="rounded-lg border border-stone bg-muted p-3 text-xs text-smoke">
         Loading service-account email…
       </div>
     )

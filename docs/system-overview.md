@@ -6,6 +6,8 @@
 
 ## Branding & Configuration
 
+> **Design system:** the UI runs on the editorial (warm cream) design system — tokens, component rules, accent/font customisation contract, and the dark-palette rationale are documented in [`docs/ui-design-system.md`](ui-design-system.md). Token source of truth: `src/styles.css`.
+
 For email delivery flows, templates, and operational findings, see `docs/email-logics/README.md`.
 
 All brand values live in a single source-of-truth file:

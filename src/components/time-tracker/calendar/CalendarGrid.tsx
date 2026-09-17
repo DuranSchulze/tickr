@@ -69,13 +69,13 @@ export function CalendarGrid({
 
   return (
     <>
-      <section className="min-w-0 overflow-hidden rounded-xl bg-card shadow-xs ring-1 ring-foreground/10">
-        <div className="flex items-center justify-between gap-3 border-b border-border/70 bg-muted/40 px-4 py-3">
+      <section className="min-w-0 overflow-hidden rounded-xl bg-eggshell shadow-[var(--shadow-whisper)]">
+        <div className="flex items-center justify-between gap-3 border-b border-stone/70 bg-warm-taupe/40 px-4 py-3">
           <div className="min-w-0">
-            <h2 className="m-0 text-base font-black tracking-tight text-foreground">
+            <h2 className="m-0 text-base font-black text-foreground">
               {view === 'week' ? 'Week schedule' : 'Month schedule'}
             </h2>
-            <p className="m-0 mt-0.5 text-xs font-medium text-muted-foreground">
+            <p className="m-0 mt-0.5 text-xs font-medium text-smoke">
               {view === 'week'
                 ? formatWeekTitle(selectedDate)
                 : `${totalEntries.toLocaleString()} task entr${
@@ -83,7 +83,7 @@ export function CalendarGrid({
                   } loaded`}
             </p>
           </div>
-          <div className="hidden items-center gap-2 text-xs font-bold text-muted-foreground sm:flex">
+          <div className="hidden items-center gap-2 text-xs font-bold text-smoke sm:flex">
             <span className="size-2 rounded-full bg-primary" />
             Click a day for task activity
           </div>
@@ -91,11 +91,11 @@ export function CalendarGrid({
 
         <div className="overflow-x-auto">
           <div className={view === 'week' ? 'min-w-[820px]' : 'min-w-[960px]'}>
-            <div className="grid grid-cols-7 border-b border-border/70 bg-muted/40">
+            <div className="grid grid-cols-7 border-b border-stone/70 bg-warm-taupe/40">
               {weekdays.map((weekday) => (
                 <div
                   key={weekday}
-                  className="border-r border-border/70 px-3 py-2 text-xs font-black uppercase tracking-wide text-muted-foreground last:border-r-0"
+                  className="border-r border-stone/70 px-3 py-2 text-xs font-black uppercase tracking-wide text-smoke last:border-r-0"
                 >
                   {weekday}
                 </div>

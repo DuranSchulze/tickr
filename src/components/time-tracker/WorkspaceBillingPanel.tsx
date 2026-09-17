@@ -108,13 +108,13 @@ export function WorkspaceBillingPanel({
   }
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+    <section className="rounded-xl border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-foreground">
             Workspace default rate
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-smoke">
             The fallback hourly rate used when a member has no rate of their
             own.
           </p>
@@ -130,10 +130,10 @@ export function WorkspaceBillingPanel({
         <span className="text-2xl font-bold text-foreground">
           {formattedDefaultRate}
         </span>
-        <span className="text-sm text-muted-foreground">/hr</span>
+        <span className="text-sm text-smoke">/hr</span>
       </div>
 
-      <p className="mt-3 flex items-start gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+      <p className="mt-3 flex items-start gap-2 rounded-lg border border-stone bg-muted/50 px-3 py-2 text-xs text-smoke">
         <Info className="mt-0.5 size-3.5 shrink-0" />
         <span>
           This is a default — a fallback value only. When a member doesn&apos;t

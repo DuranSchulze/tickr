@@ -44,14 +44,14 @@ export function PerformanceActivityTable({
     value ? timeFormatter.format(new Date(value)) : '—'
 
   return (
-    <section className="min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5">
-      <h2 className="m-0 font-heading text-xl font-black tracking-tight text-foreground">
+    <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-4 sm:p-5">
+      <h2 className="m-0 font-heading text-xl font-black text-foreground">
         {title}
       </h2>
-      <p className="m-0 mt-1 text-sm text-muted-foreground">
+      <p className="m-0 mt-1 text-sm text-smoke">
         {periodLabel} · Times shown in {timezone}.
       </p>
-      <details className="mt-2 text-xs text-muted-foreground">
+      <details className="mt-2 text-xs text-smoke">
         <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-primary">
           About these times
         </summary>
@@ -71,7 +71,7 @@ export function PerformanceActivityTable({
           <caption className="sr-only">
             Daily time in, time out, and task entries
           </caption>
-          <thead className="hidden border-b border-border text-xs text-muted-foreground sm:table-header-group">
+          <thead className="hidden border-b border-stone text-xs text-smoke sm:table-header-group">
             <tr>
               {[
                 'Day / entries',
@@ -96,7 +96,7 @@ export function PerformanceActivityTable({
               return (
                 <tr
                   key={day.date}
-                  className="grid grid-cols-2 gap-y-2 border-b border-border/60 pb-4 align-top last:border-0 sm:table-row sm:pb-0"
+                  className="grid grid-cols-2 gap-y-2 border-b border-stone/60 pb-4 align-top last:border-0 sm:table-row sm:pb-0"
                 >
                   <th
                     scope="row"
@@ -104,9 +104,7 @@ export function PerformanceActivityTable({
                   >
                     <span className="font-bold">{formatDate(day.date)}</span>
                     {!isWeekdayDateKey(day.date) && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        Weekend
-                      </span>
+                      <span className="ml-2 text-xs text-smoke">Weekend</span>
                     )}
                     {dayEntries.length > 0 ? (
                       <details className="mt-1">
@@ -120,12 +118,12 @@ export function PerformanceActivityTable({
                               <p className="m-0 font-medium">
                                 {entry.description.trim() || 'Untitled entry'}
                               </p>
-                              <p className="m-0 text-xs text-muted-foreground">
+                              <p className="m-0 text-xs text-smoke">
                                 {formatTimeEntrySource(entry.entrySource)} ·{' '}
                                 {entry.projectName ?? 'No project'} ·{' '}
                                 {formatHours(entry.seconds)}
                               </p>
-                              <p className="m-0 text-xs text-muted-foreground">
+                              <p className="m-0 text-xs text-smoke">
                                 {formatTime(entry.startedAt)} –{' '}
                                 {formatTime(entry.endedAt)}
                               </p>
@@ -134,31 +132,31 @@ export function PerformanceActivityTable({
                         </ul>
                       </details>
                     ) : (
-                      <p className="m-0 mt-1 text-xs text-muted-foreground">
+                      <p className="m-0 mt-1 text-xs text-smoke">
                         No completed entries
                       </p>
                     )}
                   </th>
                   <td className="whitespace-nowrap py-1 tabular-nums sm:px-3 sm:py-3">
-                    <span className="mb-0.5 block text-xs text-muted-foreground sm:hidden">
+                    <span className="mb-0.5 block text-xs text-smoke sm:hidden">
                       Time in
                     </span>
                     {formatTime(day.firstStartedAt)}
                   </td>
                   <td className="whitespace-nowrap py-1 tabular-nums sm:px-3 sm:py-3">
-                    <span className="mb-0.5 block text-xs text-muted-foreground sm:hidden">
+                    <span className="mb-0.5 block text-xs text-smoke sm:hidden">
                       Time out
                     </span>
                     {formatTime(day.lastEndedAt)}
                   </td>
                   <td className="whitespace-nowrap py-1 tabular-nums sm:px-3 sm:py-3">
-                    <span className="mb-0.5 block text-xs text-muted-foreground sm:hidden">
+                    <span className="mb-0.5 block text-xs text-smoke sm:hidden">
                       Day span
                     </span>
                     {formatHours(day.spanSeconds)}
                   </td>
                   <td className="whitespace-nowrap py-1 tabular-nums sm:px-3 sm:py-3">
-                    <span className="mb-0.5 block text-xs text-muted-foreground sm:hidden">
+                    <span className="mb-0.5 block text-xs text-smoke sm:hidden">
                       Tracked
                     </span>
                     {formatHours(day.seconds)}
@@ -168,10 +166,7 @@ export function PerformanceActivityTable({
             })}
             {dailyTotals.length === 0 && (
               <tr>
-                <td
-                  colSpan={5}
-                  className="py-6 text-center text-muted-foreground"
-                >
+                <td colSpan={5} className="py-6 text-center text-smoke">
                   Your daily record appears after you track time.
                 </td>
               </tr>

@@ -39,7 +39,7 @@ export function LocationBadge() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center gap-2 rounded-full bg-muted/60 px-3 py-1.5 text-xs font-medium text-smoke transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           aria-label={`View approximate location details: ${label}`}
         >
           <MapPin className="size-3.5 shrink-0" />
@@ -56,7 +56,7 @@ export function LocationBadge() {
       </PopoverTrigger>
 
       <PopoverContent align="start" sideOffset={8} className="w-72 gap-0 p-3">
-        <p className="m-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="m-0 text-xs font-bold uppercase tracking-wide text-smoke">
           Your location
         </p>
         <p className="m-0 mt-1 text-sm font-medium">
@@ -65,35 +65,35 @@ export function LocationBadge() {
             : (data?.location ?? 'Unknown')}
         </p>
         {isDevice ? (
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+          <p className="m-0 mt-0.5 text-xs text-smoke">
             Device GPS
             {data.accuracyMeters != null
               ? ` · accurate to about ${data.accuracyMeters.toLocaleString('en-US')} m`
               : ''}
           </p>
         ) : (
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+          <p className="m-0 mt-0.5 text-xs text-smoke">
             Approximate · resolved from your network
           </p>
         )}
         {hasCoords && (
-          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+          <p className="m-0 mt-0.5 text-xs text-smoke">
             {formatCoordinates(data!.latitude!, data!.longitude!)}
           </p>
         )}
         {data?.ipAddress && (
-          <p className="m-0 mt-1 font-mono text-[11px] text-muted-foreground">
+          <p className="m-0 mt-1 font-mono text-[11px] text-smoke">
             Network IP: {data.ipAddress}
           </p>
         )}
-        <p className="m-0 mt-2 text-[11px] leading-snug text-muted-foreground">
+        <p className="m-0 mt-2 text-[11px] leading-snug text-smoke">
           This is checked automatically every minute. New time entries record
           your device location when browser permission is granted, and fall back
           to this network-based location otherwise.
         </p>
 
-        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border pt-2">
-          <span className="text-[11px] text-muted-foreground">
+        <div className="mt-2 flex items-center justify-between gap-2 border-t border-stone pt-2">
+          <span className="text-[11px] text-smoke">
             {isFetching
               ? 'Updating…'
               : checkedAt
@@ -104,7 +104,7 @@ export function LocationBadge() {
             type="button"
             onClick={() => void refetch()}
             disabled={isFetching}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-smoke transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
           >
             <RefreshCw className={cn('size-3', isFetching && 'animate-spin')} />
             Refresh

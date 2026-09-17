@@ -103,31 +103,31 @@ function InvitePage() {
   const heading = getHeading(preview.status)
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 text-slate-950 dark:bg-background dark:text-foreground">
+    <main className="min-h-screen bg-eggshell px-4 py-6 text-foreground">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
         <Link to="/" className="inline-flex items-center gap-3 no-underline">
-          <BrandLogo className="size-9 rounded-lg object-contain" />
+          <BrandLogo className="size-9 rounded-full object-contain" />
           <span className="text-sm font-bold">{BRAND.name}</span>
         </Link>
         <ThemeToggle />
       </div>
 
-      <section className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm dark:border-border dark:bg-card">
-        <Mail className="size-8 text-indigo-600 dark:text-indigo-400" />
-        <h1 className="m-0 mt-4 text-2xl font-black tracking-tight">
+      <section className="mx-auto mt-16 w-full max-w-xl rounded-xl border border-stone bg-eggshell p-8 shadow-[var(--shadow-whisper)]">
+        <Mail className="size-8 text-graphite" />
+        <h1 className="m-0 mt-4 font-display text-2xl text-foreground">
           {heading}
         </h1>
 
         {preview.status === 'not_found' ? (
-          <p className="m-0 mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+          <p className="m-0 mt-3 text-sm leading-6 text-smoke">
             This invite link is not valid. Ask for a fresh invite.
           </p>
         ) : (
           <>
-            <p className="m-0 mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p className="m-0 mt-3 text-sm leading-6 text-smoke">
               {preview.inviterName ? (
                 <>
-                  <strong className="text-slate-900 dark:text-slate-100">
+                  <strong className="text-foreground">
                     {preview.inviterName}
                   </strong>{' '}
                   invited{' '}
@@ -135,17 +135,12 @@ function InvitePage() {
               ) : (
                 'You were invited to '
               )}
-              <strong className="text-slate-900 dark:text-slate-100">
-                {preview.inviteEmail}
-              </strong>{' '}
+              <strong className="text-foreground">{preview.inviteEmail}</strong>{' '}
               to join{' '}
-              <strong className="text-slate-900 dark:text-slate-100">
+              <strong className="text-foreground">
                 {preview.workspaceName}
               </strong>{' '}
-              as{' '}
-              <strong className="text-slate-900 dark:text-slate-100">
-                {preview.roleName}
-              </strong>
+              as <strong className="text-foreground">{preview.roleName}</strong>
               .
             </p>
 
@@ -170,7 +165,7 @@ function InvitePage() {
                     type="button"
                     onClick={handleContinueToApp}
                     disabled={accepting}
-                    className="mt-5 h-11 w-full rounded-lg bg-indigo-600 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-5 h-11 w-full rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {accepting ? 'Checking access…' : 'Continue to workspace'}
                   </button>
@@ -184,7 +179,7 @@ function InvitePage() {
                   <button
                     type="button"
                     onClick={handleSignInToAccept}
-                    className="h-11 rounded-lg bg-indigo-600 text-sm font-bold text-white transition-colors hover:bg-indigo-700"
+                    className="h-11 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85"
                   >
                     Sign in or create account to accept
                   </button>
@@ -194,7 +189,7 @@ function InvitePage() {
                     type="button"
                     onClick={handleAccept}
                     disabled={accepting}
-                    className="h-11 rounded-lg bg-indigo-600 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {accepting
                       ? 'Accepting…'
@@ -211,7 +206,7 @@ function InvitePage() {
                     <button
                       type="button"
                       onClick={handleSwitchAccount}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 text-sm font-semibold transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-stone bg-eggshell text-sm font-semibold text-foreground transition-colors hover:bg-warm-taupe"
                     >
                       <LogOut className="size-4" /> Sign out &amp; use{' '}
                       {preview.inviteEmail}
@@ -255,10 +250,10 @@ function StatusNotice({
   const toneClass =
     tone === 'warn'
       ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200'
-      : 'border-slate-200 bg-slate-50 text-slate-700 dark:border-border dark:bg-muted dark:text-muted-foreground'
+      : 'border-stone bg-warm-taupe text-graphite'
   return (
     <div
-      className={`mt-5 flex items-start gap-3 rounded-lg border p-3 text-sm ${toneClass}`}
+      className={`mt-5 flex items-start gap-3 rounded-xl border p-3 text-sm ${toneClass}`}
     >
       <Icon className="mt-0.5 size-4 shrink-0" />
       <div>{children}</div>

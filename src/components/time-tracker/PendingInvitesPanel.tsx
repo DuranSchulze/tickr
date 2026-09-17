@@ -69,7 +69,7 @@ export function PendingInvitesPanel() {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
+    <section className="rounded-lg border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
       <div className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           <div className="grid size-10 place-items-center rounded-full bg-primary/10">
@@ -79,7 +79,7 @@ export function PendingInvitesPanel() {
             <h2 className="m-0 text-base font-bold text-foreground">
               Pending invitations
             </h2>
-            <p className="m-0 text-sm text-muted-foreground">
+            <p className="m-0 text-sm text-smoke">
               {invites.length} pending invitation
               {invites.length === 1 ? '' : 's'} · awaiting response
             </p>
@@ -93,7 +93,7 @@ export function PendingInvitesPanel() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-h-[80vh] max-w-lg overflow-hidden p-0">
-            <DialogHeader className="border-b border-border p-4">
+            <DialogHeader className="border-b border-stone p-4">
               <DialogTitle className="text-left text-lg">
                 Pending invitations ({invites.length})
               </DialogTitle>
@@ -110,13 +110,13 @@ export function PendingInvitesPanel() {
                 return (
                   <li
                     key={invite.id}
-                    className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
+                    className="flex flex-wrap items-center gap-3 border-b border-stone px-4 py-3 last:border-b-0"
                   >
                     <div className="min-w-0 flex-1">
                       <p className="m-0 truncate text-sm font-semibold text-foreground">
                         {invite.email}
                       </p>
-                      <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                      <p className="m-0 mt-0.5 text-xs text-smoke">
                         {invite.roleName ?? 'Member'}
                         {invite.departmentName
                           ? ` · ${invite.departmentName}`
@@ -132,9 +132,7 @@ export function PendingInvitesPanel() {
                       </p>
                       {invite.joinCode && (
                         <div className="mt-1.5 flex items-center gap-1.5">
-                          <span className="text-xs text-muted-foreground">
-                            Code:
-                          </span>
+                          <span className="text-xs text-smoke">Code:</span>
                           <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground">
                             {invite.joinCode}
                           </span>
@@ -143,7 +141,7 @@ export function PendingInvitesPanel() {
                             onClick={() =>
                               void handleCopyCode(invite.id, invite.joinCode!)
                             }
-                            className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
+                            className="grid size-5 place-items-center rounded text-smoke transition-colors hover:text-foreground"
                             title="Copy join code"
                           >
                             {copiedId === invite.id ? (
@@ -160,7 +158,7 @@ export function PendingInvitesPanel() {
                         type="button"
                         onClick={() => void handleResend(invite.id)}
                         disabled={busyId === invite.id}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
+                        className="rounded-lg border border-stone px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-accent disabled:opacity-50"
                       >
                         Resend
                       </button>
@@ -168,7 +166,7 @@ export function PendingInvitesPanel() {
                         type="button"
                         onClick={() => void handleRevoke(invite.id)}
                         disabled={busyId === invite.id}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                        className="rounded-lg border border-stone px-3 py-1.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
                       >
                         Revoke
                       </button>

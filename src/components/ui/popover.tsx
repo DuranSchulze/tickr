@@ -31,7 +31,7 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          't-dropdown z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-4 rounded-md bg-popover p-4 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden',
+          't-dropdown z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-4 rounded-xl border border-stone bg-popover p-4 text-sm text-popover-foreground shadow-[var(--shadow-whisper)] outline-hidden',
           className,
         )}
         {...props}
@@ -73,7 +73,7 @@ function PopoverDescription({
   return (
     <p
       data-slot="popover-description"
-      className={cn('text-muted-foreground', className)}
+      className={cn('text-smoke', className)}
       {...props}
     />
   )

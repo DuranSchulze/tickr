@@ -63,16 +63,16 @@ export function DescriptionAutocomplete({
         disabled={disabled}
         className={
           bare
-            ? 'h-full w-full bg-transparent px-3 text-sm font-medium text-foreground outline-none placeholder:font-normal placeholder:text-muted-foreground disabled:text-muted-foreground'
-            : 'h-11 w-full rounded-lg border border-border bg-card text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-muted disabled:text-muted-foreground'
+            ? 'h-full w-full bg-transparent px-3 text-sm font-medium text-foreground outline-none placeholder:font-normal placeholder:text-smoke disabled:text-smoke'
+            : 'h-11 w-full rounded-md border border-stone bg-eggshell text-foreground px-3 text-sm outline-none focus:border-primary disabled:bg-warm-taupe disabled:text-smoke'
         }
       />
       {open && suggestions.length > 0 && !disabled && (
         <div
           className={
             dropdownUp
-              ? 'absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg'
-              : 'absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-lg'
+              ? 'absolute bottom-full left-0 right-0 z-50 mb-1 overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]'
+              : 'absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]'
           }
         >
           {suggestions.map((desc) => (
@@ -87,7 +87,7 @@ export function DescriptionAutocomplete({
               className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-foreground hover:bg-accent"
             >
               <span className="min-w-0 truncate">{desc}</span>
-              <span className="shrink-0 text-xs font-semibold text-muted-foreground">
+              <span className="shrink-0 text-xs font-semibold text-smoke">
                 Use
               </span>
             </button>

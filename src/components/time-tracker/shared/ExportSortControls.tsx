@@ -46,14 +46,14 @@ export function ExportSortControls({
       />
       <div className="flex items-center gap-2">
         <span className="text-xs font-semibold text-foreground">Direction</span>
-        <div className="flex rounded-lg border border-border bg-background p-0.5">
+        <div className="flex rounded-full border border-stone bg-eggshell p-0.5">
           <button
             type="button"
             onClick={() => onSortOrderChange('asc')}
-            className={`inline-flex size-9 items-center justify-center rounded-md transition-colors ${
+            className={`inline-flex size-9 items-center justify-center rounded-xl transition-colors ${
               sortOrder === 'asc'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-primary-action text-primary-action-foreground'
+                : 'text-smoke hover:bg-accent hover:text-foreground'
             }`}
             aria-label="Ascending"
           >
@@ -62,10 +62,10 @@ export function ExportSortControls({
           <button
             type="button"
             onClick={() => onSortOrderChange('desc')}
-            className={`inline-flex size-9 items-center justify-center rounded-md transition-colors ${
+            className={`inline-flex size-9 items-center justify-center rounded-xl transition-colors ${
               sortOrder === 'desc'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                ? 'bg-primary-action text-primary-action-foreground'
+                : 'text-smoke hover:bg-accent hover:text-foreground'
             }`}
             aria-label="Descending"
           >
@@ -91,7 +91,7 @@ function SegmentedButtonGroup<TValue extends string>({
   return (
     <div className="grid gap-1.5 text-xs font-semibold text-foreground">
       <span>{label}</span>
-      <div className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-background p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-full border border-stone bg-eggshell p-1">
         {options.map((option) => {
           const Icon = option.icon
           return (
@@ -99,10 +99,10 @@ function SegmentedButtonGroup<TValue extends string>({
               key={option.value}
               type="button"
               onClick={() => onChange(option.value)}
-              className={`inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-bold transition-colors ${
+              className={`inline-flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-bold transition-colors ${
                 value === option.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                  ? 'bg-primary-action text-primary-action-foreground'
+                  : 'text-smoke hover:bg-accent hover:text-foreground'
               }`}
             >
               <Icon className="size-3.5 shrink-0" />

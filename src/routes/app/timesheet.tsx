@@ -49,15 +49,15 @@ export const Route = createFileRoute('/app/timesheet')({
   staleTime: 30_000,
   component: TimesheetRoute,
   errorComponent: ({ reset }) => (
-    <div className="mx-auto grid max-w-lg gap-4 rounded-xl bg-card p-6 text-center shadow-sm ring-1 ring-border">
+    <div className="mx-auto grid max-w-lg gap-4 rounded-xl bg-eggshell p-6 text-center shadow-[var(--shadow-whisper)]">
       <div>
         <p className="m-0 text-sm font-semibold text-destructive">
           Timesheet unavailable
         </p>
-        <h1 className="m-0 mt-1 text-2xl font-bold text-foreground">
+        <h1 className="m-0 mt-1 font-display text-heading-sm text-foreground">
           We couldn&apos;t load this week
         </h1>
-        <p className="m-0 mt-2 text-sm text-muted-foreground">
+        <p className="m-0 mt-2 text-sm text-smoke">
           Check your connection and try loading the timesheet again.
         </p>
       </div>

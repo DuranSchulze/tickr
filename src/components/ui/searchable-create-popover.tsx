@@ -127,14 +127,14 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
           disabled={disabled}
           className={
             bare
-              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-muted-foreground'
-              : 'flex h-10 w-full items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-semibold text-foreground transition-colors hover:border-border/80 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground'
+              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-smoke'
+              : 'flex h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-graphite disabled:cursor-not-allowed disabled:bg-muted disabled:text-smoke'
           }
         >
           <div className="flex flex-1 items-center gap-1 overflow-hidden">
             {renderTrigger(selectedItems)}
           </div>
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+          <ChevronDown className="size-3.5 shrink-0 text-smoke" />
         </button>
       </PopoverTrigger>
 
@@ -148,23 +148,21 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
           e.preventDefault()
           inputRef.current?.focus()
         }}
-        className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(22rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-xl"
+        className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(22rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-lg border border-stone bg-eggshell p-0 shadow-[var(--shadow-whisper)]"
       >
-        <div className="border-b border-border p-2">
+        <div className="border-b border-stone p-2">
           <input
             ref={inputRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
-            className="h-10 w-full scroll-mt-24 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus:border-primary sm:h-8"
+            className="h-10 w-full scroll-mt-24 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-ink sm:h-8"
           />
         </div>
         <div className="max-h-[min(18rem,calc(100dvh-12rem))] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
           {filtered.length === 0 ? (
-            <p className="px-3 py-2 text-xs text-muted-foreground">
-              {emptyText}
-            </p>
+            <p className="px-3 py-2 text-xs text-smoke">{emptyText}</p>
           ) : (
             filtered.map((item) => {
               const checked = isSelected(item.id)
@@ -190,13 +188,13 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
             })
           )}
           {truncated && (
-            <p className="px-3 py-2 text-xs text-muted-foreground">
+            <p className="px-3 py-2 text-xs text-smoke">
               Showing first {MAX_VISIBLE_ITEMS} — type to narrow results.
             </p>
           )}
         </div>
         {canCreate && (
-          <div className="border-t border-border p-2">
+          <div className="border-t border-stone p-2">
             {creating ? (
               <form onSubmit={handleCreate} className="grid gap-2">
                 <div className="flex gap-2">
@@ -205,7 +203,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder={newNamePlaceholder}
                     aria-label={newNamePlaceholder}
-                    className="h-10 flex-1 scroll-mt-24 rounded-lg border border-border bg-card px-2 text-sm text-foreground outline-none focus:border-primary sm:h-8"
+                    className="h-10 flex-1 scroll-mt-24 rounded-md border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-ink sm:h-8"
                   />
                   <input
                     type="color"
@@ -213,14 +211,14 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                     onChange={(e) => setNewColor(e.target.value)}
                     title="Pick a color"
                     aria-label="Color"
-                    className="h-8 w-10 cursor-pointer rounded-lg border border-border bg-card p-0.5"
+                    className="h-8 w-10 cursor-pointer rounded-md border border-stone bg-eggshell p-0.5"
                   />
                 </div>
                 <div className="flex gap-1.5">
                   <button
                     type="submit"
                     disabled={createPending || !newName.trim()}
-                    className="flex-1 rounded-lg bg-primary py-1.5 text-xs font-bold text-primary-foreground hover:brightness-110 disabled:bg-muted disabled:text-muted-foreground"
+                    className="flex-1 rounded-full bg-primary-action py-1.5 text-xs font-semibold text-primary-action-foreground hover:bg-primary-action/85 disabled:bg-muted disabled:text-smoke"
                   >
                     {createPending ? 'Creating…' : 'Create'}
                   </button>
@@ -230,7 +228,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                       setCreating(false)
                       setNewName('')
                     }}
-                    className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent"
+                    className="rounded-full border border-stone px-2.5 py-1.5 text-xs font-semibold text-graphite hover:bg-warm-taupe"
                   >
                     Cancel
                   </button>

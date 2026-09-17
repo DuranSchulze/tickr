@@ -123,7 +123,7 @@ export function LocationHistoryScreen({
   }
 
   return (
-    <section className="relative h-full min-h-0 min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <section className="relative h-full min-h-0 min-w-0 overflow-hidden rounded-xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)]">
       <LocationMap
         key={data.selectedMemberId || 'all-members'}
         ref={mapRef}
@@ -146,10 +146,10 @@ export function LocationHistoryScreen({
               <MarkerContent>
                 <button
                   type="button"
-                  className={`flex size-9 items-center justify-center rounded-full border-[3px] border-white text-xs font-black shadow-lg transition-transform ${
+                  className={`flex size-9 items-center justify-center rounded-full border-[3px] border-white text-xs font-black shadow-[var(--shadow-whisper)] transition-transform ${
                     selected
                       ? 'scale-110 bg-amber-500 text-white'
-                      : 'bg-primary text-primary-foreground'
+                      : 'bg-primary-action text-primary-action-foreground'
                   }`}
                   aria-label={`${group.entries.length} tasks at ${group.location ?? 'this location'}`}
                 >
@@ -161,7 +161,7 @@ export function LocationHistoryScreen({
         })}
       </LocationMap>
 
-      <div className="absolute left-3 top-3 z-10 w-[min(22rem,calc(100%-1.5rem))] rounded-lg border border-border/80 bg-background/95 p-3 shadow-lg backdrop-blur-sm">
+      <div className="absolute left-3 top-3 z-10 w-[min(22rem,calc(100%-1.5rem))] rounded-xl border border-stone/80 bg-eggshell/95 p-3 shadow-[var(--shadow-whisper)] backdrop-blur-sm">
         <fieldset className="m-0 min-w-0 border-0 p-0">
           <legend className="mb-1.5 block text-xs font-bold text-foreground">
             Team member
@@ -170,7 +170,7 @@ export function LocationHistoryScreen({
             <button
               type="button"
               onClick={() => onChangeMember('')}
-              className="absolute right-3 top-2.5 inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="absolute right-3 top-2.5 inline-flex items-center gap-1 rounded px-1.5 py-1 text-[11px] font-semibold text-smoke transition-colors hover:bg-warm-taupe hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Clear member filter and show all members"
             >
               <X className="size-3" />
@@ -195,15 +195,15 @@ export function LocationHistoryScreen({
             placeholder="All members"
             searchPlaceholder="Search members..."
             emptyText="No members found."
-            className="h-10 bg-background"
+            className="h-10 bg-eggshell"
           />
         </fieldset>
-        <p className="m-0 mt-2 text-[11px] leading-4 text-muted-foreground">
+        <p className="m-0 mt-2 text-[11px] leading-4 text-smoke">
           {selectedMember
             ? `${data.entries.length} located task ${data.entries.length === 1 ? 'entry' : 'entries'} for ${selectedMember.name}`
             : `${data.entries.length} located task ${data.entries.length === 1 ? 'entry' : 'entries'} across all members`}
         </p>
-        <div className="mt-2 border-t border-border/70 pt-2">
+        <div className="mt-2 border-t border-stone/70 pt-2">
           <LocationBadge />
         </div>
       </div>
@@ -221,7 +221,7 @@ export function LocationHistoryScreen({
       )}
 
       {data.entries.length > 0 && (
-        <div className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-border/80 bg-background/90 px-2.5 py-1.5 shadow-sm backdrop-blur">
+        <div className="pointer-events-none absolute bottom-3 left-3 rounded-xl border border-stone/80 bg-eggshell/90 px-2.5 py-1.5 shadow-[var(--shadow-whisper)] backdrop-blur">
           <p className="m-0 flex items-center gap-1.5 text-xs font-bold text-foreground">
             <Navigation className="size-3.5 text-primary" />
             Select a pinpoint to review its tasks
@@ -230,7 +230,7 @@ export function LocationHistoryScreen({
       )}
 
       <aside
-        className="t-panel-slide absolute inset-y-3 right-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-xl border border-border/80 bg-background/95 shadow-xl backdrop-blur-md"
+        className="t-panel-slide absolute inset-y-3 right-3 z-20 flex w-[min(24rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-xl border border-stone/80 bg-eggshell/95 shadow-[var(--shadow-whisper)] backdrop-blur-md"
         data-open={panelState.open && Boolean(selectedGroup)}
         aria-hidden={!panelState.open}
         inert={!panelState.open}
@@ -238,7 +238,7 @@ export function LocationHistoryScreen({
       >
         {selectedGroup && (
           <>
-            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3.5">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-stone px-4 py-3.5">
               <div className="min-w-0">
                 <p className="m-0 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary">
                   <MapPin className="size-3.5" />
@@ -247,7 +247,7 @@ export function LocationHistoryScreen({
                 <h2 className="m-0 mt-1 truncate text-base font-bold text-foreground">
                   {selectedGroup.location ?? 'Resolved map point'}
                 </h2>
-                <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+                <p className="m-0 mt-0.5 text-xs text-smoke">
                   {selectedGroup.entries.length}{' '}
                   {selectedGroup.entries.length === 1
                     ? 'task entry'
@@ -257,7 +257,7 @@ export function LocationHistoryScreen({
               <button
                 type="button"
                 onClick={() => setPanelState(closeLocationPanel)}
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-xl text-smoke transition-colors hover:bg-warm-taupe hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Close location details"
               >
                 <X className="size-4" />
@@ -280,7 +280,7 @@ export function LocationHistoryScreen({
                 return (
                   <div
                     key={entry.id}
-                    className={`relative transition-colors hover:bg-muted/70 ${
+                    className={`relative transition-colors hover:bg-warm-taupe/70 ${
                       selectedEntryId === entry.id ? 'bg-primary/8' : ''
                     }`}
                   >
@@ -295,12 +295,12 @@ export function LocationHistoryScreen({
                         {entryName}
                       </span>
                       {entry.projectName && (
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                        <span className="mt-0.5 block truncate text-xs text-smoke">
                           {entry.projectName}
                         </span>
                       )}
                       <span
-                        className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground"
+                        className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-smoke"
                         title={entryLocation}
                       >
                         <MapPin
@@ -309,7 +309,7 @@ export function LocationHistoryScreen({
                         />
                         <span className="truncate">{entryLocation}</span>
                       </span>
-                      <span className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                      <span className="mt-2 flex items-center justify-between gap-3 text-xs text-smoke">
                         <span className="min-w-0 truncate font-medium text-foreground/80">
                           {entry.memberName}
                         </span>
@@ -317,7 +317,7 @@ export function LocationHistoryScreen({
                           {formatEntryTime(entry.startedAt, data.timezone)}
                         </span>
                       </span>
-                      <span className="mt-1.5 inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+                      <span className="mt-1.5 inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-smoke">
                         <Clock3 className="size-3" />
                         {entry.endedAt
                           ? formatDuration(entry.durationSeconds)
@@ -353,14 +353,12 @@ function MapMessage({
 }) {
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 pt-24">
-      <div className="max-w-sm rounded-xl border border-border/80 bg-background/95 px-6 py-5 text-center shadow-lg backdrop-blur-sm">
+      <div className="max-w-sm rounded-xl border border-stone/80 bg-eggshell/95 px-6 py-5 text-center shadow-[var(--shadow-whisper)] backdrop-blur-sm">
         <span className="mx-auto flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Icon className="size-5" />
         </span>
         <h2 className="m-0 mt-3 text-sm font-bold text-foreground">{title}</h2>
-        <p className="m-0 mt-1 text-xs leading-5 text-muted-foreground">
-          {description}
-        </p>
+        <p className="m-0 mt-1 text-xs leading-5 text-smoke">{description}</p>
       </div>
     </div>
   )

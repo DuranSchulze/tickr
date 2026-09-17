@@ -119,10 +119,10 @@ export function ImageUploader({
         disabled={disabled}
         className={`group relative mx-auto flex size-24 items-center justify-center rounded-full border-2 border-dashed transition-colors ${
           disabled
-            ? 'cursor-not-allowed border-border bg-muted opacity-60'
+            ? 'cursor-not-allowed border-stone bg-warm-taupe opacity-60'
             : dragging
               ? 'cursor-pointer border-primary bg-primary/10'
-              : 'cursor-pointer border-border bg-muted hover:border-primary hover:bg-primary/5'
+              : 'cursor-pointer border-stone bg-warm-taupe hover:border-primary hover:bg-primary/5'
         }`}
         aria-label="Upload profile picture"
         title={
@@ -151,13 +151,13 @@ export function ImageUploader({
             </div>
           </>
         ) : uploading ? (
-          <Loader2 className="size-8 animate-spin text-muted-foreground" />
+          <Loader2 className="size-8 animate-spin text-smoke" />
         ) : (
-          <Camera className="size-8 text-muted-foreground" />
+          <Camera className="size-8 text-smoke" />
         )}
       </button>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-smoke">
         {cooldownLeft > 0
           ? `Next upload available in ${cooldownLeft}s`
           : `Click or drag a JPEG · PNG · WebP to upload · max ${MAX_FILE_SIZE_MB}MB`}
