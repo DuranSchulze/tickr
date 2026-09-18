@@ -51,13 +51,35 @@ function getDateKeyInTimeZone(value: Date, timeZone: string): string {
   return getDateKeyFormatter(timeZone).format(value)
 }
 
-function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
+const offsetFormatters = new Map<string, Intl.DateTimeFormat | null>()
+
+function getOffsetFormatter(timeZone: string): Intl.DateTimeFormat | null {
+  const cached = offsetFormatters.get(timeZone)
+  if (cached !== undefined) return cached
+
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
+    const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone,
       timeZoneName: 'shortOffset',
       hour: '2-digit',
-    }).formatToParts(date)
+    })
+    offsetFormatters.set(timeZone, formatter)
+    return formatter
+  } catch {
+    // Invalid timezone — cache the failure so we don't re-throw per call.
+    offsetFormatters.set(timeZone, null)
+    return null
+  }
+}
+
+function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
+  // Construction is expensive and this runs once per day-slice in
+  // splitWorkIntervalByDay, which every report/export path now uses.
+  const formatter = getOffsetFormatter(timeZone)
+  if (!formatter) return 0
+
+  try {
+    const parts = formatter.formatToParts(date)
     const value = parts.find((part) => part.type === 'timeZoneName')?.value
     if (!value || value === 'GMT') return 0
     const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)

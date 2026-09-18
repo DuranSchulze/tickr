@@ -88,21 +88,27 @@ function getDayDtrRow(group: DayGroup, runningEntry?: TimeEntry | null) {
   if (runningEntry && !entries.some((entry) => entry.id === runningEntry.id)) {
     entries.push(runningEntry)
   }
+  if (entries.length === 0) return ''
+
   const now = new Date()
-  const starts = entries.map((entry) => new Date(entry.startedAt))
-  const ends = entries.map((entry) =>
-    entry.endedAt ? new Date(entry.endedAt) : now,
-  )
-  const firstStart = new Date(Math.min(...starts.map((date) => date.getTime())))
-  const lastEnd = new Date(Math.max(...ends.map((date) => date.getTime())))
-  const totalSeconds = entries.reduce(
-    (sum, entry) =>
-      sum +
-      (entry.endedAt
-        ? entry.durationSeconds
-        : getEntrySeconds(entry, now.getTime())),
-    0,
-  )
+  // Single pass for both bounds (spreading into Math.min/Math.max is
+  // argument-count limited and built two throwaway arrays) and the total.
+  let firstMs = Infinity
+  let lastMs = -Infinity
+  let totalSeconds = 0
+  for (const entry of entries) {
+    const startMs = new Date(entry.startedAt).getTime()
+    const endMs = entry.endedAt
+      ? new Date(entry.endedAt).getTime()
+      : now.getTime()
+    if (startMs < firstMs) firstMs = startMs
+    if (endMs > lastMs) lastMs = endMs
+    totalSeconds += entry.endedAt
+      ? entry.durationSeconds
+      : getEntrySeconds(entry, now.getTime())
+  }
+  const firstStart = new Date(firstMs)
+  const lastEnd = new Date(lastMs)
 
   return [
     formatDtrDate(firstStart),
@@ -165,11 +171,11 @@ function DayGroupHeaderRow({
     <button
       type="button"
       onClick={() => void copyDayDtrRow(group, runningEntry)}
-      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-stone px-2.5 text-xs font-semibold text-smoke transition-colors hover:bg-accent hover:text-foreground"
+      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-stone text-smoke transition-colors hover:bg-accent hover:text-foreground"
       title="Copy DTR row for Google Sheets"
+      aria-label="Copy DTR row for Google Sheets"
     >
       <Copy className="size-3.5" />
-      Copy
     </button>
   )
 
@@ -558,10 +564,10 @@ function TaskGroupHeaderCard({
 }
 
 // ─── Shared day-grouped list ─────────────────────────────────────────────────
-// Single source of truth for the day-grouped entry list shown by both
-// EntriesSection (day/week/month) and AllEntriesSection (all). Renders per-day
-// headers (static in day view, collapsible otherwise) with collapsible ×N task
-// groups, a desktop table and mobile cards.
+// Single source of truth for the day-grouped entry list shown by
+// AllEntriesSection (all). Renders per-day headers (static in day view,
+// collapsible otherwise) with collapsible ×N task groups, a desktop table and
+// mobile cards.
 
 function toLocalDateKey(iso: string): string {
   const d = new Date(iso)
@@ -640,7 +646,7 @@ export function DayGroupsList({
 }) {
   // Mount only the layout that's actually visible — rendering both the table
   // and the card list (one hidden by CSS) doubled the rows held in the DOM.
-  const { containerRef, isDesktop } = useIsDesktop<HTMLDivElement>()
+  const { containerRef, isDesktop, isMeasured } = useIsDesktop<HTMLDivElement>()
 
   // Stable identities so the memoized rows/cards skip re-rendering when an
   // unrelated piece of dashboard state (timer inputs, pickers) changes —
@@ -706,6 +712,20 @@ export function DayGroupsList({
         onResume={handleResume}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
+      />
+    )
+  }
+
+  // Until the container width is known, render only the measuring container.
+  // Entries arrive with the SSR loader data, so choosing a layout from a
+  // viewport guess here would render different markup than the server produced
+  // and hydrate-mismatch. The measurement runs before paint, so this frame is
+  // never visible.
+  if (!isMeasured) {
+    return (
+      <div
+        ref={containerRef}
+        className="grid min-w-0 gap-3 bg-transparent sm:gap-4"
       />
     )
   }

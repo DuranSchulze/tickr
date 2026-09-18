@@ -73,13 +73,37 @@ export function getAnalyticsDateRange(data: {
   }
 }
 
+/**
+ * `Intl.DateTimeFormat` construction is comparatively expensive and these
+ * formatters run once per export/report row. Instances are immutable and
+ * deterministic for a given set of options, so they are cached by key
+ * (timezone, or a fixed label for the UTC-only ones) and reused.
+ */
+const formatterCache = new Map<string, Intl.DateTimeFormat>()
+
+function getCachedFormatter(
+  key: string,
+  create: () => Intl.DateTimeFormat,
+): Intl.DateTimeFormat {
+  const cached = formatterCache.get(key)
+  if (cached) return cached
+
+  const formatter = create()
+  formatterCache.set(key, formatter)
+  return formatter
+}
+
 function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
   try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone,
-      timeZoneName: 'shortOffset',
-      hour: '2-digit',
-    }).formatToParts(date)
+    const parts = getCachedFormatter(
+      `offset:${timeZone}`,
+      () =>
+        new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          timeZoneName: 'shortOffset',
+          hour: '2-digit',
+        }),
+    ).formatToParts(date)
     const value = parts.find((part) => part.type === 'timeZoneName')?.value
     if (!value || value === 'GMT') return 0
     const match = value.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/)
@@ -116,15 +140,19 @@ export function formatDateTimeInTimeZone(
   timeZone: string,
 ): string {
   const date = value instanceof Date ? value : new Date(value)
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+  return getCachedFormatter(
+    `datetime:${timeZone}`,
+    () =>
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+  )
     .format(date)
     .replace(',', '')
 }
@@ -134,12 +162,16 @@ export function formatDateInTimeZone(
   timeZone: string,
 ): string {
   const date = value instanceof Date ? value : new Date(value)
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date)
+  return getCachedFormatter(
+    `date:${timeZone}`,
+    () =>
+      new Intl.DateTimeFormat('en-CA', {
+        timeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }),
+  ).format(date)
 }
 
 export function formatTimeOfDayInTimeZone(
@@ -147,32 +179,44 @@ export function formatTimeOfDayInTimeZone(
   timeZone: string,
 ): string {
   const date = value instanceof Date ? value : new Date(value)
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour: 'numeric',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true,
-  }).format(date)
+  return getCachedFormatter(
+    `time:${timeZone}`,
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone,
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      }),
+  ).format(date)
 }
 
 /** Formats a YYYY-MM-DD key as "May 15" without timezone ambiguity. */
 export function formatMonthDay(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number)
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(Date.UTC(year, month - 1, day)))
+  return getCachedFormatter(
+    'monthDay:UTC',
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC',
+        month: 'short',
+        day: 'numeric',
+      }),
+  ).format(new Date(Date.UTC(year, month - 1, day)))
 }
 
 /** Formats a YYYY-MM-DD key as "Friday" without timezone ambiguity. */
 export function formatDayOfWeek(dateKey: string): string {
   const [year, month, day] = dateKey.split('-').map(Number)
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
-    weekday: 'long',
-  }).format(new Date(Date.UTC(year, month - 1, day)))
+  return getCachedFormatter(
+    'dayOfWeek:UTC',
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        timeZone: 'UTC',
+        weekday: 'long',
+      }),
+  ).format(new Date(Date.UTC(year, month - 1, day)))
 }
 
 /** Formats a duration as "H:MM:SS" (e.g. 32820 -> "9:07:00"). */

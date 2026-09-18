@@ -24,6 +24,9 @@ export const auth = betterAuth({
       session: schema.sessions,
       account: schema.accounts,
       verification: schema.verifications,
+      // Prepared for `rateLimit.storage: 'database'` (see the comment below);
+      // unused while storage stays 'memory'.
+      rateLimit: schema.rateLimits,
     },
   }),
   emailAndPassword: {
@@ -74,6 +77,16 @@ export const auth = betterAuth({
   // across multiple instances (Vercel/serverless) so rate-limit state
   // is shared.  Run `npx @better-auth/cli migrate` afterwards to create
   // the rateLimit table.
+  //
+  // Decision (plans/quick-fix/server-hygiene.md item 3): per-instance memory is
+  // accepted for now, so the documented /sign-up/email rule is per-instance and
+  // an attacker spreading requests across instances gets more than 3 per window.
+  // The plumbing is prepared — the `rate_limit` table exists in
+  // src/db/schema.ts and its migration is generated — so enabling this is a
+  // one-line change to 'database' *after* `pnpm db:migrate` has been applied.
+  // Do not flip it before the table exists: auth fails loudly on a missing
+  // table. Note this limiter never sees the hand-written /api/v1/auth/* routes,
+  // which remain unthrottled and are tracked separately.
   rateLimit: {
     enabled: true, // enable in all environments (default: only prod)
     window: 60,

@@ -33,7 +33,7 @@ export function Navbar({
   birthdayCelebration,
   mobileMenuButton,
 }: {
-  workspace: { name: string }
+  workspace: { id: string; name: string }
   user: {
     id: string
     name: string
@@ -85,6 +85,7 @@ export function Navbar({
           </div>
 
           <WorkspaceSwitcher
+            currentWorkspaceId={workspace.id}
             currentWorkspaceName={workspace.name}
             permissionLevel={permissionLevel}
           />

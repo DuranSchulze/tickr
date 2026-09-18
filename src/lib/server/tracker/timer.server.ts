@@ -19,6 +19,7 @@ import type {
   stopTimerSchema,
   updateActiveTimerSchema,
 } from './shared/schemas'
+import { CLOCK_SKEW_TOLERANCE_MS } from './shared/schemas'
 
 async function getEntryTags(entryId: string) {
   return db
@@ -179,6 +180,29 @@ export async function updateActiveTimer(
     throw new Error('No running timer to update.')
   }
 
+  // An explicit user edit, unlike startTimer's offline replay: reject a
+  // client-supplied start in the future (beyond clock skew) rather than
+  // silently substituting the server clock, which would discard a deliberate
+  // correction with no feedback. The bound is the entry's own end — always NULL
+  // here because only running timers load — so "future" means "after now".
+  //
+  // This does NOT bound the past. A backdated start is still accepted, and
+  // because stopTimer only requires endedAt > startedAt it would inflate the
+  // recorded duration. A lower bound is a separate product decision (see
+  // plans/quick-fix/server-hygiene.md item 1); the same gap exists on
+  // startTimer's offline-replay path and on manual entry creation.
+  const now = new Date()
+  const nextStartedAt = data.startedAt ? new Date(data.startedAt) : null
+  if (nextStartedAt) {
+    const upperBound = entry.endedAt ?? now
+    if (
+      Number.isNaN(nextStartedAt.getTime()) ||
+      nextStartedAt.getTime() > upperBound.getTime() + CLOCK_SKEW_TOLERANCE_MS
+    ) {
+      throw new Error('Start time cannot be in the future.')
+    }
+  }
+
   // One parallel write wave: update the entry while diffing the tags in place.
   // The diff (delete stale + upsert new) never removes tags that should stay,
   // so there is no window where the entry has lost tags it keeps — unlike the
@@ -191,11 +215,11 @@ export async function updateActiveTimer(
         projectId,
         taskId,
         billable: data.billable,
-        ...(data.startedAt
+        ...(nextStartedAt
           ? {
-              startedAt: new Date(data.startedAt),
+              startedAt: nextStartedAt,
               entrySource: sourceAfterTimeEdit(entry, {
-                startedAt: new Date(data.startedAt),
+                startedAt: nextStartedAt,
                 endedAt: entry.endedAt,
               }),
             }

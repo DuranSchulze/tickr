@@ -91,7 +91,7 @@ function SegmentedButtonGroup<TValue extends string>({
   return (
     <div className="grid gap-1.5 text-xs font-semibold text-foreground">
       <span>{label}</span>
-      <div className="grid grid-cols-2 gap-1 rounded-full border border-stone bg-eggshell p-1">
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-eggshell p-1">
         {options.map((option) => {
           const Icon = option.icon
           return (

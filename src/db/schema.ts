@@ -7,6 +7,7 @@ import {
   date,
   text,
   integer,
+  bigint,
   numeric,
   index,
   uniqueIndex,
@@ -169,6 +170,19 @@ export const verifications = pgTable('verifications', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date()),
+})
+
+/**
+ * better-auth rate-limit storage (model name `rateLimit`). Only used when
+ * `rateLimit.storage` is set to `'database'` in `src/lib/auth.ts`; the app
+ * currently uses the per-instance memory store, so this table is prepared but
+ * unused. See plans/quick-fix/server-hygiene.md item 3.
+ */
+export const rateLimits = pgTable('rate_limit', {
+  id: varchar('id', { length: 64 }).primaryKey(),
+  key: text('key').notNull().unique(),
+  count: integer('count').notNull(),
+  lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 })
 
 // ── Profile tables ────────────────────────────────────────────────────────────
