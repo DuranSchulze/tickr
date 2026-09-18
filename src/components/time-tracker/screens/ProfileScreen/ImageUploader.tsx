@@ -20,12 +20,22 @@ export function ImageUploader({
   const [cooldownLeft, setCooldownLeft] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const previewUrlRef = useRef<string | null>(null)
 
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
     }
   }, [])
+
+  // Releases the current preview blob URL. Safe to call when there is none.
+  function revokePreview() {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current)
+      previewUrlRef.current = null
+    }
+  }
 
   function startCooldown() {
     setCooldownLeft(UPLOAD_COOLDOWN_S)
@@ -54,7 +64,10 @@ export function ImageUploader({
     }
 
     setError(null)
-    setPreview(URL.createObjectURL(file))
+    revokePreview()
+    const previewUrl = URL.createObjectURL(file)
+    previewUrlRef.current = previewUrl
+    setPreview(previewUrl)
     setUploading(true)
 
     try {
@@ -79,6 +92,7 @@ export function ImageUploader({
       setError(
         err instanceof Error ? err.message : 'Upload failed. Please try again.',
       )
+      revokePreview()
       setPreview(null)
     } finally {
       setUploading(false)

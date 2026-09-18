@@ -16,28 +16,28 @@
 
 - [ ] **Confirm the bypass exists and what it disables (local, instant).**
       `bash
-    grep -n -B 6 -A 6 "skipCsrf: true" src/lib/server/tracker/streaming-import.server.ts
-    grep -n -A 20 "export function assertTrustedOrigin" src/lib/server/csrf.server.ts
-    `
+  grep -n -B 6 -A 6 "skipCsrf: true" src/lib/server/tracker/streaming-import.server.ts
+  grep -n -A 20 "export function assertTrustedOrigin" src/lib/server/csrf.server.ts
+  `
       Expected: `resolveWorkspaceSheet` passes `{ skipCsrf: true }`, and `assertTrustedOrigin` is the origin check documented as _the_ CSRF gate.
 
 - [ ] **Confirm the session cookie is actually cross-site sendable (local).**
       `bash
-    grep -n -A 12 "sameSite" src/lib/auth.ts
-    `
+  grep -n -A 12 "sameSite" src/lib/auth.ts
+  `
       Expected: in production, `session_token` is `sameSite: 'none', secure: true` — deliberately, so the Chrome extension iframe can send it. This is what makes CSRF a live concern rather than a theoretical one.
 
 - [ ] **Confirm the dangerous default (local).**
       `bash
-    grep -n -B 2 -A 4 "request.json().catch" src/routes/api/import/stream.ts
-    `
+  grep -n -B 2 -A 4 "request.json().catch" src/routes/api/import/stream.ts
+  `
       Expected: `await request.json().catch(() => ({}))` followed by `const type = body.type ?? 'all'`.
 
 - [ ] **Confirm no other gate exists between the handler and the import (local).**
       `bash
-    grep -n "assertTrustedOrigin\|getTrustedOrigins\|sec-fetch-site\|x-requested-with" \
-      src/routes/api/import/stream.ts src/lib/server/tracker/streaming-import.server.ts
-    `
+  grep -n "assertTrustedOrigin\|getTrustedOrigins\|sec-fetch-site\|x-requested-with" \
+    src/routes/api/import/stream.ts src/lib/server/tracker/streaming-import.server.ts
+  `
       Expected: no origin check in the handler; the only check inside the import path is the one being skipped.
 
 - [ ] **Reproduce cross-origin (needs a running app).** While signed in, open an unrelated page (or a local HTML file on another origin) and issue a `text/plain` POST to the import endpoint with `credentials: 'include'`. Confirm the import runs. Because `text/plain` is a CORS-simple content type there is no preflight, so the browser will not block the request from being _sent_ — it only hides the response.
@@ -45,10 +45,10 @@
 
 - [ ] **Determine whether this has already been abused (needs DB/log access).** Import operations write audit rows. Look for `GSHEET_*` / catalog import audit entries that no user initiated:
       `sql
-    SELECT action, actor_email, created_at FROM audit_logs
-    WHERE action ILIKE '%IMPORT%' OR action ILIKE '%SYNC%'
-    ORDER BY created_at DESC LIMIT 50;
-    `
+  SELECT action, actor_email, created_at FROM audit_logs
+  WHERE action ILIKE '%IMPORT%' OR action ILIKE '%SYNC%'
+  ORDER BY created_at DESC LIMIT 50;
+  `
       And check Vercel logs for `POST /api/import/stream` requests whose `Origin` header is absent or not the app's own domain.
 
 ## 1. Goal
@@ -111,7 +111,7 @@ A CORS-simple request with a non-JSON content type (`text/plain`) and a junk bod
 
 ## 4. Out of Scope
 
-- The import pipeline's performance (one Sheets call per row, N+1 database writes). Separate findings, tracked in `plans/import-pipeline-performance`.
+- The import pipeline's performance (one Sheets call per row, N+1 database writes). Separate findings, tracked in `plans/database-performance` (Workstream D).
 - The general CSRF policy question — that `assertTrustedOrigin` returns early when `Origin` is absent (`csrf.server.ts:16`), which is a fail-open for every state-mutating server function, not just this route. Recorded here as a related item because the fix touches the same check, but the policy change affects the whole app and needs its own decision (Section 13).
 - The SSE backpressure and hop-by-hop header issues in the same route (`Connection: keep-alive`, `Cache-Control: no-cache`, unbounded `enqueue`).
 - Rate limiting the endpoint.

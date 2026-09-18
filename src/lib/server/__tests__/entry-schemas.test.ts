@@ -3,6 +3,7 @@ import {
   entryInputSchema,
   MAX_DESCRIPTION_LENGTH,
   startTimerSchema,
+  updateActiveTimerSchema,
 } from '../tracker/shared/schemas'
 
 const baseEntry = {
@@ -67,5 +68,35 @@ describe('time entry device location validation', () => {
         deviceLocation: { ...deviceLocation, latitude: 100 },
       }),
     ).toThrow()
+  })
+})
+
+describe('updateActiveTimer startedAt bound', () => {
+  const id = 'entry-1'
+
+  it('rejects a start time in the future', () => {
+    const future = new Date(Date.now() + 60 * 60_000).toISOString()
+    expect(() =>
+      updateActiveTimerSchema.parse({ id, startedAt: future }),
+    ).toThrow(/future/i)
+  })
+
+  it('tolerates a few seconds of client clock skew', () => {
+    const skewed = new Date(Date.now() + 30_000).toISOString()
+    expect(
+      updateActiveTimerSchema.parse({ id, startedAt: skewed }).startedAt,
+    ).toBe(skewed)
+  })
+
+  it('still accepts a legitimate past correction', () => {
+    const twentyMinutesAgo = new Date(Date.now() - 20 * 60_000).toISOString()
+    expect(
+      updateActiveTimerSchema.parse({ id, startedAt: twentyMinutesAgo })
+        .startedAt,
+    ).toBe(twentyMinutesAgo)
+  })
+
+  it('accepts an update with no start time at all', () => {
+    expect(updateActiveTimerSchema.parse({ id }).startedAt).toBeUndefined()
   })
 })

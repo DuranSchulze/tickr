@@ -305,8 +305,8 @@ This is correct, and deliberately so:
 - **The `_requestCache` itself** — verified correct; this plan only pins its behaviour with a test.
 - **The refetch behaviour of the authorization query** (the `staleTime: 0` `fetchFreshWorkspaceAuthorization` and the two `window` focus listeners). Owned by the separate `workspace-authorization-refetch-storm` plan. This plan owns the key _definitions_ and the switch-path invariant only.
 - **The email-verification / membership-claim vulnerability** (`workspace-access.server.ts:446-470`). Owned by `plans/require-email-verification-for-membership-claim/PLAN.md`. This plan touches the same region of the file for the dead guard and the fallback, so the two must be coordinated to avoid conflicting edits — but the claim gate is not implemented here.
-- **The `WorkspaceSwitcher` name-vs-id matching bug** — a separate one-liner in `plans/quick-fix/workspace-and-timer-correctness.md`.
-- **The `x-forwarded-for` first-hop trust issue** and the other client-IP concerns — `plans/quick-fix/server-hygiene.md`.
+- **The `WorkspaceSwitcher` name-vs-id matching bug** — **fixed** in `plans/quick-fix/workspace-and-timer-correctness.md`: the switcher now compares `workspaceId`, so same-named workspaces no longer both look current. No action needed here.
+- **The `x-forwarded-for` first-hop trust issue** and the other client-IP concerns — owned by `plans/quick-fix/server-hygiene.md`, which deliberately left `src/lib/server/client-ip.server.ts` unchanged pending a production check of Vercel's header handling. That item is still open; it is not this plan's concern.
 - **Renaming or restructuring the query keys** (`trackerKeys`) beyond adding a workspace discriminator if that option is chosen. No wholesale key redesign.
 - **Migrating the workspace cache to a different store** or adding cross-tab cache invalidation for workspace switches.
 - **Changing `SameSite=Lax` to a stricter value** on this cookie; `Lax` is appropriate for a preference cookie and is not the concern here.

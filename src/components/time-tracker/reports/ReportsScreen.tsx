@@ -9,10 +9,8 @@ import type { ReportsFilters } from './ReportsFilterBar'
 import { ReportsFilterBar } from './ReportsFilterBar'
 import { ReportsSummaryCards } from './ReportsSummaryCards'
 import { ReportsMemberBreakdownTable } from './ReportsMemberBreakdown'
-import {
-  formatRange,
-  toDateKey,
-} from '#/components/time-tracker/analytics/analytics.utils'
+import { formatRange } from '#/components/time-tracker/analytics/analytics.utils'
+import { WeeklyPresets } from './WeeklyPresets'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import type { SetStateAction } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -947,77 +945,4 @@ function EntriesTableWrapper(props: TableProps): React.ReactNode {
   }
 
   return <Table {...props} />
-}
-
-function getWeekRange(today: Date): { startDate: string; endDate: string } {
-  const day = today.getDay()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
-  return { startDate: toDateKey(monday), endDate: toDateKey(today) }
-}
-
-function getLastWeekRange(): { startDate: string; endDate: string } {
-  const today = new Date()
-  const day = today.getDay()
-  const thisMonday = new Date(today)
-  thisMonday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
-  const lastMonday = new Date(thisMonday)
-  lastMonday.setDate(thisMonday.getDate() - 7)
-  const lastSunday = new Date(thisMonday)
-  lastSunday.setDate(thisMonday.getDate() - 1)
-  return { startDate: toDateKey(lastMonday), endDate: toDateKey(lastSunday) }
-}
-
-function getMonthRange(): { startDate: string; endDate: string } {
-  const today = new Date()
-  const first = new Date(today.getFullYear(), today.getMonth(), 1)
-  return { startDate: toDateKey(first), endDate: toDateKey(today) }
-}
-
-function WeeklyPresets({
-  currentStartDate,
-  currentEndDate,
-  onChangeRange,
-}: {
-  currentStartDate: string
-  currentEndDate: string
-  onChangeRange: (range: { startDate: string; endDate: string }) => void
-}) {
-  const presets = useMemo(
-    () => [
-      { label: 'This Week', ...getWeekRange(new Date()) },
-      { label: 'Last Week', ...getLastWeekRange() },
-      { label: 'This Month', ...getMonthRange() },
-    ],
-    [],
-  )
-
-  const activeLabel =
-    presets.find(
-      (p) => p.startDate === currentStartDate && p.endDate === currentEndDate,
-    )?.label ?? null
-
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-1.5">
-      {presets.map((preset) => (
-        <button
-          key={preset.label}
-          type="button"
-          onClick={() =>
-            onChangeRange({
-              startDate: preset.startDate,
-              endDate: preset.endDate,
-            })
-          }
-          className={`inline-flex h-8 items-center rounded-xl px-3 text-xs font-semibold transition-colors ${
-            activeLabel === preset.label
-              ? 'bg-primary-action text-primary-action-foreground'
-              : 'bg-warm-taupe text-smoke hover:bg-accent hover:text-foreground'
-          }`}
-        >
-          {preset.label}
-        </button>
-      ))}
-    </div>
-  )
 }

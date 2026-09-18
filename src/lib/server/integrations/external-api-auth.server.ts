@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '#/db'
 import { developerAccounts, workspaceApiKeys, workspaces } from '#/db/schema'
 import { readClientIp } from '../client-ip.server'
+import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import { hashApiKey } from './api-keys.server'
 import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
 
@@ -44,6 +45,47 @@ function readPresentedCredential(request: Request): string | null {
   return headerKey || null
 }
 
+/**
+ * Records a failed public-API authentication.
+ *
+ * When the workspace is knowable the failure becomes an attributable audit row
+ * so brute-force and credential-stuffing attempts leave a trail. An unknown or
+ * malformed credential has no workspace to attach to, so it is logged for
+ * alerting instead of polluting the audit view with a null workspace.
+ *
+ * `identifier` must never be credential material: it is the stored token prefix
+ * for raw keys (`tokenPrefix`, already how keys are identified at rest) or the
+ * key/developer id carried by a verified JWT. The presented secret is never
+ * recorded.
+ */
+async function recordAuthFailure(input: {
+  reason: string
+  workspaceId?: string | null
+  targetType?: 'api_key' | 'developer_account'
+  targetId?: string | null
+  identifier?: string | null
+}): Promise<void> {
+  const details = `reason=${input.reason}${
+    input.identifier ? ` identifier=${input.identifier}` : ''
+  }`
+
+  if (!input.workspaceId) {
+    console.warn(`[external-api] Auth failure (unattributed): ${details}`)
+    return
+  }
+
+  // Awaited rather than the usual fire-and-forget: on serverless a voided
+  // promise can be killed once the response returns, which would silently
+  // defeat the purpose of a security-detection signal.
+  await createAuditLog({
+    workspaceId: input.workspaceId,
+    action: 'API_KEY_AUTH_FAILURE',
+    targetType: input.targetType ?? 'api_key',
+    targetId: input.targetId ?? null,
+    details,
+  })
+}
+
 async function buildContextFromKeyRow(
   row: {
     key: typeof workspaceApiKeys.$inferSelect
@@ -54,12 +96,30 @@ async function buildContextFromKeyRow(
 ) {
   const now = new Date()
   if (row.key.revokedAt) {
+    await recordAuthFailure({
+      reason: 'revoked_api_key',
+      workspaceId: row.workspace.id,
+      targetId: row.key.id,
+      identifier: row.key.tokenPrefix,
+    })
     throw new ExternalApiError(401, 'revoked_api_key', 'API key was revoked.')
   }
   if (row.key.expiresAt && row.key.expiresAt.getTime() <= now.getTime()) {
+    await recordAuthFailure({
+      reason: 'expired_api_key',
+      workspaceId: row.workspace.id,
+      targetId: row.key.id,
+      identifier: row.key.tokenPrefix,
+    })
     throw new ExternalApiError(401, 'expired_api_key', 'API key is expired.')
   }
   if (expectedWorkspaceId && row.workspace.id !== expectedWorkspaceId) {
+    await recordAuthFailure({
+      reason: 'workspace_mismatch',
+      workspaceId: row.workspace.id,
+      targetId: row.key.id,
+      identifier: row.key.tokenPrefix,
+    })
     throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
   }
 
@@ -95,6 +155,12 @@ async function buildContextFromDeveloperRow(
   expectedWorkspaceId: string | null,
 ): Promise<ExternalApiContext> {
   if (!row.account.isActive) {
+    await recordAuthFailure({
+      reason: 'developer_account_disabled',
+      workspaceId: row.workspace.id,
+      targetType: 'developer_account',
+      targetId: row.account.id,
+    })
     throw new ExternalApiError(
       401,
       'developer_account_disabled',
@@ -102,6 +168,12 @@ async function buildContextFromDeveloperRow(
     )
   }
   if (expectedWorkspaceId && row.workspace.id !== expectedWorkspaceId) {
+    await recordAuthFailure({
+      reason: 'workspace_mismatch',
+      workspaceId: row.workspace.id,
+      targetType: 'developer_account',
+      targetId: row.account.id,
+    })
     throw new ExternalApiError(401, 'invalid_token', 'Invalid access token.')
   }
 
@@ -135,6 +207,7 @@ export async function authenticateApiKeyCredential(
   if (looksLikeJwt(credential)) {
     const payload = await verifyExternalApiJwt(credential)
     if (!payload) {
+      await recordAuthFailure({ reason: 'invalid_jwt' })
       throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
     }
 
@@ -147,6 +220,10 @@ export async function authenticateApiKeyCredential(
         .limit(1)
 
       if (!row) {
+        await recordAuthFailure({
+          reason: 'unknown_developer',
+          identifier: payload.developerId,
+        })
         throw new ExternalApiError(
           401,
           'invalid_token',
@@ -164,6 +241,10 @@ export async function authenticateApiKeyCredential(
       .limit(1)
 
     if (!row) {
+      await recordAuthFailure({
+        reason: 'unknown_api_key',
+        identifier: payload.keyId,
+      })
       throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
     }
     return buildContextFromKeyRow(row, payload.workspaceId, request)
@@ -178,6 +259,11 @@ export async function authenticateApiKeyCredential(
     .limit(1)
 
   if (!row) {
+    // Safe identifier: the prefix is already stored at rest, never the secret.
+    await recordAuthFailure({
+      reason: 'unknown_api_key',
+      identifier: credential.slice(0, 12),
+    })
     throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
   }
   return buildContextFromKeyRow(row, null, request)
@@ -191,6 +277,10 @@ export async function authenticateDeveloperCredentials(
     await import('./developer-accounts.server')
   const result = await verifyDeveloperCredentials(email, password)
   if (!result) {
+    // Unattributed on purpose: the email is PII and looking it up purely to
+    // attach a workspace would widen the surface for no detection benefit — the
+    // log line below still surfaces the attempt for alerting.
+    await recordAuthFailure({ reason: 'invalid_developer_credentials' })
     throw new ExternalApiError(
       401,
       'invalid_credentials',

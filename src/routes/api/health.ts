@@ -26,13 +26,16 @@ export const Route = createFileRoute('/api/health')({
             checkedAt: new Date().toISOString(),
           })
         } catch (err) {
+          // The endpoint is unauthenticated, so never echo the driver's error
+          // text (it can disclose host/port/database/role details). Log the
+          // detail server-side instead — Sentry captures it.
+          console.error('[health] Database check failed', err)
           return json(
             {
               status: 'error',
               latencyMs: Date.now() - startedAt,
               checkedAt: new Date().toISOString(),
-              message:
-                err instanceof Error ? err.message : 'Database check failed',
+              message: 'Database check failed',
             },
             { status: 503 },
           )

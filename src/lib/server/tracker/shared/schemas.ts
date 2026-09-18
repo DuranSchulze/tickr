@@ -52,15 +52,37 @@ export const startTimerSchema = z.object({
   deviceLocation: deviceLocationSchema.optional(),
 })
 
-export const updateActiveTimerSchema = z.object({
-  id: z.string().min(1),
-  description: descriptionOptional.default(''),
-  projectId: z.string().default(''),
-  taskId: z.string().nullable().default(null),
-  tagIds: z.array(z.string().min(1)).default([]),
-  billable: z.boolean().default(false),
-  startedAt: z.string().datetime().optional(),
-})
+/**
+ * Tolerated difference between a client-supplied timestamp and the server
+ * clock. A few seconds of drift is normal; anything beyond this is treated as
+ * an untrusted client clock rather than a deliberate correction.
+ */
+export const CLOCK_SKEW_TOLERANCE_MS = 60_000
+
+export const updateActiveTimerSchema = z
+  .object({
+    id: z.string().min(1),
+    description: descriptionOptional.default(''),
+    projectId: z.string().default(''),
+    taskId: z.string().nullable().default(null),
+    tagIds: z.array(z.string().min(1)).default([]),
+    billable: z.boolean().default(false),
+    // An explicit user edit — unlike offline replay, a future value is a
+    // client-clock error, so reject it (bounded by clock skew) instead of
+    // silently substituting the server clock. See startTimer/stopTimer for the
+    // equivalent clamps on the other two timestamp paths.
+    startedAt: z.string().datetime().optional(),
+  })
+  .refine(
+    (data) =>
+      !data.startedAt ||
+      new Date(data.startedAt).getTime() <=
+        Date.now() + CLOCK_SKEW_TOLERANCE_MS,
+    {
+      message: 'Start time cannot be in the future.',
+      path: ['startedAt'],
+    },
+  )
 
 export const entryIdSchema = z.object({
   id: z.string().min(1),
@@ -342,12 +364,7 @@ export const updateWorkspaceSettingsSchema = z
   .object({
     name: z.string().trim().min(1).max(150).optional(),
     timezone: z.string().trim().min(1).max(80).optional(),
-    expectedDailyHours: z
-      .number()
-      .min(1)
-      .max(24)
-      .multipleOf(0.5)
-      .optional(),
+    expectedDailyHours: z.number().min(1).max(24).multipleOf(0.5).optional(),
     payrollCutoffDays: z
       .array(z.number().int().min(1).max(28))
       .min(1)

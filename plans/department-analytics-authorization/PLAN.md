@@ -18,40 +18,40 @@
 
 - [ ] **Confirm the file has no permission logic at all (local, instant).**
       `bash
-    grep -n "permissionLevel\|assertPermission\|assertCanAccessMember\|getAccessLevel\|memberScopeCondition\|permissions\[" \
-      src/lib/server/tracker/department-dashboard.server.ts
-    `
+  grep -n "permissionLevel\|assertPermission\|assertCanAccessMember\|getAccessLevel\|memberScopeCondition\|permissions\[" \
+    src/lib/server/tracker/department-dashboard.server.ts
+  `
       Expected: **no output**. Compare against the siblings, which do gate:
       `bash
-    grep -n "permissionLevel\|memberScopeCondition" \
-      src/lib/server/tracker/analytics.server.ts src/lib/server/tracker/reports.server.ts
-    `
+  grep -n "permissionLevel\|memberScopeCondition" \
+    src/lib/server/tracker/analytics.server.ts src/lib/server/tracker/reports.server.ts
+  `
 
 - [ ] **Confirm the hardcoded flag and where it is consumed (local).**
       `bash
-    grep -n "canFilterDepartments" -r src/
-    `
+  grep -n "canFilterDepartments" -r src/
+  `
       `department-dashboard.server.ts:285` sets `true`; `DepartmentDashboardScreen.tsx:120` uses it only to show/hide the department filter control.
 
 - [ ] **Confirm the server functions have no extra gate (local).**
       `bash
-    grep -n -A 5 "getDepartmentDashboardFn\|getDepartmentMemberDetailFn\|getDepartmentMemberTodayActivityFn" src/lib/server/tracker.ts
-    `
+  grep -n -A 5 "getDepartmentDashboardFn\|getDepartmentMemberDetailFn\|getDepartmentMemberTodayActivityFn" src/lib/server/tracker.ts
+  `
       Expected: plain `createServerFn` + `inputValidator` + `handler`. There is no global middleware — `src/server.ts` is a bare `createStartHandler`.
 
 - [ ] **Confirm the nav entry is ungated (local).**
       `bash
-    grep -n -B 4 -A 2 "department-analytics" src/components/time-tracker/AppShell.tsx
-    `
+  grep -n -B 4 -A 2 "department-analytics" src/components/time-tracker/AppShell.tsx
+  `
       The entries above it are wrapped in `if (permissions['activity.view'])` / `if (permissions['locations.view'])`; "Department list" is pushed unconditionally.
 
 - [ ] **Reproduce the exposure (needs a running app + a low-privilege account).** Sign in as an EMPLOYEE whose role does **not** have `activity.view` or `members.view`. Open "Department list". Confirm that per-member tracked hours, billable amounts, effective rates and entry descriptions render. Then confirm the same via a direct call to `getDepartmentDashboardFn` with a `memberId` belonging to another member.
 
 - [ ] **Determine the blast radius (needs DB access).** Which roles currently exist, and does the default EMPLOYEE role hold `activity.view` / `members.view`?
       `sql
-    SELECT id, name, permission_level, permissions FROM workspace_roles ORDER BY permission_level;
-    SELECT count(*) FROM workspace_members WHERE status = 'ACTIVE';
-    `
+  SELECT id, name, permission_level, permissions FROM workspace_roles ORDER BY permission_level;
+  SELECT count(*) FROM workspace_members WHERE status = 'ACTIVE';
+  `
       If EMPLOYEE already holds `activity.view` in practice, the severity drops from "access-control bypass" to "inconsistent gating" — establish this before sizing the fix.
 
 ## 1. Goal
@@ -111,7 +111,7 @@ The code comment at `:382-383` — _"Fetch active members first so all analytics
 
 ## 4. Out of Scope
 
-- The other findings in `department-dashboard.server.ts`: the duplicate full scan of the same predicate (`:445-485`), the three-queries-where-one-suffices today-activity block (`:848-896`), and the `SELECT *` over-fetch. Those are performance work and belong in `plans/remove-redundant-database-round-trips`. Note they touch the same queries, so sequence the two plans to avoid conflicting edits.
+- The other findings in `department-dashboard.server.ts`: the duplicate full scan of the same predicate (`:445-485`), the three-queries-where-one-suffices today-activity block (`:848-896`), and the `SELECT *` over-fetch. Those are performance work and belong in `plans/server-write-reliability` (Part B — the absorbed `remove-redundant-database-round-trips`). Note they touch the same queries, so sequence the two plans to avoid conflicting edits.
 - Redesigning the RBAC model, adding new permissions, or changing role definitions.
 - Any UI redesign of the department screens beyond gating the nav entry.
 - Changing what a legitimate OWNER/ADMIN sees.
@@ -217,14 +217,14 @@ Phases 2–4 are one release unit: shipping the server gate without the nav chan
 
 ## 12. Risks & Considerations
 
-| Risk                                                                                                                  | Mitigation                                                                                                                                          |
-| --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A legitimate MANAGER loses access they rely on                                                                        | Verify First item 5 reproduces current behaviour per role before the change; test MANAGER-with-department and MANAGER-without-department separately |
-| `activity.view` turns out to be granted to EMPLOYEE by design, making this "inconsistent gating" rather than a bypass | Resolve Verify First item 6 first; the fix is the same either way, but the severity, urgency and messaging change                                   |
-| A self-scoped EMPLOYEE response breaks a screen that assumed a member list                                            | Verify the empty-state rendering for both pickers (Section 8)                                                                                       |
-| This plan and `remove-redundant-database-round-trips` edit the same queries                                           | Land this one first; the perf plan should rebase on top of the new `where` clauses rather than the reverse                                          |
-| Server-side gating alone leaves the nav entry advertising an unusable page                                            | Ship phases 2–4 together (Section 11)                                                                                                               |
-| Rate data could still leak through a serializer even when the query is scoped                                         | Strip `billableRate`/`effectiveRate` in the serializer for out-of-scope callers rather than relying only on the query filter                        |
+| Risk                                                                                                                           | Mitigation                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A legitimate MANAGER loses access they rely on                                                                                 | Verify First item 5 reproduces current behaviour per role before the change; test MANAGER-with-department and MANAGER-without-department separately |
+| `activity.view` turns out to be granted to EMPLOYEE by design, making this "inconsistent gating" rather than a bypass          | Resolve Verify First item 6 first; the fix is the same either way, but the severity, urgency and messaging change                                   |
+| A self-scoped EMPLOYEE response breaks a screen that assumed a member list                                                     | Verify the empty-state rendering for both pickers (Section 8)                                                                                       |
+| This plan and `server-write-reliability` (Part B — the absorbed `remove-redundant-database-round-trips`) edit the same queries | Land this one first; the perf plan should rebase on top of the new `where` clauses rather than the reverse                                          |
+| Server-side gating alone leaves the nav entry advertising an unusable page                                                     | Ship phases 2–4 together (Section 11)                                                                                                               |
+| Rate data could still leak through a serializer even when the query is scoped                                                  | Strip `billableRate`/`effectiveRate` in the serializer for out-of-scope callers rather than relying only on the query filter                        |
 
 **Rollback:** code-only, no schema change; revert the commit. There is no data migration and no persisted state, so rollback is instantaneous and safe.
 

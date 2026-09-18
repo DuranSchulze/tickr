@@ -169,6 +169,20 @@
       "when": 1788834712315,
       "tag": "0023_cold_typhoid_mary",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789697295517,
+      "tag": "0024_plain_lady_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789702482637,
+      "tag": "0025_silent_rictor",
+      "breakpoints": true
     }
   ]
 }

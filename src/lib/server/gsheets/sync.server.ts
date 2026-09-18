@@ -13,6 +13,7 @@ import {
 } from '#/db/schema'
 import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
+import { chunkArray } from '../shared/import-utils.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import type { AuditAction } from '../tracker/audit/audit-logger.server'
 import { extractSheetId } from './extract-sheet-id'
@@ -106,18 +107,30 @@ export async function syncWorkspaceById({
 
   const [usersData, departmentsData, entryTagsData, memberClientRateRows] =
     await Promise.all([
+      // Chunked: these id lists come from unbounded fetches and PostgreSQL
+      // rejects a statement with more than 65,535 bind parameters — a latent
+      // failure that fires exactly when a workspace grows large enough to
+      // matter. See plans/database-performance Workstream B1.
       userIds.length > 0
-        ? db.select().from(users).where(inArray(users.id, userIds))
+        ? Promise.all(
+            chunkArray(userIds).map((ids) =>
+              db.select().from(users).where(inArray(users.id, ids)),
+            ),
+          ).then((rows) => rows.flat())
         : Promise.resolve([]),
       db
         .select()
         .from(departments)
         .where(eq(departments.workspaceId, workspace.id)),
       entryIds.length > 0
-        ? db
-            .select()
-            .from(timeEntryTags)
-            .where(inArray(timeEntryTags.timeEntryId, entryIds))
+        ? Promise.all(
+            chunkArray(entryIds).map((ids) =>
+              db
+                .select()
+                .from(timeEntryTags)
+                .where(inArray(timeEntryTags.timeEntryId, ids)),
+            ),
+          ).then((rows) => rows.flat())
         : Promise.resolve([]),
       db
         .select()

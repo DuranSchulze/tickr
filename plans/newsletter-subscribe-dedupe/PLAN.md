@@ -16,43 +16,43 @@
 
 - [ ] **Confirm the guard can never fire (local, instant).**
       `bash
-    grep -n -B 4 -A 14 "onConflictDoUpdate" src/lib/server/newsletter.server.ts
-    `
+  grep -n -B 4 -A 14 "onConflictDoUpdate" src/lib/server/newsletter.server.ts
+  `
       Expected: `INSERT ... .onConflictDoUpdate({ target: newsletterSubscribers.email, set: { status: 'active' } }).returning({ id, email })` followed by `const alreadySubscribed = result.length === 0`.
 
       `ON CONFLICT DO UPDATE ... RETURNING` always returns the affected row, so `result.length` is always `1` and `alreadySubscribed` is permanently `false`. The `if (alreadySubscribed)` block below it is unreachable.
 
 - [ ] **Confirm nothing else dedupes (local).**
       `bash
-    grep -rn "alreadySubscribed\|newsletter_subscribers\|newsletterSubscribers" src/ --include=*.ts --include=*.tsx
-    `
+  grep -rn "alreadySubscribed\|newsletter_subscribers\|newsletterSubscribers" src/ --include=*.ts --include=*.tsx
+  `
 
 - [ ] **Confirm the endpoint is open and throttle-free (local).**
       `bash
-    grep -rn "ratelimit\|rate-limit\|rateLimit\|429" src/routes/api/newsletter/ src/lib/server/newsletter.server.ts
-    grep -n -A 6 "corsHeaders" src/routes/api/newsletter/subscribe.ts
-    `
+  grep -rn "ratelimit\|rate-limit\|rateLimit\|429" src/routes/api/newsletter/ src/lib/server/newsletter.server.ts
+  grep -n -A 6 "corsHeaders" src/routes/api/newsletter/subscribe.ts
+  `
       Expected: no rate limiting anywhere, and `'Access-Control-Allow-Origin': '*'`.
 
 - [ ] **Confirm the recipient is hardcoded (local).**
       `bash
-    grep -n "info@\|NEWSLETTER_\|teamEmail\|to:" src/lib/server/newsletter.server.ts
-    `
+  grep -n "info@\|NEWSLETTER_\|teamEmail\|to:" src/lib/server/newsletter.server.ts
+  `
       This determines who receives the amplified internal notification flood.
 
 - [ ] **Confirm the delivery path (local).**
       `bash
-    grep -n "Resend\|resend\|nodemailer\|smtp" src/lib/server/mailer.ts
-    `
+  grep -n "Resend\|resend\|nodemailer\|smtp" src/lib/server/mailer.ts
+  `
       Establishes which provider quota the amplification would exhaust.
 
 - [ ] **Size the exposure (needs DB access).** Count distinct subscribers and check for repeated subscribe activity that suggests the endpoint has already been driven:
       `sql
-    SELECT count(*) FROM newsletter_subscribers;
-    SELECT status, count(*) FROM newsletter_subscribers GROUP BY status;
-    SELECT date_trunc('hour', subscribed_at) AS hour, count(*)
-    FROM newsletter_subscribers GROUP BY 1 ORDER BY 1 DESC LIMIT 24;
-    `
+  SELECT count(*) FROM newsletter_subscribers;
+  SELECT status, count(*) FROM newsletter_subscribers GROUP BY status;
+  SELECT date_trunc('hour', subscribed_at) AS hour, count(*)
+  FROM newsletter_subscribers GROUP BY 1 ORDER BY 1 DESC LIMIT 24;
+  `
       If the hourly counts show spikes, the endpoint has already been exercised beyond normal signups.
 
 - [ ] **Check provider quota usage (needs Resend/SMTP dashboard access).** Look for unusual send volume around any spike found above. If quota has been consumed, it affects password resets and workspace invites too, since they share `mailer.ts`.
@@ -110,7 +110,7 @@ void sendTeamNotification(normalized).catch((err) =>
 )
 ```
 
-Note this is also an instance of the fire-and-forget class of defect in `plans/await-serverless-background-writes`: on Vercel the isolate can be frozen when the response returns, so these emails may not complete at all. The observable, provable bug is the broken dedupe; the delivery reliability issue is a separate finding that happens to live in the same lines.
+Note this is also an instance of the fire-and-forget class of defect in `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`): on Vercel the isolate can be frozen when the response returns, so these emails may not complete at all. The observable, provable bug is the broken dedupe; the delivery reliability issue is a separate finding that happens to live in the same lines.
 
 **The exposure.** `src/routes/api/newsletter/subscribe.ts:10-14` sets `'Access-Control-Allow-Origin': '*'` with `POST, OPTIONS` allowed, and there is no rate limiting in the repository — a grep for rate-limit constructs returns only the Better Auth configuration, which covers `/api/auth/*` and not this route.
 
@@ -129,11 +129,11 @@ Note this is also an instance of the fire-and-forget class of defect in `plans/a
 - `[FIX]` Add a regression test asserting a second subscribe for the same address sends no email.
 - `[CHECK]` Confirm the newsletter form is same-origin before removing CORS.
 - `[CHECK]` Confirm the `status` transition semantics — if `onConflictDoUpdate` was deliberately used to _reactivate_ an unsubscribed address, that behaviour must be preserved while still not re-sending.
-- `[CHECK]` Determine whether either email should be awaited (cross-reference `plans/await-serverless-background-writes`).
+- `[CHECK]` Determine whether either email should be awaited (cross-reference `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`)).
 
 ## 4. Out of Scope
 
-- The general fire-and-forget pattern across the other ~40 call sites — that is `plans/await-serverless-background-writes`. This plan decides only what happens to these two emails.
+- The general fire-and-forget pattern across the other ~40 call sites — that is `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`). This plan decides only what happens to these two emails.
 - Any redesign of the welcome or team-notification email content.
 - Full double-opt-in confirmation flow, unless the decision in Section 13 goes that way.
 - Unsubscribe handling.
@@ -238,7 +238,7 @@ Manual checks:
 - [ ] Phase 2 — Fix the insert and delete the redundant query. This alone stops the amplification of _repeat_ requests.
 - [ ] Phase 3 — Remove the wildcard CORS header.
 - [ ] Phase 4 — Add rate limiting.
-- [ ] Phase 5 — Decide and apply the send strategy (await vs queue), coordinated with `plans/await-serverless-background-writes`.
+- [ ] Phase 5 — Decide and apply the send strategy (await vs queue), coordinated with `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`).
 - [ ] Phase 6 — Regression tests.
 
 Phase 2 is the highest-value single change. Phases 3 and 4 are independent and small.
@@ -262,5 +262,5 @@ Phase 2 is the highest-value single change. Phases 3 and 4 are independent and s
 - [ ] Should subscription require double opt-in (confirm-by-email) rather than a single request? This is the only fix that fully removes the ability to send mail to arbitrary third-party addresses, at the cost of a confirmation step.
 - [ ] What is the rate-limit threshold, keyed on what (IP, and/or normalized email), and is per-instance in-memory limiting acceptable or is a shared store required?
 - [ ] Should an unsubscribed address be reactivated by a new subscribe, and should reactivation send the welcome email? (If yes, the welcome email is no longer strictly "first insert only".)
-- [ ] Are the two emails best awaited or handed to a queue? Cross-reference `plans/await-serverless-background-writes` so the two plans agree rather than each deciding separately.
+- [ ] Are the two emails best awaited or handed to a queue? Cross-reference `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) so the two plans agree rather than each deciding separately.
 - [ ] Should a failed email be retried, or is it acceptable to log and drop given the subscription is already recorded?

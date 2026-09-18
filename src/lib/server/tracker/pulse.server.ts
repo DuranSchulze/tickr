@@ -8,11 +8,16 @@
 // page sitting open on ANOTHER device (BroadcastChannel is same-browser and
 // DOM activation events never fire on an untouched tab).
 //
-// Cost note: two member-scoped aggregate queries per poll (index prefix
-// workspace_id + workspace_member_id), served in one parallel wave as
-// everywhere else on the Neon HTTP driver. Session/workspace resolution in
-// requireWorkspaceAccess dominates the cost — still roughly an order of
-// magnitude cheaper than polling getTrackerState, which ships the whole
+// Cost note: the aggregate below is `max(updated_at)` + `count(*)` scoped to
+// (workspace_id, workspace_member_id) with NO date bound. Before
+// `time_entries_ws_member_updated_idx` existed, no index contained updated_at,
+// so the planner could not satisfy max() with a backward index scan and had to
+// read every entry the member had ever recorded — the poll grew permanently
+// slower with history while this comment claimed it was cheap, which is why
+// nobody revisited it. That index (plans/database-performance, Workstream A)
+// makes max() a backward index scan and lets count(*) run index-only. Session
+// and workspace resolution in requireWorkspaceAccess remains a fixed cost, and
+// this is still far cheaper than polling getTrackerState, which ships the whole
 // 62-day entry window.
 // ─────────────────────────────────────────────────────────────────────────────
 

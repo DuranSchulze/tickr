@@ -20,10 +20,14 @@ export type DeveloperJwtPayload = {
 export type ExternalApiJwtPayload = ApiKeyJwtPayload | DeveloperJwtPayload
 
 function jwtSecret(): Uint8Array {
-  const secret =
-    process.env.EXTERNAL_API_JWT_SECRET || process.env.BETTER_AUTH_SECRET
+  // Deliberately independent of BETTER_AUTH_SECRET: falling back to the auth
+  // master secret reused one key across two security domains, so rotating one
+  // invalidated the other and a single leak compromised both.
+  const secret = process.env.EXTERNAL_API_JWT_SECRET
   if (!secret) {
-    throw new Error('EXTERNAL_API_JWT_SECRET is not configured.')
+    throw new Error(
+      'EXTERNAL_API_JWT_SECRET is not configured. Public-API token issuance requires a dedicated secret (see .env.example).',
+    )
   }
   return new TextEncoder().encode(secret)
 }

@@ -33,9 +33,11 @@ import {
 import { createWorkspaceFn } from '#/lib/server/workspaces'
 
 export function WorkspaceSwitcher({
+  currentWorkspaceId,
   currentWorkspaceName,
   permissionLevel,
 }: {
+  currentWorkspaceId: string
   currentWorkspaceName: string
   permissionLevel: string
 }) {
@@ -121,16 +123,18 @@ export function WorkspaceSwitcher({
             </DropdownMenuItem>
           )}
           {workspaces.map((ws) => {
-            const isCurrentByName = ws.name === currentWorkspaceName
+            // `name` is not unique (only `slug` is), so two same-named
+            // workspaces both looked "current" and neither could be switched to.
+            const isCurrent = ws.workspaceId === currentWorkspaceId
             return (
               <DropdownMenuItem
                 key={ws.workspaceId}
                 onSelect={(e) => {
                   e.preventDefault()
-                  if (!isCurrentByName) void handleSwitch(ws.slug)
+                  if (!isCurrent) void handleSwitch(ws.slug)
                 }}
                 className={`flex items-start gap-2 ${
-                  isCurrentByName ? 'bg-warm-taupe' : ''
+                  isCurrent ? 'bg-warm-taupe' : ''
                 }`}
               >
                 <div className="flex-1 min-w-0">
@@ -150,7 +154,7 @@ export function WorkspaceSwitcher({
                     </p>
                   )}
                 </div>
-                {isCurrentByName && (
+                {isCurrent && (
                   <Check className="mt-0.5 size-4 text-primary shrink-0" />
                 )}
               </DropdownMenuItem>

@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Consolidation note (2026-09-18):** five plans from this audit's tiers have since been absorbed and their folders deleted — `dashboard-live-total-recompute` and `stabilize-active-entry-identity` into `plans/time-recording-performance/` (Phases 6 and 5), and `remove-redundant-database-round-trips`, `await-serverless-background-writes`, `fix-overlap-cancel-bug` into `plans/server-write-reliability/` (Parts B, A, C — full original text preserved there). The §5 plan tree and §11 sequencing below are annotated with the new locations.
+
 ## Status
 
 - [ ] Triage: decide which findings are verification-only and which are scheduled for a fix.
@@ -11,7 +13,7 @@
 - [ ] Work through the client performance plans.
 - [ ] Work through the serverless reliability plans.
 - [ ] Work through the security and correctness plans.
-- [ ] Batch the low-severity quick fixes.
+- [x] Batch the low-severity quick fixes. _(all four `plans/quick-fix/` plans are Done/Implemented — see Tier 4 below)_
 - [ ] Re-run the audit's high-value checks to confirm nothing regressed.
 
 ## Verify First (No Code Change)
@@ -20,14 +22,14 @@ This plan is the entry point to an audit, so "verify first" here means triaging 
 
 - [ ] **Run the baseline and record the numbers, so later changes have a reference point.**
       `bash
-    ./node_modules/.bin/tsc --noEmit -p tsconfig.json
-    npx eslint src --ext .ts,.tsx --max-warnings 0
-    ./node_modules/.bin/vitest run
-    NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
-    `
+./node_modules/.bin/tsc --noEmit -p tsconfig.json
+npx eslint src --ext .ts,.tsx --max-warnings 0
+./node_modules/.bin/vitest run
+NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
+`
       Baseline as of this audit: typecheck clean, lint clean, **1 failing test** (`src/lib/time-tracker/payroll-periods.test.ts`, date-dependent — see `plans/fix-payroll-period-test-time-bomb`), and a client bundle whose two largest chunks are `exceljs.min` (930 KB raw / 256 KB gzip) and `useAppTheme-D-ys7bb4.js` (971 KB raw / 251 KB gzip, which is MapLibre — see `plans/dashboard-bundle-maplibre-lazy-load`).
 
-- [ ] **Settle the questions that change severity, because several findings are "critical if X, minor if not".** These need production or dashboard access and cannot be answered from source: - Does any real payment exist? (`subscriptions` vs `subscription_payments` counts) — decides whether `plans/fix-neon-http-transaction-failure` is a bug fix or a live incident. - Has the Google Sheets cron ever run? (`SELECT count(*) FROM pending_gsheets_syncs`, plus Vercel Cron logs for 405s) — decides whether `plans/fix-gsheets-cron-http-method` is latent or an active data-sync outage. - Does the default EMPLOYEE role hold `activity.view` / `members.view`? — decides whether `plans/department-analytics-authorization` is an access-control bypass or an inconsistency. - Has the newsletter endpoint been driven in a loop? (hourly subscribe counts + provider send volume) — decides whether `plans/newsletter-subscribe-dedupe` needs incident handling. - Has `/api/import/stream` been reached cross-origin? (audit log entries nobody initiated) — decides whether `plans/import-stream-csrf-bypass` needs forensic review. - How does Vercel treat a client-supplied `x-forwarded-for`? — decides the severity of the client-IP item in `plans/quick-fix/server-hygiene.md`.
+- [ ] **Settle the questions that change severity, because several findings are "critical if X, minor if not".** These need production or dashboard access and cannot be answered from source: - Does any real payment exist? (`subscriptions` vs `subscription_payments` counts) — decides whether `plans/fix-neon-http-transaction-failure` is a bug fix or a live incident. - Has the Google Sheets cron ever run? (`SELECT count(*) FROM pending_gsheets_syncs`, plus Vercel Cron logs for 405s) — decides whether `plans/fix-gsheets-cron-http-method` is latent or an active data-sync outage. - Does the default EMPLOYEE role hold `activity.view` / `members.view`? — decides whether `plans/department-analytics-authorization` is an access-control bypass or an inconsistency. - Has the newsletter endpoint been driven in a loop? (hourly subscribe counts + provider send volume) — decides whether `plans/newsletter-subscribe-dedupe` needs incident handling. - Has `/api/import/stream` been reached cross-origin? (audit log entries nobody initiated) — decides whether `plans/import-stream-csrf-bypass` needs forensic review. - How does Vercel treat a client-supplied `x-forwarded-for`? — decides the severity of the client-IP item in `plans/quick-fix/server-hygiene.md`. **Still open, and now the only unresolved question from the quick-fix batch:** that plan shipped but deliberately left `src/lib/server/client-ip.server.ts` unchanged pending this answer.
 
 - [ ] **Decide in advance which findings are check-only and will NOT be fixed now.** The audit deliberately recorded several items as latent or unverified, and those should be consciously deferred rather than silently dropped: - `trackerKeys.state` has no `workspaceId`, but no leak exists because every workspace switch performs a hard navigation. Harden cheaply; do not treat as urgent. - `vercel.json`'s `/_build/(.*)` Cache-Control rule is vestigial, but immutable caching **is** correctly applied via Nitro's generated `/assets/(.*)` rule. There is no bug to fix. Do not "fix" it. - `createTask` / `deleteTask` skipping the catalog permission may be intentional (`README.md:8` documents "all workspace roles can manage tasks"). Resolve the policy question before changing behaviour. - `config({ path: '.env.local' })` at module scope in `src/db.ts` loads dotenv in production. Impact unmeasured; check before changing.
 
@@ -92,27 +94,49 @@ plans/
   fix-payroll-period-test-time-bomb/PLAN.md                    (NEW)
 
   ── Tier 1: highest impact, lowest risk ──────────────────────
-  add-missing-database-indexes/PLAN.md                         (NEW)
-  tracker-pulse-query-scaling/PLAN.md                          (NEW)
+  ~~add-missing-database-indexes/PLAN.md~~                     (ABSORBED 2026-09-18 →
+                                                                database-performance Workstream A)
+  ~~tracker-pulse-query-scaling/PLAN.md~~                      (ABSORBED 2026-09-18 →
+                                                                database-performance Workstream C)
   dashboard-bundle-maplibre-lazy-load/PLAN.md                  (NEW)
-  dashboard-live-total-recompute/PLAN.md                       (NEW)
-  stabilize-active-entry-identity/PLAN.md                      (NEW)
+  ~~dashboard-live-total-recompute/PLAN.md~~                   (ABSORBED 2026-09-18 →
+                                                                time-recording-performance Phase 6)
+  ~~stabilize-active-entry-identity/PLAN.md~~                  (ABSORBED 2026-09-18 →
+                                                                time-recording-performance Phase 5)
 
   ── Tier 2: reliability and query efficiency ─────────────────
   workspace-authorization-refetch-storm/PLAN.md                (NEW)
   intl-formatter-and-timesheet-render-cost/PLAN.md             (NEW)
-  remove-redundant-database-round-trips/PLAN.md                (NEW)
-  bound-unbounded-query-result-sets/PLAN.md                    (NEW)
-  await-serverless-background-writes/PLAN.md                   (NEW)
+  ~~remove-redundant-database-round-trips/PLAN.md~~            (ABSORBED 2026-09-18 →
+                                                                server-write-reliability Part B;
+                                                                timer slice → time-recording-performance Phase 2)
+  ~~bound-unbounded-query-result-sets/PLAN.md~~                (ABSORBED 2026-09-18 →
+                                                                database-performance Workstream B)
+  ~~await-serverless-background-writes/PLAN.md~~               (ABSORBED 2026-09-18 →
+                                                                server-write-reliability Part A;
+                                                                stop-path slice → time-recording-performance Phase 2)
   gsheets-write-integrity/PLAN.md                              (NEW)
   fix-gsheets-cron-http-method/PLAN.md                         (NEW)
-  import-pipeline-performance/PLAN.md                          (NEW)
+  ~~import-pipeline-performance/PLAN.md~~                      (ABSORBED 2026-09-18 →
+                                                                database-performance Workstream D)
   external-call-timeouts-and-auth/PLAN.md                      (NEW)
+
+  ── Consolidated plans added after this audit ────────────────
+  time-recording-performance/PLAN.md                           (NEW 2026-09-18 — record-a-task
+                                                                journey; absorbed 2 Tier-1 + slices
+                                                                of 2 Tier-2 plans; see its §0.4)
+  server-write-reliability/PLAN.md                             (NEW 2026-09-18 — mother plan holding
+                                                                the full text of the 3 absorbed
+                                                                Tier-2 plans' remaining scope)
+  database-performance/PLAN.md                                 (NEW 2026-09-18 — merged 5 DB plans;
+                                                                Workstreams A–E; verbatim originals
+                                                                in absorbed/)
 
   ── Tier 3: security and correctness ─────────────────────────
   require-email-verification-for-membership-claim/PLAN.md      (NEW)
   task-catalog-permission-and-project-validation/PLAN.md       (NEW)
-  prevent-duplicate-active-timers/PLAN.md                      (NEW)
+  ~~prevent-duplicate-active-timers/PLAN.md~~                  (ABSORBED 2026-09-18 →
+                                                                database-performance Workstream E)
   service-worker-asset-cache-path/PLAN.md                      (NEW)
   workspace-access-hardening/PLAN.md                           (NEW)
 
@@ -127,8 +151,8 @@ plans/
 
 N/A for this index plan. Two sibling plans carry schema work and are the only ones that do:
 
-- `plans/add-missing-database-indexes` — additive indexes plus re-creating a dropped trigram index, delivered as one migration.
-- `plans/prevent-duplicate-active-timers` — a partial unique index, which **requires pre-existing duplicate cleanup before it can be applied** or the migration will fail.
+- `plans/database-performance` (Workstream A) — additive indexes plus re-creating a dropped trigram index, delivered as one migration.
+- `plans/database-performance` (Workstream E) — a partial unique index, which **requires pre-existing duplicate cleanup before it can be applied** or the migration will fail.
 
 No plan in this set requires a destructive migration or a data backfill beyond that one cleanup. Confirm the standard parity workflow (`schema.ts` ↔ `drizzle/`) is followed, and note `db:push` exists — a schema-declared index that never reaches a migration file will not exist in production.
 
@@ -180,37 +204,38 @@ Ordering is by (impact ÷ risk), with dependencies respected. Each tier should b
 
 **Tier 1 — highest impact, lowest risk.**
 
-- [ ] `add-missing-database-indexes` — additive; the best ratio in the set. Note `tracker-pulse-query-scaling` depends on the `updated_at` index added here, so land this first if the pulse fix ships as the counter approach.
-- [ ] `tracker-pulse-query-scaling`
+- [x] `database-performance` (Workstream A) — additive; the best ratio in the set. _(landed 2026-09-18: five indexes in `schema.ts` + `drizzle/0025_silent_rictor.sql` generated; **not applied**)_
+- [x] `database-performance` (Workstream C) — depends on the Workstream A `updated_at` index; land A first if the pulse ships as the counter approach. _(landed 2026-09-18: Option A chosen — no counter column; `pulse.server.ts` cost note corrected)_
 - [ ] `dashboard-bundle-maplibre-lazy-load` — ~250 KB gzip off three routes, one-file change.
-- [ ] `dashboard-live-total-recompute`
-- [ ] `stabilize-active-entry-identity`
+- [ ] ~~`dashboard-live-total-recompute`~~ → **`time-recording-performance` Phase 6** (absorbed 2026-09-18).
+- [ ] ~~`stabilize-active-entry-identity`~~ → **`time-recording-performance` Phase 5** (absorbed 2026-09-18).
 
 **Tier 2 — reliability and query efficiency.**
 
 - [ ] `workspace-authorization-refetch-storm` — highest user-visible latency win.
 - [ ] `intl-formatter-and-timesheet-render-cost`
-- [ ] `remove-redundant-database-round-trips` — note this edits the same queries as `department-analytics-authorization`; rebase on top of it rather than the reverse.
-- [ ] `bound-unbounded-query-result-sets` — measure with `EXPLAIN (ANALYZE, BUFFERS)` before and after; the `AT TIME ZONE` grouping change may reduce bytes-on-wire without reducing the index scan.
-- [ ] `await-serverless-background-writes` — decide the await-vs-queue policy once here, and have `newsletter-subscribe-dedupe` follow it.
+- [ ] ~~`remove-redundant-database-round-trips`~~ → **`server-write-reliability` Part B** (absorbed 2026-09-18) — note it edits the same queries as `department-analytics-authorization`; rebase on top of it rather than the reverse. Its timer-path slice is `time-recording-performance` Phase 2.
+- [ ] `database-performance` (Workstream B) — measure with `EXPLAIN (ANALYZE, BUFFERS)` before and after; the `AT TIME ZONE` grouping change may reduce bytes-on-wire without reducing the index scan. _(B1 chunked 2026-09-18 — the 65,535 bind-parameter ceiling is closed; B2–B4 still gated on production row counts)_
+- [ ] ~~`await-serverless-background-writes`~~ → **`server-write-reliability` Part A** (absorbed 2026-09-18) — decide the await-vs-queue policy once there, and have `newsletter-subscribe-dedupe` follow it. Its stop-path slice is `time-recording-performance` Phase 2.
 - [ ] `gsheets-write-integrity`
 - [ ] `fix-gsheets-cron-http-method` — cheap and zero-risk; could be promoted into Tier 0 if the verification shows the queue has never drained.
-- [ ] `import-pipeline-performance` — starts with a delete-or-optimize decision.
+- [ ] `database-performance` (Workstream D) — starts with a consolidate-vs-port decision (the "delete it" option is already falsified in the absorbed file).
 - [ ] `external-call-timeouts-and-auth` — the shared `fetchWithTimeout` helper is best introduced once and adopted everywhere rather than per call site.
 
 **Tier 3 — security and correctness, some needing a product decision.**
 
 - [ ] `require-email-verification-for-membership-claim` — needs an onboarding decision first.
 - [ ] `task-catalog-permission-and-project-validation` — the `projectId` validation is unconditional; the permission question needs a policy answer.
-- [ ] `prevent-duplicate-active-timers` — needs the duplicate-cleanup review before the unique index can be applied.
+- [ ] `database-performance` (Workstream E) — needs the duplicate-cleanup review before the unique index can be applied.
 - [ ] `service-worker-asset-cache-path` — verify the current SW behaviour before changing it, since a caching mistake here can white-screen installed users.
 - [ ] `workspace-access-hardening`
 
 **Tier 4 — batched.**
 
-- [ ] `quick-fix/workspace-and-timer-correctness.md`
-- [ ] `quick-fix/client-memory-and-formatting.md`
-- [ ] `quick-fix/server-hygiene.md`
+- [x] `quick-fix/workspace-and-timer-correctness.md` — **done** (switcher matches by id; `useIsDesktop` measurement gate; `WeeklyPresets` click-time ranges + a timezone off-by-one fix)
+- [x] `quick-fix/client-memory-and-formatting.md` — **done** (object-URL revoke, sort allocation, DTR single pass, dead files deleted)
+- [x] `quick-fix/server-hygiene.md` — **done** (items 1, 2, 4, 6 landed; item 3 accepted with the `rate_limit` migration prepared but unapplied; items 5 and 7 intentionally unchanged)
+- [x] `quick-fix/export-time-separation.md` — **done**; not listed in this audit, but it landed in the same batch (the day-splitting was already present; the batch added the `Intl` caching that `intl-formatter-and-timesheet-render-cost` also wanted)
 
 ## 12. Risks & Considerations
 
@@ -220,7 +245,7 @@ Ordering is by (impact ÷ risk), with dependencies respected. Each tier should b
 | A "critical" finding turns out to be latent once production is checked, wasting effort                            | Verify First gates every severity; do the triage sweep before scheduling Tier 1+                                                                  |
 | Someone "fixes" a non-bug — specifically the vestigial `/_build/` cache rule, which looks broken but is not       | Recorded explicitly in Verify First and in `plans/service-worker-asset-cache-path`, which exists partly to prevent this                           |
 | Tightening authorization or CSRF breaks a legitimate flow that was silently relying on the gap                    | Each affected plan exercises the legitimate path before and after, and names the specific caller to re-test                                       |
-| A schema change is applied without cleaning pre-existing bad data                                                 | `prevent-duplicate-active-timers` requires duplicate detection and review before the unique index                                                 |
+| A schema change is applied without cleaning pre-existing bad data                                                 | `database-performance` Workstream E requires duplicate detection and review before the unique index                                               |
 | The set is too large to land in one go and stalls                                                                 | Every plan is independently shippable; tiers exist so the work can stop cleanly at any boundary                                                   |
 | Findings drift as the codebase moves                                                                              | Plans cite file:line as of the audit; re-verify line numbers when starting a plan rather than trusting them blindly                               |
 

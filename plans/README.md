@@ -4,6 +4,8 @@ This directory holds all feature, fix, and redesign plans for the Tickr (Trackly
 
 > **Purpose:** Before any non-trivial code change begins, a plan is written here. The plan serves as the single source of truth for what to build, why, how it fits into the existing codebase, and what "done" looks like. It is read by both humans and LLMs.
 
+> **Execution order:** [`EXECUTION-ORDER.md`](./EXECUTION-ORDER.md) is the ordered work queue — waves, dependencies, blockers, and the known-bad statuses in this directory. **Start there when picking up work**, then open the individual plan.
+
 ---
 
 ## Directory Structure
@@ -11,10 +13,11 @@ This directory holds all feature, fix, and redesign plans for the Tickr (Trackly
 ```
 plans/
 ├── README.md                          ← THIS FILE — the convention guide
+├── EXECUTION-ORDER.md                 ← ordered work queue (waves + dependencies)
 ├── <plan-folder>/                     ← kebab-case, descriptive
 │   └── PLAN.md                        ← the plan document itself
 │
-├── fix-overlap-cancel-bug/            ← example: fix plan
+├── fix-gsheets-cron-http-method/      ← example: fix plan
 │   └── PLAN.md
 ├── subscription-workspace-access/     ← example: feature plan
 │   └── PLAN.md
@@ -38,6 +41,8 @@ plans/
 
 A read-only system audit produced 24 sibling plans. **Do not read them individually at random** — `plans/audit-2026-09-remediation/PLAN.md` is the index: it tiers them by priority, records cross-plan dependencies and edit-order hazards, and lists the findings that are deliberately deferred as latent or policy-dependent.
 
+> **Consolidation (2026-09-18):** five of the 24 were later absorbed to reduce folder count, per the "one idea = one plan" rule — two fully into `plans/time-recording-performance/` (Phases 5–6) and three into the mother plan `plans/server-write-reliability/` (Parts A–C, full original text preserved). 21 sibling folders remain. When a merge fully absorbs a plan, fold its scope into the surviving plan, preserve its original text inside the surviving plan folder (e.g. an `absorbed/` subfolder or as a Part), and only then delete the absorbed folder.
+
 Conventions specific to this set, layered on top of the standard template:
 
 | Convention                              | Meaning                                                                                                                                                                                                           |
@@ -52,7 +57,7 @@ Two plans exist partly to **prevent a non-fix**: `service-worker-asset-cache-pat
 
 | Rule                                                           | Example                                                                         |
 | -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Folder name is **kebab-case**                                  | `landing-page-redesign`, `fix-overlap-cancel-bug`                               |
+| Folder name is **kebab-case**                                  | `landing-page-redesign`, `fix-gsheets-cron-http-method`                         |
 | Folder name summarizes the plan                                | `subscription-workspace-access`, not `plan-3`                                   |
 | Plan file is always `PLAN.md`                                  | `plans/landing-page-redesign/PLAN.md`                                           |
 | Exception: `quick-fix/` folder for tiny, single-commit changes | `plans/quick-fix/export-time-separation.md` (multiple `.md` files allowed here) |

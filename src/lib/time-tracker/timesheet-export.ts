@@ -30,14 +30,23 @@ type TimesheetExportRow = {
   status: 'WORK' | 'RUNNING' | 'NO_TIME'
 }
 
+// Cached per timezone: one formatter per row is wasteful across a timesheet.
+const exportTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+
 function formatExportTime(value: string | null, timezone: string) {
   if (!value) return ''
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(new Date(value))
+
+  let formatter = exportTimeFormatters.get(timezone)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+    exportTimeFormatters.set(timezone, formatter)
+  }
+  return formatter.format(new Date(value))
 }
 
 /** Keep user-controlled values as literal text when opened in a spreadsheet. */

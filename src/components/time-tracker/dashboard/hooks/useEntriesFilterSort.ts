@@ -28,15 +28,24 @@ export function useEntriesFilterSort(entries: TimeEntry[]) {
     if (filterBillable === 'yes') result = result.filter((e) => e.billable)
     if (filterBillable === 'no') result = result.filter((e) => !e.billable)
 
-    result.sort((a, b) => {
-      if (sortKey === 'newest')
-        return new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-      if (sortKey === 'oldest')
-        return new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
-      if (sortKey === 'longest')
-        return getEntrySeconds(b, tickForSort) - getEntrySeconds(a, tickForSort)
-      return getEntrySeconds(a, tickForSort) - getEntrySeconds(b, tickForSort)
-    })
+    if (sortKey === 'newest' || sortKey === 'oldest') {
+      // Parse each timestamp once up front: doing it inside the comparator
+      // allocated two `Date` objects per comparison (~2·n log n total).
+      const withTime = result.map((entry) => ({
+        entry,
+        time: Date.parse(entry.startedAt),
+      }))
+      withTime.sort((a, b) =>
+        sortKey === 'newest' ? b.time - a.time : a.time - b.time,
+      )
+      result = withTime.map((x) => x.entry)
+    } else {
+      result.sort((a, b) =>
+        sortKey === 'longest'
+          ? getEntrySeconds(b, tickForSort) - getEntrySeconds(a, tickForSort)
+          : getEntrySeconds(a, tickForSort) - getEntrySeconds(b, tickForSort),
+      )
+    }
 
     return result
   }, [entries, filterProject, filterTag, filterBillable, sortKey, tickForSort])

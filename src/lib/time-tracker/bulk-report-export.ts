@@ -16,22 +16,45 @@ type GroupedReportExportOptions = {
   orientation?: 'portrait' | 'landscape'
 }
 
-function formatReportTime(value: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-US', {
+// Formatter construction is expensive and these run four times per export row;
+// cache one instance per timezone (they are immutable and deterministic).
+const reportTimeFormatters = new Map<string, Intl.DateTimeFormat>()
+const reportDateFormatters = new Map<string, Intl.DateTimeFormat>()
+
+function getReportTimeFormatter(timeZone: string): Intl.DateTimeFormat {
+  const cached = reportTimeFormatters.get(timeZone)
+  if (cached) return cached
+
+  const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
-  }).format(new Date(value))
+  })
+  reportTimeFormatters.set(timeZone, formatter)
+  return formatter
 }
 
-function formatReportDate(value: string, timeZone: string): string {
-  return new Intl.DateTimeFormat('en-CA', {
+function getReportDateFormatter(timeZone: string): Intl.DateTimeFormat {
+  const cached = reportDateFormatters.get(timeZone)
+  if (cached) return cached
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date(value))
+  })
+  reportDateFormatters.set(timeZone, formatter)
+  return formatter
+}
+
+function formatReportTime(value: string, timeZone: string): string {
+  return getReportTimeFormatter(timeZone).format(new Date(value))
+}
+
+function formatReportDate(value: string, timeZone: string): string {
+  return getReportDateFormatter(timeZone).format(new Date(value))
 }
 
 function reportFilename(

@@ -85,6 +85,30 @@ describe('external API JWT', () => {
     expect(looksLikeJwt('tickr_abcdefghijklmnopqrstuvwxyz')).toBe(false)
   })
 
+  it('refuses to sign with the auth master secret when the dedicated secret is missing', async () => {
+    const originalExternal = process.env.EXTERNAL_API_JWT_SECRET
+    const originalAuth = process.env.BETTER_AUTH_SECRET
+    delete process.env.EXTERNAL_API_JWT_SECRET
+    process.env.BETTER_AUTH_SECRET = 'auth-master-secret'
+
+    try {
+      await expect(
+        signApiKeyJwt({ keyId: 'key_123', workspaceId: 'ws_456' }),
+      ).rejects.toThrow('EXTERNAL_API_JWT_SECRET is not configured')
+    } finally {
+      if (originalExternal === undefined) {
+        delete process.env.EXTERNAL_API_JWT_SECRET
+      } else {
+        process.env.EXTERNAL_API_JWT_SECRET = originalExternal
+      }
+      if (originalAuth === undefined) {
+        delete process.env.BETTER_AUTH_SECRET
+      } else {
+        process.env.BETTER_AUTH_SECRET = originalAuth
+      }
+    }
+  })
+
   it('signs and verifies a developer token with high-level access', async () => {
     const { token } = await signDeveloperJwt({
       developerId: 'dev_123',
