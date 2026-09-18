@@ -113,6 +113,8 @@ GROUP BY 1 ORDER BY 1;
 
 **[needs DB access]** Purpose: **this is the check that keeps the plan honest.** An expression `GROUP BY` over a timezone conversion generally **cannot** use the plain btree index on `(workspace_id, started_at)`, so the rewrite reduces bytes-on-the-wire and JS work dramatically but may **not** reduce the underlying index/heap scan. Compare this plan against a plain `GROUP BY date_trunc(...)` variant, and compare both against the current "fetch all rows and reduce in JS" cost. **If the `AT TIME ZONE` plan shows the same scan volume, the win is payload and CPU, not I/O** — say so in the PR rather than claiming a query-plan improvement.
 
+> **Update (2026-09-18):** `plans/quick-fix/export-time-separation.md` removed the analytics **daily-totals** `AT TIME ZONE` `GROUP BY` entirely — `analytics.server.ts` now computes daily totals in memory from `summaryRows` via `splitWorkIntervalByDay`. This EXPLAIN therefore no longer applies to daily totals; the remaining `AT TIME ZONE` aggregates (project / tag / department, via `clippedSecondsSql`) are unchanged, so the check still applies to those.
+
 **8. Confirm the rollup table exists and is populated, before proposing to read from it:**
 
 ```sql
@@ -310,7 +312,7 @@ Note the window itself is bounded and reasonable: `ENTRIES_WINDOW_DAYS = 62` (`s
 - `[CHECK]` Identify the busiest member per tenant to establish the realistic per-request row count (Verify First item 2).
 - `[CHECK]` **Measure whether any workspace is near the 65,535 bind-parameter ceiling** — the check that decides whether workstream 1 is a bug fix or hardening (Verify First item 3).
 - `[CHECK]` Record `EXPLAIN (ANALYZE, BUFFERS)` baselines for the catalog stats aggregate, a per-member range select, and a bootstrap catalogue query (Verify First items 4, 5, 6).
-- `[CHECK]` Determine whether the `AT TIME ZONE` `GROUP BY` rewrite actually reduces scan volume, or only payload and CPU (Verify First item 7). **Report this honestly either way.**
+- `[CHECK]` Determine whether the `AT TIME ZONE` `GROUP BY` rewrite actually reduces scan volume, or only payload and CPU (Verify First item 7). **Report this honestly either way.** _(Narrowed 2026-09-18: the **daily-totals** aggregate was removed by `plans/quick-fix/export-time-separation.md` and is now computed in JS, so this now applies only to the remaining project/tag/department aggregates.)_
 - `[CHECK]` Confirm `analytics_daily_member_metrics` is populated **and current** (`pending_analytics_rollups` empty) before proposing it as a source of totals (Verify First item 8).
 - `[CHECK]` Re-confirm the cited sites still lack bounds, and check for any existing `.limit()` the audit may have missed (Verify First item 9).
 - `[CHECK]` Determine which of the named aggregates genuinely require interval merging and therefore cannot become `GROUP BY` (Verify First item 10). **This prevents a silent billing-number change.**

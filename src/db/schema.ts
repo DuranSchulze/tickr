@@ -112,23 +112,31 @@ export const users = pgTable('users', {
     .$onUpdate(() => new Date()),
 })
 
-export const sessions = pgTable('sessions', {
-  id: varchar('id', { length: 255 }).primaryKey(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  token: varchar('token', { length: 255 }).notNull().unique(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-  ipAddress: text('ip_address'),
-  userAgent: text('user_agent'),
-  userId: varchar('user_id', { length: 30 })
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-})
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    token: varchar('token', { length: 255 }).notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    userId: varchar('user_id', { length: 30 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+  },
+  // `accounts` has the equivalent FK index but `sessions` never did. PostgreSQL
+  // does not auto-index foreign keys, so "sign out everywhere", password-reset
+  // session purges, and cascading user deletes sequentially scan what is
+  // normally the largest table in a Better Auth deployment.
+  (table) => [index('sessions_user_id_idx').on(table.userId)],
+)
 
 export const accounts = pgTable(
   'accounts',
@@ -886,8 +894,12 @@ export const projects = pgTable(
     // Supports the catalog page query: WHERE workspace_id = ? ORDER BY name.
     // Without this, listing projects (5k+ rows) does a full seq scan + sort on
     // every page load. With it, pagination is a bounded, pre-sorted index scan.
-    // This index also serves name-ordered search, so a separate trigram index
-    // is unnecessary — the planner prefers this one given ORDER BY name LIMIT.
+    // NOTE: this btree index serves ORDER BY name / pagination, but it does NOT
+    // serve leading-wildcard search (`name ILIKE '%term%'`) — a btree cannot
+    // satisfy an unanchored pattern. The trigram index that did (created in
+    // migration 0004, dropped in 0005) has never been rebuilt; see
+    // plans/database-performance for the deferred write-cost-vs-search-speed
+    // decision. Do not claim this index replaces it.
     index('projects_workspace_name_idx').on(table.workspaceId, table.name),
   ],
 )
@@ -921,6 +933,10 @@ export const projectTasks = pgTable(
       table.name,
     ),
     index('project_tasks_project_id_idx').on(table.projectId),
+    // Same fix `projects` received in migration 0004, for the identical
+    // `WHERE workspace_id = ? AND archived = false ORDER BY name` shape: the
+    // unique index above ends in `name`, so it cannot serve the sort.
+    index('project_tasks_workspace_name_idx').on(table.workspaceId, table.name),
   ],
 )
 
@@ -1082,6 +1098,27 @@ export const timeEntries = pgTable(
       .where(sql`${table.billable} = true`),
     index('time_entries_project_id_idx').on(table.projectId),
     index('time_entries_task_id_idx').on(table.taskId),
+    // The tracker "pulse" (polled every 30s per visible tab) runs
+    // `max(updated_at)` per member. Without an index containing updated_at the
+    // planner cannot satisfy max() with a backward index scan and must read
+    // every entry that member has ever recorded — it degrades permanently.
+    index('time_entries_ws_member_updated_idx').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+      table.updatedAt,
+    ),
+    // Workspace-scoped incremental sync (`updatedFilter`); the member-scoped
+    // variant above does not cover a cross-member workspace query.
+    index('time_entries_workspace_updated_idx').on(
+      table.workspaceId,
+      table.updatedAt,
+    ),
+    // Catalog-stats filter; the single-column project_id index only serves it
+    // with a heap re-check.
+    index('time_entries_workspace_project_idx').on(
+      table.workspaceId,
+      table.projectId,
+    ),
   ],
 )
 

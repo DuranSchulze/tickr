@@ -35,6 +35,22 @@ export async function runInBatches<T>(
   }
 }
 
+/**
+ * Split an array into fixed-size chunks.
+ *
+ * PostgreSQL rejects any statement carrying more than 65,535 bind parameters,
+ * so an `inArray(...)` built from an unbounded fetch is a latent hard failure
+ * that only fires once a workspace has enough rows to succeed at scale. 1,000
+ * keeps every statement far below the ceiling while still bounding round trips.
+ */
+export function chunkArray<T>(items: readonly T[], size = 1000): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size))
+  }
+  return chunks
+}
+
 // ── Writeback ID computation ──────────────────────────────────────────────────
 
 /**

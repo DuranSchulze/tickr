@@ -26,6 +26,7 @@ import {
 import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import { createAuditLog } from './audit/audit-logger.server'
+import { chunkArray } from '../shared/import-utils.server'
 import { getWorkspaceDateRange } from './shared/dates'
 import {
   splitWorkIntervalByDay,
@@ -395,18 +396,26 @@ export async function getBulkReport(data: {
     .where(and(...entryConditions))
     .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
 
-  // Tags for all returned entries.
+  // Tags for all returned entries. Chunked to stay under PostgreSQL's 65,535
+  // bind-parameter ceiling — a report range can return more entry ids than a
+  // single statement can carry. See plans/database-performance Workstream B1.
   const entryIds = rawEntries.map((e) => e.id)
   const tagRows =
     entryIds.length > 0
-      ? await db
-          .select({
-            timeEntryId: timeEntryTags.timeEntryId,
-            tagName: tags.name,
-          })
-          .from(timeEntryTags)
-          .innerJoin(tags, eq(timeEntryTags.tagId, tags.id))
-          .where(inArray(timeEntryTags.timeEntryId, entryIds))
+      ? (
+          await Promise.all(
+            chunkArray(entryIds).map((ids) =>
+              db
+                .select({
+                  timeEntryId: timeEntryTags.timeEntryId,
+                  tagName: tags.name,
+                })
+                .from(timeEntryTags)
+                .innerJoin(tags, eq(timeEntryTags.tagId, tags.id))
+                .where(inArray(timeEntryTags.timeEntryId, ids)),
+            ),
+          )
+        ).flat()
       : []
 
   const tagsByEntry = new Map<string, string[]>()

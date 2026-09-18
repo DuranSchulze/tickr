@@ -10,7 +10,7 @@
 - [ ] Pre-migration cleanup of existing duplicate open entries completed (or explicitly deferred with sign-off).
 - [ ] Partial unique index migration generated and reviewed.
 - [ ] `startTimer` converted from check-then-insert to insert-and-handle-conflict.
-- [ ] `updateActiveTimer` timestamp clamp symmetric with `startTimer`/`stopTimer`.
+- [x] `updateActiveTimer` timestamp clamp symmetric with `startTimer`/`stopTimer`. _(landed separately via `plans/quick-fix/server-hygiene.md` item 1: future bound with a 60s clock-skew tolerance, rejected in the handler. A lower bound is still an open product decision — Section 13 Q2.)_
 - [ ] Two-tab concurrent-start regression test added (concurrent call assertion).
 - [ ] Validation: typecheck, lint, tests, manual two-tab reproduction.
 - [ ] Rollback path documented and rehearsed (Section 12).

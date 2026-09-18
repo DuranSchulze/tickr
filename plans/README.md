@@ -4,6 +4,8 @@ This directory holds all feature, fix, and redesign plans for the Tickr (Trackly
 
 > **Purpose:** Before any non-trivial code change begins, a plan is written here. The plan serves as the single source of truth for what to build, why, how it fits into the existing codebase, and what "done" looks like. It is read by both humans and LLMs.
 
+> **Execution order:** [`EXECUTION-ORDER.md`](./EXECUTION-ORDER.md) is the ordered work queue — waves, dependencies, blockers, and the known-bad statuses in this directory. **Start there when picking up work**, then open the individual plan.
+
 ---
 
 ## Directory Structure
@@ -11,6 +13,7 @@ This directory holds all feature, fix, and redesign plans for the Tickr (Trackly
 ```
 plans/
 ├── README.md                          ← THIS FILE — the convention guide
+├── EXECUTION-ORDER.md                 ← ordered work queue (waves + dependencies)
 ├── <plan-folder>/                     ← kebab-case, descriptive
 │   └── PLAN.md                        ← the plan document itself
 │

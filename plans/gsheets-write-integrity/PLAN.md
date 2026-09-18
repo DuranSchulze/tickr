@@ -237,7 +237,7 @@ The _intent_ in each comment is defensible — none of these should fail a user'
 
 - **Automatically repairing duplicates that already exist in customer sheets.** Deleting rows from a customer's spreadsheet is destructive and needs human review and its own plan. This plan detects and reports; a human repairs.
 - **Fixing the unawaited `void exportProject(...)` / `void createAuditLog(...)` call sites.** Owned by `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`). This plan assumes that plan's Phase 1 may touch the same `catch {}` blocks in `catalog-sync.server.ts` — coordinate to avoid a double-edit.
-- **Rewriting `streaming-import.server.ts`'s per-row loops.** Owned by `plans/import-pipeline-performance`.
+- **Rewriting `streaming-import.server.ts`'s per-row loops.** Owned by `plans/database-performance` (Workstream D).
 - **Fixing the `POST`-only Sheets cron or `CRON_SECRET`.** Owned by `plans/fix-gsheets-cron-http-method`.
 - **Improving the misleading wording of `friendlyDbError`.** It is genuinely misleading, but rewording it is cosmetic and the real fix is to stop _creating_ the duplicates. If wording is changed, it must not be changed to claim the sheet is clean without evidence — see Section 13.
 - **Adding a deduplicating upsert strategy to the Sheets write path.** This plan makes writes fail closed; it does not make them idempotent. Idempotency across an `append` API is a larger design question.
@@ -434,5 +434,5 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 - [ ] **Should the misleading `friendlyDbError` wording change?** It currently blames the customer for duplicates the app created. Rewording is cosmetic and risky to do before the duplicates stop being created — decide the order.
 - [ ] **Is a redacted identifier acceptable in the invite-share log line,** or does the team want the raw email for support purposes?
 - [ ] **Should retries be added to these Sheets reads?** If yes, they belong in `plans/external-call-timeouts-and-auth` (bounded backoff with jitter, honouring Google's quota). Confirm that plan owns it so this one does not grow a competing retry implementation.
-- [ ] **Merge order for `catalog-sync.server.ts`.** This plan, `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) (Phase 1/3), and `plans/import-pipeline-performance` all reference this file. Assign an order before any of them land.
+- [ ] **Merge order for `catalog-sync.server.ts`.** This plan, `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) (Phase 1/3), and `plans/database-performance` (Workstream D) all reference this file. Assign an order before any of them land.
 - [ ] **Does the same `null`-overloading exist in `sync.server.ts` or `settings.server.ts`?** Verify First §3 covers the grep; if found, decide whether to widen this plan or file a follow-up.

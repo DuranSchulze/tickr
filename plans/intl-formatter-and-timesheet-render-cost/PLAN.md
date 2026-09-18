@@ -4,6 +4,8 @@
 
 > **Coordination — `plans/time-recording-performance/PLAN.md`:** same screen family, different cause. That plan fixes the record-a-task network/server latency; this plan makes each render cheaper (hoisted `Intl` formatters, day-label cache, tick isolation). Its Phase 5 render-path check coordinates with this plan's profiler baseline — neither plan claims the other's win.
 
+> **Partially landed (2026-09-18).** The `Intl` formatter hoisting below was implemented for the **report/export paths** by `plans/quick-fix/export-time-separation.md`: `shared/dates.ts` (all five timezone formatters + the `shortOffset` formatter), `work-intervals.ts` (per-slice offset formatter), `bulk-report-export.ts` (the two formatters built 4× per row) and `timesheet-export.ts`. Measured 11–52× on the affected calls with byte-identical output. **Still open here:** the _render_ cost this plan is named for — `entries-grouping.ts:formatDayLabel`, `TimesheetScreen.tsx`, `ReportsEntriesTable.tsx`, the day-label cache, and the 1 Hz tick isolation.
+
 ## Status
 
 - [ ] Confirmed the per-call `Intl` construction sites and counted the calls per render.
