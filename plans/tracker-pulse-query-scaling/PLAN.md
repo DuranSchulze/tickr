@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** that plan works under a no-database constraint, so the index/counter fix stays deferred and owned here — it records the pulse's per-poll cost as a known, deferred item and verifies the 30 s visibility gating stays intact as part of its cross-device validation. No scope overlap; this plan remains the sole owner of the pulse query cost.
+
 ## Status
 
 - [ ] Verify First block executed; per-poll cost measured on production-shaped data.

@@ -13,7 +13,7 @@
 - [ ] Resolved IP validated with `net.isIP()`.
 - [ ] **Severity refinement recorded:** the unbounded vector is caller-supplied coordinates, not the request IP (see Verify First §3).
 - [ ] Validation: typecheck, lint, tests, plus the timeout/retry behaviour exercised against a stub.
-- [ ] Reviewed against `plans/gsheets-write-integrity` and `plans/await-serverless-background-writes` (shared files).
+- [ ] Reviewed against `plans/gsheets-write-integrity` and `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) (shared files).
 
 ## Verify First (No Code Change)
 
@@ -22,17 +22,21 @@
 ### 1. Enumerate every unguarded external call (local, no access needed)
 
 - [ ] Confirm which calls already have timeouts — the audit claims only two:
+
   ```bash
   grep -rn "AbortSignal.timeout" src/ --include=*.ts
   ```
 
   - [ ] Expected: exactly two hits, `src/lib/server/reverse-geocode.ts:126` and `src/lib/server/geoip.ts:100`.
+
 - [ ] Enumerate every remaining outbound `fetch` and classify each:
+
   ```bash
   grep -rn "await fetch(" src/ --include=*.ts
   ```
 
   - [ ] For each hit, note whether it appears in the list below. Any **new** hit is a call site this plan has not accounted for — add it to Section 5 before implementing.
+
 - [ ] Confirm the six known unguarded sites:
   ```bash
   sed -n '104,108p' src/lib/server/mailer.ts
@@ -43,6 +47,7 @@
   sed -n '69,73p' src/lib/server/tracker/workspace-billing.server.ts
   ```
 - [ ] Confirm there is no retry anywhere — the audit claims a single 429/503 aborts a whole sync:
+
   ```bash
   sed -n '252,258p' src/lib/server/gsheets/auth.server.ts
   ```
@@ -55,6 +60,7 @@
 ### 2. Confirm the timeout ceiling is the platform budget, not the HTTP client (local, no access needed)
 
 - [ ] Confirm the function budget:
+
   ```bash
   grep -n "maxDuration" vite.config.ts
   ```
@@ -63,6 +69,7 @@
     ```bash
     grep -rn "maxDuration" src/ --include=*.ts
     ```
+
 - [ ] Establish what the runtime does without a timeout. Node's undici has a **300-second** headers timeout by default — ten times the function budget. So an unguarded call cannot fail on its own terms; it is always the platform that kills the request first.
   - [ ] **Demonstrate it locally** (this is the decisive local check): point one of the call sites at a blackhole address that accepts a connection and never responds, invoke the handler, and confirm the request does not fail quickly. A convenient approach is to add a temporary local route or a scratch script that calls the same helper against `http://10.255.255.1/` (a non-routable address) and observe how long `fetch` waits. Record the observed behaviour.
   - [ ] **Do not commit** the scratch harness. Record the observation in this plan's Status section.
@@ -72,26 +79,32 @@
 The audit's finding is correct that `getMyLocation` requires no authentication. Verification adds an important refinement about _which_ path is actually unbounded — establish it yourself:
 
 - [ ] Confirm there is no authentication:
+
   ```bash
   sed -n '30,50p' src/lib/server/tracker/my-location.server.ts
   grep -n "getAuthSession\|getSession\|requireWorkspace" src/lib/server/tracker/my-location.server.ts
   ```
 
   - [ ] Expected: **no matches**. Confirm the contrast with a neighbouring function that does check.
+
 - [ ] Confirm there is no global middleware that would cover it, which is why the per-function check matters:
+
   ```bash
   cat src/server.ts
   grep -rn "createMiddleware\|globalMiddleware" src/ --include=*.ts --include=*.tsx
   ```
 
   - [ ] Expected: `src/server.ts` is a bare `createStartHandler(defaultStreamHandler)`, and the middleware grep returns nothing.
+
 - [ ] Confirm the endpoint's input schema — this is the refinement:
+
   ```bash
   sed -n '143,148p' src/lib/server/tracker.ts
   sed -n '21,26p' src/lib/server/tracker/shared/schemas.ts
   ```
 
   - [ ] `myLocationSchema` accepts an optional `deviceLocation` whose `latitude`/`longitude` are validated only for **range** (−90..90, −180..180). There is no restriction on how many _distinct_ coordinates a caller may supply.
+
 - [ ] Confirm the cache behaviour that determines severity:
   ```bash
   sed -n '10,14p' src/lib/server/reverse-geocode.ts
@@ -104,6 +117,7 @@ The audit's finding is correct that `getMyLocation` requires no authentication. 
   - [ ] **Coordinate path** (`deviceLocation` supplied): the cache key is the coordinate pair (`reverse-geocode.ts:19-20`, 30-day TTL, 2000 entries). An anonymous caller supplying **arbitrary distinct coordinates** produces a cache miss on every request. **This is the genuinely unbounded vector.**
   - [ ] Conclusion to record: the finding stands, and the severity is _higher_ than the audit's phrasing implies for the coordinate path and _lower_ for the IP path. Both are fixed by the same change, which is why the fix is unchanged.
 - [ ] Confirm the upstream service and note its policy constraint:
+
   ```bash
   sed -n '119,127p' src/lib/server/reverse-geocode.ts
   ```
@@ -162,14 +176,14 @@ The deliverables: one shared, bounded, retrying fetch helper applied consistentl
 
 ### The unguarded call sites
 
-| #   | Site                                                    | Provider                                        | Awaited on a user-facing path?                                                        |
-| --- | ------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 1   | `src/lib/server/mailer.ts:104`                          | Resend `POST /emails`                           | **Yes** — invite email is awaited at `src/lib/server/workspace-invites.server.ts:269` |
-| 2   | `src/lib/server/subscriptions.server.ts:214`            | Xendit `POST /sessions`                         | **Yes** — subscription checkout                                                       |
-| 3   | `src/lib/server/gsheets/auth.server.ts:173`             | Google Drive `permissions`                      | No — currently unawaited (see `plans/await-serverless-background-writes`)             |
-| 4   | `src/lib/server/gsheets/auth.server.ts:242`             | Google Sheets (every call, via `sheetsRequest`) | Both — used by sync and by request paths                                              |
-| 5   | `src/lib/server/gsheets/auth.server.ts:269`             | Google OAuth token endpoint                     | Yes — every Google operation depends on it                                            |
-| 6   | `src/lib/server/tracker/workspace-billing.server.ts:71` | `api.frankfurter.dev` FX rates                  | Yes — billing settings                                                                |
+| #   | Site                                                    | Provider                                        | Awaited on a user-facing path?                                                                                               |
+| --- | ------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `src/lib/server/mailer.ts:104`                          | Resend `POST /emails`                           | **Yes** — invite email is awaited at `src/lib/server/workspace-invites.server.ts:269`                                        |
+| 2   | `src/lib/server/subscriptions.server.ts:214`            | Xendit `POST /sessions`                         | **Yes** — subscription checkout                                                                                              |
+| 3   | `src/lib/server/gsheets/auth.server.ts:173`             | Google Drive `permissions`                      | No — currently unawaited (see `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`)) |
+| 4   | `src/lib/server/gsheets/auth.server.ts:242`             | Google Sheets (every call, via `sheetsRequest`) | Both — used by sync and by request paths                                                                                     |
+| 5   | `src/lib/server/gsheets/auth.server.ts:269`             | Google OAuth token endpoint                     | Yes — every Google operation depends on it                                                                                   |
+| 6   | `src/lib/server/tracker/workspace-billing.server.ts:71` | `api.frankfurter.dev` FX rates                  | Yes — billing settings                                                                                                       |
 
 The retry gap is concentrated in `sheetsRequest` (`src/lib/server/gsheets/auth.server.ts:237-259`):
 
@@ -262,7 +276,7 @@ The fix is the same either way — require a session — which is why the plan i
 
 - **Adding rate limiting to `getMyLocation` or any other endpoint.** This plan closes the anonymous path by requiring a session; per-user rate limiting is a separate concern and a separate plan.
 - **Replacing the in-memory TTL caches** in `reverse-geocode.ts` / `geoip.ts` with a shared store. Their bounds are adequate and both files were reviewed clean.
-- **Making unawaited Google calls awaited.** Owned by `plans/await-serverless-background-writes`. Note the interaction: that plan makes `maybeShareSheetWithMember` awaited, which promotes site 3 above from "background" to "user-facing" — so this plan's timeout matters _more_ once that lands.
+- **Making unawaited Google calls awaited.** Owned by `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`). Note the interaction: that plan makes `maybeShareSheetWithMember` awaited, which promotes site 3 above from "background" to "user-facing" — so this plan's timeout matters _more_ once that lands.
 - **Fixing `getRowIndexForRecord`'s swallowed read errors.** Owned by `plans/gsheets-write-integrity`. Both plans touch `gsheets/auth.server.ts` / `catalog-sync.server.ts`-adjacent code — coordinate.
 - **Adding idempotency keys to Xendit session creation.** Identified in Section 7.4 as a precondition for retrying it; the idempotency work itself is out of scope.
 - **Fixing the `db.transaction()` failure** in `subscriptions.server.ts` (the neon-http driver throws unconditionally). Higher severity, separate plan — but note that this plan makes the Xendit call _more_ resilient while the surrounding transaction is still broken.
@@ -383,12 +397,14 @@ This table is the part most likely to cause an incident if skipped. A blanket `a
 One conditional touchpoint, requiring a check before implementing Section 7.5:
 
 - [ ] Enumerate the consumers of `getMyLocationFn` before adding the session requirement:
+
   ```bash
   grep -rn "useMyLocation\|getMyLocationFn\|fetchMyLocation" src/ --include=*.ts --include=*.tsx
   ```
 
   - [ ] If the only consumer is the personal location badge (rendered on a screen that is already behind `/app` and therefore behind the session guard), the change is invisible to users and no UI work is needed.
   - [ ] If a consumer exists on a public or pre-auth page, the badge will start erroring. In that case the badge needs an unauthenticated fallback state — a small conditional render, not a new component.
+
 - [ ] Confirm the badge already handles a failed query gracefully (it is documented as "best-effort"): if `useMyLocation` already treats an error as "no location to show", nothing further is needed.
 
 No new routes, components, or client state are proposed.
@@ -426,27 +442,32 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 ### Static verification
 
 - [ ] No unguarded outbound `fetch` remains. Every remaining raw `fetch` should be inside the helper:
+
   ```bash
   grep -rn "await fetch(" src/ --include=*.ts
   ```
 
   - [ ] Expected hits: only the two clean reference files (`reverse-geocode.ts`, `geoip.ts`, which keep their own `AbortSignal.timeout(3000)`) and the helper's own internal `fetch`.
   - [ ] Any other hit is a missed call site — fix it before shipping.
+
 - [ ] The helper is the only place a timeout policy is defined:
   ```bash
   grep -rn "AbortSignal.timeout" src/ --include=*.ts
   ```
 - [ ] `getMyLocation` now checks a session:
+
   ```bash
   grep -n "getAuthSession\|getSession\|requireWorkspace" src/lib/server/tracker/my-location.server.ts
   ```
 
   - [ ] Expected: at least one match, and it must appear **before** any call that performs I/O.
+
 - [ ] IP validation is present:
   ```bash
   grep -n "isIP\|node:net" src/lib/server/tracker/my-location.server.ts
   ```
 - [ ] `sheetsRequest` no longer throws on the first non-ok response:
+
   ```bash
   sed -n '237,265p' src/lib/server/gsheets/auth.server.ts
   ```
@@ -491,7 +512,7 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 | **Retrying a non-idempotent call duplicates a side effect** — duplicate welcome/invite email, or a duplicate Xendit payment session | High if retries are blanket-enabled   | High   | The Section 7.4 table is mandatory reading before any retry is enabled. Default to **timeout without retry** for Resend and Xendit; add `attempts: 1` explicitly at those sites so the intent is visible in the code.                                                                                                                                               |
 | **Retrying `values.append` creates duplicate sheet rows** — the exact corruption `plans/gsheets-write-integrity` is fixing          | High                                  | High   | Do not retry `append`. Retry `get` and fixed-range `update` only. Add the "Google duplicate protection" integration check. Coordinate both plans.                                                                                                                                                                                                                   |
 | **Google Sheets quota** — retries increase request volume against ~300 read + 300 write requests/min/user                           | Medium                                | High   | Automatic retry on 429 is correct **only** with real backoff. Honour `Retry-After`, cap attempts low (2–3), and add jitter so parallel syncs do not retry in lockstep. Monitor 429 rates after Phase 4. **Rollback:** each call site's change is independent — reverting the helper application at one site restores the previous behaviour for that provider only. |
-| **Resend quota/reputation** — a retry storm on a mailbox provider can trip abuse controls                                           | Medium                                | Medium | Cap attempts and back off. Because Resend delivery is also currently fire-and-forget (see `plans/await-serverless-background-writes`), confirm ordering: if that plan makes sends awaited, retries become user-visible latency. Decide the interaction before both ship.                                                                                            |
+| **Resend quota/reputation** — a retry storm on a mailbox provider can trip abuse controls                                           | Medium                                | Medium | Cap attempts and back off. Because Resend delivery is also currently fire-and-forget (see `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`)), confirm ordering: if that plan makes sends awaited, retries become user-visible latency. Decide the interaction before both ship.                                         |
 | **Xendit** — a timeout on session creation leaves a session that exists at Xendit but is not recorded locally                       | Medium                                | High   | This already happens today for a different reason (the `db.transaction()` failure in `subscriptions.server.ts`). The timeout makes it more likely, not less. Mitigation: log timeouts distinctly so the reconciliation gap is visible, and flag it to whoever owns the transaction fix. **Rollback:** the timeout is a single call-site change.                     |
 | A too-aggressive timeout breaks slow-but-legitimate operations (a large Sheets tab read)                                            | Medium                                | Medium | Set a longer timeout on the Sheets write paths than on Resend, derived from Verify First §4's measured latencies. Log timeouts separately so a systematically-too-short value is visible immediately.                                                                                                                                                               |
 | Requiring a session on `getMyLocation` breaks an unauthenticated consumer                                                           | Low                                   | Medium | Section 8's grep enumerates consumers first; the badge is documented as best-effort and should already tolerate an error. Verify in staging before shipping.                                                                                                                                                                                                        |

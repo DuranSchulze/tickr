@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** that plan operates under a no-database constraint, so its scope excludes the unique-index migration this plan owns. Its Phase 5 reuses this plan's two-tab concurrent-start scenario as a regression gate for its optimistic-stop rollback: a stop-with-conflict must never leave a ghost running entry. No code overlap otherwise.
+
 ## Status
 
 - [ ] Verify First checklist completed; duplicate running entries counted and triaged.

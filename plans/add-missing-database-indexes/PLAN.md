@@ -264,7 +264,7 @@ The unique index's column order is `(workspace_id, project_id, name)`. The boots
 
 ## 4. Out of Scope
 
-- **Any query rewriting.** This plan adds indexes only. Rewriting the leading-wildcard searches to prefix searches, replacing `count(*)` with window functions, adding date bounds to aggregates, and removing redundant round-trips all belong to plan `bound-unbounded-query-result-sets` and plan `remove-redundant-database-round-trips`.
+- **Any query rewriting.** This plan adds indexes only. Rewriting the leading-wildcard searches to prefix searches, replacing `count(*)` with window functions, adding date bounds to aggregates, and removing redundant round-trips all belong to plan `bound-unbounded-query-result-sets` and `server-write-reliability` (Part B — the absorbed `remove-redundant-database-round-trips`).
 - **The `pulse.server.ts` query change itself.** This plan provides the index the pulse needs; changing the pulse's query shape or introducing an `entriesVersion` counter is plan `tracker-pulse-query-scaling`.
 - **Replacing `time_entries_project_id_idx` with the new composite.** The single-column index may still serve other plans; drop it only after checking `idx_scan` and confirming nothing else relies on it. Recorded as Open Question 4.
 - **Adding an index to back the `startTimer` no-active-timer check** (a partial unique index `WHERE ended_at IS NULL`). That is a correctness fix with behavioural consequences (it would reject rather than race) and needs its own plan.

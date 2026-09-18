@@ -12,7 +12,7 @@
 - [ ] Sheets write-back loops batched (one `batchUpdate` per entity instead of one `append` per row).
 - [ ] Duplicate local `runInBatches` copy in `catalog-sync.server.ts` consolidated onto the shared helper.
 - [ ] Validation: typecheck, lint, tests, plus an end-to-end import of a large sheet inside the 30s budget.
-- [ ] Reviewed against `plans/fix-gsheets-cron-http-method` and `plans/await-serverless-background-writes` for shared assumptions.
+- [ ] Reviewed against `plans/fix-gsheets-cron-http-method` and `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) for shared assumptions.
 
 ## Verify First (No Code Change)
 
@@ -44,16 +44,19 @@ The audit left this explicitly open: _"whether `streaming-import.server.ts` has 
   sed -n '10,22p' src/lib/server/gsheets/sync.ts
   ```
 - [ ] Confirm the shared lower layer — `streaming-import.server.ts` imports from `catalog-sync.server.ts`, so they are layered, not alternatives:
+
   ```bash
   sed -n '18,28p' src/lib/server/tracker/streaming-import.server.ts
   ```
 
   - [ ] **Conclusion to record:** two live importers exist for the same job. One (`catalog-sync.server.ts`) is already correctly batched. The other (`streaming-import.server.ts`) is per-row. The **"delete it" branch of the open question is therefore falsified** — deleting `streaming-import.server.ts` would remove the progress-streaming import UI used by `SyncSheetDialog`. The real decision is _consolidate_ vs _port in place_ (Section 13).
+
 - [ ] If any of the above differs from this description, **stop and re-scope** — the plan assumes the streaming path is the one needing work.
 
 ### 2. Measure the actual cost (needs a sheet + a workspace; stubs are not enough)
 
 - [ ] Count the `await db` occurrences and confirm where they sit relative to the loops:
+
   ```bash
   grep -n "await db" src/lib/server/tracker/streaming-import.server.ts
   grep -n "for (let i\|for (const" src/lib/server/tracker/streaming-import.server.ts
@@ -64,6 +67,7 @@ The audit left this explicitly open: _"whether `streaming-import.server.ts` has 
     ```bash
     wc -l src/lib/server/tracker/streaming-import.server.ts
     ```
+
 - [ ] In a staging workspace, connect a Google Sheet and put a **known row count** in the Clients tab (start small — 100 — then retry with 2,000). Run the streaming import from `SyncSheetDialog` and record:
   - [ ] Total wall-clock duration.
   - [ ] Whether it completed or was cut off. The client's reader loop treats a killed function as a clean end of stream (`for (;;) { const { done, value } = await reader.read(); if (done) break }` in `SyncSheetDialog`), so **a timeout looks like success** — check the DB and the sheet row counts, not just the UI.
@@ -100,6 +104,7 @@ The recommendation is "port the existing correct implementation", so verify that
 ### 4. Check whether truncation has already happened to customers (needs DB access)
 
 - [ ] Compare row counts between the DB and a connected sheet for one workspace — a sheet that is short rows it should have is evidence of a truncated import:
+
   ```sql
   SELECT w.id, w.name, w.google_sheet_url,
          (SELECT count(*) FROM clients  c WHERE c.workspace_id = w.id AND c.archived = false) AS db_clients,
@@ -110,8 +115,10 @@ The recommendation is "port the existing correct implementation", so verify that
   ```
 
   - [ ] Compare each `db_*` figure against the corresponding sheet tab's data-row count. Record discrepancies.
+
 - [ ] Ask whether any user has reported an import that "finished but didn't import everything" — that is this bug's user-visible signature.
 - [ ] Check the server log line the streaming path emits on failure, which should appear only when the handler catches an error (not when the platform kills it):
+
   ```bash
   grep -rn "\[streaming-import\]" src/lib/server/tracker/streaming-import.server.ts
   ```
@@ -241,7 +248,7 @@ Note also that departments has **no** archive loop (the loop at `:1445` is a wri
 ### Why this interacts with other work
 
 - `vite.config.ts:23` sets `maxDuration: 30` — the constraint this plan is designed around.
-- The import is itself invoked from an unawaited context in the broader codebase (`plans/await-serverless-background-writes`), and the **cron's** Sheets traffic shares Google's quota (`plans/fix-gsheets-cron-http-method`). Batching changes how much quota pressure the import applies, so coordinate before shipping both together.
+- The import is itself invoked from an unawaited context in the broader codebase (`plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`)), and the **cron's** Sheets traffic shares Google's quota (`plans/fix-gsheets-cron-http-method`). Batching changes how much quota pressure the import applies, so coordinate before shipping both together.
 - `plans/gsheets-write-integrity` changes the Sheets _read_ helper used by the write-back path. If both land, sequence them.
 
 ### Assumptions
@@ -277,7 +284,7 @@ Note also that departments has **no** archive loop (the loop at `:1445` is a wri
 - **Raising `maxDuration`** (`vite.config.ts:23`).
 - **Fixing the CSRF bypass on `/api/import/stream`** (the `skipCsrf: true` at `streaming-import.server.ts:91`) and the `type ?? 'all'` default in `src/routes/api/import/stream.ts:28-29`. Those are separate, higher-severity findings with their own remediation; do not fold them in.
 - **Fixing `getRowIndexForRecord`'s swallowed read errors** in `catalog-sync.server.ts`. Owned by `plans/gsheets-write-integrity`.
-- **Removing the unawaited `void exportProject(...)` fan-out** in `bulkArchiveProjects`. Owned by `plans/await-serverless-background-writes`, though it should converge on the same batching approach — note the shared technique in the PR.
+- **Removing the unawaited `void exportProject(...)` fan-out** in `bulkArchiveProjects`. Owned by `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`), though it should converge on the same batching approach — note the shared technique in the PR.
 - **Optimizing the `pending_gsheets_syncs` cron.** Owned by `plans/fix-gsheets-cron-http-method`.
 - **Adding indexes to speed up the import's DB writes.** No missing index was identified for these specific predicates; do not speculatively add one.
 - **Improving the SSE stream's backpressure handling** (the `controller.enqueue()` with no `desiredSize` check in `src/routes/api/import/stream.ts`). Real, but a separate finding.
@@ -304,7 +311,8 @@ src/lib/server/gsheets/catalog-sync.server.ts                    (MODIFY)
   ├─ :188-198   remove the local duplicate runInBatches definition
   └─ import the shared helper from import-utils.server.ts instead
      NOTE: coordinate — plans/gsheets-write-integrity and
-     plans/await-serverless-background-writes also modify this file.
+     plans/server-write-reliability (Part A — absorbed
+     await-serverless-background-writes) also modify this file.
 
 src/lib/server/shared/import-utils.server.ts                     (MODIFY — conditional)
   └─ only if runInBatches needs an option added (e.g. an explicit
@@ -431,6 +439,7 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 ### Static verification
 
 - [ ] No `await db` remains inside a `for` loop over parsed rows. Every remaining `await db` should be at the top level of a phase:
+
   ```bash
   grep -n "await db" src/lib/server/tracker/streaming-import.server.ts
   ```
@@ -440,23 +449,29 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
     grep -n "for (let i\|for (const" src/lib/server/tracker/streaming-import.server.ts
     ```
     A loop line number immediately preceding an `await db` line number is the signature of the bug returning.
+
 - [ ] No O(n²) lookup remains:
+
   ```bash
   grep -n "allRows.find" src/lib/server/tracker/streaming-import.server.ts
   ```
 
   - [ ] Expect **zero** results.
+
 - [ ] One `batchUpdate` per entity instead of per-row `append`:
   ```bash
   grep -n "values.append\|values.batchUpdate" src/lib/server/tracker/streaming-import.server.ts
   ```
 - [ ] The duplicate helper is gone:
+
   ```bash
   grep -rn "async function runInBatches" src/lib/server/
   ```
 
   - [ ] Expect exactly **one** definition, in `src/lib/server/shared/import-utils.server.ts`.
+
 - [ ] The bulk archive includes the tenant predicate:
+
   ```bash
   grep -n "IDX\|IN (" src/lib/server/tracker/streaming-import.server.ts
   ```
@@ -474,12 +489,14 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 ### Performance verification (the acceptance test)
 
 - [ ] Re-run the **same** measurement from Verify First §2 against the same sheet size and compare:
+
   ```bash
   # Before: record duration and row count from the baseline run.
   # After: same sheet, same row count.
   ```
 
   - [ ] Record the before/after wall-clock in this plan's Status section.
+
 - [ ] Confirm a 2,000-row Clients import now completes well inside 30 s (`vite.config.ts:23`) with a large margin.
 - [ ] Confirm the DB, not the UI, reflects the full row count — this is the assertion that catches silent truncation:
   ```sql
@@ -527,4 +544,4 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 - [ ] **Should a stream-completion marker be added** so a truncated import can never look like a successful one? Out of scope here, but this is the failure mode that hid the bug. Recommend filing it.
 - [ ] **What sheet sizes must be supported?** The 2,000-row figure is the audit's illustration. Get the real maximum (or the 95th percentile) from usage, because it determines whether batching alone suffices or a resumable design is needed.
 - [ ] **Who owns the merge order for `catalog-sync.server.ts`?** Three plans in this batch modify it. Assign before Phase 5.
-- [ ] **Should `bulkArchiveProjects`'s identical fan-out be converted in the same PR?** It is owned by `plans/await-serverless-background-writes`, but it needs the same technique. Sharing one PR avoids writing the batching twice — decide, and name the owner.
+- [ ] **Should `bulkArchiveProjects`'s identical fan-out be converted in the same PR?** It is owned by `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`), but it needs the same technique. Sharing one PR avoids writing the batching twice — decide, and name the owner.

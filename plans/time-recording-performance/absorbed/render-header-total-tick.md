@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** same screen, different cause. That plan fixes the record-a-task network/server latency; this plan fixes the 20 Hz `HeaderTotal` re-scan. Its Phase 5 render-path check verifies that plan's changes added no renders to this path and shares this plan's profiler baseline — coordinate so neither plan claims the other's win.
+
 ## Status
 
 - [ ] Confirmed `HeaderTotal` receives the full 62-day entry window, not the selected day's entries.

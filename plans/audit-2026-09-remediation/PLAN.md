@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Consolidation note (2026-09-18):** five plans from this audit's tiers have since been absorbed and their folders deleted — `dashboard-live-total-recompute` and `stabilize-active-entry-identity` into `plans/time-recording-performance/` (Phases 6 and 5), and `remove-redundant-database-round-trips`, `await-serverless-background-writes`, `fix-overlap-cancel-bug` into `plans/server-write-reliability/` (Parts B, A, C — full original text preserved there). The §5 plan tree and §11 sequencing below are annotated with the new locations.
+
 ## Status
 
 - [ ] Triage: decide which findings are verification-only and which are scheduled for a fix.
@@ -20,11 +22,11 @@ This plan is the entry point to an audit, so "verify first" here means triaging 
 
 - [ ] **Run the baseline and record the numbers, so later changes have a reference point.**
       `bash
-    ./node_modules/.bin/tsc --noEmit -p tsconfig.json
-    npx eslint src --ext .ts,.tsx --max-warnings 0
-    ./node_modules/.bin/vitest run
-    NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
-    `
+  ./node_modules/.bin/tsc --noEmit -p tsconfig.json
+  npx eslint src --ext .ts,.tsx --max-warnings 0
+  ./node_modules/.bin/vitest run
+  NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
+  `
       Baseline as of this audit: typecheck clean, lint clean, **1 failing test** (`src/lib/time-tracker/payroll-periods.test.ts`, date-dependent — see `plans/fix-payroll-period-test-time-bomb`), and a client bundle whose two largest chunks are `exceljs.min` (930 KB raw / 256 KB gzip) and `useAppTheme-D-ys7bb4.js` (971 KB raw / 251 KB gzip, which is MapLibre — see `plans/dashboard-bundle-maplibre-lazy-load`).
 
 - [ ] **Settle the questions that change severity, because several findings are "critical if X, minor if not".** These need production or dashboard access and cannot be answered from source: - Does any real payment exist? (`subscriptions` vs `subscription_payments` counts) — decides whether `plans/fix-neon-http-transaction-failure` is a bug fix or a live incident. - Has the Google Sheets cron ever run? (`SELECT count(*) FROM pending_gsheets_syncs`, plus Vercel Cron logs for 405s) — decides whether `plans/fix-gsheets-cron-http-method` is latent or an active data-sync outage. - Does the default EMPLOYEE role hold `activity.view` / `members.view`? — decides whether `plans/department-analytics-authorization` is an access-control bypass or an inconsistency. - Has the newsletter endpoint been driven in a loop? (hourly subscribe counts + provider send volume) — decides whether `plans/newsletter-subscribe-dedupe` needs incident handling. - Has `/api/import/stream` been reached cross-origin? (audit log entries nobody initiated) — decides whether `plans/import-stream-csrf-bypass` needs forensic review. - How does Vercel treat a client-supplied `x-forwarded-for`? — decides the severity of the client-IP item in `plans/quick-fix/server-hygiene.md`.
@@ -95,19 +97,33 @@ plans/
   add-missing-database-indexes/PLAN.md                         (NEW)
   tracker-pulse-query-scaling/PLAN.md                          (NEW)
   dashboard-bundle-maplibre-lazy-load/PLAN.md                  (NEW)
-  dashboard-live-total-recompute/PLAN.md                       (NEW)
-  stabilize-active-entry-identity/PLAN.md                      (NEW)
+  ~~dashboard-live-total-recompute/PLAN.md~~                   (ABSORBED 2026-09-18 →
+                                                                time-recording-performance Phase 6)
+  ~~stabilize-active-entry-identity/PLAN.md~~                  (ABSORBED 2026-09-18 →
+                                                                time-recording-performance Phase 5)
 
   ── Tier 2: reliability and query efficiency ─────────────────
   workspace-authorization-refetch-storm/PLAN.md                (NEW)
   intl-formatter-and-timesheet-render-cost/PLAN.md             (NEW)
-  remove-redundant-database-round-trips/PLAN.md                (NEW)
+  ~~remove-redundant-database-round-trips/PLAN.md~~            (ABSORBED 2026-09-18 →
+                                                                server-write-reliability Part B;
+                                                                timer slice → time-recording-performance Phase 2)
   bound-unbounded-query-result-sets/PLAN.md                    (NEW)
-  await-serverless-background-writes/PLAN.md                   (NEW)
+  ~~await-serverless-background-writes/PLAN.md~~               (ABSORBED 2026-09-18 →
+                                                                server-write-reliability Part A;
+                                                                stop-path slice → time-recording-performance Phase 2)
   gsheets-write-integrity/PLAN.md                              (NEW)
   fix-gsheets-cron-http-method/PLAN.md                         (NEW)
   import-pipeline-performance/PLAN.md                          (NEW)
   external-call-timeouts-and-auth/PLAN.md                      (NEW)
+
+  ── Consolidated plans added after this audit ────────────────
+  time-recording-performance/PLAN.md                           (NEW 2026-09-18 — record-a-task
+                                                                journey; absorbed 2 Tier-1 + slices
+                                                                of 2 Tier-2 plans; see its §0.4)
+  server-write-reliability/PLAN.md                             (NEW 2026-09-18 — mother plan holding
+                                                                the full text of the 3 absorbed
+                                                                Tier-2 plans' remaining scope)
 
   ── Tier 3: security and correctness ─────────────────────────
   require-email-verification-for-membership-claim/PLAN.md      (NEW)
@@ -183,16 +199,16 @@ Ordering is by (impact ÷ risk), with dependencies respected. Each tier should b
 - [ ] `add-missing-database-indexes` — additive; the best ratio in the set. Note `tracker-pulse-query-scaling` depends on the `updated_at` index added here, so land this first if the pulse fix ships as the counter approach.
 - [ ] `tracker-pulse-query-scaling`
 - [ ] `dashboard-bundle-maplibre-lazy-load` — ~250 KB gzip off three routes, one-file change.
-- [ ] `dashboard-live-total-recompute`
-- [ ] `stabilize-active-entry-identity`
+- [ ] ~~`dashboard-live-total-recompute`~~ → **`time-recording-performance` Phase 6** (absorbed 2026-09-18).
+- [ ] ~~`stabilize-active-entry-identity`~~ → **`time-recording-performance` Phase 5** (absorbed 2026-09-18).
 
 **Tier 2 — reliability and query efficiency.**
 
 - [ ] `workspace-authorization-refetch-storm` — highest user-visible latency win.
 - [ ] `intl-formatter-and-timesheet-render-cost`
-- [ ] `remove-redundant-database-round-trips` — note this edits the same queries as `department-analytics-authorization`; rebase on top of it rather than the reverse.
+- [ ] ~~`remove-redundant-database-round-trips`~~ → **`server-write-reliability` Part B** (absorbed 2026-09-18) — note it edits the same queries as `department-analytics-authorization`; rebase on top of it rather than the reverse. Its timer-path slice is `time-recording-performance` Phase 2.
 - [ ] `bound-unbounded-query-result-sets` — measure with `EXPLAIN (ANALYZE, BUFFERS)` before and after; the `AT TIME ZONE` grouping change may reduce bytes-on-wire without reducing the index scan.
-- [ ] `await-serverless-background-writes` — decide the await-vs-queue policy once here, and have `newsletter-subscribe-dedupe` follow it.
+- [ ] ~~`await-serverless-background-writes`~~ → **`server-write-reliability` Part A** (absorbed 2026-09-18) — decide the await-vs-queue policy once there, and have `newsletter-subscribe-dedupe` follow it. Its stop-path slice is `time-recording-performance` Phase 2.
 - [ ] `gsheets-write-integrity`
 - [ ] `fix-gsheets-cron-http-method` — cheap and zero-risk; could be promoted into Tier 0 if the verification shows the queue has never drained.
 - [ ] `import-pipeline-performance` — starts with a delete-or-optimize decision.

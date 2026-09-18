@@ -2,6 +2,8 @@
 
 > **Status:** ✅ Done
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** noted because that plan's Phases 3–4 (optimistic stop on click, cache-splice instead of full refetch) touch the same `useTimerCore.ts` / `TimerPanel.tsx` code this plan fixed. Its Phase 5 re-runs this plan's key scenario — edit the running timer's start time, stop immediately, saved duration must reflect the edit — as a regression gate.
+
 ## 1. Goal
 
 Fix the TimerPanel running-entry edit flow so changing the start time of an ongoing task immediately displays an accurate live timer and accurate live total everywhere on the dashboard, including the running panel, entry list/card duration, document title/extension state, and Today/Week header totals.

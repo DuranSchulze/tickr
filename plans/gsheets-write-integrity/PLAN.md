@@ -11,7 +11,7 @@
 - [ ] Silent `catch {}` blocks in the four flagged locations log with context.
 - [ ] Decisions recorded on pre-existing duplicate repair and on UI behaviour when a write fails closed.
 - [ ] Validation: typecheck, lint, tests, plus the local falsification test and a staging round-trip.
-- [ ] Reviewed against `plans/await-serverless-background-writes` for the shared `catch {}` sites.
+- [ ] Reviewed against `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) for the shared `catch {}` sites.
 
 ## Verify First (No Code Change)
 
@@ -45,6 +45,7 @@
   ```
   (Expect zero rows. If the DB has duplicates where the sheet does not, the problem is upstream of this plan.)
 - [ ] Check whether anyone has hit the downstream symptom. The misleading error is thrown at `src/lib/server/gsheets/catalog-sync.server.ts:177-178`:
+
   ```
   "Duplicate names detected in your sheet."
   ```
@@ -210,7 +211,7 @@ The same "never break the main operation" philosophy appears in four places, and
   }
   ```
 
-The _intent_ in each comment is defensible — none of these should fail a user's primary operation. The defect is that they also discard the _error_, so there is no signal at all. Combined with the unawaited call sites documented in `plans/await-serverless-background-writes`, an entire deployment can produce zero audit rows and zero sheet-sharing successes with nothing written anywhere to say so.
+The _intent_ in each comment is defensible — none of these should fail a user's primary operation. The defect is that they also discard the _error_, so there is no signal at all. Combined with the unawaited call sites documented in `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`), an entire deployment can produce zero audit rows and zero sheet-sharing successes with nothing written anywhere to say so.
 
 ### Assumptions
 
@@ -235,7 +236,7 @@ The _intent_ in each comment is defensible — none of these should fail a user'
 ## 4. Out of Scope
 
 - **Automatically repairing duplicates that already exist in customer sheets.** Deleting rows from a customer's spreadsheet is destructive and needs human review and its own plan. This plan detects and reports; a human repairs.
-- **Fixing the unawaited `void exportProject(...)` / `void createAuditLog(...)` call sites.** Owned by `plans/await-serverless-background-writes`. This plan assumes that plan's Phase 1 may touch the same `catch {}` blocks in `catalog-sync.server.ts` — coordinate to avoid a double-edit.
+- **Fixing the unawaited `void exportProject(...)` / `void createAuditLog(...)` call sites.** Owned by `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`). This plan assumes that plan's Phase 1 may touch the same `catch {}` blocks in `catalog-sync.server.ts` — coordinate to avoid a double-edit.
 - **Rewriting `streaming-import.server.ts`'s per-row loops.** Owned by `plans/import-pipeline-performance`.
 - **Fixing the `POST`-only Sheets cron or `CRON_SECRET`.** Owned by `plans/fix-gsheets-cron-http-method`.
 - **Improving the misleading wording of `friendlyDbError`.** It is genuinely misleading, but rewording it is cosmetic and the real fix is to stop _creating_ the duplicates. If wording is changed, it must not be changed to claim the sheet is clean without evidence — see Section 13.
@@ -310,7 +311,7 @@ At `:1013`, `:1055`, `:1091`, and `:1132`, replace the two-way `rowIndex !== nul
 - `absent` → `sheets.spreadsheets.values.append(...)` (existing behaviour, `:1030`/`:1072`/`:1108`/`:1149`).
 - `error` → **throw**. The error must (a) be logged with the tab, record id/name, and sheet context, and (b) reach the caller so the user learns the write did not happen. It must **not** be converted into an append, and it must not be swallowed.
 
-Because these callers are invoked from the unawaited `void exportProject(...)` path (see `plans/await-serverless-background-writes`), a thrown error there may itself be invisible. That is an acceptable interim state: fixing the throw is this plan's job, making the throw _reachable_ is the other plan's job. Note the dependency explicitly in the PR description.
+Because these callers are invoked from the unawaited `void exportProject(...)` path (see `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`)), a thrown error there may itself be invisible. That is an acceptable interim state: fixing the throw is this plan's job, making the throw _reachable_ is the other plan's job. Note the dependency explicitly in the PR description.
 
 ### 7.3 Make the silent catches observable without making them fatal
 
@@ -406,7 +407,7 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 - [ ] **Phase 0 — Verify (no code).** Run Verify First §1 (local falsification, decisive) and §2 (live duplicate count, needs access) and §3. Record results in the Status section. If §1 does **not** reproduce, stop and re-read `:994-995` before proceeding — the plan's premise would be wrong.
 - [ ] **Phase 1 — Lock the behaviour with a failing test.** Add the regression test asserting no `append` after a throwing `get`. Confirm it **fails** against today's code. This proves the test is meaningful and gives the refactor a target.
 - [ ] **Phase 2 — The union.** Convert `getRowIndexForRecord` to the discriminated result and update the four callers in the same commit; the typecheck will not pass otherwise. Ship as one atomic change.
-- [ ] **Phase 3 — Observability.** Add contextual logging to the four `catch {}` blocks. Independent of Phase 2 and independently shippable. Coordinate with `plans/await-serverless-background-writes` Phase 1 if it also touches `catalog-sync.server.ts:143-145` / `:163-165`.
+- [ ] **Phase 3 — Observability.** Add contextual logging to the four `catch {}` blocks. Independent of Phase 2 and independently shippable. Coordinate with `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) Phase 1 if it also touches `catalog-sync.server.ts:143-145` / `:163-165`.
 - [ ] **Phase 4 — Staging round-trip.** Run the manual verification, including the forced-failure scenario.
 - [ ] **Phase 5 — Duplicate repair (human task).** If Phase 0 found existing duplicates, they are repaired manually with the customer, tracked outside this plan. Do not automate.
 - [ ] **Phase 6 — Re-validate and close.** Re-check the tab row counts after a week of staging/production use; the count must not drift.
@@ -415,7 +416,7 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 
 | Risk                                                                                                 | Likelihood                  | Impact     | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | ---------------------------------------------------------------------------------------------------- | --------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Failing closed turns a silent corruption into a visible write outage for customers                   | Medium                      | High       | This is the intended trade. Failing closed must come with contextual logging and a truthful UI message. Because the four callers are reached from the unawaited `void exportProject(...)` path, confirm with `plans/await-serverless-background-writes` that the error is actually reachable before announcing the failure to users.                                                                                                                                                      |
+| Failing closed turns a silent corruption into a visible write outage for customers                   | Medium                      | High       | This is the intended trade. Failing closed must come with contextual logging and a truthful UI message. Because the four callers are reached from the unawaited `void exportProject(...)` path, confirm with `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) that the error is actually reachable before announcing the failure to users.                                                                                                   |
 | The change makes catalog edits fail during a transient Sheets blip where they previously "succeeded" | High                        | Medium     | Previously they "succeeded" by corrupting data. Accept the trade, but the mitigation is retry, not silent append — see the retry helper described in `plans/external-call-timeouts-and-auth`. Note the dependency; do not build retry here.                                                                                                                                                                                                                                               |
 | **Google Sheets API quota** — a retry-on-error strategy multiplies outbound reads                    | High if retry is added here | High       | Do **not** add retries in this plan. Google enforces roughly 300 read + 300 write requests/min/user, and this path already issues one **full-tab read per record** (`range: ${tabName}!A:${idColLetter}`), which is the dominant quota consumer. Retries belong in `plans/external-call-timeouts-and-auth` with bounded backoff and jitter. **Rollback:** the union change is inert on the happy path — reverting it restores the previous guess-and-append behaviour in a single commit. |
 | The union refactor misses a call site                                                                | Low                         | High       | The typecheck is the enforcement mechanism — the old return type is not assignable to the new one. Do the helper and all four callers in one commit, and confirm `tsc` is clean.                                                                                                                                                                                                                                                                                                          |
@@ -433,5 +434,5 @@ NODE_OPTIONS='--max-old-space-size=4096' ./node_modules/.bin/vite build
 - [ ] **Should the misleading `friendlyDbError` wording change?** It currently blames the customer for duplicates the app created. Rewording is cosmetic and risky to do before the duplicates stop being created — decide the order.
 - [ ] **Is a redacted identifier acceptable in the invite-share log line,** or does the team want the raw email for support purposes?
 - [ ] **Should retries be added to these Sheets reads?** If yes, they belong in `plans/external-call-timeouts-and-auth` (bounded backoff with jitter, honouring Google's quota). Confirm that plan owns it so this one does not grow a competing retry implementation.
-- [ ] **Merge order for `catalog-sync.server.ts`.** This plan, `plans/await-serverless-background-writes` (Phase 1/3), and `plans/import-pipeline-performance` all reference this file. Assign an order before any of them land.
+- [ ] **Merge order for `catalog-sync.server.ts`.** This plan, `plans/server-write-reliability` (Part A — the absorbed `await-serverless-background-writes`) (Phase 1/3), and `plans/import-pipeline-performance` all reference this file. Assign an order before any of them land.
 - [ ] **Does the same `null`-overloading exist in `sync.server.ts` or `settings.server.ts`?** Verify First §3 covers the grep; if found, decide whether to widen this plan or file a follow-up.

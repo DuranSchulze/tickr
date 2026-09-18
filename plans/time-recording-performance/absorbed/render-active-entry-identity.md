@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** same screen, different cause. That plan fixes the record-a-task network/server latency (stop-path round trips, non-blocking side effects, post-mutation refetch trim); this plan removes per-keystroke recompute re-runs. Its Phase 5 runs a typing-while-running no-regression check that shares this plan's profiler baseline — coordinate so neither plan claims the other's win.
+
 ## Status
 
 - [ ] Confirmed `activeEntry` is rebuilt as a fresh object on every render while a synced timer is running (no `useMemo`).

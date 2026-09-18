@@ -2,6 +2,8 @@
 
 > **Status:** 📋 Planned
 
+> **Coordination — `plans/time-recording-performance/PLAN.md`:** that plan's Phase 4 removes the _mutation-triggered_ full-route invalidation after timer start/stop confirmation; this plan removes the _focus-triggered_ storm. Same symptom, different triggers — both must land before the dashboard stops fully refetching on routine events, and neither plan alone claims that outcome.
+
 ## Status
 
 - [ ] Confirmed both window-`focus` listeners end in `router.invalidate()`.
