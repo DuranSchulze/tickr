@@ -1,6 +1,7 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import type { ComponentType } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3,
   BriefcaseBusiness,
@@ -9,8 +10,18 @@ import {
   Cog,
   PanelLeftClose,
   PanelLeftOpen,
+  LogOut,
+  Palette,
+  Settings,
+  Sparkles,
   Timer,
+  UserCircle,
 } from 'lucide-react'
+import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
+import { AppLogo } from '#/components/ui/AppLogo'
+import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
+import { authClient } from '#/lib/auth-client'
+import { Button } from '#/components/ui/button'
 
 type NavItem = {
   to: string
@@ -23,6 +34,9 @@ export const AppSidebar = memo(function ({
   collapsed,
   onToggleCollapsed,
   workspaceName,
+  workspaceId,
+  permissionLevel,
+  user,
   userEmail,
   timerActive,
   analyticsGroupActive,
@@ -38,6 +52,9 @@ export const AppSidebar = memo(function ({
   collapsed: boolean
   onToggleCollapsed: () => void
   workspaceName: string
+  workspaceId: string
+  permissionLevel: string
+  user: { name: string; email: string; image?: string | null }
   userEmail: string
   timerActive: boolean
   analyticsGroupActive: boolean
@@ -50,10 +67,24 @@ export const AppSidebar = memo(function ({
   onToggleSettings: () => void
   settingsChildren: readonly NavItem[]
 }) {
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
   const hasAnalyticsChildren = analyticsChildren.length > 0
   const firstAnalyticsChild = analyticsChildren[0]
   const hasSettingsChildren = settingsChildren.length > 0
   const firstSettingsChild = settingsChildren[0]
+
+  const handleSignOut = () => {
+    void authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          queryClient.clear()
+          void navigate({ to: '/auth' })
+        },
+      },
+    })
+  }
 
   const navLinkClass = (active: boolean) =>
     `flex h-10 w-full items-center gap-3 rounded-full text-sm font-medium transition-colors ${
@@ -90,36 +121,67 @@ export const AppSidebar = memo(function ({
             >
               <PanelLeftOpen className="size-4" />
             </button>
-            <div className="flex size-9 items-center justify-center rounded-full bg-stone">
-              <BriefcaseBusiness className="size-4 text-primary" />
-            </div>
+            <WorkspaceSwitcher
+              currentWorkspaceId={workspaceId}
+              currentWorkspaceName={workspaceName}
+              permissionLevel={permissionLevel}
+              collapsed
+            />
           </div>
         ) : (
-          <div className="mb-3 rounded-xl border border-stone bg-eggshell p-3">
-            <div className="flex items-center gap-2.5">
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-stone shadow-[var(--shadow-whisper)]">
-                <BriefcaseBusiness className="size-4 text-primary" />
+          <div className="mb-3">
+            <Link
+              to="/app/time-tracker"
+              className="mb-4 flex items-center px-2 no-underline"
+            >
+              <AppLogo size="md" />
+            </Link>
+            <div className="rounded-xl border border-stone bg-eggshell p-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-stone shadow-[var(--shadow-whisper)]">
+                  <BriefcaseBusiness className="size-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-graphite">
+                    Workspace
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onToggleCollapsed}
+                  title="Collapse sidebar"
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full text-smoke transition-colors hover:bg-stone/60 hover:text-foreground"
+                >
+                  <PanelLeftClose className="size-4" />
+                </button>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-graphite">
-                  Workspace
-                </p>
-                <p className="m-0 mt-0.5 truncate text-sm font-bold text-foreground">
-                  {workspaceName}
-                </p>
+              <div className="mt-3">
+                <div className="flex items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <WorkspaceSwitcher
+                      currentWorkspaceId={workspaceId}
+                      currentWorkspaceName={workspaceName}
+                      permissionLevel={permissionLevel}
+                    />
+                  </div>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    title="Workspace settings"
+                    aria-label="Open workspace settings"
+                    className="size-9 shrink-0 rounded-full text-smoke hover:bg-stone hover:text-foreground"
+                  >
+                    <Link to="/app/workspace/settings">
+                      <Settings className="size-4" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={onToggleCollapsed}
-                title="Collapse sidebar"
-                className="flex size-7 shrink-0 items-center justify-center rounded-full text-smoke transition-colors hover:bg-stone/60 hover:text-foreground"
-              >
-                <PanelLeftClose className="size-4" />
-              </button>
+              <p className="m-0 mt-2.5 truncate border-t border-stone pt-2 text-xs text-smoke">
+                {userEmail}
+              </p>
             </div>
-            <p className="m-0 mt-2.5 truncate border-t border-stone pt-2 text-xs text-smoke">
-              {userEmail}
-            </p>
           </div>
         )}
 
@@ -245,6 +307,73 @@ export const AppSidebar = memo(function ({
             </>
           )}
         </nav>
+      </div>
+
+      <div className="mt-auto shrink-0 border-t border-stone px-2.5 py-3">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/app/profile"
+            title="Open profile"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-2 text-foreground no-underline transition-colors hover:bg-warm-taupe"
+          >
+            {user.image ? (
+              <img
+                src={user.image}
+                alt={user.name}
+                className="size-8 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <UserCircle className="size-6 shrink-0 text-smoke" />
+            )}
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold">
+                {user.name}
+              </span>
+              <span className="block truncate text-xs text-smoke">
+                {user.email}
+              </span>
+            </span>
+          </Link>
+
+          <div className="flex shrink-0 items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Appearance"
+              aria-label="Open appearance settings"
+              onClick={() => setAppearanceOpen(true)}
+              className="size-8 justify-self-center rounded-full text-smoke hover:bg-warm-taupe hover:text-foreground"
+            >
+              <Palette className="size-4" />
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              title="What's new"
+              aria-label="Open what's new"
+              className="size-8 justify-self-center rounded-full text-smoke hover:bg-warm-taupe hover:text-foreground"
+            >
+              <Link to="/app/changelog">
+                <Sparkles className="size-4" />
+              </Link>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Sign out"
+              aria-label="Sign out"
+              onClick={handleSignOut}
+              className="size-8 justify-self-center rounded-full text-smoke hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="size-4" />
+            </Button>
+          </div>
+        </div>
+        <AppearanceDialog
+          open={appearanceOpen}
+          onOpenChange={setAppearanceOpen}
+        />
       </div>
     </aside>
   )
