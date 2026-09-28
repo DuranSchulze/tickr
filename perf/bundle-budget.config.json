@@ -1,0 +1,109 @@
+{
+  "$comment": [
+    "Performance budgets for the client bundle. `pnpm perf:bundle` measures the real",
+    "emitted assets and fails when a budget is exceeded; perf/bundle-budget.test.ts",
+    "guards the heavy imports statically without needing a build.",
+    "",
+    "Every number below was measured on a real build at commit 2f673ed and is set",
+    "roughly 8-15% above the measurement, so ordinary growth passes while a heavy",
+    "library leaking into a new route fails loudly.",
+    "",
+    "To accept an intentional increase, raise the limit in the same PR that changes",
+    "the bundle and record the reason in perf/README.md."
+  ],
+  "budgets": {
+    "totalJavaScriptKb": 1950,
+    "largestChunkKb": 400
+  },
+  "routeBudgets": [
+    {
+      "route": "__root__",
+      "label": "Initial load (every page)",
+      "maxKb": 250
+    },
+    {
+      "route": "/app/workspace/locations",
+      "label": "Locations map route (pulls maplibre-gl)",
+      "maxKb": 300
+    },
+    {
+      "route": "/auth/",
+      "label": "Sign-in route (ships three.js today)",
+      "maxKb": 165
+    },
+    {
+      "route": "/app/time-tracker/",
+      "label": "Time tracker route",
+      "maxKb": 150
+    }
+  ],
+  "chunkBudgets": [
+    {
+      "label": "maplibre-gl chunk (route-scoped today)",
+      "match": "*useAppTheme*",
+      "maxKb": 270
+    },
+    {
+      "label": "exceljs chunk (lazy export)",
+      "match": "*exceljs.min*",
+      "maxKb": 275
+    },
+    {
+      "label": "jspdf chunk (lazy export)",
+      "match": "*jspdf.es.min*",
+      "maxKb": 140
+    },
+    {
+      "label": "three.js chunk",
+      "match": "*three.module*",
+      "maxKb": 130
+    },
+    {
+      "label": "recharts chunk",
+      "match": "*PieChart*",
+      "maxKb": 115
+    }
+  ],
+  "heavyModules": [
+    {
+      "module": "maplibre-gl",
+      "reason": "~950 KB raw / 245 KB gzip map renderer",
+      "allowedStaticImporters": [
+        "src/components/ui/map.tsx",
+        "src/components/time-tracker/screens/WorkspaceActivityScreen/MemberActivityMap.tsx"
+      ]
+    },
+    {
+      "module": "three",
+      "reason": "~470 KB raw / 115 KB gzip 3D renderer",
+      "allowedStaticImporters": [
+        "src/components/PixelBlast.tsx",
+        "src/components/ColorBends.tsx"
+      ]
+    },
+    {
+      "module": "exceljs",
+      "reason": "~930 KB raw / 250 KB gzip spreadsheet writer; must stay a dynamic import",
+      "allowedStaticImporters": []
+    },
+    {
+      "module": "jspdf",
+      "reason": "~400 KB raw / 126 KB gzip PDF writer; must stay a dynamic import",
+      "allowedStaticImporters": []
+    },
+    {
+      "module": "html2canvas",
+      "reason": "~200 KB raw / 46 KB gzip canvas rasteriser; must stay a dynamic import",
+      "allowedStaticImporters": []
+    },
+    {
+      "module": "recharts",
+      "reason": "~660 KB raw / 102 KB gzip chart library; imported by chart components that are route-lazy",
+      "allowedStaticImporters": [
+        "src/components/time-tracker/analytics/AnalyticsCharts.tsx",
+        "src/components/time-tracker/performance/PerformanceCharts.tsx",
+        "src/components/time-tracker/reports/ReportsCharts.tsx"
+      ]
+    }
+  ]
+}

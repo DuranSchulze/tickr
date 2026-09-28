@@ -103,10 +103,13 @@ The app runs at **http://localhost:3000**.
 | `pnpm dev`         | Start the development server on port 3000           |
 | `pnpm build`       | Build for production                                |
 | `pnpm preview`     | Preview the production build locally                |
-| `pnpm test`        | Run Vitest tests                                    |
-| `pnpm lint`        | Run ESLint                                          |
+| `pnpm test`        | Run all Vitest unit tests + the performance guard   |
+| `pnpm lint`        | Run ESLint (zero-warning policy)                    |
 | `pnpm format`      | Check formatting with Prettier                      |
 | `pnpm check`       | Auto-fix formatting and lint issues                 |
+| `pnpm typecheck`   | Type-check with `tsc --noEmit`                      |
+| `pnpm perf:bundle` | Check client bundle size against the budgets        |
+| `pnpm check-all`   | Run typecheck + lint + tests (the mergeable bar)    |
 | `pnpm db:generate` | Generate a new migration file after schema changes  |
 | `pnpm db:migrate`  | Apply pending migrations to the database            |
 | `pnpm db:push`     | Push schema directly to DB without a migration file |
@@ -140,6 +143,34 @@ pnpm check
 pnpm lint          # Check ESLint
 pnpm format        # Check Prettier formatting
 ```
+
+---
+
+## Testing
+
+Testing is organised into seven distinct layers — formatting, lint, types, React
+diagnostics, unit/integration tests, performance budgets, and manual testing — each
+answering a different question and labelled differently.
+
+| Document                               | Read it for                                                      |
+| -------------------------------------- | ---------------------------------------------------------------- |
+| **[TEST.md](TEST.md)**                 | How to **run** tests: commands, expected output, troubleshooting |
+| **[docs/testing.md](docs/testing.md)** | How testing **works**: layers, conventions, labels, known gaps   |
+
+Quick start:
+
+```bash
+pnpm check-all   # typecheck + lint + tests — run this before pushing
+pnpm perf:ci     # build + performance budgets
+```
+
+**See [TEST.md](TEST.md) for the full runbook**, including:
+
+- every command, what it checks, and how long it takes;
+- how to run a single file, a directory, or a test by name;
+- the current expected baseline (79 files, 417 tests);
+- troubleshooting for the errors you will actually hit;
+- what cannot be run locally yet (E2E, coverage, load testing).
 
 ---
 

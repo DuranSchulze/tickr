@@ -27,3 +27,29 @@ jobs:
       - run: pnpm run lint
 
       - run: pnpm run test
+
+      - run: pnpm run build
+
+  # Separate job so a bundle regression is reported on its own line in the PR
+  # instead of being buried inside the correctness job.
+  performance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # `pnpm perf:ci` builds the app, measures the emitted client assets against
+      # the budgets in perf/bundle-budget.config.json, and exits non-zero when a
+      # budget is exceeded. It needs no database or secrets: a production build
+      # completes without them.
+      - run: pnpm run perf:ci
