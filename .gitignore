@@ -56,3 +56,6 @@ coverage
 # Local task state
 todos.json
 mcp-todos.json
+
+# Apps Script local secrets (bound-script API key)
+appscript/Secrets.gs
