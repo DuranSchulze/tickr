@@ -105,6 +105,7 @@ The app runs at **http://localhost:3000**.
 | `pnpm preview`     | Preview the production build locally                |
 | `pnpm test`        | Run all Vitest unit tests + the performance guard   |
 | `pnpm lint`        | Run ESLint (zero-warning policy)                    |
+| `pnpm lint:commit` | Lint commit messages against Conventional Commits   |
 | `pnpm format`      | Check formatting with Prettier                      |
 | `pnpm check`       | Auto-fix formatting and lint issues                 |
 | `pnpm typecheck`   | Type-check with `tsc --noEmit`                      |
@@ -121,6 +122,8 @@ The app runs at **http://localhost:3000**.
 ## Pre-Commit Hooks
 
 This project uses **Husky** + **lint-staged** to run checks before each commit. The following commands are automatically executed on staged files:
+
+Commit **messages** are validated too — see [Commit Message Convention](#commit-message-convention).
 
 **For `.ts` and `.tsx` files:**
 
@@ -142,6 +145,58 @@ pnpm check
 # Or run individually:
 pnpm lint          # Check ESLint
 pnpm format        # Check Prettier formatting
+```
+
+---
+
+## Commit Message Convention
+
+Every commit must follow [Conventional Commits](https://www.conventionalcommits.org):
+
+```
+<type>(<optional scope>): <subject>
+```
+
+The type is lowercase and must be one of:
+
+| Type       | Use for                                         |
+| ---------- | ----------------------------------------------- |
+| `feat`     | A new feature                                   |
+| `fix`      | A bug fix                                       |
+| `docs`     | Documentation only                              |
+| `style`    | Formatting — no change to code behaviour        |
+| `refactor` | A code change that is neither a fix nor feature |
+| `perf`     | A performance improvement                       |
+| `test`     | Adding or fixing tests                          |
+| `build`    | Build system or dependency changes              |
+| `ci`       | CI configuration and scripts                    |
+| `chore`    | Other changes that don't touch `src` or tests   |
+| `revert`   | Reverts a previous commit                       |
+
+The subject is required, must not end with a period, and the header must stay under 100 characters. Subject casing is free, so both `feat: Add presets` and `feat: add presets` pass. Merge commits are ignored.
+
+Examples:
+
+```
+feat(timer): add manual entry creation
+fix: stop the running timer from duplicating
+chore(deps): bump eslint
+docs(api): document the members search endpoint
+```
+
+Enforcement:
+
+- **Locally** — `.husky/commit-msg` runs [commitlint](https://commitlint.js.org) and aborts the commit when the message is invalid, so a bad message can't be pushed.
+- **On GitHub** — [`.github/workflows/commitlint.yml`](.github/workflows/commitlint.yml) lints every commit in a pull request. Mark the `commitlint` job as a required status check so the PR can't merge until the messages pass.
+
+The rules live in [`commitlint.config.mjs`](commitlint.config.mjs). Validate manually with:
+
+```bash
+# Check a single message
+echo "feat: something" | pnpm exec commitlint
+
+# Check the last few commits
+pnpm lint:commit --from HEAD~3 --to HEAD --verbose
 ```
 
 ---

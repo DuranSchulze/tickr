@@ -17,6 +17,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src perf --ext .ts,.tsx --max-warnings 0",
+    "lint:commit": "commitlint",
     "format": "prettier --check .",
     "check": "prettier --write . && eslint --fix",
     "check-all": "pnpm typecheck && pnpm lint && pnpm test",
@@ -103,6 +104,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-event-client": "latest",
     "@tanstack/devtools-vite": "latest",
