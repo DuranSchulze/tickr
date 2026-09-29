@@ -5,6 +5,7 @@ const sizes = {
   sm: 'h-7 w-auto sm:h-8',
   md: 'h-9 w-auto sm:h-10',
   lg: 'h-11 w-auto sm:h-12',
+  xl: 'h-14 w-auto sm:h-16',
 }
 
 /**

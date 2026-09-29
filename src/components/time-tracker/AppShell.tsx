@@ -19,7 +19,6 @@ import {
 import { AppSidebar } from './AppSidebar'
 import { BirthdayCelebration } from './BirthdayCelebration'
 import { MobileNav } from './MobileNav'
-import { Navbar } from './Navbar'
 import { fireSideCannons } from '#/components/ui/confetti'
 import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
@@ -234,38 +233,31 @@ export function AppShell({
 
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-eggshell text-foreground">
+      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-sidebar text-foreground">
         {showAppChrome && (
-          <div className="print:hidden">
-            <Navbar
-              workspace={workspace}
-              user={user}
-              permissionLevel={permissionLevel}
-              birthdayCelebration={
-                <BirthdayCelebration
-                  birthDate={user.birthDate}
-                  userId={user.id}
-                  userName={user.name}
-                />
-              }
-              mobileMenuButton={
-                <MobileNav
-                  workspaceName={workspace.name}
-                  userEmail={user.email}
-                  timerActive={timerActive}
-                  analyticsGroupActive={analyticsGroupActive}
-                  analyticsOpen={analyticsOpen}
-                  onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
-                  analyticsChildren={analyticsChildren}
-                  calendarActive={calendarActive}
-                  settingsActive={settingsActive}
-                  settingsOpen={settingsOpen}
-                  onToggleSettings={() => setSettingsOpen((open) => !open)}
-                  settingsChildren={settingsChildren}
-                />
-              }
+          <>
+            <BirthdayCelebration
+              birthDate={user.birthDate}
+              userId={user.id}
+              userName={user.name}
             />
-          </div>
+            <div className="flex h-14 shrink-0 items-center justify-end border-b border-stone px-3 lg:hidden print:hidden">
+              <MobileNav
+                workspaceName={workspace.name}
+                userEmail={user.email}
+                timerActive={timerActive}
+                analyticsGroupActive={analyticsGroupActive}
+                analyticsOpen={analyticsOpen}
+                onToggleAnalytics={() => setAnalyticsOpen((open) => !open)}
+                analyticsChildren={analyticsChildren}
+                calendarActive={calendarActive}
+                settingsActive={settingsActive}
+                settingsOpen={settingsOpen}
+                onToggleSettings={() => setSettingsOpen((open) => !open)}
+                settingsChildren={settingsChildren}
+              />
+            </div>
+          </>
         )}
 
         {showAppChrome && <SubscriptionStatusBanner summary={subscription} />}
@@ -280,6 +272,9 @@ export function AppShell({
                   collapsed={collapsed}
                   onToggleCollapsed={() => setCollapsed((c) => !c)}
                   workspaceName={workspace.name}
+                  workspaceId={workspace.id}
+                  permissionLevel={permissionLevel}
+                  user={user}
                   userEmail={user.email}
                   timerActive={timerActive}
                   analyticsGroupActive={analyticsGroupActive}

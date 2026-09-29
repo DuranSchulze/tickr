@@ -320,6 +320,10 @@ code {
   --eggshell: #fdfcfc;
   --warm-taupe: #f5f3f1;
   --stone: #ebe8e4;
+  /* Workspace content plane — a step brighter than eggshell paper so the
+     app shell's <main> separates from the taupe frame/sidebar. Light mode
+     uses white (eggshell is already near-white, leaving no warmer headroom). */
+  --app-surface: #ffffff;
   --ink: #000000;
   --graphite: #44403b;
   --smoke: #777169;
@@ -756,6 +760,7 @@ code {
   --color-eggshell: var(--eggshell);
   --color-warm-taupe: var(--warm-taupe);
   --color-stone: var(--stone);
+  --color-app-surface: var(--app-surface);
   --color-ink: var(--ink);
   --color-graphite: var(--graphite);
   --color-smoke: var(--smoke);
@@ -971,6 +976,9 @@ code {
   --eggshell: #1d1a18; /* "paper" is the warm near-black card in dark   */
   --warm-taupe: #262220;
   --stone: #35302b;
+  /* Workspace content plane — lifts the app <main> above the eggshell card
+     tone while staying below warm-taupe so hover/secondary washes still read. */
+  --app-surface: #23201e;
   --ink: #f5f3f1; /* filled-ink chip becomes the light chip in dark */
   /* Text tones lift so they stay legible on the dark warm surfaces. */
   --graphite: #cfc9c1;

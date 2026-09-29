@@ -1,6 +1,9 @@
 import { Building2 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { getEntrySecondsInRange, getViewRange } from '#/lib/time-tracker/store'
+import {
+  getRecordedEntrySecondsInRange,
+  getViewRange,
+} from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { TimeEntry } from '#/lib/time-tracker/types'
 import { useNowTick } from './hooks/useNowTick'
@@ -20,7 +23,8 @@ function HeaderTotal({
   const range = getViewRange('day', now)
   const selectedTotalSeconds = entries.reduce(
     (total, entry) =>
-      total + getEntrySecondsInRange(entry, range.start, range.end, now),
+      total +
+      getRecordedEntrySecondsInRange(entry, range.start, range.end, now),
     0,
   )
 

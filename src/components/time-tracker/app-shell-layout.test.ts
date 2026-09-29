@@ -26,12 +26,13 @@ describe('usesFullscreenWorkspaceLayout', () => {
       usesFullscreenLayout: false,
       showAppChrome: true,
       mainClassName:
-        'min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6',
+        'min-w-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl bg-app-surface sm:rounded-2xl mt-1 mr-1 mb-1 ml-0 p-4 sm:mt-2 sm:mr-2 sm:mb-2 sm:p-6',
     })
     expect(getAppShellLayout('/app/workspace/activity', true)).toEqual({
       usesFullscreenLayout: false,
       showAppChrome: false,
-      mainClassName: 'min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-2',
+      mainClassName:
+        'min-w-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl bg-app-surface sm:rounded-2xl m-1 p-2',
     })
   })
 

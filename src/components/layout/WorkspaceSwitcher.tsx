@@ -36,10 +36,12 @@ export function WorkspaceSwitcher({
   currentWorkspaceId,
   currentWorkspaceName,
   permissionLevel,
+  collapsed = false,
 }: {
   currentWorkspaceId: string
   currentWorkspaceName: string
   permissionLevel: string
+  collapsed?: boolean
 }) {
   const canCreate = permissionLevel === 'OWNER' || permissionLevel === 'ADMIN'
   const queryClient = useQueryClient()
@@ -102,18 +104,30 @@ export function WorkspaceSwitcher({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            size="default"
+            size={collapsed ? 'icon' : 'default'}
             title="Switch workspace"
-            className="max-w-[240px] shrink-0 gap-2 rounded-full border border-stone bg-eggshell px-3 text-foreground hover:bg-warm-taupe sm:max-w-[280px]"
+            className={
+              collapsed
+                ? 'size-9 rounded-full border border-stone bg-eggshell p-0 text-foreground hover:bg-warm-taupe'
+                : 'w-full justify-start gap-2 rounded-xl border border-stone bg-eggshell px-3 text-foreground hover:bg-warm-taupe'
+            }
           >
             <BriefcaseBusiness className="size-4 shrink-0 text-primary" />
-            <span className="hidden min-w-0 truncate font-semibold sm:inline">
-              {currentWorkspaceName}
-            </span>
-            <ChevronDown className="size-3.5 shrink-0 text-smoke" />
+            {!collapsed && (
+              <span className="min-w-0 truncate font-semibold">
+                {currentWorkspaceName}
+              </span>
+            )}
+            {!collapsed && (
+              <ChevronDown className="ml-auto size-3.5 shrink-0 text-smoke" />
+            )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuContent
+          side={collapsed ? 'right' : 'top'}
+          align={collapsed ? 'start' : 'center'}
+          className="w-64"
+        >
           <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wide text-smoke">
             Your workspaces
           </DropdownMenuLabel>

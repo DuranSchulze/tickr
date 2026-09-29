@@ -5,7 +5,11 @@ const MANILA = 'Asia/Manila'
 
 describe('buildPayrollPeriods', () => {
   it('splits a single-cutoff month into 1–15 and 16–month-end', () => {
-    const periods = buildPayrollPeriods([15], '2026-09', MANILA)
+    // Pin "now" inside the month under test: the `closed` flag is relative to
+    // the wall clock, so omitting `now` makes this test fail once real time
+    // passes 2026-09-15. Every assertion on `closed` must inject a fixed date.
+    const now = new Date('2026-09-10T04:00:00Z') // Sep 10 in Manila
+    const periods = buildPayrollPeriods([15], '2026-09', MANILA, now)
 
     expect(periods).toEqual([
       {
