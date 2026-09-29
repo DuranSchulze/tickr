@@ -12,8 +12,10 @@ export function getAppShellLayout(pathname: string, isEmbed: boolean) {
     showAppChrome: !isEmbed && !usesFullscreenLayout,
     mainClassName: usesFullscreenLayout
       ? 'min-w-0 flex-1 overflow-hidden p-0'
-      : `min-w-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl bg-eggshell sm:rounded-2xl ${
-          isEmbed ? 'm-1 p-2' : 'm-2 p-4 sm:m-4 sm:p-6'
+      : `min-w-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl bg-app-surface sm:rounded-2xl ${
+          isEmbed
+            ? 'm-1 p-2'
+            : 'mt-1 mr-1 mb-1 ml-0 p-4 sm:mt-2 sm:mr-2 sm:mb-2 sm:p-6'
         }`,
   }
 }

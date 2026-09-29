@@ -45,10 +45,7 @@ export function formatDurationPrecise(seconds: number) {
 }
 
 export function getEntrySecondsPrecise(entry: TimeEntry, tick = Date.now()) {
-  if (entry.endedAt) {
-    return entry.durationSeconds
-  }
-  return Math.max(0, (tick - new Date(entry.startedAt).getTime()) / 1000)
+  return getEntrySeconds(entry, tick)
 }
 
 export function formatHours(seconds: number) {
@@ -170,6 +167,21 @@ export function getEntrySecondsInRange(
     end.getTime(),
   )
   return Math.max(0, (entryEnd - entryStart) / 1000)
+}
+
+/** Use recorded durations for completed entries, prorated across day boundaries. */
+export function getRecordedEntrySecondsInRange(
+  entry: TimeEntry,
+  start: Date,
+  end: Date,
+  now = new Date(),
+) {
+  const overlap = getEntrySecondsInRange(entry, start, end, now)
+  if (!entry.endedAt || overlap === 0) return overlap
+  const elapsed =
+    (new Date(entry.endedAt).getTime() - new Date(entry.startedAt).getTime()) /
+    1000
+  return getEntrySeconds(entry) * (overlap / elapsed)
 }
 
 export function useFilteredEntries(

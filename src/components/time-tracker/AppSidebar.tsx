@@ -132,9 +132,9 @@ export const AppSidebar = memo(function ({
           <div className="mb-3">
             <Link
               to="/app/time-tracker"
-              className="mb-4 flex items-center px-2 no-underline"
+              className="mb-4 flex items-center justify-center px-2 no-underline"
             >
-              <AppLogo size="md" />
+              <AppLogo size="xl" />
             </Link>
             <div className="rounded-xl border border-stone bg-eggshell p-3">
               <div className="flex items-center gap-2.5">
