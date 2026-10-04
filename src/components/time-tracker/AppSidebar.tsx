@@ -20,6 +20,7 @@ import {
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
+import { AnnouncementCard } from '#/features/announcements/AnnouncementCard'
 import { authClient } from '#/lib/auth-client'
 import { Button } from '#/components/ui/button'
 
@@ -307,6 +308,8 @@ export const AppSidebar = memo(function ({
             </>
           )}
         </nav>
+
+        <AnnouncementCard collapsed={collapsed} />
       </div>
 
       <div className="mt-auto shrink-0 border-t border-stone px-2.5 py-3">
