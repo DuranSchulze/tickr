@@ -1,6 +1,19 @@
 {
-  "appVersion": "1.12.0",
+  "appVersion": "1.13.0",
   "updates": [
+    {
+      "version": "1.13.0",
+      "publishedAt": "2026-10-04",
+      "title": "TimeTrackly Has a New URL",
+      "body": "TimeTrackly has moved to a new web address: https://timetrackly.com/. The app, your workspaces, and your data are unchanged — only the address is new. Please update your bookmarks so you always land on the current site.",
+      "features": [
+        {
+          "title": "New Home at timetrackly.com",
+          "description": "You can now reach TimeTrackly at https://timetrackly.com/. Update your bookmarks to the new address — everything else works exactly as before.",
+          "image": null
+        }
+      ]
+    },
     {
       "version": "1.12.0",
       "publishedAt": "2026-07-09",
