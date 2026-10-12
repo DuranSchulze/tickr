@@ -23,6 +23,7 @@ export type SelfProfileData = {
     country: string
   } | null
   employeeProfile: {
+    employeeNumber: string
     positionTitle: string
   } | null
 }
