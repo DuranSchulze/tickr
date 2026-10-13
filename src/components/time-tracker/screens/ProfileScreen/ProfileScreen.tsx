@@ -51,7 +51,9 @@ export function ProfileScreen({
               type="button"
               size="sm"
               className="rounded-full"
-              onClick={() => fireSideCannons({ durationMs: 1600, particleCount: 2 })}
+              onClick={() =>
+                fireSideCannons({ durationMs: 1600, particleCount: 2 })
+              }
             >
               <PartyPopper className="size-4" />
               Celebrate
@@ -75,7 +77,7 @@ export function ProfileScreen({
         </SectionCard>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <ProfileSidebar
           name={displayName}
           email={member.email}

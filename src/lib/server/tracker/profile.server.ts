@@ -28,6 +28,27 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
   const gender = data.gender || null
   const maritalStatus = data.maritalStatus ? data.maritalStatus : null
   const positionTitle = emptyToNull(data.positionTitle)
+  const employeeNumber = emptyToNull(data.employeeNumber)
+
+  if (employeeNumber) {
+    // employee_number is globally unique; check first so the caller gets a
+    // readable error instead of a raw constraint violation.
+    const [clash] = await db
+      .select({ id: employeeProfiles.id })
+      .from(employeeProfiles)
+      .where(eq(employeeProfiles.employeeNumber, employeeNumber))
+      .limit(1)
+    if (clash) {
+      const [mine] = await db
+        .select({ id: employeeProfiles.id })
+        .from(employeeProfiles)
+        .where(eq(employeeProfiles.workspaceMemberId, access.member.id))
+        .limit(1)
+      if (mine?.id !== clash.id) {
+        throw new Error('That employee number is already in use.')
+      }
+    }
+  }
 
   await db
     .update(users)
@@ -90,11 +111,13 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     .insert(employeeProfiles)
     .values({
       workspaceMemberId: access.member.id,
+      employeeNumber,
       positionTitle,
     })
     .onConflictDoUpdate({
       target: employeeProfiles.workspaceMemberId,
       set: {
+        employeeNumber,
         positionTitle,
       },
     })
