@@ -1,6 +1,7 @@
 import '@tanstack/react-start/server-only'
 import type { ZodError, z } from 'zod'
 import {
+  ExternalApiError,
   authenticateApiKeyCredential,
   authenticateDeveloperCredentials,
   authenticateUserCredentials,
@@ -25,13 +26,10 @@ import {
   tagsListQuerySchema,
   tasksListQuerySchema,
   timeEntriesQuerySchema,
+  personalTimeEntriesQuerySchema,
 } from './external-api.shared'
 import type { ExternalApiContext } from './external-api-auth.server'
-import type {
-  ListQuery,
-  MembersListQuery,
-  TimeEntriesQuery,
-} from './external-api.shared'
+import type { ListQuery, MembersListQuery } from './external-api.shared'
 
 function queryObject(request: Request): Record<string, string> {
   const url = new URL(request.url)
@@ -235,7 +233,6 @@ export async function handleLoginRequest(request: Request): Promise<Response> {
     const { context, user } = await authenticateUserCredentials(
       parsed.data.email,
       parsed.data.password,
-      parsed.data.workspaceSlug,
     )
     return issueTokenResponse(context, { user })
   } catch (error) {
@@ -270,11 +267,7 @@ export async function handleRegisterRequest(
     return registrationErrorResponse(error)
   }
 
-  const context = await resolveUserContext(
-    user.id,
-    user.email,
-    parsed.data.workspaceSlug,
-  )
+  const context = await resolveUserContext(user.id, user.email)
   if (!context) {
     return jsonResponse(
       { data: { user, token: null, workspace: null } },
@@ -420,16 +413,55 @@ export function handleDepartmentsRequest(request: Request): Promise<Response> {
   )
 }
 
-export function handleTimeEntriesRequest(request: Request): Promise<Response> {
-  return handleList<TimeEntriesQuery, unknown>(
-    request,
-    timeEntriesQuerySchema,
-    async (workspaceId, query) => {
-      const { listExternalTimeEntries } =
-        await import('./external-api-data.server')
-      return listExternalTimeEntries(workspaceId, query)
-    },
-  )
+export async function handleTimeEntriesRequest(
+  request: Request,
+): Promise<Response> {
+  try {
+    const context = await requireExternalApiKey(request)
+    const input = queryObject(request)
+    if (context.userId !== null) {
+      const parsed = personalTimeEntriesQuerySchema.safeParse(input)
+      if (!parsed.success) return validationError(parsed.error)
+      if (parsed.data.userId && parsed.data.userId !== context.userId) {
+        throw new ExternalApiError(
+          403,
+          'user_scope_denied',
+          'Only your own time entries are accessible.',
+        )
+      }
+      const { listPersonalTimeEntries } =
+        await import('./personal-time-entries.server')
+      const generatedAt = new Date()
+      const result = await listPersonalTimeEntries(
+        context.userId,
+        parsed.data,
+        generatedAt,
+      )
+      return jsonResponse({
+        ...listPayload(result.data, parsed.data, result.total),
+        summaries: result.summaries,
+        generatedAt: generatedAt.toISOString(),
+      })
+    }
+    if (['userId', 'workspaceId', 'date'].some((key) => key in input)) {
+      throw new ExternalApiError(
+        400,
+        'invalid_query',
+        'userId, workspaceId, and date require a user JWT.',
+      )
+    }
+    const parsed = timeEntriesQuerySchema.safeParse(input)
+    if (!parsed.success) return validationError(parsed.error)
+    const { listExternalTimeEntries } =
+      await import('./external-api-data.server')
+    const result = await listExternalTimeEntries(
+      context.workspaceId,
+      parsed.data,
+    )
+    return jsonResponse(listPayload(result.data, parsed.data, result.total))
+  } catch (error) {
+    return externalApiErrorResponse(error)
+  }
 }
 
 export async function handleDtrIntegrationRequest(

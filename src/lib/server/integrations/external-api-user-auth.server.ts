@@ -88,7 +88,6 @@ export async function registerTracklyUserAccount(input: {
 export async function resolveTracklyWorkspaceMembership(
   userId: string,
   email: string,
-  workspaceSlug?: string,
 ): Promise<{
   memberId: string
   workspace: {
@@ -102,10 +101,7 @@ export async function resolveTracklyWorkspaceMembership(
   const memberships = await listUserWorkspaces(userId, email)
   if (memberships.length === 0) return null
 
-  const chosen =
-    (workspaceSlug
-      ? memberships.find((m) => m.workspace.slug === workspaceSlug)
-      : undefined) ?? memberships[0]
+  const chosen = memberships[0]
 
   if (!chosen) return null
 

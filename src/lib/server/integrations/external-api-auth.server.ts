@@ -388,13 +388,8 @@ export async function requireExternalApiKey(
 export async function resolveUserContext(
   userId: string,
   email: string,
-  workspaceSlug?: string,
 ): Promise<ExternalApiContext | null> {
-  const membership = await resolveTracklyWorkspaceMembership(
-    userId,
-    email,
-    workspaceSlug,
-  )
+  const membership = await resolveTracklyWorkspaceMembership(userId, email)
   if (!membership) return null
 
   return {
@@ -416,7 +411,6 @@ export async function resolveUserContext(
 export async function authenticateUserCredentials(
   email: string,
   password: string,
-  workspaceSlug?: string,
 ): Promise<{ context: ExternalApiContext; user: TracklyUserIdentity }> {
   const user = await verifyTracklyUserCredentials(email, password)
   if (!user) {
@@ -428,7 +422,7 @@ export async function authenticateUserCredentials(
     )
   }
 
-  const context = await resolveUserContext(user.id, user.email, workspaceSlug)
+  const context = await resolveUserContext(user.id, user.email)
   if (!context) {
     throw new ExternalApiError(
       403,

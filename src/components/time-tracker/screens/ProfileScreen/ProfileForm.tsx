@@ -24,6 +24,7 @@ import {
   validateBirthDate,
   validateContactNumber,
   validateDisplayName,
+  validateEmployeeNumber,
   validateFirstName,
   validateLastName,
   validateMaxLength,
@@ -70,6 +71,7 @@ function getProfileInitialValues({
       selfProfile.profile?.lastName ||
       fallbackName.split(' ').slice(1).join(' ') ||
       fallbackName,
+    employeeNumber: selfProfile.employeeProfile?.employeeNumber ?? '',
     positionTitle: selfProfile.employeeProfile?.positionTitle ?? '',
     contactNumber: selfProfile.profile?.contactNumber ?? '',
     birthDate: selfProfile.profile?.birthDate ?? '',
@@ -141,6 +143,9 @@ export function ProfileForm({
       fallbackName.split(' ').slice(1).join(' ') ||
       fallbackName,
   )
+  const [employeeNumber, setEmployeeNumber] = useState(
+    selfProfile.employeeProfile?.employeeNumber ?? '',
+  )
   const [positionTitle, setPositionTitle] = useState(
     selfProfile.employeeProfile?.positionTitle ?? '',
   )
@@ -178,6 +183,7 @@ export function ProfileForm({
     if (firstName !== iv.firstName) return true
     if (middleName !== iv.middleName) return true
     if (lastName !== iv.lastName) return true
+    if (employeeNumber !== iv.employeeNumber) return true
     if (positionTitle !== iv.positionTitle) return true
     if (birthDate !== iv.birthDate) return true
     if (avatarUrl !== iv.avatarUrl) return true
@@ -198,6 +204,7 @@ export function ProfileForm({
     firstName,
     middleName,
     lastName,
+    employeeNumber,
     positionTitle,
     contactNumber,
     birthDate,
@@ -273,6 +280,7 @@ export function ProfileForm({
       firstName,
       middleName,
       lastName,
+      employeeNumber,
       positionTitle,
       // Only validate extended fields when they are visible
       contactNumber: SHOW_EXTENDED_PROFILE_FIELDS ? contactNumber : '',
@@ -304,6 +312,7 @@ export function ProfileForm({
           firstName,
           middleName,
           lastName,
+          employeeNumber,
           positionTitle,
           avatarUrl,
           contactNumber: contactNumber || undefined,
@@ -320,6 +329,7 @@ export function ProfileForm({
         firstName,
         middleName,
         lastName,
+        employeeNumber,
         positionTitle,
         contactNumber,
         birthDate: nextBirthDate,
@@ -353,7 +363,7 @@ export function ProfileForm({
     : 'NONE'
 
   return (
-    <form onSubmit={handleSave} className="grid gap-4" noValidate>
+    <form onSubmit={handleSave} className="grid min-w-0 gap-4" noValidate>
       {/* ── Account ────────────────────────────────────────────────────────── */}
       <SectionCard title="Account">
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -427,7 +437,7 @@ export function ProfileForm({
 
       {/* ── Personal ───────────────────────────────────────────────────────── */}
       <SectionCard title="Personal">
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div className="grid gap-2">
             <Label htmlFor="pf-first">
               First name <span className="text-red-500">*</span>
@@ -604,16 +614,37 @@ export function ProfileForm({
 
       {/* ── Work ───────────────────────────────────────────────────────────── */}
       <SectionCard title="Work">
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Employee number is assigned by an administrator, so it's shown
-              read-only here (matching the Department field). */}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {/* Employee number is editable by the member themselves. */}
           <div className="grid gap-2">
             <Label htmlFor="pf-employee-number">Employee number</Label>
             <Input
               id="pf-employee-number"
-              value={selfProfile.employeeProfile?.employeeNumber ?? ''}
-              placeholder="Not assigned"
-              disabled
+              value={employeeNumber}
+              onChange={(e) => {
+                setEmployeeNumber(e.target.value)
+                if (errors.employeeNumber)
+                  setError(
+                    'employeeNumber',
+                    validateEmployeeNumber(e.target.value),
+                  )
+              }}
+              onBlur={() =>
+                setError(
+                  'employeeNumber',
+                  validateEmployeeNumber(employeeNumber),
+                )
+              }
+              placeholder="e.g. EMP-00123"
+              aria-describedby={
+                errors.employeeNumber ? 'pf-employee-number-err' : undefined
+              }
+              aria-invalid={!!errors.employeeNumber}
+              className={errorInputClass(errors.employeeNumber)}
+            />
+            <FieldError
+              id="pf-employee-number-err"
+              message={errors.employeeNumber}
             />
           </div>
 
