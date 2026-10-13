@@ -11,17 +11,6 @@ import type {
   updateTagSchema,
 } from '../shared/schemas'
 
-async function exportTag(
-  workspaceId: string,
-  tag: { id: string; name: string; color: string; archived: boolean },
-) {
-  const { exportTagToSheet } =
-    await import('#/lib/server/gsheets/catalog-sync.server')
-  exportTagToSheet(workspaceId, tag).catch((err) =>
-    console.error('[GSheets catalog export] tag:', err),
-  )
-}
-
 export async function createTag(data: z.infer<typeof createTagSchema>) {
   const access = await requireWorkspaceAccess()
   assertCanManageCatalogs(access)
@@ -47,13 +36,6 @@ export async function createTag(data: z.infer<typeof createTagSchema>) {
     })
     .returning()
 
-  void exportTag(access.workspace.id, {
-    id: created.id,
-    name: data.name,
-    color: data.color,
-    archived: false,
-  })
-
   void createAuditLog({
     workspaceId: access.workspace.id,
     actorId: access.user.id,
@@ -73,13 +55,6 @@ export async function updateTag(data: z.infer<typeof updateTagSchema>) {
     .update(tags)
     .set({ name: data.name, color: data.color })
     .where(and(eq(tags.id, data.id), eq(tags.workspaceId, access.workspace.id)))
-
-  void exportTag(access.workspace.id, {
-    id: data.id,
-    name: data.name,
-    color: data.color,
-    archived: false,
-  })
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -128,12 +103,6 @@ export async function bulkArchiveTags(data: z.infer<typeof bulkIdsSchema>) {
       targetId: row.id,
       details: row.name,
     })
-    void exportTag(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      color: row.color,
-      archived: true,
-    })
   }
 }
 
@@ -171,12 +140,6 @@ export async function bulkActivateTags(data: z.infer<typeof bulkIdsSchema>) {
       targetId: row.id,
       details: row.name,
     })
-    void exportTag(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      color: row.color,
-      archived: false,
-    })
   }
 }
 
@@ -204,15 +167,6 @@ export async function archiveTag(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: tag?.name ?? null,
   })
-
-  if (tag) {
-    void exportTag(access.workspace.id, {
-      id: data.id,
-      name: tag.name,
-      color: tag.color,
-      archived: true,
-    })
-  }
 }
 
 export async function activateTag(data: z.infer<typeof idSchema>) {
@@ -239,13 +193,4 @@ export async function activateTag(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: tag?.name ?? null,
   })
-
-  if (tag) {
-    void exportTag(access.workspace.id, {
-      id: data.id,
-      name: tag.name,
-      color: tag.color,
-      archived: false,
-    })
-  }
 }

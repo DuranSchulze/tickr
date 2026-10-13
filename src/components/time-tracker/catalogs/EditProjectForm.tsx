@@ -18,10 +18,14 @@ import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 export function EditProjectForm({
   project,
   clients,
+  fixedClient,
+  onSaved,
   onDone,
 }: {
   project: TrackerState['projects'][number]
   clients: TrackerState['clients']
+  fixedClient?: { id: string; name: string }
+  onSaved?: () => void | Promise<void>
   onDone: () => void
 }) {
   const router = useRouter()
@@ -39,6 +43,7 @@ export function EditProjectForm({
       await router.invalidate()
       publishTaskChange()
       gooeyToast.success('Project updated')
+      await onSaved?.()
       onDone()
     } catch (err) {
       gooeyToast.error('Could not update project', {
@@ -51,11 +56,20 @@ export function EditProjectForm({
 
   return (
     <form onSubmit={handleSubmit} className={catalogFormClass}>
-      <ClientSelect
-        clients={clients}
-        value={clientId}
-        onChange={(id) => setClientId(id)}
-      />
+      {fixedClient ? (
+        <p className="m-0 text-sm text-smoke">
+          Client:{' '}
+          <span className="font-semibold text-foreground">
+            {fixedClient.name}
+          </span>
+        </p>
+      ) : (
+        <ClientSelect
+          clients={clients}
+          value={clientId}
+          onChange={(id) => setClientId(id)}
+        />
+      )}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

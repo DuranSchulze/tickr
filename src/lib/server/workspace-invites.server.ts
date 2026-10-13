@@ -18,8 +18,6 @@ import {
 } from './workspace-access.server'
 import type { WorkspaceAccess } from './workspace-access.server'
 import { createAuditLog } from './tracker/audit/audit-logger.server'
-import { shareSheetWithUser } from './gsheets/auth.server'
-import { extractSheetId } from './gsheets/extract-sheet-id'
 import {
   assertPermission,
   getAccessLevel,
@@ -32,23 +30,6 @@ import {
 } from '#/lib/rbac/authorization'
 
 const INVITE_TTL_DAYS = 7
-
-const SHEET_SHARED_ROLES = new Set(['OWNER', 'ADMIN'])
-
-async function maybeShareSheetWithMember(
-  workspace: { googleSheetUrl: string | null },
-  role: { permissionLevel: string } | null,
-  email: string,
-) {
-  if (!workspace.googleSheetUrl) return
-  if (!role || !SHEET_SHARED_ROLES.has(role.permissionLevel)) return
-  try {
-    const sheetId = extractSheetId(workspace.googleSheetUrl)
-    await shareSheetWithUser(sheetId, email)
-  } catch {
-    // Non-fatal: sheet sharing failures should not block the invite flow
-  }
-}
 
 export class WorkspaceInviteError extends Error {
   readonly code: InviteErrorCode
@@ -528,12 +509,6 @@ export async function acceptInvite(token: string) {
     details: invite.email,
   })
 
-  void maybeShareSheetWithMember(
-    invite.workspace,
-    invite.workspaceRole,
-    invite.email,
-  )
-
   return {
     workspaceId: invite.workspaceId,
     slug: invite.workspace.slug,
@@ -634,8 +609,6 @@ export async function redeemInviteByCode(code: string) {
     targetId: result.id,
     details: `${invite.email} (via join code)`,
   })
-
-  void maybeShareSheetWithMember(row.workspace, row.workspaceRole, invite.email)
 
   return {
     workspaceId: invite.workspaceId,

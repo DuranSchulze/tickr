@@ -11,23 +11,6 @@ import type {
   updateProjectSchema,
 } from '../shared/schemas'
 
-async function exportProject(
-  workspaceId: string,
-  project: {
-    id: string
-    name: string
-    clientName: string
-    color: string
-    archived: boolean
-  },
-) {
-  const { exportProjectToSheet } =
-    await import('#/lib/server/gsheets/catalog-sync.server')
-  exportProjectToSheet(workspaceId, project).catch((err) =>
-    console.error('[GSheets catalog export] project:', err),
-  )
-}
-
 export async function createProject(data: z.infer<typeof createProjectSchema>) {
   const access = await requireWorkspaceAccess()
   assertCanManageCatalogs(access)
@@ -71,14 +54,6 @@ export async function createProject(data: z.infer<typeof createProjectSchema>) {
     })
     .returning()
 
-  void exportProject(access.workspace.id, {
-    id: created.id,
-    name: data.name,
-    clientName: client.name,
-    color: data.color,
-    archived: false,
-  })
-
   void createAuditLog({
     workspaceId: access.workspace.id,
     actorId: access.user.id,
@@ -116,14 +91,6 @@ export async function updateProject(data: z.infer<typeof updateProjectSchema>) {
         eq(projects.workspaceId, access.workspace.id),
       ),
     )
-
-  void exportProject(access.workspace.id, {
-    id: data.id,
-    name: data.name,
-    clientName: client.name,
-    color: data.color,
-    archived: false,
-  })
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -167,18 +134,8 @@ export async function bulkArchiveProjects(data: z.infer<typeof bulkIdsSchema>) {
       ),
     )
 
-  // Per-row client-name lookups are independent reads — run them concurrently.
   await Promise.all(
-    rows.map(async (row) => {
-      let clientName = ''
-      if (row.clientId) {
-        const [client] = await db
-          .select({ name: clients.name })
-          .from(clients)
-          .where(eq(clients.id, row.clientId))
-          .limit(1)
-        clientName = client?.name ?? ''
-      }
+    rows.map((row) => {
       void createAuditLog({
         workspaceId: access.workspace.id,
         actorId: access.user.id,
@@ -187,13 +144,6 @@ export async function bulkArchiveProjects(data: z.infer<typeof bulkIdsSchema>) {
         targetType: 'project',
         targetId: row.id,
         details: row.name,
-      })
-      void exportProject(access.workspace.id, {
-        id: row.id,
-        name: row.name,
-        clientName,
-        color: row.color,
-        archived: true,
       })
     }),
   )
@@ -230,18 +180,8 @@ export async function bulkActivateProjects(
       ),
     )
 
-  // Per-row client-name lookups are independent reads — run them concurrently.
   await Promise.all(
-    rows.map(async (row) => {
-      let clientName = ''
-      if (row.clientId) {
-        const [client] = await db
-          .select({ name: clients.name })
-          .from(clients)
-          .where(eq(clients.id, row.clientId))
-          .limit(1)
-        clientName = client?.name ?? ''
-      }
+    rows.map((row) => {
       void createAuditLog({
         workspaceId: access.workspace.id,
         actorId: access.user.id,
@@ -250,13 +190,6 @@ export async function bulkActivateProjects(
         targetType: 'project',
         targetId: row.id,
         details: row.name,
-      })
-      void exportProject(access.workspace.id, {
-        id: row.id,
-        name: row.name,
-        clientName,
-        color: row.color,
-        archived: false,
       })
     }),
   )
@@ -281,16 +214,6 @@ export async function archiveProject(data: z.infer<typeof idSchema>) {
     )
     .limit(1)
 
-  let clientName = ''
-  if (project?.clientId) {
-    const [client] = await db
-      .select({ name: clients.name })
-      .from(clients)
-      .where(eq(clients.id, project.clientId))
-      .limit(1)
-    clientName = client?.name ?? ''
-  }
-
   await db
     .update(projects)
     .set({ archived: true })
@@ -310,16 +233,6 @@ export async function archiveProject(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: project?.name ?? null,
   })
-
-  if (project) {
-    void exportProject(access.workspace.id, {
-      id: data.id,
-      name: project.name,
-      clientName,
-      color: project.color,
-      archived: true,
-    })
-  }
 }
 
 export async function activateProject(data: z.infer<typeof idSchema>) {
@@ -341,16 +254,6 @@ export async function activateProject(data: z.infer<typeof idSchema>) {
     )
     .limit(1)
 
-  let clientName = ''
-  if (project?.clientId) {
-    const [client] = await db
-      .select({ name: clients.name })
-      .from(clients)
-      .where(eq(clients.id, project.clientId))
-      .limit(1)
-    clientName = client?.name ?? ''
-  }
-
   await db
     .update(projects)
     .set({ archived: false })
@@ -370,14 +273,4 @@ export async function activateProject(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: project?.name ?? null,
   })
-
-  if (project) {
-    void exportProject(access.workspace.id, {
-      id: data.id,
-      name: project.name,
-      clientName,
-      color: project.color,
-      archived: false,
-    })
-  }
 }

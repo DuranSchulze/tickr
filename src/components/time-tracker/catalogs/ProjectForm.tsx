@@ -1,5 +1,5 @@
 import { useReducer } from 'react'
-import type { FormEvent } from 'react'
+import type { Dispatch, FormEvent } from 'react'
 import { Plus } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
 import { gooeyToast } from '#/lib/toast'
@@ -33,9 +33,11 @@ type ProjectFormState = {
 
 export function ProjectForm({
   clients,
+  fixedClient,
   onSuccess,
 }: {
   clients: TrackerState['clients']
+  fixedClient?: { id: string; name: string }
   onSuccess?: () => void
 }) {
   const router = useRouter()
@@ -48,7 +50,7 @@ export function ProjectForm({
       name: '',
       bulkNames: '',
       color: '#2563eb',
-      clientId: activeClients[0]?.id ?? '',
+      clientId: fixedClient?.id ?? activeClients.at(0)?.id ?? '',
       pending: false,
       addingClient: false,
       newClientName: '',
@@ -63,9 +65,7 @@ export function ProjectForm({
     color,
     clientId,
     pending,
-    addingClient,
     newClientName,
-    newClientPending,
     pendingSelectName,
   } = state
 
@@ -156,7 +156,66 @@ export function ProjectForm({
       />
       <ModeToggle mode={mode} onChange={(m) => dispatch({ mode: m })} />
 
-      {activeClients.length === 0 && !addingClient ? (
+      <ProjectClientFields
+        fixedClient={fixedClient}
+        activeClients={activeClients}
+        state={state}
+        resolvedClientId={resolvedClientId}
+        dispatch={dispatch}
+        onCreateClient={handleCreateClient}
+      />
+
+      {mode === 'single' ? (
+        <input
+          value={name}
+          onChange={(event) => dispatch({ name: event.target.value })}
+          placeholder="Project name"
+          aria-label="Project name"
+          required
+          className={inputClass}
+          disabled={!resolvedClientId}
+        />
+      ) : (
+        <BulkNamesInput
+          value={bulkNames}
+          onChange={(v) => dispatch({ bulkNames: v })}
+        />
+      )}
+      <ColorInput value={color} onChange={(c) => dispatch({ color: c })} />
+      <SubmitButton
+        pending={pending}
+        label={mode === 'single' ? 'Create project' : 'Create projects'}
+      />
+    </form>
+  )
+}
+
+function ProjectClientFields({
+  fixedClient,
+  activeClients,
+  state,
+  resolvedClientId,
+  dispatch,
+  onCreateClient,
+}: {
+  fixedClient?: { id: string; name: string }
+  activeClients: TrackerState['clients']
+  state: ProjectFormState
+  resolvedClientId: string
+  dispatch: Dispatch<Partial<ProjectFormState>>
+  onCreateClient: () => Promise<void>
+}) {
+  const { addingClient, newClientName, newClientPending } = state
+  return (
+    <>
+      {fixedClient ? (
+        <p className="m-0 text-sm text-smoke">
+          Client:{' '}
+          <span className="font-semibold text-foreground">
+            {fixedClient.name}
+          </span>
+        </p>
+      ) : activeClients.length === 0 && !addingClient ? (
         <p className="text-sm text-smoke">
           No clients yet.{' '}
           <button
@@ -188,7 +247,7 @@ export function ProjectForm({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
-                    void handleCreateClient()
+                    void onCreateClient()
                   }
                   if (e.key === 'Escape') {
                     dispatch({ addingClient: false, newClientName: '' })
@@ -198,7 +257,7 @@ export function ProjectForm({
               <button
                 type="button"
                 disabled={newClientPending}
-                onClick={() => void handleCreateClient()}
+                onClick={() => void onCreateClient()}
                 className="h-11 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground disabled:opacity-50"
               >
                 {newClientPending ? '…' : 'Add'}
@@ -225,28 +284,6 @@ export function ProjectForm({
           )}
         </>
       )}
-
-      {mode === 'single' ? (
-        <input
-          value={name}
-          onChange={(event) => dispatch({ name: event.target.value })}
-          placeholder="Project name"
-          aria-label="Project name"
-          required
-          className={inputClass}
-          disabled={!resolvedClientId}
-        />
-      ) : (
-        <BulkNamesInput
-          value={bulkNames}
-          onChange={(v) => dispatch({ bulkNames: v })}
-        />
-      )}
-      <ColorInput value={color} onChange={(c) => dispatch({ color: c })} />
-      <SubmitButton
-        pending={pending}
-        label={mode === 'single' ? 'Create project' : 'Create projects'}
-      />
-    </form>
+    </>
   )
 }

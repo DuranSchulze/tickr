@@ -604,7 +604,19 @@ export function ProfileForm({
 
       {/* ── Work ───────────────────────────────────────────────────────────── */}
       <SectionCard title="Work">
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Employee number is assigned by an administrator, so it's shown
+              read-only here (matching the Department field). */}
+          <div className="grid gap-2">
+            <Label htmlFor="pf-employee-number">Employee number</Label>
+            <Input
+              id="pf-employee-number"
+              value={selfProfile.employeeProfile?.employeeNumber ?? ''}
+              placeholder="Not assigned"
+              disabled
+            />
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="pf-position">Position</Label>
             <Input

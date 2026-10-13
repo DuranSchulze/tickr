@@ -6,7 +6,6 @@ export {
   type SelfProfileData,
 } from './screens/ProfileScreen/ProfileScreen'
 export { MembersScreen } from './screens/MembersScreen/MembersScreen'
-export { CatalogsScreen } from './screens/CatalogsScreen/CatalogsScreen'
 export {
   normalizeSettingsTab,
   SettingsScreen,

@@ -26,7 +26,6 @@ export const Route = createFileRoute('/app/workspace/catalogs')({
     return {
       state,
       canManage: access.member.permissions['catalogs.manage'],
-      canImport: access.member.permissions['catalogs.import'],
       canManageRoles: access.member.permissions['roles.manage_permissions'],
       actorPermissionLevel: access.member.permissionLevel,
     }

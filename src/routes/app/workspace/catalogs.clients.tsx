@@ -57,15 +57,13 @@ function ClientsRoute() {
   const search = Route.useSearch()
 
   const canManage = access.member.permissions['catalogs.manage']
-  const canImportSheet = access.member.permissions['catalogs.import']
   const canViewBillable = access.member.permissions['catalogs.view']
 
   const currency = access.workspace.billableCurrency
 
-  const googleSheetUrl = access.workspace.googleSheetUrl
-
   return (
     <ClientsTablePage
+      workspaceId={access.workspace.id}
       data={data}
       page={search.page ?? 0}
       pageSize={pageSize}
@@ -75,10 +73,8 @@ function ClientsRoute() {
         sort: search.sort ?? 'name_asc',
       }}
       canManage={canManage}
-      canImportSheet={canImportSheet}
       canViewBillable={canViewBillable}
       currency={currency}
-      googleSheetUrl={googleSheetUrl}
       onFilterChange={(updates) => {
         void navigate({
           search: (prev) => ({ ...prev, ...updates, page: 0 }),

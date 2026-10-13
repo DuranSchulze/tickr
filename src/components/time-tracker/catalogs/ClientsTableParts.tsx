@@ -3,13 +3,9 @@ import { createColumnHelper } from '@tanstack/react-table'
 import {
   Archive,
   CheckCircle,
-  FileSpreadsheet,
-  Loader2,
   MoreHorizontal,
   PauseCircle,
   Pencil,
-  RefreshCw,
-  Table as TableIcon,
 } from 'lucide-react'
 import type { PaginatedClient } from '#/lib/server/tracker/catalogs/paginated.server'
 import { formatCurrency } from '#/lib/time-tracker/billing'
@@ -39,6 +35,7 @@ export function useClientColumns({
   canViewBillable,
   currency,
   archivingId,
+  onView,
   onEdit,
   onArchive,
   onActivate,
@@ -48,6 +45,7 @@ export function useClientColumns({
   canViewBillable: boolean
   currency: string
   archivingId: string | null
+  onView: (client: PaginatedClient) => void
   onEdit: (client: PaginatedClient) => void
   onArchive: (client: PaginatedClient) => void
   onActivate: (client: PaginatedClient) => void
@@ -57,8 +55,14 @@ export function useClientColumns({
     () => [
       col.accessor('name', {
         header: 'Name',
-        cell: ({ getValue }) => (
-          <span className="font-semibold text-foreground">{getValue()}</span>
+        cell: ({ row }) => (
+          <button
+            type="button"
+            onClick={() => onView(row.original)}
+            className="font-semibold text-foreground no-underline hover:text-primary"
+          >
+            {row.original.name}
+          </button>
         ),
       }),
       col.accessor('clientStatus', {
@@ -199,72 +203,11 @@ export function useClientColumns({
       canViewBillable,
       currency,
       archivingId,
+      onView,
       onEdit,
       onArchive,
       onActivate,
       onSuspend,
     ],
-  )
-}
-
-/** Google Sheet import/sync menu shown in the Clients table header. */
-export function ClientSheetMenu({
-  canImportSheet,
-  canManage,
-  sheetLoading,
-  googleSheetUrl,
-  onImport,
-  onSyncAll,
-  onSetupTab,
-}: {
-  canImportSheet: boolean
-  canManage: boolean
-  sheetLoading: boolean
-  googleSheetUrl: string | null
-  onImport: () => void
-  onSyncAll: () => void
-  onSetupTab: () => void
-}) {
-  if (!canImportSheet) return null
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={sheetLoading || !googleSheetUrl}
-        title={
-          !googleSheetUrl
-            ? 'Configure a Google Sheet URL in workspace settings to enable import'
-            : undefined
-        }
-        aria-label="Google Sheet actions"
-        aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {sheetLoading ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-        ) : (
-          <FileSpreadsheet className="size-4" aria-hidden />
-        )}
-        Sheet
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onImport}>
-          <RefreshCw className="mr-2 size-4" />
-          Sync from Sheet
-        </DropdownMenuItem>
-        {canManage && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onSyncAll}>
-              <RefreshCw className="mr-2 size-4" />
-              Sync all catalogs
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSetupTab}>
-              <TableIcon className="mr-2 size-4" />
-              Setup Sheet Tab
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
   )
 }

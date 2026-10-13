@@ -80,14 +80,6 @@ export const PERMISSIONS = {
     dataScope: 'workspace',
     delegation: 'delegable',
   },
-  'catalogs.import': {
-    group: 'Workspace',
-    label: 'Import catalogs',
-    description: 'Import catalog records from the connected Google Sheet.',
-    defaults: ['OWNER', 'ADMIN', 'MANAGER'],
-    dataScope: 'workspace',
-    delegation: 'delegable',
-  },
   'roles.manage_permissions': {
     group: 'Workspace',
     label: 'Manage role permissions',

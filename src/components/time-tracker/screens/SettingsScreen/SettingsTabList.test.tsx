@@ -48,7 +48,7 @@ describe('SettingsTabList', () => {
       container.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
     )
 
-    expect(tabs).toHaveLength(5)
+    expect(tabs).toHaveLength(4)
     expect(tabs[0].textContent).toContain('General')
     expect(tabs[0].getAttribute('aria-selected')).toBe('true')
 
@@ -56,7 +56,7 @@ describe('SettingsTabList', () => {
     expect(tabs[1].textContent).toContain('Location & privacy')
     expect(tabs[1].getAttribute('aria-selected')).toBe('true')
 
-    expect(tabs[3].textContent).toContain('Working hours & payroll')
+    expect(tabs[2].textContent).toContain('Working hours & payroll')
   })
 
   it('supports keyboard navigation and hides unavailable tools', () => {
@@ -65,7 +65,7 @@ describe('SettingsTabList', () => {
       container.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
     )
 
-    expect(tabs).toHaveLength(3)
+    expect(tabs).toHaveLength(2)
     expect(
       tabs.every(
         (tab) =>

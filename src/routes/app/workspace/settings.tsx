@@ -40,7 +40,6 @@ export const Route = createFileRoute('/app/workspace/settings')({
       isOwner,
       taggedEntryCount: locationDataSummary.taggedEntryCount,
       canManageSettings: access.member.permissions['workspace.settings.manage'],
-      canImportCatalogs: access.member.permissions['catalogs.import'],
     }
   },
   staleTime: 30_000,
@@ -49,13 +48,8 @@ export const Route = createFileRoute('/app/workspace/settings')({
 
 // oxlint-disable-next-line react/only-export-components
 function SettingsRoute() {
-  const {
-    state,
-    isOwner,
-    taggedEntryCount,
-    canManageSettings,
-    canImportCatalogs,
-  } = Route.useLoaderData()
+  const { state, isOwner, taggedEntryCount, canManageSettings } =
+    Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const activeTab =
@@ -70,7 +64,6 @@ function SettingsRoute() {
       isOwner={isOwner}
       taggedEntryCount={taggedEntryCount}
       canManageSettings={canManageSettings}
-      canImportCatalogs={canImportCatalogs}
       activeTab={activeTab}
       onTabChange={(tab) => {
         void navigate({

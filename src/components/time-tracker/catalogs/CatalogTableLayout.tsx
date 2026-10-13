@@ -183,7 +183,7 @@ export function CatalogFilterBar({
           }}
           placeholder={searchPlaceholder}
           aria-label={searchPlaceholder}
-          className="h-9 w-full rounded-md border border-stone bg-eggshell pl-9 pr-9 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="h-9 w-full rounded-xl border border-stone bg-eggshell pl-9 pr-9 text-sm text-foreground placeholder:text-smoke focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         {searchValue && (
           <button
@@ -214,7 +214,7 @@ export function CatalogFilterBar({
               f.searchPlaceholder ?? `Search ${f.label.toLowerCase()}…`
             }
             emptyText={f.emptyText ?? `No ${f.label.toLowerCase()} found.`}
-            className="h-9 w-auto min-w-40 rounded-md"
+            className="h-9 w-auto min-w-40 rounded-xl"
             contentClassName="z-[60]"
           />
         ) : (
@@ -225,7 +225,7 @@ export function CatalogFilterBar({
               setDraft((d) => ({ ...d, [f.key]: e.target.value }))
             }
             aria-label={f.label}
-            className="h-9 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="h-9 rounded-xl border border-stone bg-eggshell px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {f.options.map((o) => (
               <option key={o.value} value={o.value}>

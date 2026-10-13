@@ -169,6 +169,7 @@ export async function getSelfProfile() {
       : null,
     employeeProfile: employeeProfileRow
       ? {
+          employeeNumber: employeeProfileRow.employeeNumber ?? '',
           positionTitle: employeeProfileRow.positionTitle ?? '',
         }
       : null,

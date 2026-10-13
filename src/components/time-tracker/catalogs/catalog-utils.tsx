@@ -3,21 +3,8 @@ import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
 import { gooeyToast } from '#/lib/toast'
-import {
-  Archive,
-  CheckCircle,
-  FileSpreadsheet,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  RefreshCw,
-  Table as TableIcon,
-} from 'lucide-react'
+import { Archive, CheckCircle, MoreHorizontal, Pencil } from 'lucide-react'
 import { formatCurrency } from '#/lib/time-tracker/billing'
-import {
-  ensureCatalogTabsFn,
-  syncCatalogsWithSheetFn,
-} from '#/lib/server/gsheets/sync'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,136 +25,6 @@ function formatSeconds(seconds: number): string {
   if (h === 0) return `${m}m`
   if (m === 0) return `${h}h`
   return `${h}h ${m}m`
-}
-
-// ---------------------------------------------------------------------------
-// Hook: catalog sheet sync state + handlers
-// Provides the common sheet-sync lifecycle shared across Clients, Projects,
-// and Tags table pages.
-// ---------------------------------------------------------------------------
-
-export function useCatalogSheetSync() {
-  const router = useRouter()
-  const publishTaskChange = useTaskSyncPublisher()
-  const [sheetLoading, setSheetLoading] = useState(false)
-  const [showSyncDialog, setShowSyncDialog] = useState(false)
-
-  async function handleSync() {
-    setSheetLoading(true)
-    try {
-      const result = await syncCatalogsWithSheetFn()
-      await router.invalidate()
-      publishTaskChange()
-      gooeyToast.success(
-        `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
-      )
-    } catch (err) {
-      gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      setSheetLoading(false)
-    }
-  }
-
-  async function handleSetupSheetTab() {
-    setSheetLoading(true)
-    try {
-      await ensureCatalogTabsFn()
-      gooeyToast.success('Sheet tab ready')
-    } catch (err) {
-      gooeyToast.error('Setup failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      setSheetLoading(false)
-    }
-  }
-
-  function handleImportFromSheet() {
-    setShowSyncDialog(true)
-  }
-
-  return {
-    sheetLoading,
-    setSheetLoading,
-    showSyncDialog,
-    handleSync,
-    handleSetupSheetTab,
-    handleImportFromSheet,
-    setShowSyncDialog,
-    router,
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Component: CatalogSheetButton
-// The Google Sheet dropdown button shared across Clients, Projects, and Tags
-// table pages.
-// ---------------------------------------------------------------------------
-
-interface CatalogSheetButtonProps {
-  sheetLoading: boolean
-  googleSheetUrl: string | null
-  canManage: boolean
-  canImportSheet: boolean
-  onImportFromSheet: () => void
-  onSyncAll: () => void
-  onSetupTab: () => void
-}
-
-export function CatalogSheetButton({
-  sheetLoading,
-  googleSheetUrl,
-  canManage,
-  canImportSheet,
-  onImportFromSheet,
-  onSyncAll,
-  onSetupTab,
-}: CatalogSheetButtonProps) {
-  if (!canImportSheet) return null
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={sheetLoading || !googleSheetUrl}
-        title={
-          !googleSheetUrl
-            ? 'Configure a Google Sheet URL in workspace settings to enable import'
-            : undefined
-        }
-        aria-label="Google Sheet actions"
-        aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {sheetLoading ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-        ) : (
-          <FileSpreadsheet className="size-4" aria-hidden />
-        )}
-        Sheet
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onImportFromSheet}>
-          <RefreshCw className="mr-2 size-4" />
-          Sync from Sheet
-        </DropdownMenuItem>
-        {canManage && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onSyncAll}>
-              <RefreshCw className="mr-2 size-4" />
-              Sync all catalogs
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onSetupTab}>
-              <TableIcon className="mr-2 size-4" />
-              Setup Sheet Tab
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 }
 
 // ---------------------------------------------------------------------------

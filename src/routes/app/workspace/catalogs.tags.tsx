@@ -57,9 +57,6 @@ function TagsRoute() {
   const search = Route.useSearch()
 
   const canManage = access.member.permissions['catalogs.manage']
-  const canImportSheet = access.member.permissions['catalogs.import']
-
-  const googleSheetUrl = access.workspace.googleSheetUrl
 
   return (
     <TagsTablePage
@@ -72,8 +69,6 @@ function TagsRoute() {
         sort: search.sort ?? 'name_asc',
       }}
       canManage={canManage}
-      canImportSheet={canImportSheet}
-      googleSheetUrl={googleSheetUrl}
       onFilterChange={(updates) => {
         void navigate({
           search: (prev) => ({ ...prev, ...updates, page: 0 }),

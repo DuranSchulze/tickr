@@ -17,7 +17,16 @@ export type DeveloperJwtPayload = {
   type: 'developer_jwt'
 }
 
-export type ExternalApiJwtPayload = ApiKeyJwtPayload | DeveloperJwtPayload
+export type UserJwtPayload = {
+  userId: string
+  workspaceId: string
+  type: 'user_jwt'
+}
+
+export type ExternalApiJwtPayload =
+  | ApiKeyJwtPayload
+  | DeveloperJwtPayload
+  | UserJwtPayload
 
 function jwtSecret(): Uint8Array {
   // Deliberately independent of BETTER_AUTH_SECRET: falling back to the auth
@@ -68,6 +77,10 @@ export function signDeveloperJwt(payload: {
   return signToken({ ...payload, type: 'developer_jwt' })
 }
 
+export function signUserJwt(payload: { userId: string; workspaceId: string }) {
+  return signToken({ ...payload, type: 'user_jwt' })
+}
+
 export async function verifyExternalApiJwt(
   token: string,
 ): Promise<ExternalApiJwtPayload | null> {
@@ -102,6 +115,19 @@ export async function verifyExternalApiJwt(
         workspaceId: payload.workspaceId,
         permissionLevel: payload.permissionLevel,
         type: 'developer_jwt',
+      }
+    }
+    if (payload.type === 'user_jwt') {
+      if (
+        typeof payload.userId !== 'string' ||
+        typeof payload.workspaceId !== 'string'
+      ) {
+        return null
+      }
+      return {
+        userId: payload.userId,
+        workspaceId: payload.workspaceId,
+        type: 'user_jwt',
       }
     }
     return null

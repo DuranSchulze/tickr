@@ -2,27 +2,9 @@ import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from '#/lib/toast'
-import {
-  FileSpreadsheet,
-  Loader2,
-  Pencil,
-  RefreshCw,
-  Table as TableIcon,
-  Trash2,
-  Users,
-} from 'lucide-react'
+import { Pencil, Trash2, Users } from 'lucide-react'
 import { deleteDepartmentFn } from '#/lib/server/tracker'
-import {
-  ensureCatalogTabsFn,
-  importDepartmentsFromSheetFn,
-} from '#/lib/server/gsheets/sync'
 import type { PaginatedDepartment } from '#/lib/server/tracker/catalogs/paginated.server'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '#/components/ui/dropdown-menu'
 import {
   CatalogFilterBar,
   CatalogFormDialog,
@@ -30,7 +12,6 @@ import {
 } from './CatalogTableLayout'
 import { DepartmentForm } from './DepartmentForm'
 import { EditDepartmentForm } from './EditDepartmentForm'
-import { SyncSheetDialog } from './SyncSheetDialog'
 
 const col = createColumnHelper<PaginatedDepartment>()
 
@@ -49,8 +30,6 @@ interface Props {
     sort: string
   }
   canManage: boolean
-  canImportSheet: boolean
-  googleSheetUrl: string | null
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
@@ -61,8 +40,6 @@ export function DepartmentsTablePage({
   pageSize,
   appliedFilters,
   canManage,
-  canImportSheet,
-  googleSheetUrl,
   onFilterChange,
   onPageChange,
 }: Props) {
@@ -73,8 +50,6 @@ export function DepartmentsTablePage({
         showCreate: boolean
         editingDept: PaginatedDepartment | null
         deletingId: string | null
-        sheetLoading: boolean
-        showSyncDialog: boolean
       },
       a: Partial<typeof s>,
     ) => ({ ...s, ...a }),
@@ -82,43 +57,9 @@ export function DepartmentsTablePage({
       showCreate: false,
       editingDept: null,
       deletingId: null,
-      sheetLoading: false,
-      showSyncDialog: false,
     },
   )
-  const { showCreate, editingDept, deletingId, sheetLoading, showSyncDialog } =
-    local
-
-  async function handleImportFromSheet() {
-    dispatch({ sheetLoading: true })
-    try {
-      const result = await importDepartmentsFromSheetFn()
-      await router.invalidate()
-      gooeyToast.success(
-        `Synced ${result.count} department${result.count !== 1 ? 's' : ''}`,
-      )
-    } catch (err) {
-      gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
-
-  async function handleSetupSheetTab() {
-    dispatch({ sheetLoading: true })
-    try {
-      await ensureCatalogTabsFn()
-      gooeyToast.success('Sheet tab ready')
-    } catch (err) {
-      gooeyToast.error('Setup failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
+  const { showCreate, editingDept, deletingId } = local
 
   async function handleDelete(dept: PaginatedDepartment) {
     if (!confirm(`Delete department "${dept.name}"? This cannot be undone.`))
@@ -202,49 +143,11 @@ export function DepartmentsTablePage({
     [canManage, deletingId],
   )
 
-  const sheetButton = canImportSheet ? (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={sheetLoading || !googleSheetUrl}
-        title={
-          !googleSheetUrl
-            ? 'Configure a Google Sheet URL in workspace settings to enable import'
-            : undefined
-        }
-        aria-label="Google Sheet actions"
-        aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {sheetLoading ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-        ) : (
-          <FileSpreadsheet className="size-4" aria-hidden />
-        )}
-        Sheet
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => dispatch({ showSyncDialog: true })}>
-          <RefreshCw className="mr-2 size-4" />
-          Sync from Sheet
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 size-4" />
-          Quick Sync
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleSetupSheetTab}>
-          <TableIcon className="mr-2 size-4" />
-          Setup Sheet Tab
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ) : null
-
   const toolbar = (
     <CatalogFilterBar
       searchPlaceholder="Search departments…"
       appliedValues={appliedFilters}
       onApply={onFilterChange}
-      extra={sheetButton}
       filters={[
         {
           key: 'hasMembers',
@@ -332,13 +235,6 @@ export function DepartmentsTablePage({
           />
         )}
       </CatalogFormDialog>
-
-      <SyncSheetDialog
-        open={showSyncDialog}
-        onClose={() => dispatch({ showSyncDialog: false })}
-        type="departments"
-        onComplete={() => router.invalidate()}
-      />
     </>
   )
 }

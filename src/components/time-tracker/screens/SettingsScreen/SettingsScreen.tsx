@@ -1,9 +1,6 @@
 import { useId } from 'react'
-import { CheckCircle2, RefreshCw, Unplug } from 'lucide-react'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { cn } from '#/lib/utils'
-import { WorkspaceGoogleSheetPanel } from '../../WorkspaceGoogleSheetPanel'
-import { GoogleSheetSyncButton } from '../../dashboard/GoogleSheetSyncButton'
 import { Page } from '../shared/Page'
 import { SmtpTestPanel } from './SmtpTestPanel'
 import { ResendTestPanel } from './ResendTestPanel'
@@ -19,7 +16,6 @@ export { normalizeSettingsTab, type SettingsTab } from './SettingsTabList'
 export function SettingsScreen({
   state,
   canManageSettings,
-  canImportCatalogs,
   isOwner,
   taggedEntryCount,
   activeTab,
@@ -27,7 +23,6 @@ export function SettingsScreen({
 }: {
   state: TrackerState
   canManageSettings: boolean
-  canImportCatalogs: boolean
   isOwner: boolean
   taggedEntryCount: number
   activeTab: SettingsTab
@@ -37,8 +32,6 @@ export function SettingsScreen({
   const currentMember = state.members.find(
     (m) => m.id === state.currentMemberId,
   )!
-  const hasSheet = !!state.workspace.googleSheetUrl
-  const lastSyncedAt = state.workspace.googleSheetSyncedAt
   return (
     <Page title="Workspace settings" eyebrow="Company workspace">
       <SettingsTabList
@@ -96,65 +89,6 @@ export function SettingsScreen({
           <TrackingExpectationsPanel workspace={state.workspace} />
         </div>
       )}
-
-      <div
-        id={`${tabListId}-integrations-panel`}
-        role="tabpanel"
-        aria-labelledby={`${tabListId}-integrations-tab`}
-        hidden={activeTab !== 'integrations'}
-        className={cn(
-          'outline-none',
-          activeTab === 'integrations' ? 'grid gap-4' : 'hidden',
-        )}
-      >
-        {canImportCatalogs && (
-          <section className="rounded-lg border border-stone bg-eggshell p-5 shadow-[var(--shadow-whisper)]">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="m-0 flex items-center gap-2 text-base font-bold text-foreground">
-                  <RefreshCw className="size-4 text-primary" />
-                  Sync time entries
-                </h2>
-                <p className="m-0 mt-1 max-w-2xl text-sm text-smoke">
-                  {hasSheet
-                    ? 'Push all time entries to the linked Google Sheet. Time entries are also synced automatically every two hours.'
-                    : 'Link a Google Sheet below to start syncing workspace time entries.'}
-                </p>
-              </div>
-              <div
-                className={cn(
-                  'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold',
-                  hasSheet
-                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                    : 'bg-muted text-smoke',
-                )}
-              >
-                {hasSheet ? (
-                  <CheckCircle2 className="size-3.5" />
-                ) : (
-                  <Unplug className="size-3.5" />
-                )}
-                {hasSheet ? 'Sheet connected' : 'Not connected'}
-              </div>
-            </div>
-            <div className="mt-4">
-              <GoogleSheetSyncButton
-                sheetUrl={state.workspace.googleSheetUrl}
-                lastSyncedAt={lastSyncedAt}
-              />
-              {hasSheet && !lastSyncedAt && (
-                <p className="mt-2 text-xs text-smoke">Never synced</p>
-              )}
-            </div>
-          </section>
-        )}
-
-        <WorkspaceGoogleSheetPanel
-          workspace={state.workspace}
-          canManageSettings={canManageSettings}
-          canImportCatalogs={canImportCatalogs}
-        />
-      </div>
 
       {canManageSettings && (
         <div

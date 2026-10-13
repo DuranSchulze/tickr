@@ -93,6 +93,21 @@ export const externalApiSignInSchema = z.object({
   apiKey: z.string().trim().min(10).max(500),
 })
 
+const workspaceSlugQuerySchema = z.string().trim().max(100).optional()
+
+export const externalApiLoginSchema = z.object({
+  email: z.string().trim().toLowerCase().email().max(255),
+  password: z.string().min(1).max(500),
+  workspaceSlug: workspaceSlugQuerySchema,
+})
+
+export const externalApiRegisterSchema = z.object({
+  name: z.string().trim().min(2).max(150),
+  email: z.string().trim().toLowerCase().email().max(255),
+  password: z.string().min(8).max(500),
+  workspaceSlug: workspaceSlugQuerySchema,
+})
+
 export type ListQuery = z.infer<typeof listQuerySchema>
 export type MembersListQuery = z.infer<typeof membersListQuerySchema>
 export type ClientsListQuery = z.infer<typeof clientsListQuerySchema>
@@ -106,6 +121,8 @@ export type MemberDayActivityQuery = z.infer<
 >
 export type DtrIntegrationQuery = z.infer<typeof dtrIntegrationQuerySchema>
 export type ExternalApiSignInInput = z.infer<typeof externalApiSignInSchema>
+export type ExternalApiLoginInput = z.infer<typeof externalApiLoginSchema>
+export type ExternalApiRegisterInput = z.infer<typeof externalApiRegisterSchema>
 
 export function listPayload<T>(data: T[], query: ListQuery, total: number) {
   const totalPages = Math.ceil(total / query.limit)

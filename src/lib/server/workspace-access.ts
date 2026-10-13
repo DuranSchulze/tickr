@@ -23,11 +23,6 @@ export const getWorkspaceAccessFn = createServerFn({ method: 'GET' })
         timezone: access.workspace.timezone,
         defaultBillableRate: Number(access.workspace.defaultBillableRate),
         billableCurrency: access.workspace.billableCurrency,
-        googleSheetUrl:
-          permissions['workspace.settings.view'] ||
-          permissions['catalogs.import']
-            ? access.workspace.googleSheetUrl
-            : null,
       },
       user: {
         id: access.user.id,

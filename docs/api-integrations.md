@@ -36,7 +36,7 @@ The OpenAPI JSON document is available at:
 
 ## 3. Authenticate Requests
 
-There are two ways to authenticate: send the raw workspace API key directly, or exchange it for a short-lived JWT.
+There are several ways to authenticate: send the raw workspace API key directly, exchange it for a short-lived JWT, use a developer access account, or sign in with a Trackly account's own credentials.
 
 ### Option A — Raw API key
 
@@ -153,16 +153,63 @@ Notes:
 - The account can be disabled at any time; disabled accounts are rejected immediately, even with an unexpired token.
 - The same `EXTERNAL_API_JWT_SECRET` and TTL settings apply to developer tokens.
 
+### Option D — Trackly account credentials
+
+Accounts created in the app can sign in to the public API with the same email and password they use on the web. This is intended for your own backend or companion service acting on behalf of a workspace member.
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"email": "jane@acme.com", "password": "her-trackly-password"}' \
+  http://localhost:3000/api/v1/auth/login
+```
+
+Example response:
+
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresInSeconds": 3600,
+    "expiresAt": "2026-06-28T10:00:00.000Z",
+    "user": { "id": "usr_123", "name": "Jane Doe", "email": "jane@acme.com" },
+    "workspace": { "id": "ws_123", "name": "Acme Inc", "slug": "acme-inc" }
+  }
+}
+```
+
+New accounts can be created with the same credentials the web sign-up form uses:
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Jane Doe", "email": "jane@acme.com", "password": "her-trackly-password"}' \
+  http://localhost:3000/api/v1/auth/register
+```
+
+When the new account already belongs to a workspace (for example it was invited by email), the response is the same shape as `login` with a `201` status. Otherwise `token` is `null` and the account must be granted workspace access before it can call protected endpoints.
+
+Notes:
+
+- The resulting JWT is interchangeable with an API-key or developer token on all `/api/v1/*` endpoints.
+- Pass `workspaceSlug` in the body to choose a workspace when the account belongs to more than one.
+- `login` returns `403 no_workspace_access` when the account has no workspace membership, and `401` for bad credentials.
+- `register` returns `409` when the email already has an account.
+- These endpoints are not rate-limited yet; add a gateway/edge limit if you expose them publicly.
+
 ## 4. Available Endpoints
 
 All endpoints are read-only and return JSON.
 
 ### Authentication
 
-| Endpoint                              | Description                                        |
-| ------------------------------------- | -------------------------------------------------- |
-| `POST /api/v1/auth/sign-in`           | Exchange a workspace API key for a short-lived JWT |
-| `POST /api/v1/auth/developer-sign-in` | Sign in a developer access account for a JWT       |
+| Endpoint                              | Description                                                      |
+| ------------------------------------- | ---------------------------------------------------------------- |
+| `POST /api/v1/auth/sign-in`           | Exchange a workspace API key for a short-lived JWT               |
+| `POST /api/v1/auth/developer-sign-in` | Sign in a developer access account for a JWT                     |
+| `POST /api/v1/auth/login`             | Sign in a Trackly account (email + password) for a JWT           |
+| `POST /api/v1/auth/register`          | Create a Trackly account (signs in when it has workspace access) |
 
 ### Workspace
 
