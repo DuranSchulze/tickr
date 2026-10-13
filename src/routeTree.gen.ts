@@ -57,9 +57,7 @@ import { Route as ApiV1DtrIntegrationRouteImport } from './routes/api/v1/dtr-int
 import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
 import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
 import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
-import { Route as ApiImportStreamRouteImport } from './routes/api/import/stream'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
-import { Route as ApiCronSyncGsheetsRouteImport } from './routes/api/cron/sync-gsheets'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppWorkspaceMembersMemberIdRouteImport } from './routes/app/workspace/members.$memberId'
 import { Route as AppWorkspaceCatalogsTagsRouteImport } from './routes/app/workspace/catalogs.tags'
@@ -70,7 +68,11 @@ import { Route as AppWorkspaceCatalogsCohortsRouteImport } from './routes/app/wo
 import { Route as AppWorkspaceCatalogsClientsRouteImport } from './routes/app/workspace/catalogs.clients'
 import { Route as AppWorkspaceActivityMapRouteImport } from './routes/app/workspace/activity_.map'
 import { Route as ApiV1AuthSignInRouteImport } from './routes/api/v1/auth/sign-in'
+import { Route as ApiV1AuthRegisterRouteImport } from './routes/api/v1/auth/register'
+import { Route as ApiV1AuthLoginRouteImport } from './routes/api/v1/auth/login'
 import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
+import { Route as AppWorkspaceCatalogsProjectsProjectIdRouteImport } from './routes/app/workspace/catalogs_.projects_.$projectId'
+import { Route as AppWorkspaceCatalogsClientsClientIdRouteImport } from './routes/app/workspace/catalogs.clients.$clientId'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -314,19 +316,9 @@ const ApiNewsletterSubscribeRoute = ApiNewsletterSubscribeRouteImport.update({
   path: '/api/newsletter/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiImportStreamRoute = ApiImportStreamRouteImport.update({
-  id: '/api/import/stream',
-  path: '/api/import/stream',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiCronTimerRemindersRoute = ApiCronTimerRemindersRouteImport.update({
   id: '/api/cron/timer-reminders',
   path: '/api/cron/timer-reminders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiCronSyncGsheetsRoute = ApiCronSyncGsheetsRouteImport.update({
-  id: '/api/cron/sync-gsheets',
-  path: '/api/cron/sync-gsheets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -386,11 +378,33 @@ const ApiV1AuthSignInRoute = ApiV1AuthSignInRouteImport.update({
   path: '/api/v1/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1AuthRegisterRoute = ApiV1AuthRegisterRouteImport.update({
+  id: '/api/v1/auth/register',
+  path: '/api/v1/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1AuthLoginRoute = ApiV1AuthLoginRouteImport.update({
+  id: '/api/v1/auth/login',
+  path: '/api/v1/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1AuthDeveloperSignInRoute =
   ApiV1AuthDeveloperSignInRouteImport.update({
     id: '/api/v1/auth/developer-sign-in',
     path: '/api/v1/auth/developer-sign-in',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AppWorkspaceCatalogsProjectsProjectIdRoute =
+  AppWorkspaceCatalogsProjectsProjectIdRouteImport.update({
+    id: '/workspace/catalogs_/projects_/$projectId',
+    path: '/workspace/catalogs/projects/$projectId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppWorkspaceCatalogsClientsClientIdRoute =
+  AppWorkspaceCatalogsClientsClientIdRouteImport.update({
+    id: '/$clientId',
+    path: '/$clientId',
+    getParentRoute: () => AppWorkspaceCatalogsClientsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -418,9 +432,7 @@ export interface FileRoutesByFullPath {
   '/performance/$token': typeof PerformanceTokenRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
-  '/api/import/stream': typeof ApiImportStreamRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -447,15 +459,19 @@ export interface FileRoutesByFullPath {
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
+  '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/activity/map': typeof AppWorkspaceActivityMapRoute
-  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
+  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRouteWithChildren
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
   '/app/workspace/catalogs/projects': typeof AppWorkspaceCatalogsProjectsRoute
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
+  '/app/workspace/catalogs/projects/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -482,9 +498,7 @@ export interface FileRoutesByTo {
   '/performance/$token': typeof PerformanceTokenRoute
   '/auth': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
-  '/api/import/stream': typeof ApiImportStreamRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -511,15 +525,19 @@ export interface FileRoutesByTo {
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
+  '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/activity/map': typeof AppWorkspaceActivityMapRoute
-  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
+  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRouteWithChildren
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
   '/app/workspace/catalogs/projects': typeof AppWorkspaceCatalogsProjectsRoute
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
+  '/app/workspace/catalogs/projects/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -547,9 +565,7 @@ export interface FileRoutesById {
   '/performance/$token': typeof PerformanceTokenRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/api/cron/sync-gsheets': typeof ApiCronSyncGsheetsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
-  '/api/import/stream': typeof ApiImportStreamRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -576,15 +592,19 @@ export interface FileRoutesById {
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
+  '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
+  '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
   '/api/v1/auth/sign-in': typeof ApiV1AuthSignInRoute
   '/app/workspace/activity_/map': typeof AppWorkspaceActivityMapRoute
-  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRoute
+  '/app/workspace/catalogs/clients': typeof AppWorkspaceCatalogsClientsRouteWithChildren
   '/app/workspace/catalogs/cohorts': typeof AppWorkspaceCatalogsCohortsRoute
   '/app/workspace/catalogs/departments': typeof AppWorkspaceCatalogsDepartmentsRoute
   '/app/workspace/catalogs/projects': typeof AppWorkspaceCatalogsProjectsRoute
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
+  '/app/workspace/catalogs_/projects_/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -613,9 +633,7 @@ export interface FileRouteTypes {
     | '/performance/$token'
     | '/auth/'
     | '/api/auth/$'
-    | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
-    | '/api/import/stream'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -642,6 +660,8 @@ export interface FileRouteTypes {
     | '/app/workspace/settings'
     | '/app/time-tracker/'
     | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/login'
+    | '/api/v1/auth/register'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/activity/map'
     | '/app/workspace/catalogs/clients'
@@ -651,6 +671,8 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/app/workspace/catalogs/clients/$clientId'
+    | '/app/workspace/catalogs/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -677,9 +699,7 @@ export interface FileRouteTypes {
     | '/performance/$token'
     | '/auth'
     | '/api/auth/$'
-    | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
-    | '/api/import/stream'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -706,6 +726,8 @@ export interface FileRouteTypes {
     | '/app/workspace/settings'
     | '/app/time-tracker'
     | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/login'
+    | '/api/v1/auth/register'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/activity/map'
     | '/app/workspace/catalogs/clients'
@@ -715,6 +737,8 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/app/workspace/catalogs/clients/$clientId'
+    | '/app/workspace/catalogs/projects/$projectId'
   id:
     | '__root__'
     | '/'
@@ -741,9 +765,7 @@ export interface FileRouteTypes {
     | '/performance/$token'
     | '/auth/'
     | '/api/auth/$'
-    | '/api/cron/sync-gsheets'
     | '/api/cron/timer-reminders'
-    | '/api/import/stream'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -770,6 +792,8 @@ export interface FileRouteTypes {
     | '/app/workspace/settings'
     | '/app/time-tracker/'
     | '/api/v1/auth/developer-sign-in'
+    | '/api/v1/auth/login'
+    | '/api/v1/auth/register'
     | '/api/v1/auth/sign-in'
     | '/app/workspace/activity_/map'
     | '/app/workspace/catalogs/clients'
@@ -779,6 +803,8 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/app/workspace/catalogs/clients/$clientId'
+    | '/app/workspace/catalogs_/projects_/$projectId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -796,9 +822,7 @@ export interface RootRouteChildren {
   PerformanceTokenRoute: typeof PerformanceTokenRoute
   AuthIndexRoute: typeof AuthIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
-  ApiCronSyncGsheetsRoute: typeof ApiCronSyncGsheetsRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
-  ApiImportStreamRoute: typeof ApiImportStreamRoute
   ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
   ApiV1ClientsRoute: typeof ApiV1ClientsRoute
   ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
@@ -812,6 +836,8 @@ export interface RootRouteChildren {
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
   ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
   ApiV1AuthDeveloperSignInRoute: typeof ApiV1AuthDeveloperSignInRoute
+  ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
+  ApiV1AuthRegisterRoute: typeof ApiV1AuthRegisterRoute
   ApiV1AuthSignInRoute: typeof ApiV1AuthSignInRoute
 }
 
@@ -1153,25 +1179,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNewsletterSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/import/stream': {
-      id: '/api/import/stream'
-      path: '/api/import/stream'
-      fullPath: '/api/import/stream'
-      preLoaderRoute: typeof ApiImportStreamRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/cron/timer-reminders': {
       id: '/api/cron/timer-reminders'
       path: '/api/cron/timer-reminders'
       fullPath: '/api/cron/timer-reminders'
       preLoaderRoute: typeof ApiCronTimerRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cron/sync-gsheets': {
-      id: '/api/cron/sync-gsheets'
-      path: '/api/cron/sync-gsheets'
-      fullPath: '/api/cron/sync-gsheets'
-      preLoaderRoute: typeof ApiCronSyncGsheetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -1244,6 +1256,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/auth/register': {
+      id: '/api/v1/auth/register'
+      path: '/api/v1/auth/register'
+      fullPath: '/api/v1/auth/register'
+      preLoaderRoute: typeof ApiV1AuthRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/auth/login': {
+      id: '/api/v1/auth/login'
+      path: '/api/v1/auth/login'
+      fullPath: '/api/v1/auth/login'
+      preLoaderRoute: typeof ApiV1AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/auth/developer-sign-in': {
       id: '/api/v1/auth/developer-sign-in'
       path: '/api/v1/auth/developer-sign-in'
@@ -1251,11 +1277,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1AuthDeveloperSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/workspace/catalogs_/projects_/$projectId': {
+      id: '/app/workspace/catalogs_/projects_/$projectId'
+      path: '/workspace/catalogs/projects/$projectId'
+      fullPath: '/app/workspace/catalogs/projects/$projectId'
+      preLoaderRoute: typeof AppWorkspaceCatalogsProjectsProjectIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workspace/catalogs/clients/$clientId': {
+      id: '/app/workspace/catalogs/clients/$clientId'
+      path: '/$clientId'
+      fullPath: '/app/workspace/catalogs/clients/$clientId'
+      preLoaderRoute: typeof AppWorkspaceCatalogsClientsClientIdRouteImport
+      parentRoute: typeof AppWorkspaceCatalogsClientsRoute
+    }
   }
 }
 
+interface AppWorkspaceCatalogsClientsRouteChildren {
+  AppWorkspaceCatalogsClientsClientIdRoute: typeof AppWorkspaceCatalogsClientsClientIdRoute
+}
+
+const AppWorkspaceCatalogsClientsRouteChildren: AppWorkspaceCatalogsClientsRouteChildren =
+  {
+    AppWorkspaceCatalogsClientsClientIdRoute:
+      AppWorkspaceCatalogsClientsClientIdRoute,
+  }
+
+const AppWorkspaceCatalogsClientsRouteWithChildren =
+  AppWorkspaceCatalogsClientsRoute._addFileChildren(
+    AppWorkspaceCatalogsClientsRouteChildren,
+  )
+
 interface AppWorkspaceCatalogsRouteChildren {
-  AppWorkspaceCatalogsClientsRoute: typeof AppWorkspaceCatalogsClientsRoute
+  AppWorkspaceCatalogsClientsRoute: typeof AppWorkspaceCatalogsClientsRouteWithChildren
   AppWorkspaceCatalogsCohortsRoute: typeof AppWorkspaceCatalogsCohortsRoute
   AppWorkspaceCatalogsDepartmentsRoute: typeof AppWorkspaceCatalogsDepartmentsRoute
   AppWorkspaceCatalogsProjectsRoute: typeof AppWorkspaceCatalogsProjectsRoute
@@ -1264,7 +1319,8 @@ interface AppWorkspaceCatalogsRouteChildren {
 }
 
 const AppWorkspaceCatalogsRouteChildren: AppWorkspaceCatalogsRouteChildren = {
-  AppWorkspaceCatalogsClientsRoute: AppWorkspaceCatalogsClientsRoute,
+  AppWorkspaceCatalogsClientsRoute:
+    AppWorkspaceCatalogsClientsRouteWithChildren,
   AppWorkspaceCatalogsCohortsRoute: AppWorkspaceCatalogsCohortsRoute,
   AppWorkspaceCatalogsDepartmentsRoute: AppWorkspaceCatalogsDepartmentsRoute,
   AppWorkspaceCatalogsProjectsRoute: AppWorkspaceCatalogsProjectsRoute,
@@ -1311,6 +1367,7 @@ interface AppRouteChildren {
   AppWorkspaceSettingsRoute: typeof AppWorkspaceSettingsRoute
   AppTimeTrackerIndexRoute: typeof AppTimeTrackerIndexRoute
   AppWorkspaceActivityMapRoute: typeof AppWorkspaceActivityMapRoute
+  AppWorkspaceCatalogsProjectsProjectIdRoute: typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1340,6 +1397,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppWorkspaceSettingsRoute: AppWorkspaceSettingsRoute,
   AppTimeTrackerIndexRoute: AppTimeTrackerIndexRoute,
   AppWorkspaceActivityMapRoute: AppWorkspaceActivityMapRoute,
+  AppWorkspaceCatalogsProjectsProjectIdRoute:
+    AppWorkspaceCatalogsProjectsProjectIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -1359,9 +1418,7 @@ const rootRouteChildren: RootRouteChildren = {
   PerformanceTokenRoute: PerformanceTokenRoute,
   AuthIndexRoute: AuthIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
-  ApiCronSyncGsheetsRoute: ApiCronSyncGsheetsRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
-  ApiImportStreamRoute: ApiImportStreamRoute,
   ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
   ApiV1ClientsRoute: ApiV1ClientsRoute,
   ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
@@ -1375,6 +1432,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
   ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
   ApiV1AuthDeveloperSignInRoute: ApiV1AuthDeveloperSignInRoute,
+  ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
+  ApiV1AuthRegisterRoute: ApiV1AuthRegisterRoute,
   ApiV1AuthSignInRoute: ApiV1AuthSignInRoute,
 }
 export const routeTree = rootRouteImport

@@ -20,7 +20,6 @@ import { AppSidebar } from './AppSidebar'
 import { BirthdayCelebration } from './BirthdayCelebration'
 import { MobileNav } from './MobileNav'
 import { fireSideCannons } from '#/components/ui/confetti'
-import { syncWorkspaceToGoogleSheetsFn } from '#/lib/server/gsheets/sync'
 import type { Workspace } from '#/lib/time-tracker/types'
 import { SubscriptionStatusBanner } from '#/components/subscription/SubscriptionStatusBanner'
 import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
@@ -78,21 +77,6 @@ export function AppShell({
       fetch('/api/health', { keepalive: true }).catch(() => undefined)
     }
   }, [])
-
-  // ── Auto-sync every 2 hours ────────────────────────────────────────────
-  useEffect(() => {
-    if (!permissions['catalogs.import']) return
-
-    const interval = setInterval(async () => {
-      try {
-        await syncWorkspaceToGoogleSheetsFn()
-      } catch {
-        // Silently handle — no sheet URL, role mismatch, etc.
-      }
-    }, 7_200_000) // 2 hours
-
-    return () => clearInterval(interval)
-  }, [permissions['catalogs.import']])
 
   useEffect(() => {
     function refreshAuthorization() {

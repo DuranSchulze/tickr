@@ -363,6 +363,174 @@ export function getOpenApiDocument(origin?: string) {
           },
         },
       },
+      '/api/v1/auth/login': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Sign in with Trackly credentials and receive a JWT',
+          description:
+            'Authenticates a Trackly account with its email and password (the same credentials used to sign in to the web app) and returns a short-lived bearer JWT scoped to the account workspace. Send the JWT as Authorization: Bearer <jwt> on subsequent requests. Pass workspaceSlug to choose a workspace when the account belongs to more than one.',
+          security: [],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', format: 'password' },
+                    workspaceSlug: {
+                      type: 'string',
+                      description:
+                        'Target workspace slug. Defaults to the account earliest membership.',
+                    },
+                  },
+                  required: ['email', 'password'],
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'A bearer JWT scoped to the account workspace.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'object',
+                        properties: {
+                          token: { type: 'string' },
+                          tokenType: { type: 'string', enum: ['Bearer'] },
+                          expiresInSeconds: { type: 'integer' },
+                          expiresAt: { type: 'string', format: 'date-time' },
+                          user: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              name: { type: 'string' },
+                              email: { type: 'string', format: 'email' },
+                            },
+                            required: ['id', 'name', 'email'],
+                          },
+                          workspace: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              name: { type: 'string' },
+                              slug: { type: 'string' },
+                            },
+                            required: ['id', 'name', 'slug'],
+                          },
+                        },
+                        required: [
+                          'token',
+                          'tokenType',
+                          'expiresInSeconds',
+                          'expiresAt',
+                          'user',
+                          'workspace',
+                        ],
+                      },
+                    },
+                    required: ['data'],
+                  },
+                },
+              },
+            },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '401': { $ref: '#/components/responses/Unauthorized' },
+            '403': {
+              description: 'The account has no workspace access.',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ErrorResponse' },
+                },
+              },
+            },
+          },
+        },
+      },
+      '/api/v1/auth/register': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Create a Trackly account',
+          description:
+            'Creates a Trackly account with the same credentials the web sign-up form accepts. When the new account already belongs to a workspace (for example it was invited by email), a bearer JWT is returned and the response is identical to /api/v1/auth/login. Otherwise the account is created and returned with token: null so the caller can complete onboarding first.',
+          security: [],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    email: { type: 'string', format: 'email' },
+                    password: { type: 'string', format: 'password' },
+                    workspaceSlug: { type: 'string' },
+                  },
+                  required: ['name', 'email', 'password'],
+                },
+              },
+            },
+          },
+          responses: {
+            '201': {
+              description:
+                'The created account, with a bearer JWT when it has workspace access.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      data: {
+                        type: 'object',
+                        properties: {
+                          user: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'string' },
+                              name: { type: 'string' },
+                              email: { type: 'string', format: 'email' },
+                            },
+                            required: ['id', 'name', 'email'],
+                          },
+                          token: { type: 'string', nullable: true },
+                          tokenType: { type: 'string', enum: ['Bearer'] },
+                          expiresInSeconds: { type: 'integer' },
+                          expiresAt: { type: 'string', format: 'date-time' },
+                          workspace: {
+                            type: 'object',
+                            nullable: true,
+                            properties: {
+                              id: { type: 'string' },
+                              name: { type: 'string' },
+                              slug: { type: 'string' },
+                            },
+                          },
+                        },
+                        required: ['user'],
+                      },
+                    },
+                    required: ['data'],
+                  },
+                },
+              },
+            },
+            '400': { $ref: '#/components/responses/BadRequest' },
+            '409': {
+              description: 'An account with this email already exists.',
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/ErrorResponse' },
+                },
+              },
+            },
+          },
+        },
+      },
       '/api/v1/workspace': {
         get: {
           tags: ['Workspace'],

@@ -1,14 +1,9 @@
 import { useRef } from 'react'
 import type { KeyboardEvent } from 'react'
-import { Building2, Code2, ShieldCheck, Target, Workflow } from 'lucide-react'
+import { Building2, Code2, ShieldCheck, Target } from 'lucide-react'
 import { cn } from '#/lib/utils'
 
-export type SettingsTab =
-  | 'general'
-  | 'location'
-  | 'integrations'
-  | 'expectations'
-  | 'developer'
+export type SettingsTab = 'general' | 'location' | 'expectations' | 'developer'
 
 const settingsTabs = [
   {
@@ -22,12 +17,6 @@ const settingsTabs = [
     label: 'Location & privacy',
     description: 'Collection and history',
     icon: ShieldCheck,
-  },
-  {
-    id: 'integrations',
-    label: 'Integrations',
-    description: 'Google Sheets and sync',
-    icon: Workflow,
   },
   {
     id: 'expectations',

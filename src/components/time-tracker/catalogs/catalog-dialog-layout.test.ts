@@ -12,6 +12,8 @@ describe('catalog dialog layout contract', () => {
     expect(catalogDialogContentClass).toContain('max-h-[calc(100dvh-0.75rem)]')
     expect(catalogDialogContentClass).toContain('sm:max-w-[30rem]')
     expect(catalogDialogContentClass).toContain('sm:top-1/2')
+    expect(catalogDialogContentClass).toContain('flex flex-col')
+    expect(catalogDialogBodyClass).toContain('min-w-0')
     expect(catalogDialogBodyClass).toContain('overflow-y-auto')
     expect(catalogDialogBodyClass).toContain('env(safe-area-inset-bottom)')
   })

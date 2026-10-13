@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react'
+import { useCallback, useReducer, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Check, PauseCircle, X } from 'lucide-react'
 import { gooeyToast } from '#/lib/toast'
@@ -10,23 +10,20 @@ import {
   bulkSuspendClientsFn,
   suspendClientFn,
 } from '#/lib/server/tracker'
-import {
-  ensureCatalogTabsFn,
-  syncCatalogsWithSheetFn,
-} from '#/lib/server/gsheets/sync'
 import type { PaginatedClient } from '#/lib/server/tracker/catalogs/paginated.server'
 import {
   CatalogFilterBar,
   CatalogFormDialog,
   CatalogTablePage,
 } from './CatalogTableLayout'
+import { ClientDetailsDialog } from './ClientDetailsDialog'
 import { ClientForm } from './ClientForm'
 import { EditClientForm } from './EditClientForm'
-import { SyncSheetDialog } from './SyncSheetDialog'
-import { ClientSheetMenu, useClientColumns } from './ClientsTableParts'
+import { useClientColumns } from './ClientsTableParts'
 import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 interface Props {
+  workspaceId: string
   data: {
     items: PaginatedClient[]
     totalCount: number
@@ -40,27 +37,27 @@ interface Props {
     sort: string
   }
   canManage: boolean
-  canImportSheet: boolean
   canViewBillable: boolean
   currency: string
-  googleSheetUrl: string | null
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
 
 export function ClientsTablePage({
+  workspaceId,
   data,
   page,
   pageSize,
   appliedFilters,
   canManage,
-  canImportSheet,
   canViewBillable,
   currency,
-  googleSheetUrl,
   onFilterChange,
   onPageChange,
 }: Props) {
+  const [viewingClient, setViewingClient] = useState<PaginatedClient | null>(
+    null,
+  )
   const router = useRouter()
   const publishTaskChange = useTaskSyncPublisher()
   const [local, dispatch] = useReducer(
@@ -69,8 +66,6 @@ export function ClientsTablePage({
         showCreate: boolean
         editingClient: PaginatedClient | null
         archivingId: string | null
-        sheetLoading: boolean
-        showSyncDialog: boolean
       },
       a: Partial<typeof s>,
     ) => ({ ...s, ...a }),
@@ -78,17 +73,9 @@ export function ClientsTablePage({
       showCreate: false,
       editingClient: null,
       archivingId: null,
-      sheetLoading: false,
-      showSyncDialog: false,
     },
   )
-  const {
-    showCreate,
-    editingClient,
-    archivingId,
-    sheetLoading,
-    showSyncDialog,
-  } = local
+  const { showCreate, editingClient, archivingId } = local
 
   const handleArchive = useCallback(
     async (client: PaginatedClient) => {
@@ -152,43 +139,12 @@ export function ClientsTablePage({
     [],
   )
 
-  async function handleSync() {
-    dispatch({ sheetLoading: true })
-    try {
-      const result = await syncCatalogsWithSheetFn()
-      await router.invalidate()
-      publishTaskChange()
-      gooeyToast.success(
-        `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
-      )
-    } catch (err) {
-      gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
-
-  async function handleSetupSheetTab() {
-    dispatch({ sheetLoading: true })
-    try {
-      await ensureCatalogTabsFn()
-      gooeyToast.success('Sheet tab ready')
-    } catch (err) {
-      gooeyToast.error('Setup failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
-
   const columns = useClientColumns({
     canManage,
     canViewBillable,
     currency,
     archivingId,
+    onView: setViewingClient,
     onEdit: handleEdit,
     onArchive: handleArchive,
     onActivate: handleActivate,
@@ -210,17 +166,6 @@ export function ClientsTablePage({
         canManage={canManage}
         onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Client"
-        headerActions={
-          <ClientSheetMenu
-            canImportSheet={canImportSheet}
-            canManage={canManage}
-            sheetLoading={sheetLoading}
-            googleSheetUrl={googleSheetUrl}
-            onImport={() => dispatch({ showSyncDialog: true })}
-            onSyncAll={handleSync}
-            onSetupTab={handleSetupSheetTab}
-          />
-        }
         toolbar={
           <CatalogFilterBar
             searchPlaceholder="Search clients…"
@@ -300,6 +245,16 @@ export function ClientsTablePage({
         }}
       />
 
+      {viewingClient && (
+        <ClientDetailsDialog
+          key={viewingClient.id}
+          client={viewingClient}
+          canManage={canManage}
+          workspaceId={workspaceId}
+          onClose={() => setViewingClient(null)}
+        />
+      )}
+
       <CatalogFormDialog
         title="New Client"
         open={showCreate}
@@ -330,16 +285,6 @@ export function ClientsTablePage({
           />
         )}
       </CatalogFormDialog>
-
-      <SyncSheetDialog
-        open={showSyncDialog}
-        onComplete={publishTaskChange}
-        onClose={async () => {
-          dispatch({ showSyncDialog: false })
-          await router.invalidate()
-        }}
-        type="clients"
-      />
     </>
   )
 }

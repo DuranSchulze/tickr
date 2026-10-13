@@ -1362,15 +1362,6 @@ export const auditLogs = pgTable(
   ],
 )
 
-export const pendingGsheetsSyncs = pgTable('pending_gsheets_syncs', {
-  workspaceId: varchar('workspace_id', { length: 30 })
-    .primaryKey()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-})
-
 // ── Newsletter subscribers ──────────────────────────────────────────────────
 
 export const newsletterSubscribers = pgTable('newsletter_subscribers', {

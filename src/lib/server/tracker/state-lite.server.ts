@@ -203,13 +203,9 @@ export async function getTrackerStateLite(
       timezone: access.workspace.timezone,
       defaultBillableRate: Number(access.workspace.defaultBillableRate),
       billableCurrency: access.workspace.billableCurrency,
-      googleSheetUrl:
-        canViewSettings || can(access, 'catalogs.import')
-          ? access.workspace.googleSheetUrl
-          : null,
+      googleSheetUrl: canViewSettings ? access.workspace.googleSheetUrl : null,
       googleSheetSyncedAt:
-        (canViewSettings || can(access, 'catalogs.import')) &&
-        access.workspace.googleSheetSyncedAt
+        canViewSettings && access.workspace.googleSheetSyncedAt
           ? access.workspace.googleSheetSyncedAt.toISOString()
           : null,
       locationTrackingEnabled: access.workspace.locationTrackingEnabled,

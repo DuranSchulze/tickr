@@ -11,7 +11,6 @@ import {
 import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { captureEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
-import { enqueueTimeEntry } from '../gsheets/sync-queue'
 import { createAuditLog } from './audit/audit-logger.server'
 import { memberScopeCondition } from './shared/member-scope.server'
 import {
@@ -120,17 +119,11 @@ export async function createManualEntry(
     })
     .returning()
 
-  // Tag links and the sync flag are independent — one round trip wave.
-  await Promise.all([
-    tagIds.length
-      ? db
-          .insert(timeEntryTags)
-          .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
-      : Promise.resolve(),
-    endedAt
-      ? enqueueTimeEntry(access.workspace.id, entry.id)
-      : Promise.resolve(),
-  ])
+  if (tagIds.length) {
+    await db
+      .insert(timeEntryTags)
+      .values(tagIds.map((tagId) => ({ timeEntryId: entry.id, tagId })))
+  }
   if (endedAt) {
     await safeRefreshAnalyticsRollups([entryRollupTarget(entry)])
   }
@@ -216,9 +209,6 @@ export async function updateEntry(data: z.infer<typeof updateEntrySchema>) {
       : Promise.resolve(),
   ])
 
-  // Any edit can change what the synced sheet shows (times, description,
-  // project, billable), so always flag the workspace for re-sync.
-  await enqueueTimeEntry(access.workspace.id, existingEntry.id)
   await safeRefreshAnalyticsRollups([
     entryRollupTarget(existingEntry),
     {
@@ -308,7 +298,6 @@ export async function updateWorkspaceMemberEntry(
       : Promise.resolve(),
   ])
 
-  await enqueueTimeEntry(access.workspace.id, existingEntry.id)
   await safeRefreshAnalyticsRollups([
     entryRollupTarget(existingEntry),
     {
@@ -350,7 +339,6 @@ export async function deleteEntry(data: z.infer<typeof entryIdSchema>) {
     })
 
   if (deleted.length > 0) {
-    await enqueueTimeEntry(access.workspace.id, data.id)
     const completedDeleted = deleted.filter((entry) => entry.endedAt)
     await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
   } else {
@@ -394,7 +382,6 @@ export async function deleteWorkspaceMemberEntry(
     })
 
   if (deleted.length > 0) {
-    await enqueueTimeEntry(access.workspace.id, data.id)
     const completedDeleted = deleted.filter((entry) => entry.endedAt)
     await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
   } else {
@@ -465,7 +452,6 @@ export async function bulkDeleteWorkspaceMemberEntries(
     throw new Error('Could not delete all selected time entries.')
   }
 
-  await Promise.all(ids.map((id) => enqueueTimeEntry(access.workspace.id, id)))
   const completedDeleted = deleted.filter((entry) => entry.endedAt)
   await safeRefreshAnalyticsRollups(completedDeleted.map(entryRollupTarget))
 

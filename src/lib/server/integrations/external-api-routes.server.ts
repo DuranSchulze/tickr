@@ -3,15 +3,20 @@ import type { ZodError, z } from 'zod'
 import {
   authenticateApiKeyCredential,
   authenticateDeveloperCredentials,
+  authenticateUserCredentials,
   externalApiErrorResponse,
   jsonResponse,
   requireExternalApiKey,
+  resolveUserContext,
 } from './external-api-auth.server'
 import { developerSignInSchema } from './developer-accounts.shared'
+import { registerTracklyUserAccount } from './external-api-user-auth.server'
 import {
   clientsListQuerySchema,
   departmentsListQuerySchema,
   dtrIntegrationQuerySchema,
+  externalApiLoginSchema,
+  externalApiRegisterSchema,
   externalApiSignInSchema,
   listPayload,
   memberDayActivityQuerySchema,
@@ -45,6 +50,76 @@ function validationError(error: ZodError): Response {
   )
 }
 
+function invalidBodyResponse(): Response {
+  return jsonResponse(
+    {
+      error: {
+        code: 'invalid_body',
+        message: 'Request body must be valid JSON.',
+      },
+    },
+    { status: 400 },
+  )
+}
+
+/**
+ * Translates a Better Auth `APIError` from account creation into the public
+ * API's error envelope. Duplicate emails map to 409 so integrations can react
+ * without parsing a message string.
+ */
+function registrationErrorResponse(error: unknown): Response {
+  if (typeof error === 'object' && error !== null) {
+    const status =
+      'statusCode' in error
+        ? (error as { statusCode?: unknown }).statusCode
+        : undefined
+    const body =
+      'body' in error
+        ? (error as { body?: { code?: string; message?: string } }).body
+        : undefined
+
+    if (
+      body?.code === 'USER_ALREADY_EXISTS' ||
+      body?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL'
+    ) {
+      return jsonResponse(
+        {
+          error: {
+            code: 'email_in_use',
+            message: 'An account with this email already exists.',
+          },
+        },
+        { status: 409 },
+      )
+    }
+
+    if (status === 400 || status === 422) {
+      return jsonResponse(
+        {
+          error: {
+            code: 'invalid_registration',
+            message:
+              body?.message ??
+              'Could not create the account with the provided details.',
+          },
+        },
+        { status: 400 },
+      )
+    }
+  }
+
+  console.error('[external-api] Registration failed', error)
+  return jsonResponse(
+    {
+      error: {
+        code: 'internal_error',
+        message: 'The account could not be created.',
+      },
+    },
+    { status: 500 },
+  )
+}
+
 type ListResult<TData> = { data: TData[]; total: number }
 
 async function handleList<TQuery extends ListQuery, TData>(
@@ -69,37 +144,48 @@ async function issueTokenResponse(
     keyId?: string
     developerId?: string
     permissionLevel?: 'OWNER' | 'ADMIN'
+    user?: { id: string; name: string; email: string }
   },
+  status = 200,
 ) {
-  const { signApiKeyJwt, signDeveloperJwt } =
+  const { signApiKeyJwt, signDeveloperJwt, signUserJwt } =
     await import('./external-api-jwt.server')
-  const { token, expiresInSeconds, expiresAt } = claims.developerId
-    ? await signDeveloperJwt({
-        developerId: claims.developerId,
-        workspaceId: context.workspaceId,
-        permissionLevel: claims.permissionLevel ?? 'OWNER',
-      })
-    : await signApiKeyJwt({
-        keyId: claims.keyId ?? '',
+  const { token, expiresInSeconds, expiresAt } = claims.user
+    ? await signUserJwt({
+        userId: claims.user.id,
         workspaceId: context.workspaceId,
       })
+    : claims.developerId
+      ? await signDeveloperJwt({
+          developerId: claims.developerId,
+          workspaceId: context.workspaceId,
+          permissionLevel: claims.permissionLevel ?? 'OWNER',
+        })
+      : await signApiKeyJwt({
+          keyId: claims.keyId ?? '',
+          workspaceId: context.workspaceId,
+        })
 
-  return jsonResponse({
-    data: {
-      token,
-      tokenType: 'Bearer',
-      expiresInSeconds,
-      expiresAt: expiresAt.toISOString(),
-      ...(claims.developerId
-        ? { permissionLevel: claims.permissionLevel ?? 'OWNER' }
-        : {}),
-      workspace: {
-        id: context.workspace.id,
-        name: context.workspace.name,
-        slug: context.workspace.slug,
+  return jsonResponse(
+    {
+      data: {
+        token,
+        tokenType: 'Bearer',
+        expiresInSeconds,
+        expiresAt: expiresAt.toISOString(),
+        ...(claims.developerId
+          ? { permissionLevel: claims.permissionLevel ?? 'OWNER' }
+          : {}),
+        ...(claims.user ? { user: claims.user } : {}),
+        workspace: {
+          id: context.workspace.id,
+          name: context.workspace.name,
+          slug: context.workspace.slug,
+        },
       },
     },
-  })
+    { status },
+  )
 }
 
 async function readJsonBody(request: Request): Promise<unknown | null> {
@@ -112,17 +198,7 @@ async function readJsonBody(request: Request): Promise<unknown | null> {
 
 export async function handleSignInRequest(request: Request): Promise<Response> {
   const body = await readJsonBody(request)
-  if (body == null) {
-    return jsonResponse(
-      {
-        error: {
-          code: 'invalid_body',
-          message: 'Request body must be valid JSON.',
-        },
-      },
-      { status: 400 },
-    )
-  }
+  if (body == null) return invalidBodyResponse()
 
   const parsed = externalApiSignInSchema.safeParse(body)
   if (!parsed.success) return validationError(parsed.error)
@@ -142,6 +218,70 @@ export async function handleSignInRequest(request: Request): Promise<Response> {
   } catch (error) {
     return externalApiErrorResponse(error)
   }
+}
+
+/**
+ * Signs a Trackly account in with its email + password and issues a
+ * workspace-scoped bearer JWT usable on every protected /api/v1 endpoint.
+ */
+export async function handleLoginRequest(request: Request): Promise<Response> {
+  const body = await readJsonBody(request)
+  if (body == null) return invalidBodyResponse()
+
+  const parsed = externalApiLoginSchema.safeParse(body)
+  if (!parsed.success) return validationError(parsed.error)
+
+  try {
+    const { context, user } = await authenticateUserCredentials(
+      parsed.data.email,
+      parsed.data.password,
+      parsed.data.workspaceSlug,
+    )
+    return issueTokenResponse(context, { user })
+  } catch (error) {
+    return externalApiErrorResponse(error)
+  }
+}
+
+/**
+ * Creates a Trackly account using the same credentials the web sign-up form
+ * accepts, then issues a token when the new account already belongs to a
+ * workspace (e.g. it was invited by email). Accounts without workspace access
+ * are returned with `token: null` so the caller can onboard them first.
+ */
+export async function handleRegisterRequest(
+  request: Request,
+): Promise<Response> {
+  const body = await readJsonBody(request)
+  if (body == null) return invalidBodyResponse()
+
+  const parsed = externalApiRegisterSchema.safeParse(body)
+  if (!parsed.success) return validationError(parsed.error)
+
+  let user: { id: string; name: string; email: string }
+  try {
+    user = await registerTracklyUserAccount({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      password: parsed.data.password,
+      headers: request.headers,
+    })
+  } catch (error) {
+    return registrationErrorResponse(error)
+  }
+
+  const context = await resolveUserContext(
+    user.id,
+    user.email,
+    parsed.data.workspaceSlug,
+  )
+  if (!context) {
+    return jsonResponse(
+      { data: { user, token: null, workspace: null } },
+      { status: 201 },
+    )
+  }
+  return issueTokenResponse(context, { user }, 201)
 }
 
 export async function handleDeveloperSignInRequest(

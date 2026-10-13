@@ -25,7 +25,7 @@ type PaginatedResult<T> = {
 
 // ─── Stats helpers ────────────────────────────────────────────────────────────
 
-async function fetchClientStats(
+export async function fetchClientStats(
   workspaceId: string,
   clientIds: string[],
   defaultRate: number,
@@ -67,7 +67,7 @@ async function fetchClientStats(
     .groupBy(projects.clientId)
 }
 
-async function fetchProjectStats(
+export async function fetchProjectStats(
   workspaceId: string,
   projectIds: string[],
   defaultRate: number,

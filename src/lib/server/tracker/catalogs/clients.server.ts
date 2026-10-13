@@ -12,22 +12,6 @@ import type {
   updateClientSchema,
 } from '../shared/schemas'
 
-async function exportClient(
-  workspaceId: string,
-  client: {
-    id: string
-    name: string
-    clientStatus: string
-    defaultBillableRate?: string | number | null
-  },
-) {
-  const { exportClientToSheet } =
-    await import('#/lib/server/gsheets/catalog-sync.server')
-  exportClientToSheet(workspaceId, client).catch((err) =>
-    console.error('[GSheets catalog export] client:', err),
-  )
-}
-
 export async function createClient(data: z.infer<typeof createClientSchema>) {
   const access = await requireWorkspaceAccess()
   assertCanManageCatalogs(access)
@@ -56,13 +40,6 @@ export async function createClient(data: z.infer<typeof createClientSchema>) {
           : String(toFiniteRate(data.defaultBillableRate)),
     })
     .returning()
-
-  void exportClient(access.workspace.id, {
-    id: created.id,
-    name: data.name,
-    clientStatus: data.clientStatus ?? 'ACTIVE',
-    defaultBillableRate: created.defaultBillableRate,
-  })
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -98,13 +75,6 @@ export async function updateClient(data: z.infer<typeof updateClientSchema>) {
         eq(clients.workspaceId, access.workspace.id),
       ),
     )
-
-  void exportClient(access.workspace.id, {
-    id: data.id,
-    name: data.name,
-    clientStatus: data.clientStatus,
-    defaultBillableRate: data.defaultBillableRate,
-  })
 
   void createAuditLog({
     workspaceId: access.workspace.id,
@@ -160,12 +130,6 @@ export async function bulkArchiveClients(data: z.infer<typeof bulkIdsSchema>) {
       targetId: row.id,
       details: row.name,
     })
-    void exportClient(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      clientStatus: 'INACTIVE',
-      defaultBillableRate: row.defaultBillableRate,
-    })
   }
 }
 
@@ -206,12 +170,6 @@ export async function bulkActivateClients(data: z.infer<typeof bulkIdsSchema>) {
       targetType: 'client',
       targetId: row.id,
       details: row.name,
-    })
-    void exportClient(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      clientStatus: 'ACTIVE',
-      defaultBillableRate: row.defaultBillableRate,
     })
   }
 }
@@ -254,12 +212,6 @@ export async function bulkSuspendClients(data: z.infer<typeof bulkIdsSchema>) {
       targetId: row.id,
       details: row.name,
     })
-    void exportClient(access.workspace.id, {
-      id: row.id,
-      name: row.name,
-      clientStatus: 'SUSPENDED',
-      defaultBillableRate: row.defaultBillableRate,
-    })
   }
 }
 
@@ -300,15 +252,6 @@ export async function archiveClient(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: client?.name ?? null,
   })
-
-  if (client) {
-    void exportClient(access.workspace.id, {
-      id: data.id,
-      name: client.name,
-      clientStatus: 'INACTIVE',
-      defaultBillableRate: client.defaultBillableRate,
-    })
-  }
 }
 
 export async function activateClient(data: z.infer<typeof idSchema>) {
@@ -348,15 +291,6 @@ export async function activateClient(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: client?.name ?? null,
   })
-
-  if (client) {
-    void exportClient(access.workspace.id, {
-      id: data.id,
-      name: client.name,
-      clientStatus: 'ACTIVE',
-      defaultBillableRate: client.defaultBillableRate,
-    })
-  }
 }
 
 export async function suspendClient(data: z.infer<typeof idSchema>) {
@@ -396,13 +330,4 @@ export async function suspendClient(data: z.infer<typeof idSchema>) {
     targetId: data.id,
     details: client?.name ?? null,
   })
-
-  if (client) {
-    void exportClient(access.workspace.id, {
-      id: data.id,
-      name: client.name,
-      clientStatus: 'SUSPENDED',
-      defaultBillableRate: client.defaultBillableRate,
-    })
-  }
 }

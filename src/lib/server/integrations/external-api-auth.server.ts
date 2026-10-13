@@ -1,15 +1,26 @@
 import '@tanstack/react-start/server-only'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '#/db'
-import { developerAccounts, workspaceApiKeys, workspaces } from '#/db/schema'
+import {
+  developerAccounts,
+  workspaceApiKeys,
+  workspaceMembers,
+  workspaces,
+} from '#/db/schema'
 import { readClientIp } from '../client-ip.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import { hashApiKey } from './api-keys.server'
 import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
+import {
+  resolveTracklyWorkspaceMembership,
+  verifyTracklyUserCredentials,
+} from './external-api-user-auth.server'
+import type { TracklyUserIdentity } from './external-api-user-auth.server'
 
 export type ExternalApiContext = {
   keyId: string | null
   developerId: string | null
+  userId: string | null
   permissionLevel: 'OWNER' | 'ADMIN' | null
   workspaceId: string
   workspace: {
@@ -61,7 +72,7 @@ function readPresentedCredential(request: Request): string | null {
 async function recordAuthFailure(input: {
   reason: string
   workspaceId?: string | null
-  targetType?: 'api_key' | 'developer_account'
+  targetType?: 'api_key' | 'developer_account' | 'user'
   targetId?: string | null
   identifier?: string | null
 }): Promise<void> {
@@ -134,6 +145,7 @@ async function buildContextFromKeyRow(
   return {
     keyId: row.key.id,
     developerId: null,
+    userId: null,
     permissionLevel: null,
     workspaceId: row.workspace.id,
     workspace: {
@@ -180,6 +192,7 @@ async function buildContextFromDeveloperRow(
   return {
     keyId: null,
     developerId: row.account.id,
+    userId: null,
     permissionLevel:
       row.account.permissionLevel === 'ADMIN' ? 'ADMIN' : 'OWNER',
     workspaceId: row.workspace.id,
@@ -191,6 +204,46 @@ async function buildContextFromDeveloperRow(
       billableCurrency: row.workspace.billableCurrency,
     },
     createdByUserId: row.account.createdByUserId,
+  }
+}
+
+/**
+ * Resolves the context for a verified Trackly account. The membership is
+ * re-checked on every request, so removing the user from the workspace
+ * immediately invalidates an already-issued token.
+ */
+async function buildContextFromUserRow(row: {
+  member: typeof workspaceMembers.$inferSelect
+  workspace: typeof workspaces.$inferSelect
+}): Promise<ExternalApiContext> {
+  if (row.member.status !== 'ACTIVE') {
+    await recordAuthFailure({
+      reason: 'membership_inactive',
+      workspaceId: row.workspace.id,
+      targetType: 'user',
+      targetId: row.member.id,
+    })
+    throw new ExternalApiError(
+      403,
+      'workspace_access_denied',
+      'This account no longer has access to the workspace.',
+    )
+  }
+
+  return {
+    keyId: null,
+    developerId: null,
+    userId: row.member.userId,
+    permissionLevel: null,
+    workspaceId: row.workspace.id,
+    workspace: {
+      id: row.workspace.id,
+      name: row.workspace.name,
+      slug: row.workspace.slug,
+      timezone: row.workspace.timezone,
+      billableCurrency: row.workspace.billableCurrency,
+    },
+    createdByUserId: row.member.userId,
   }
 }
 
@@ -231,6 +284,34 @@ export async function authenticateApiKeyCredential(
         )
       }
       return buildContextFromDeveloperRow(row, payload.workspaceId)
+    }
+
+    if (payload.type === 'user_jwt') {
+      const [row] = await db
+        .select({ member: workspaceMembers, workspace: workspaces })
+        .from(workspaceMembers)
+        .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+        .where(
+          and(
+            eq(workspaceMembers.userId, payload.userId),
+            eq(workspaceMembers.workspaceId, payload.workspaceId),
+          ),
+        )
+        .limit(1)
+
+      if (!row) {
+        await recordAuthFailure({
+          reason: 'unknown_user_token',
+          identifier: payload.userId,
+          targetType: 'user',
+        })
+        throw new ExternalApiError(
+          401,
+          'invalid_token',
+          'Invalid access token.',
+        )
+      }
+      return buildContextFromUserRow(row)
     }
 
     const [row] = await db
@@ -298,6 +379,65 @@ export async function requireExternalApiKey(
     throw new ExternalApiError(401, 'missing_api_key', 'API key is required.')
   }
   return authenticateApiKeyCredential(credential, request)
+}
+
+/**
+ * Resolves a workspace context for a Trackly user. Returns null when the user
+ * has no ACTIVE/INVITED workspace membership (mapped to a 403 by the caller).
+ */
+export async function resolveUserContext(
+  userId: string,
+  email: string,
+  workspaceSlug?: string,
+): Promise<ExternalApiContext | null> {
+  const membership = await resolveTracklyWorkspaceMembership(
+    userId,
+    email,
+    workspaceSlug,
+  )
+  if (!membership) return null
+
+  return {
+    keyId: null,
+    developerId: null,
+    userId,
+    permissionLevel: null,
+    workspaceId: membership.workspace.id,
+    workspace: { ...membership.workspace },
+    createdByUserId: userId,
+  }
+}
+
+/**
+ * Authenticates a Trackly account's email + password for the public API and
+ * resolves its workspace context. Throws `ExternalApiError` on bad credentials
+ * (401) or when the account has no workspace access (403).
+ */
+export async function authenticateUserCredentials(
+  email: string,
+  password: string,
+  workspaceSlug?: string,
+): Promise<{ context: ExternalApiContext; user: TracklyUserIdentity }> {
+  const user = await verifyTracklyUserCredentials(email, password)
+  if (!user) {
+    await recordAuthFailure({ reason: 'invalid_user_credentials' })
+    throw new ExternalApiError(
+      401,
+      'invalid_credentials',
+      'Invalid email or password.',
+    )
+  }
+
+  const context = await resolveUserContext(user.id, user.email, workspaceSlug)
+  if (!context) {
+    throw new ExternalApiError(
+      403,
+      'no_workspace_access',
+      'This account is not a member of any workspace.',
+    )
+  }
+
+  return { context, user }
 }
 
 export function jsonResponse(body: unknown, init?: ResponseInit): Response {

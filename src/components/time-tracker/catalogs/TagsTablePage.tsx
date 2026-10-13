@@ -2,26 +2,13 @@ import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
 import { gooeyToast } from '#/lib/toast'
-import {
-  Archive,
-  CheckCircle,
-  FileSpreadsheet,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  RefreshCw,
-  Table as TableIcon,
-} from 'lucide-react'
+import { Archive, CheckCircle, MoreHorizontal, Pencil } from 'lucide-react'
 import {
   activateTagFn,
   archiveTagFn,
   bulkActivateTagsFn,
   bulkArchiveTagsFn,
 } from '#/lib/server/tracker'
-import {
-  ensureCatalogTabsFn,
-  syncCatalogsWithSheetFn,
-} from '#/lib/server/gsheets/sync'
 import type { PaginatedTag } from '#/lib/server/tracker/catalogs/paginated.server'
 import {
   DropdownMenu,
@@ -37,7 +24,6 @@ import {
 } from './CatalogTableLayout'
 import { TagForm } from './TagForm'
 import { EditTagForm } from './EditTagForm'
-import { SyncSheetDialog } from './SyncSheetDialog'
 import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 
 function formatSeconds(seconds: number): string {
@@ -65,8 +51,6 @@ interface Props {
     sort: string
   }
   canManage: boolean
-  canImportSheet: boolean
-  googleSheetUrl: string | null
   onFilterChange: (updates: Record<string, string | undefined>) => void
   onPageChange: (page: number) => void
 }
@@ -77,8 +61,6 @@ export function TagsTablePage({
   pageSize,
   appliedFilters,
   canManage,
-  canImportSheet,
-  googleSheetUrl,
   onFilterChange,
   onPageChange,
 }: Props) {
@@ -90,8 +72,6 @@ export function TagsTablePage({
         showCreate: boolean
         editingTag: PaginatedTag | null
         archivingId: string | null
-        sheetLoading: boolean
-        showSyncDialog: boolean
       },
       a: Partial<typeof s>,
     ) => ({ ...s, ...a }),
@@ -99,12 +79,9 @@ export function TagsTablePage({
       showCreate: false,
       editingTag: null,
       archivingId: null,
-      sheetLoading: false,
-      showSyncDialog: false,
     },
   )
-  const { showCreate, editingTag, archivingId, sheetLoading, showSyncDialog } =
-    local
+  const { showCreate, editingTag, archivingId } = local
 
   async function handleArchive(tag: PaginatedTag) {
     dispatch({ archivingId: tag.id })
@@ -136,42 +113,6 @@ export function TagsTablePage({
     } finally {
       dispatch({ archivingId: null })
     }
-  }
-
-  async function handleSync() {
-    dispatch({ sheetLoading: true })
-    try {
-      const result = await syncCatalogsWithSheetFn()
-      await router.invalidate()
-      publishTaskChange()
-      gooeyToast.success(
-        `Synced ${result.clients} clients, ${result.projects} projects, ${result.tags} tags`,
-      )
-    } catch (err) {
-      gooeyToast.error('Sync failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
-
-  async function handleSetupSheetTab() {
-    dispatch({ sheetLoading: true })
-    try {
-      await ensureCatalogTabsFn()
-      gooeyToast.success('Sheet tab ready')
-    } catch (err) {
-      gooeyToast.error('Setup failed', {
-        description: err instanceof Error ? err.message : 'Please try again.',
-      })
-    } finally {
-      dispatch({ sheetLoading: false })
-    }
-  }
-
-  function handleImportFromSheet() {
-    dispatch({ showSyncDialog: true })
   }
 
   const columns = useMemo(
@@ -266,48 +207,6 @@ export function TagsTablePage({
     [canManage, archivingId],
   )
 
-  const sheetButton = canImportSheet ? (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        disabled={sheetLoading || !googleSheetUrl}
-        title={
-          !googleSheetUrl
-            ? 'Configure a Google Sheet URL in workspace settings to enable import'
-            : undefined
-        }
-        aria-label="Google Sheet actions"
-        aria-busy={sheetLoading}
-        className="inline-flex items-center gap-2 rounded-full border border-stone bg-eggshell px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {sheetLoading ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-        ) : (
-          <FileSpreadsheet className="size-4" aria-hidden />
-        )}
-        Sheet
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleImportFromSheet}>
-          <RefreshCw className="mr-2 size-4" />
-          Sync from Sheet
-        </DropdownMenuItem>
-        {canManage && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSync}>
-              <RefreshCw className="mr-2 size-4" />
-              Sync all catalogs
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSetupSheetTab}>
-              <TableIcon className="mr-2 size-4" />
-              Setup Sheet Tab
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  ) : null
-
   const toolbar = (
     <CatalogFilterBar
       searchPlaceholder="Search tags…"
@@ -350,7 +249,6 @@ export function TagsTablePage({
         canManage={canManage}
         onCreate={() => dispatch({ showCreate: true })}
         createLabel="New Tag"
-        headerActions={sheetButton}
         toolbar={toolbar}
         emptyMessage={
           appliedFilters.search || appliedFilters.showArchived
@@ -400,16 +298,6 @@ export function TagsTablePage({
           />
         )}
       </CatalogFormDialog>
-
-      <SyncSheetDialog
-        open={showSyncDialog}
-        onComplete={publishTaskChange}
-        onClose={async () => {
-          dispatch({ showSyncDialog: false })
-          await router.invalidate()
-        }}
-        type="tags"
-      />
     </>
   )
 }

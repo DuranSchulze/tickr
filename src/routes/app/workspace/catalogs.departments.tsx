@@ -65,7 +65,6 @@ export const Route = createFileRoute('/app/workspace/catalogs/departments')({
       access,
       data: paginatedDepartments,
       pageSize: PAGE_SIZE,
-      googleSheetUrl: access.workspace.googleSheetUrl ?? null,
     }
   },
   staleTime: 30_000,
@@ -74,12 +73,11 @@ export const Route = createFileRoute('/app/workspace/catalogs/departments')({
 
 // oxlint-disable-next-line react/only-export-components
 function DepartmentsRoute() {
-  const { access, data, pageSize, googleSheetUrl } = Route.useLoaderData()
+  const { access, data, pageSize } = Route.useLoaderData()
   const navigate = Route.useNavigate()
   const search = Route.useSearch()
 
   const canManage = access.member.permissions['catalogs.manage']
-  const canImportSheet = access.member.permissions['catalogs.import']
 
   return (
     <DepartmentsTablePage
@@ -93,8 +91,6 @@ function DepartmentsRoute() {
         sort: search.sort ?? 'name_asc',
       }}
       canManage={canManage}
-      canImportSheet={canImportSheet}
-      googleSheetUrl={googleSheetUrl}
       onFilterChange={(updates) => {
         void navigate({
           search: (prev) => ({ ...prev, ...updates, page: 0 }),

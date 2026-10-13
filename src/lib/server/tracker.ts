@@ -1137,6 +1137,16 @@ export const getPaginatedClientsFn = createServerFn({ method: 'GET' })
     return getPaginatedClients(data)
   })
 
+export const getClientDetailFn = createServerFn({ method: 'GET' })
+  .inputValidator((input) =>
+    z.object({ clientId: z.string().trim().min(1) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { getClientDetail } =
+      await import('./tracker/catalogs/client-detail.server')
+    return getClientDetail(data)
+  })
+
 export const getPaginatedProjectsFn = createServerFn({ method: 'GET' })
   .inputValidator((input) =>
     paginatedCatalogBaseSchema

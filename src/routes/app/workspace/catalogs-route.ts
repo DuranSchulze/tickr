@@ -28,11 +28,9 @@ type NavigateFn = (opts: {
 export function useCatalogPermissions(access: WorkspaceAccess) {
   const canManage = access.member.permissions['catalogs.manage'] ?? false
 
-  const canImportSheet = access.member.permissions['catalogs.import'] ?? false
+  const canViewBillable = access.member.permissions['catalogs.view'] ?? false
 
-  const canViewBillable = canImportSheet
-
-  return { canManage, canImportSheet, canViewBillable }
+  return { canManage, canViewBillable }
 }
 
 export function getCatalogCurrency(access: WorkspaceAccess) {
