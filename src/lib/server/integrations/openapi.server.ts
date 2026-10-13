@@ -77,6 +77,8 @@ type ListOptions = {
   tag: ApiTag
   sortBy: string[]
   extraParameters?: ApiParameter[]
+  responseSchema?: Record<string, unknown>
+  forbidden?: boolean
 }
 
 function listPath({
@@ -85,6 +87,8 @@ function listPath({
   tag,
   sortBy,
   extraParameters = [],
+  responseSchema = { $ref: '#/components/schemas/ListResponse' },
+  forbidden = false,
 }: ListOptions) {
   return {
     get: {
@@ -103,12 +107,15 @@ function listPath({
           description: 'A paginated list response.',
           content: {
             'application/json': {
-              schema: { $ref: '#/components/schemas/ListResponse' },
+              schema: responseSchema,
             },
           },
         },
         '400': { $ref: '#/components/responses/BadRequest' },
         '401': { $ref: '#/components/responses/Unauthorized' },
+        ...(forbidden
+          ? { '403': { $ref: '#/components/responses/Forbidden' } }
+          : {}),
       },
     },
   }
@@ -126,7 +133,7 @@ export function getOpenApiDocument(origin?: string) {
     openapi: '3.1.0',
     info: {
       title: 'Tickr Workspace API',
-      version: '1.1.0',
+      version: '1.2.0',
       description:
         'Read-only workspace integration API secured by workspace API keys. Create a key from Workspace settings as an Owner or Admin, then authorize requests with Authorization: Bearer <api_key> or the X-API-Key header. Keys are workspace-scoped, shown only once at creation, and can be revoked from Workspace settings. For long-lived integrations, exchange a key for a short-lived JWT via POST /api/v1/auth/sign-in and send it as Authorization: Bearer <jwt>. List endpoints support pagination (limit, page, updatedSince), free-text search, sorting (sortBy, sortDir), and resource-specific filters.',
     },
@@ -161,7 +168,7 @@ export function getOpenApiDocument(origin?: string) {
           type: 'http',
           scheme: 'bearer',
           description:
-            'A workspace API key (Authorization: Bearer tickr_...) or a JWT issued by POST /api/v1/auth/sign-in.',
+            'A workspace API key or a JWT issued by /api/v1/auth/sign-in, /api/v1/auth/developer-sign-in, or /api/v1/auth/login. User JWTs return personal records on /api/v1/time-entries.',
         },
         ApiKeyAuth: {
           type: 'apiKey',
@@ -171,6 +178,15 @@ export function getOpenApiDocument(origin?: string) {
         },
       },
       responses: {
+        Forbidden: {
+          description:
+            'The requested user, workspace, or member is not accessible, or the token’s originating membership is inactive.',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/ErrorResponse' },
+            },
+          },
+        },
         BadRequest: {
           description: 'Invalid query parameters.',
           content: {
@@ -202,6 +218,125 @@ export function getOpenApiDocument(origin?: string) {
             },
           },
           required: ['error'],
+        },
+        PersonalWorkspace: {
+          type: 'object',
+          required: ['id', 'name', 'slug', 'timezone'],
+          properties: {
+            id: { type: 'string' },
+            name: { type: 'string' },
+            slug: { type: 'string' },
+            timezone: { type: 'string', examples: ['Asia/Manila'] },
+          },
+        },
+        PersonalDaySummary: {
+          type: 'object',
+          required: [
+            'workspace',
+            'date',
+            'timeIn',
+            'timeOut',
+            'durationSeconds',
+            'entryCount',
+            'running',
+          ],
+          properties: {
+            workspace: { $ref: '#/components/schemas/PersonalWorkspace' },
+            date: {
+              type: 'string',
+              format: 'date',
+              description: 'Workspace-local calendar day.',
+            },
+            timeIn: {
+              type: ['string', 'null'],
+              format: 'date-time',
+              description:
+                'Earliest matched start clipped to the day and requested interval; null for no activity.',
+            },
+            timeOut: {
+              type: ['string', 'null'],
+              format: 'date-time',
+              description:
+                'Latest clipped completed end; null for no activity or an overlapping running timer.',
+            },
+            durationSeconds: {
+              type: 'integer',
+              minimum: 0,
+              description:
+                'Sum of clipped entry intervals, including running elapsed time as of generatedAt.',
+            },
+            entryCount: { type: 'integer', minimum: 0 },
+            running: { type: 'boolean' },
+          },
+        },
+        PersonalTimeEntry: {
+          type: 'object',
+          required: [
+            'id',
+            'workspaceMemberId',
+            'memberName',
+            'memberEmail',
+            'description',
+            'projectId',
+            'projectName',
+            'clientName',
+            'taskId',
+            'taskName',
+            'tagIds',
+            'billable',
+            'startedAt',
+            'endedAt',
+            'durationSeconds',
+            'notes',
+            'createdAt',
+            'updatedAt',
+            'workspace',
+          ],
+          properties: {
+            id: { type: 'string' },
+            workspaceMemberId: { type: 'string' },
+            memberName: { type: 'string' },
+            memberEmail: { type: 'string' },
+            description: { type: 'string' },
+            projectId: { type: ['string', 'null'] },
+            projectName: { type: ['string', 'null'] },
+            clientName: { type: ['string', 'null'] },
+            taskId: { type: ['string', 'null'] },
+            taskName: { type: ['string', 'null'] },
+            tagIds: { type: 'array', items: { type: 'string' } },
+            billable: { type: 'boolean' },
+            startedAt: { type: 'string', format: 'date-time' },
+            endedAt: { type: ['string', 'null'], format: 'date-time' },
+            durationSeconds: {
+              type: 'integer',
+              description:
+                'Stored entry duration; daily summaries calculate clipped elapsed intervals separately.',
+            },
+            notes: { type: ['string', 'null'] },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            workspace: { $ref: '#/components/schemas/PersonalWorkspace' },
+          },
+        },
+        PersonalTimeEntriesResponse: {
+          allOf: [
+            { $ref: '#/components/schemas/ListResponse' },
+            {
+              type: 'object',
+              required: ['summaries', 'generatedAt'],
+              properties: {
+                data: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/PersonalTimeEntry' },
+                },
+                summaries: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/PersonalDaySummary' },
+                },
+                generatedAt: { type: 'string', format: 'date-time' },
+              },
+            },
+          ],
         },
         ListResponse: {
           type: 'object',
@@ -368,7 +503,7 @@ export function getOpenApiDocument(origin?: string) {
           tags: ['Authentication'],
           summary: 'Sign in with Trackly credentials and receive a JWT',
           description:
-            'Authenticates a Trackly account with its email and password (the same credentials used to sign in to the web app) and returns a short-lived bearer JWT scoped to the account workspace. Send the JWT as Authorization: Bearer <jwt> on subsequent requests. Pass workspaceSlug to choose a workspace when the account belongs to more than one.',
+            'Authenticates a Trackly account with its email and password (the same credentials used to sign in to the web app) and returns a short-lived bearer JWT scoped to the account workspace. Send the JWT as Authorization: Bearer <jwt> on subsequent requests.',
           security: [],
           requestBody: {
             required: true,
@@ -379,11 +514,6 @@ export function getOpenApiDocument(origin?: string) {
                   properties: {
                     email: { type: 'string', format: 'email' },
                     password: { type: 'string', format: 'password' },
-                    workspaceSlug: {
-                      type: 'string',
-                      description:
-                        'Target workspace slug. Defaults to the account earliest membership.',
-                    },
                   },
                   required: ['email', 'password'],
                 },
@@ -469,7 +599,6 @@ export function getOpenApiDocument(origin?: string) {
                     name: { type: 'string' },
                     email: { type: 'string', format: 'email' },
                     password: { type: 'string', format: 'password' },
-                    workspaceSlug: { type: 'string' },
                   },
                   required: ['name', 'email', 'password'],
                 },
@@ -731,11 +860,39 @@ export function getOpenApiDocument(origin?: string) {
       '/api/v1/time-entries': listPath({
         summary: 'List time entries',
         description:
-          'Lists time entries in the API key workspace. Filter by member, project, task, billable state, running state, and date range; search across the entry description.',
+          'User JWTs return only the JWT owner’s entries across ACTIVE workspace memberships, with per-workspace/day summaries independent of pagination. Defaults to today in each workspace timezone; date selects a local day, or paired offset startDate/endDate select a half-open interval of up to 31 days. Overnight entries overlap the interval; summary times/durations are clipped and running timers use generatedAt. Empty days are included. User-supplied IDs cannot widen identity or membership access. API keys/developer JWTs retain the original workspace-scoped ListResponse and startedAt-based inclusive date filters; personal-only userId, workspaceId and date are rejected for those credentials.',
         tag: 'Time Tracking',
+        forbidden: true,
+        responseSchema: {
+          anyOf: [
+            { $ref: '#/components/schemas/ListResponse' },
+            { $ref: '#/components/schemas/PersonalTimeEntriesResponse' },
+          ],
+        },
         sortBy: ['startedAt', 'createdAt', 'updatedAt', 'durationSeconds'],
         extraParameters: [
-          idFilter('memberId', 'Filter by workspace member id.'),
+          {
+            name: 'userId',
+            in: 'query',
+            schema: { type: 'string', maxLength: 255 },
+            description:
+              'User JWT only: optional confirmation of the JWT owner. A different user returns 403.',
+          },
+          idFilter(
+            'workspaceId',
+            'User JWT only: narrow to an ACTIVE workspace membership owned by the JWT user; otherwise 403.',
+          ),
+          {
+            name: 'date',
+            in: 'query',
+            schema: { type: 'string', format: 'date' },
+            description:
+              'User JWT only: workspace-local day; mutually exclusive with startDate/endDate.',
+          },
+          idFilter(
+            'memberId',
+            'Filter by workspace member id. User JWTs accept only an ACTIVE membership belonging to their owner in the selected scope.',
+          ),
           idFilter('projectId', 'Filter by project id.'),
           idFilter('taskId', 'Filter by task id.'),
           booleanFilter('billable', 'Filter by billable state.'),
@@ -747,13 +904,15 @@ export function getOpenApiDocument(origin?: string) {
             name: 'startDate',
             in: 'query',
             schema: { type: 'string', format: 'date-time' },
-            description: 'Lower bound for the entry startedAt.',
+            description:
+              'User JWT: inclusive interval start, paired with endDate, with an explicit offset. Service credentials: optional lower bound for startedAt.',
           },
           {
             name: 'endDate',
             in: 'query',
             schema: { type: 'string', format: 'date-time' },
-            description: 'Upper bound for the entry startedAt.',
+            description:
+              'User JWT: exclusive interval end, paired with startDate; range must be positive and at most 31 days. Service credentials: optional inclusive upper bound for startedAt.',
           },
         ],
       }),

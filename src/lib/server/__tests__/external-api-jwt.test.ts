@@ -195,7 +195,6 @@ describe('external API account auth validation', () => {
     ).toEqual({
       email: 'jane@acme.com',
       password: 'correct horse battery',
-      workspaceSlug: undefined,
     })
   })
 
@@ -220,7 +219,6 @@ describe('external API account auth validation', () => {
       name: 'Jane Doe',
       email: 'jane@acme.com',
       password: 'longenough',
-      workspaceSlug: undefined,
     })
   })
 

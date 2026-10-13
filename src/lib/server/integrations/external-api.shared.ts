@@ -82,6 +82,49 @@ export const timeEntriesQuerySchema = listQuerySchema.extend({
   sortDir: sortDirQuerySchema,
 })
 
+/** Personal requests deliberately have a stricter date contract than service keys. */
+export const personalTimeEntriesQuerySchema = timeEntriesQuerySchema
+  .extend({
+    userId: z.string().trim().min(1).max(255).optional(),
+    workspaceId: z.string().trim().min(1).max(30).optional(),
+    memberId: z.string().trim().min(1).max(30).optional(),
+    date: z.string().date().optional(),
+    startDate: z.string().datetime({ offset: true }).optional(),
+    endDate: z.string().datetime({ offset: true }).optional(),
+  })
+  .superRefine((query, context) => {
+    if (query.date && (query.startDate || query.endDate)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Use date or startDate/endDate, not both.',
+      })
+    }
+    if (Boolean(query.startDate) !== Boolean(query.endDate)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'startDate and endDate must be supplied together.',
+      })
+    }
+    if (query.startDate && query.endDate) {
+      const duration = Date.parse(query.endDate) - Date.parse(query.startDate)
+      if (duration <= 0 || duration > 31 * 24 * 60 * 60 * 1000) {
+        context.addIssue({
+          code: 'custom',
+          message: 'Date range must be positive and no longer than 31 days.',
+        })
+      }
+    }
+    if (!Number.isSafeInteger((query.page - 1) * query.limit)) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Pagination offset is too large.',
+      })
+    }
+  })
+export type PersonalTimeEntriesQuery = z.infer<
+  typeof personalTimeEntriesQuerySchema
+>
+
 export const memberDayActivityQuerySchema = z.object({
   user: z.string().trim().min(1).max(255),
   date: z.string().date().optional(),
@@ -93,19 +136,15 @@ export const externalApiSignInSchema = z.object({
   apiKey: z.string().trim().min(10).max(500),
 })
 
-const workspaceSlugQuerySchema = z.string().trim().max(100).optional()
-
 export const externalApiLoginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(1).max(500),
-  workspaceSlug: workspaceSlugQuerySchema,
 })
 
 export const externalApiRegisterSchema = z.object({
   name: z.string().trim().min(2).max(150),
   email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(8).max(500),
-  workspaceSlug: workspaceSlugQuerySchema,
 })
 
 export type ListQuery = z.infer<typeof listQuerySchema>

@@ -193,7 +193,6 @@ When the new account already belongs to a workspace (for example it was invited 
 Notes:
 
 - The resulting JWT is interchangeable with an API-key or developer token on all `/api/v1/*` endpoints.
-- Pass `workspaceSlug` in the body to choose a workspace when the account belongs to more than one.
 - `login` returns `403 no_workspace_access` when the account has no workspace membership, and `401` for bad credentials.
 - `register` returns `409` when the email already has an account.
 - These endpoints are not rate-limited yet; add a gateway/edge limit if you expose them publicly.
@@ -236,9 +235,9 @@ All endpoints are read-only and return JSON.
 
 ### Time Tracking
 
-| Endpoint                   | Description                 |
-| -------------------------- | --------------------------- |
-| `GET /api/v1/time-entries` | List workspace time entries |
+| Endpoint                   | Description                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/time-entries` | Personal entries and daily workspace summaries for user JWTs; workspace entries for service credentials |
 
 ### Integration
 
@@ -269,7 +268,7 @@ List endpoints support these query parameters:
 | `GET /api/v1/departments`  | None. `sortBy`: `name`, `createdAt`, `updatedAt`.                                                                                                                                       |
 | `GET /api/v1/time-entries` | `memberId`, `projectId`, `taskId`, `billable` (`true`/`false`), `running` (`true`/`false`), `startDate`, `endDate`. `sortBy`: `startedAt`, `createdAt`, `updatedAt`, `durationSeconds`. |
 
-`GET /api/v1/time-entries` also supports:
+`GET /api/v1/time-entries` with an API key or developer JWT also supports:
 
 | Parameter   | Description                                        |
 | ----------- | -------------------------------------------------- |
@@ -290,6 +289,81 @@ Filtered and sorted member example:
 curl \
   -H "Authorization: Bearer tickr_your_api_key_here" \
   "http://localhost:3000/api/v1/members?search=alex&status=ACTIVE&sortBy=name&sortDir=asc&limit=25&page=2"
+```
+
+### Personal time entries (user JWT)
+
+A JWT obtained through `POST /api/v1/auth/login` makes `GET /api/v1/time-entries` personal: it always restricts records to the token owner across their **ACTIVE** workspace memberships. An Owner/Admin user token cannot read another user’s entries through this endpoint. Existing API-key and developer-JWT requests retain their workspace-scoped response and filters.
+
+| Parameter              | Personal behavior                                                                                                                                                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `userId`               | Optional confirmation of the JWT owner; another ID returns `403`. Omit it to use the authenticated identity.                                                                                                      |
+| `workspaceId`          | Optional active workspace membership filter; unauthorized or disabled memberships return `403`.                                                                                                                   |
+| `memberId`             | Optional member filter, restricted to an active membership belonging to the JWT owner in the selected workspace scope.                                                                                            |
+| `date`                 | `YYYY-MM-DD` in each workspace’s timezone. With no date filters, defaults to today separately in each workspace.                                                                                                  |
+| `startDate`, `endDate` | Supply both ISO timestamps with offsets (`Z` or `+08:00`). Start is inclusive; end is exclusive. The interval must be positive and at most 31 days. Do not combine with `date`.                                   |
+| Other list filters     | Existing `search`, `updatedSince`, `projectId`, `taskId`, `billable`, `running`, `sortBy`, `sortDir`, `page`, and `limit` still apply. Pagination is global across selected workspaces; maximum page size is 100. |
+
+Examples (use a **user JWT**, not a developer token or API key):
+
+```bash
+# Your entries for today across your active workspaces.
+curl -H "Authorization: Bearer $USER_JWT" \
+  "http://localhost:3000/api/v1/time-entries"
+
+# Your entries for a particular workspace-local day.
+curl -H "Authorization: Bearer $USER_JWT" \
+  "http://localhost:3000/api/v1/time-entries?workspaceId=ws_example&date=2026-10-13&limit=20&page=1"
+
+# Exact interval; encode the plus sign in timezone offsets.
+curl -G -H "Authorization: Bearer $USER_JWT" \
+  --data-urlencode "startDate=2026-10-13T00:00:00+08:00" \
+  --data-urlencode "endDate=2026-10-14T00:00:00+08:00" \
+  "http://localhost:3000/api/v1/time-entries"
+```
+
+Response shape (entry records retain all existing fields):
+
+```json
+{
+  "data": [],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 0,
+    "totalPages": 0,
+    "hasMore": false
+  },
+  "summaries": [
+    {
+      "workspace": {
+        "id": "ws_example",
+        "name": "Example workspace",
+        "slug": "example",
+        "timezone": "Asia/Manila"
+      },
+      "date": "2026-10-13",
+      "timeIn": null,
+      "timeOut": null,
+      "durationSeconds": 0,
+      "entryCount": 0,
+      "running": false
+    }
+  ],
+  "generatedAt": "2026-10-13T04:00:00.000Z"
+}
+```
+
+Each entry adds `workspace: { id, name, slug, timezone }`. Entries preserve actual `startedAt` and `endedAt` in UTC ISO format; a running timer has `endedAt: null`. Entries are included when their time interval overlaps the requested period, including work that started the previous day. An entry ending exactly at the interval start, or starting exactly at its end, is excluded.
+
+Summaries include every selected workspace/day, even with no matching activity. They cover **all matching records**, not just the current page, and apply the same entry filters. `timeIn` is the earliest start clipped to the day/interval; `timeOut` is the latest clipped completed end, or null if there is no activity or an overlapping running timer. `durationSeconds` sums clipped entry intervals, including running elapsed time at the single `generatedAt` instant. Breaks are excluded; overlapping records are summed individually rather than merged. Entry `durationSeconds` remains its stored value and may differ from a clipped summary total.
+
+Timestamp-range summaries split at local midnight in each workspace and correctly handle 23/25-hour DST days. Summary timestamps are UTC ISO strings; `date` and `workspace.timezone` provide their local context. Unknown/invalid date ranges return `400`; foreign user/workspace/member selections return `403` without data, counts, or summaries. API keys and developer JWTs receive `400` if supplied the personal-only `userId`, `workspaceId`, or `date` parameters. JWT signature/expiry and originating workspace membership checks still run on every request; removal from the token’s originating workspace invalidates that token.
+
+For implementation validation, the opt-in PostgreSQL fixture suite uses only session-local temporary tables and rolls them back:
+
+```bash
+PERSONAL_API_TEST_DATABASE_URL="$TEST_DATABASE_URL" pnpm exec vitest run src/lib/server/__tests__/personal-time-entries.postgres.test.ts
 ```
 
 ### Daily Time Record (DTR)

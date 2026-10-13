@@ -10,6 +10,7 @@ import {
   tagsListQuerySchema,
   tasksListQuerySchema,
   timeEntriesQuerySchema,
+  personalTimeEntriesQuerySchema,
 } from '../integrations/external-api.shared'
 
 describe('external API query validation', () => {
@@ -162,5 +163,51 @@ describe('external API query validation', () => {
     expect(departmentsListQuerySchema.parse({ search: 'ops' })).toMatchObject({
       search: 'ops',
     })
+  })
+})
+
+describe('personal time-entry query validation', () => {
+  it('accepts calendar dates and offset timestamp pairs', () => {
+    expect(
+      personalTimeEntriesQuerySchema.parse({ date: '2026-10-13' }).date,
+    ).toBe('2026-10-13')
+    expect(
+      personalTimeEntriesQuerySchema.parse({
+        startDate: '2026-10-13T00:00:00+08:00',
+        endDate: '2026-10-14T00:00:00+08:00',
+      }).startDate,
+    ).toContain('+08:00')
+  })
+  it.each([
+    { startDate: '2026-10-13T00:00:00Z' },
+    { endDate: '2026-10-14T00:00:00Z' },
+    { startDate: '2026-10-13T00:00:00', endDate: '2026-10-14T00:00:00' },
+    { startDate: '2026-10-13T00:00:00Z', endDate: '2026-10-13T00:00:00Z' },
+    { startDate: '2026-10-14T00:00:00Z', endDate: '2026-10-13T00:00:00Z' },
+    { startDate: '2026-10-01T00:00:00Z', endDate: '2026-11-02T00:00:00Z' },
+    {
+      date: '2026-10-13',
+      startDate: '2026-10-13T00:00:00Z',
+      endDate: '2026-10-14T00:00:00Z',
+    },
+    { date: '2026-02-30' },
+    { userId: '' },
+    { workspaceId: '' },
+    { memberId: '' },
+    { page: Number.MAX_SAFE_INTEGER, limit: 100 },
+  ])('rejects invalid personal params %j', (input) => {
+    expect(personalTimeEntriesQuerySchema.safeParse(input).success).toBe(false)
+  })
+  it('accepts exactly 31 days while retaining legacy date behavior', () => {
+    expect(
+      personalTimeEntriesQuerySchema.safeParse({
+        startDate: '2026-10-01T00:00:00Z',
+        endDate: '2026-11-01T00:00:00Z',
+      }).success,
+    ).toBe(true)
+    expect(
+      timeEntriesQuerySchema.safeParse({ startDate: '2026-10-01T00:00:00Z' })
+        .success,
+    ).toBe(true)
   })
 })
