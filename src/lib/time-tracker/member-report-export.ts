@@ -1,6 +1,7 @@
 import type { MemberMonthlyReport } from '#/lib/server/tracker/member-report.server'
 import type { BulkReport } from '#/lib/server/tracker/bulk-report.server'
 import {
+  buildGroupedTimeReportPdf,
   downloadGroupedTimeReportCsv,
   downloadGroupedTimeReportPdf,
 } from './bulk-report-export'
@@ -67,4 +68,17 @@ export function downloadMemberReportCsv(report: MemberMonthlyReport): void {
       'Individual member time entries with task detail, client rates, billable status, and computed amounts.',
     filenamePrefix: 'member-time-billing-report',
   })
+}
+
+/** Server-compatible PDF bytes, sharing the manual export renderer. */
+export async function buildWeeklyMemberReportPdf(
+  report: MemberMonthlyReport,
+  workspaceName: string,
+) {
+  const doc = await buildGroupedTimeReportPdf(toGroupedReport(report), {
+    title: 'Weekly Personal Time Report',
+    subtitle: `${workspaceName} - Completed entries only. Running timers are excluded.`,
+    orientation: 'landscape',
+  })
+  return new Uint8Array(doc.output('arraybuffer'))
 }

@@ -22,6 +22,9 @@ const config = defineConfig(({ mode }) => ({
               functions: {
                 maxDuration: 30,
               },
+              functionRules: {
+                '/api/cron/weekly-reports': { maxDuration: 60 },
+              },
             },
           }
         : {}),

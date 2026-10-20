@@ -4,6 +4,12 @@ import { renderInviteEmail } from '#/lib/server/email-templates/invite'
 import { renderTimerReminderEmail } from '#/lib/server/email-templates/timer-reminder'
 
 export type SendEmailInput = {
+  from?: string
+  attachments?: Array<{
+    filename: string
+    content: string
+    contentType: string
+  }>
   to: string
   subject: string
   html: string
@@ -24,7 +30,7 @@ function getSmtpFromAddress(): string {
  * dashboard (https://resend.com/domains). Falls back to `onboarding@resend.dev`
  * which only works for sending to the account owner's email during testing.
  */
-function getResendFromAddress(): string {
+export function getResendFromAddress(): string {
   return (
     process.env.RESEND_FROM ??
     process.env.EMAIL_FROM ??
@@ -89,6 +95,11 @@ async function sendViaSmtp(input: SendEmailInput): Promise<void> {
     subject: input.subject,
     text: input.text,
     html: input.html,
+    attachments: input.attachments?.map((a) => ({
+      filename: a.filename,
+      content: Buffer.from(a.content, 'base64'),
+      contentType: a.contentType,
+    })),
   })
 }
 
@@ -113,6 +124,10 @@ async function sendViaResend(
       subject: input.subject,
       html: input.html,
       text: input.text,
+      attachments: input.attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+      })),
     }),
   })
 
@@ -194,4 +209,69 @@ export async function sendTimerReminderEmail(params: {
   const { to, ...templateInput } = params
   const { subject, html, text } = renderTimerReminderEmail(templateInput)
   await sendEmail({ to, subject, text, html })
+}
+
+/** Explicit outcome classification for durable jobs; deliberately no SMTP fallback. */
+export class WeeklyEmailError extends Error {
+  constructor(
+    public outcome: 'retryable' | 'terminal' | 'uncertain',
+    public retryAfterSeconds = 0,
+  ) {
+    super(`Weekly email ${outcome}`)
+  }
+}
+export async function sendWeeklyReportEmail(
+  input: SendEmailInput,
+  idempotencyKey: string,
+): Promise<{ provider: 'resend'; id: string }> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) throw new WeeklyEmailError('terminal')
+  let response: Response
+  try {
+    response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'Idempotency-Key': idempotencyKey,
+      },
+      body: JSON.stringify({
+        from: input.from ?? getResendFromAddress(),
+        to: [input.to],
+        subject: input.subject,
+        html: input.html,
+        text: input.text,
+        attachments: input.attachments?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+        })),
+      }),
+      signal: AbortSignal.timeout(15000),
+    })
+  } catch {
+    throw new WeeklyEmailError('uncertain')
+  }
+  if (!response.ok) {
+    const retryHeader = response.headers.get('retry-after')
+    const seconds = retryHeader
+      ? Number(retryHeader) ||
+        Math.max(0, (Date.parse(retryHeader) - Date.now()) / 1000)
+      : 0
+    // 5xx can be ambiguous: never assume a rejected delivery unless the provider says so.
+    throw new WeeklyEmailError(
+      response.status === 429
+        ? 'retryable'
+        : response.status >= 500 || response.status === 408
+          ? 'uncertain'
+          : 'terminal',
+      Number.isFinite(seconds) ? seconds : 0,
+    )
+  }
+  try {
+    const result = (await response.json()) as { id?: string }
+    if (!result.id) throw new Error('Missing provider ID')
+    return { provider: 'resend', id: result.id }
+  } catch {
+    throw new WeeklyEmailError('uncertain')
+  }
 }

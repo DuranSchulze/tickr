@@ -189,7 +189,20 @@ export async function getMemberMonthlyReport(
 ): Promise<MemberMonthlyReport> {
   const access = await assertMemberReportAccess(data)
 
-  const timezone = access.workspace.timezone || 'UTC'
+  return buildMemberReport({ ...data, workspaceId: access.workspace.id })
+}
+
+/** Internal background-job entry point; callers must establish membership eligibility. */
+export async function buildMemberReport(
+  data: MemberMonthlyReportInput & { workspaceId: string; timezone?: string },
+): Promise<MemberMonthlyReport> {
+  const [workspace] = await db
+    .select({ timezone: workspaces.timezone })
+    .from(workspaces)
+    .where(eq(workspaces.id, data.workspaceId))
+    .limit(1)
+  if (!workspace) throw new Error('Workspace not found.')
+  const timezone = data.timezone ?? workspace.timezone ?? 'UTC'
   const range = getWorkspaceDateRange(data, timezone)
 
   // Get workspace defaults
@@ -199,7 +212,7 @@ export async function getMemberMonthlyReport(
       billableCurrency: workspaces.billableCurrency,
     })
     .from(workspaces)
-    .where(eq(workspaces.id, access.workspace.id))
+    .where(eq(workspaces.id, data.workspaceId))
     .limit(1)
 
   const defaultRate = workspaceRow
@@ -218,7 +231,7 @@ export async function getMemberMonthlyReport(
     .where(
       and(
         eq(workspaceMembers.id, data.memberId),
-        eq(workspaceMembers.workspaceId, access.workspace.id),
+        eq(workspaceMembers.workspaceId, data.workspaceId),
       ),
     )
     .limit(1)
@@ -248,7 +261,7 @@ export async function getMemberMonthlyReport(
     .leftJoin(projectTasks, eq(timeEntries.taskId, projectTasks.id))
     .where(
       and(
-        eq(timeEntries.workspaceId, access.workspace.id),
+        eq(timeEntries.workspaceId, data.workspaceId),
         eq(timeEntries.workspaceMemberId, data.memberId),
         isNotNull(timeEntries.endedAt),
         lt(timeEntries.startedAt, range.endExclusive),
@@ -279,7 +292,7 @@ export async function getMemberMonthlyReport(
   }
 
   const entryRateMap = await resolveEntryRateMap({
-    workspaceId: access.workspace.id,
+    workspaceId: data.workspaceId,
     defaultRate,
     memberRateById: new Map([
       [
