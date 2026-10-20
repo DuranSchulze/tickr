@@ -1,6 +1,29 @@
 {
-  "appVersion": "1.13.0",
+  "appVersion": "1.14.0",
   "updates": [
+    {
+      "version": "1.14.0",
+      "publishedAt": "2026-10-20",
+      "title": "Your Weekly Time Report, Automatically Emailed",
+      "body": "Get a PDF of your own completed time entries for each workspace, without repeating the manual export. Weekly report preferences are enabled by default; delivery begins when automatic reports are activated for your workspace.",
+      "features": [
+        {
+          "title": "A Personal PDF Every Sunday",
+          "description": "Reports start sending on Sundays at 8 AM in your workspace timezone and cover the previous Sunday through Saturday. Each email includes only your own entries, task details, and totals for that workspace.",
+          "image": null
+        },
+        {
+          "title": "Manage Delivery Beside Export My Time",
+          "description": "Open Weekly emails in the time tracker to turn delivery off or on, check your account email, see the next reporting period, and review the latest report status. Re-enabling resumes future reports.",
+          "image": null
+        },
+        {
+          "title": "Completed Work, Delivered Privately",
+          "description": "Empty weeks are skipped and running timers are excluded. Each member receives a separate email with their PDF attached, while reports are processed in batches for reliable delivery as the workspace grows.",
+          "image": null
+        }
+      ]
+    },
     {
       "version": "1.13.0",
       "publishedAt": "2026-10-04",

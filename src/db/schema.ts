@@ -390,6 +390,14 @@ export const workspaceMembers = pgTable(
       { onDelete: 'set null' },
     ),
     status: memberStatusEnum('status').notNull().default('INVITED'),
+    weeklyReportEmailEnabled: boolean('weekly_report_email_enabled')
+      .notNull()
+      .default(true),
+    weeklyReportEnabledAt: timestamp('weekly_report_enabled_at', {
+      withTimezone: true,
+    })
+      .notNull()
+      .defaultNow(),
     billableRate: numeric('billable_rate', { precision: 12, scale: 2 }),
     departmentId: varchar('department_id', { length: 30 }).references(
       () => departments.id,
@@ -1388,3 +1396,73 @@ export type SubscriptionStatus =
   (typeof subscriptionStatusEnum.enumValues)[number]
 export type SubscriptionPaymentStatus =
   (typeof subscriptionPaymentStatusEnum.enumValues)[number]
+
+// Durable weekly report scheduling and delivery. Payloads are cleared on completion.
+export const weeklyReportSchedules = pgTable(
+  'weekly_report_schedules',
+  {
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .primaryKey()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    timezone: varchar('timezone', { length: 80 }).notNull(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    memberCursor: varchar('member_cursor', { length: 30 })
+      .notNull()
+      .default(''),
+  },
+  (table) => [index('weekly_schedule_due_idx').on(table.dueAt)],
+)
+
+export const weeklyReportJobs = pgTable(
+  'weekly_report_jobs',
+  {
+    id: varchar('id', { length: 100 }).primaryKey(),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    memberId: varchar('member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    weekStart: date('week_start').notNull(),
+    weekEnd: date('week_end').notNull(),
+    timezone: varchar('timezone', { length: 80 }).notNull(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    status: text('status').notNull().default('pending'),
+    attempts: integer('attempts').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    firstAttemptAt: timestamp('first_attempt_at', { withTimezone: true }),
+    leaseUntil: timestamp('lease_until', { withTimezone: true }),
+    leaseToken: text('lease_token'),
+    payload: jsonb('payload'),
+    providerId: text('provider_id'),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('weekly_report_member_week_unique').on(
+      table.workspaceId,
+      table.memberId,
+      table.weekStart,
+    ),
+    index('weekly_report_pending_idx').on(table.status, table.nextAttemptAt),
+    index('weekly_report_retention_idx').on(table.updatedAt),
+    check(
+      'weekly_report_status_check',
+      sql`${table.status} in ('pending', 'processing', 'sent', 'skipped', 'retryable_failure', 'terminal_failure', 'uncertain')`,
+    ),
+  ],
+)
+
+export const weeklyReportThrottle = pgTable('weekly_report_throttle', {
+  id: text('id').primaryKey(),
+  nextAllowedAt: timestamp('next_allowed_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+})

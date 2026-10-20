@@ -1,8 +1,8 @@
 ---
-title: TimeTrackly has a new URL
-badge: Update
-link: https://timetrackly.com/
-linkLabel: Visit timetrackly.com
+title: Your weekly report, emailed
+badge: New
+link: /app/changelog
+linkLabel: See what's new
 ---
 
-TimeTrackly now lives at [timetrackly.com](https://timetrackly.com/) — same app and same data, just a cleaner address. Please update your bookmarks.
+Get your own completed time entries as a **weekly PDF email**, sent Sundays at 8 AM in your workspace timezone once delivery is activated. Manage your preference in **Weekly emails**, beside Export my time.

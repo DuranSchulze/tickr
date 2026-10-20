@@ -1,3 +1,4 @@
+import { WeeklyReportEmailsButton } from '#/components/time-tracker/shared/WeeklyReportEmailsButton'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Play, Square, X } from 'lucide-react'
@@ -628,10 +629,13 @@ export function TimeTrackerDashboard({
 
   const exportButton = useMemo(
     () => (
-      <MemberExportButton
-        memberId={state.currentMemberId}
-        label="Export my time"
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <MemberExportButton
+          memberId={state.currentMemberId}
+          label="Export my time"
+        />
+        <WeeklyReportEmailsButton memberId={state.currentMemberId} />
+      </div>
     ),
     [state.currentMemberId],
   )

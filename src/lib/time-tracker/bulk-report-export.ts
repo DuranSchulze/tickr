@@ -113,10 +113,10 @@ function summaryRows(report: BulkReport): [string, string][] {
  * Generates and downloads a grouped report PDF. Detailed reports use
  * landscape so all time and billing columns remain readable.
  */
-export async function downloadGroupedTimeReportPdf(
+export async function buildGroupedTimeReportPdf(
   report: BulkReport,
   options: GroupedReportExportOptions = {},
-): Promise<void> {
+) {
   // jsPDF + autotable are heavy; load them only when a PDF export is actually
   // requested instead of shipping them with every screen that can open the
   // export dialog.
@@ -194,8 +194,7 @@ export async function downloadGroupedTimeReportPdf(
   if (report.groups.length === 0) {
     doc.setFont('helvetica', 'italic')
     doc.text('No time entries match this selection.', margin, y)
-    doc.save(reportFilename(report, 'pdf', options.filenamePrefix))
-    return
+    return doc
   }
 
   for (const group of report.groups) {
@@ -295,6 +294,14 @@ export async function downloadGroupedTimeReportPdf(
     y = finalY + 24
   }
 
+  return doc
+}
+
+export async function downloadGroupedTimeReportPdf(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+): Promise<void> {
+  const doc = await buildGroupedTimeReportPdf(report, options)
   doc.save(reportFilename(report, 'pdf', options.filenamePrefix))
 }
 

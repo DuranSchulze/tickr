@@ -6,6 +6,7 @@ This folder documents how email sending currently works in Trackly, with emphasi
 - suspicious-login alerts
 - workspace invite emails
 - running-timer reminder emails
+- [weekly personal PDF reports](./weekly-personal-reports.md)
 - SMTP and Resend delivery behavior
 
 ## Current delivery architecture
@@ -21,6 +22,7 @@ This folder documents how email sending currently works in Trackly, with emphasi
 - Suspicious login alert: `src/lib/server/auth-security.server.ts` -> `renderSuspiciousLoginEmail(...)` -> `sendEmail(...)`
 - Workspace invite: `src/lib/server/workspace-invites.server.ts` -> `sendInviteEmail(...)`
 - Running timer reminder: `src/lib/server/tracker/timer-reminders.server.ts` -> `sendTimerReminderEmail(...)`
+- Weekly personal reports: cron → durable database queue → `sendWeeklyReportEmail(...)` (Resend only; no SMTP fallback)
 - Test panels:
   - SMTP: `src/lib/server/smtp-test.server.ts`
   - Resend/fallback chain: `src/lib/server/resend-test.server.ts`

@@ -212,7 +212,7 @@ export async function handleSignInRequest(request: Request): Promise<Response> {
         { status: 401 },
       )
     }
-    return issueTokenResponse(context, { keyId: context.keyId })
+    return await issueTokenResponse(context, { keyId: context.keyId })
   } catch (error) {
     return externalApiErrorResponse(error)
   }
@@ -234,7 +234,7 @@ export async function handleLoginRequest(request: Request): Promise<Response> {
       parsed.data.email,
       parsed.data.password,
     )
-    return issueTokenResponse(context, { user })
+    return await issueTokenResponse(context, { user })
   } catch (error) {
     return externalApiErrorResponse(error)
   }
@@ -312,7 +312,7 @@ export async function handleDeveloperSignInRequest(
         { status: 401 },
       )
     }
-    return issueTokenResponse(context, {
+    return await issueTokenResponse(context, {
       developerId: context.developerId,
       permissionLevel: context.permissionLevel,
     })

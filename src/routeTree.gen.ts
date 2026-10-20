@@ -57,6 +57,7 @@ import { Route as ApiV1DtrIntegrationRouteImport } from './routes/api/v1/dtr-int
 import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
 import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
 import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
+import { Route as ApiCronWeeklyReportsRouteImport } from './routes/api/cron/weekly-reports'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppWorkspaceMembersMemberIdRouteImport } from './routes/app/workspace/members.$memberId'
@@ -316,6 +317,11 @@ const ApiNewsletterSubscribeRoute = ApiNewsletterSubscribeRouteImport.update({
   path: '/api/newsletter/subscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronWeeklyReportsRoute = ApiCronWeeklyReportsRouteImport.update({
+  id: '/api/cron/weekly-reports',
+  path: '/api/cron/weekly-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCronTimerRemindersRoute = ApiCronTimerRemindersRouteImport.update({
   id: '/api/cron/timer-reminders',
   path: '/api/cron/timer-reminders',
@@ -433,6 +439,7 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
+  '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -499,6 +506,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
+  '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -566,6 +574,7 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
+  '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
@@ -634,6 +643,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
+    | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
+    | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -766,6 +777,7 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
+    | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
     | '/api/v1/clients'
     | '/api/v1/departments'
@@ -823,6 +835,7 @@ export interface RootRouteChildren {
   AuthIndexRoute: typeof AuthIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
+  ApiCronWeeklyReportsRoute: typeof ApiCronWeeklyReportsRoute
   ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
   ApiV1ClientsRoute: typeof ApiV1ClientsRoute
   ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
@@ -1179,6 +1192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNewsletterSubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/weekly-reports': {
+      id: '/api/cron/weekly-reports'
+      path: '/api/cron/weekly-reports'
+      fullPath: '/api/cron/weekly-reports'
+      preLoaderRoute: typeof ApiCronWeeklyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/cron/timer-reminders': {
       id: '/api/cron/timer-reminders'
       path: '/api/cron/timer-reminders'
@@ -1419,6 +1439,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthIndexRoute: AuthIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
+  ApiCronWeeklyReportsRoute: ApiCronWeeklyReportsRoute,
   ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
   ApiV1ClientsRoute: ApiV1ClientsRoute,
   ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
