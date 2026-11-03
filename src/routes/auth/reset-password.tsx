@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { AlertTriangle, CheckCircle2, KeyRound } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { AuthSplitLayout } from '#/components/auth/AuthSplitLayout'
 import { PasswordInput } from '#/components/ui/password-input'
@@ -64,7 +64,7 @@ function ResetPasswordPage() {
         return
       }
       setSuccess(true)
-      gooeyToast.success('Password updated')
+      toast.success('Password updated')
     } catch {
       setFormError('Something went wrong. Please try again.')
     } finally {

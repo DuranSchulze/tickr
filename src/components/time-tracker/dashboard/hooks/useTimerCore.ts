@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   loadPendingEntries,
   reconcilePendingEntries,
@@ -140,7 +140,7 @@ export function useTimerCore({
 
     if (reconciliation.orphaned.length > 0) {
       const count = reconciliation.orphaned.length
-      gooeyToast.success('Local entries refreshed', {
+      toast.success('Local entries refreshed', {
         description: `${count} stale local ${count === 1 ? 'entry was' : 'entries were'} removed. Your server records are unchanged.`,
       })
     }
@@ -564,7 +564,7 @@ export function useTimerCore({
     })
     upsertOptimisticStoppedEntry(stoppedEntry)
 
-    gooeyToast.success('Timer stopped')
+    toast.success('Timer stopped')
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
@@ -620,7 +620,7 @@ export function useTimerCore({
         removeOptimisticStoppedEntry(entryToStop.id)
         setTimerOperation({ kind: 'idle' })
         setOptimisticActiveEntry(entryToStop)
-        gooeyToast.error('Failed to stop timer', {
+        toast.error('Failed to stop timer', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       })
@@ -668,7 +668,7 @@ export function useTimerCore({
       optimisticId: optimisticEntry.id,
     })
     lastSyncedEntryIdRef.current = optimisticEntry.id
-    gooeyToast.success('Timer started')
+    toast.success('Timer started')
 
     const nextInput = {
       description,
@@ -748,7 +748,7 @@ export function useTimerCore({
         if (!operationHasToken(timerOperationRef.current, token)) return
         setOptimisticActiveEntry(null)
         setTimerOperation({ kind: 'idle' })
-        gooeyToast.error('Failed to start timer', {
+        toast.error('Failed to start timer', {
           description: 'Please try again.',
         })
       },
@@ -758,7 +758,7 @@ export function useTimerCore({
   async function resumeEntry(entry: TimeEntry) {
     if (activeEntry) {
       if (stopBlocked) {
-        gooeyToast.error('Finish the running timer details first', {
+        toast.error('Finish the running timer details first', {
           description:
             'Add the missing description, project, and tags before switching tasks.',
         })
@@ -766,7 +766,7 @@ export function useTimerCore({
       }
 
       if (!isOnline) {
-        gooeyToast.error('Reconnect to switch timers', {
+        toast.error('Reconnect to switch timers', {
           description:
             'The one-click switch needs a connection so the current timer can stop before the next one starts.',
         })
@@ -801,7 +801,7 @@ export function useTimerCore({
         upsertOptimisticStoppedEntry(stoppedEntry)
         upsertTrackerStateEntry(queryClient, stoppedEntry)
       } catch (err) {
-        gooeyToast.error('Failed to stop timer', {
+        toast.error('Failed to stop timer', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
         return
@@ -844,7 +844,7 @@ export function useTimerCore({
         state.currentMemberId,
         entryToDiscard.id,
       )
-      gooeyToast.success('Timer discarded')
+      toast.success('Timer discarded')
       return
     }
 
@@ -856,7 +856,7 @@ export function useTimerCore({
       entryId: entryToDiscard.id,
     })
 
-    gooeyToast.success('Timer discarded')
+    toast.success('Timer discarded')
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
@@ -890,7 +890,7 @@ export function useTimerCore({
           return
         }
         setTimerOperation({ kind: 'idle' })
-        gooeyToast.error('Failed to discard timer', {
+        toast.error('Failed to discard timer', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       })

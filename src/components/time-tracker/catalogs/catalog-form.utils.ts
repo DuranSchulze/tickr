@@ -1,4 +1,4 @@
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import type { useRouter } from '@tanstack/react-router'
 
 export function parseBulkNames(raw: string): string[] {
@@ -20,11 +20,11 @@ export async function runBulk<T>(
   const succeeded = results.filter((r) => r.status === 'fulfilled').length
   const failed = results.filter((r) => r.status === 'rejected').length
   if (succeeded > 0) {
-    gooeyToast.success(
+    toast.success(
       `${succeeded} ${label}${succeeded > 1 ? 's' : ''} created${failed > 0 ? `, ${failed} failed` : ''}`,
     )
     onSuccess?.()
   } else {
-    gooeyToast.error(`Failed to create ${label}s`)
+    toast.error(`Failed to create ${label}s`)
   }
 }

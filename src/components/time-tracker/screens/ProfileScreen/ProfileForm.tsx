@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { useRouter, useBlocker } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Cake } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Label } from '#/components/ui/label'
@@ -296,7 +296,7 @@ export function ProfileForm({
     setErrors(next)
     if (hasProfileErrors(next)) {
       savingRef.current = false
-      gooeyToast.error('Check profile fields', {
+      toast.error('Check profile fields', {
         description:
           Object.values(next).find((message) => message.length > 0) ??
           'Please fix the highlighted fields.',
@@ -340,9 +340,9 @@ export function ProfileForm({
       })
       await queryClient.invalidateQueries({ queryKey: ['self-profile'] })
       await router.invalidate()
-      gooeyToast.success('Profile updated')
+      toast.success('Profile updated')
     } catch (err) {
-      gooeyToast.error('Could not update profile', {
+      toast.error('Could not update profile', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

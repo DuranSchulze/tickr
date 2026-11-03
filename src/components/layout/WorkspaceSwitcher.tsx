@@ -9,7 +9,7 @@ import {
   Loader2,
   Plus,
 } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import {
   DropdownMenu,
@@ -60,7 +60,7 @@ export function WorkspaceSwitcher({
       await setActiveWorkspaceFn({ data: { slug } })
       window.location.assign('/app/time-tracker')
     } catch (err) {
-      gooeyToast.error('Could not switch workspace', {
+      toast.error('Could not switch workspace', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     }
@@ -75,7 +75,7 @@ export function WorkspaceSwitcher({
     e.preventDefault()
     const name = wsName.trim()
     if (name.length < 2) {
-      gooeyToast.error('Name too short', {
+      toast.error('Name too short', {
         description: 'Workspace name must be at least 2 characters.',
       })
       return
@@ -85,12 +85,12 @@ export function WorkspaceSwitcher({
       const created = await createWorkspaceFn({ data: { name } })
       await queryClient.invalidateQueries({ queryKey: ['user-workspaces'] })
       setShowCreate(false)
-      gooeyToast.success(`"${created.name}" created`, {
+      toast.success(`"${created.name}" created`, {
         description: 'Switching you over now…',
       })
       window.location.assign('/app/time-tracker')
     } catch (err) {
-      gooeyToast.error('Could not create workspace', {
+      toast.error('Could not create workspace', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

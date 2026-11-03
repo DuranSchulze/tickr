@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Pencil } from 'lucide-react'
 import { updateWorkspaceSettingsFn } from '#/lib/server/tracker'
 import type { Workspace } from '#/lib/time-tracker/types'
@@ -26,10 +26,10 @@ export function WorkspaceInfoPanel({
     try {
       await updateWorkspaceSettingsFn({ data: { name, timezone } })
       await router.invalidate()
-      gooeyToast.success('Settings saved')
+      toast.success('Settings saved')
       setEditing(false)
     } catch (err) {
-      gooeyToast.error('Could not save settings', {
+      toast.error('Could not save settings', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

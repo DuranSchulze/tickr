@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Archive, CheckCircle, MoreHorizontal, Pencil } from 'lucide-react'
 import {
   activateTagFn,
@@ -89,9 +89,9 @@ export function TagsTablePage({
       await archiveTagFn({ data: { id: tag.id } })
       await router.invalidate()
       publishTaskChange()
-      gooeyToast.success(`"${tag.name}" archived`)
+      toast.success(`"${tag.name}" archived`)
     } catch (err) {
-      gooeyToast.error('Failed to archive', {
+      toast.error('Failed to archive', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -105,9 +105,9 @@ export function TagsTablePage({
       await activateTagFn({ data: { id: tag.id } })
       await router.invalidate()
       publishTaskChange()
-      gooeyToast.success(`"${tag.name}" activated`)
+      toast.success(`"${tag.name}" activated`)
     } catch (err) {
-      gooeyToast.error('Failed to activate', {
+      toast.error('Failed to activate', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -264,7 +264,7 @@ export function TagsTablePage({
           }
           await router.invalidate()
           publishTaskChange()
-          gooeyToast.success(
+          toast.success(
             `${ids.length} tag${ids.length === 1 ? '' : 's'} ${action === 'activate' ? 'activated' : 'archived'}`,
           )
         }}

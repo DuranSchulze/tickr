@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { KeyRound, X } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
 import { PasswordInput } from '#/components/ui/password-input'
@@ -35,15 +35,15 @@ export function ChangePasswordDialog({ onClose }: { onClose: () => void }) {
         revokeOtherSessions: false,
       })
       if (result.error) {
-        gooeyToast.error('Could not change password', {
+        toast.error('Could not change password', {
           description: result.error.message ?? 'Please try again.',
         })
         return
       }
-      gooeyToast.success('Password changed successfully')
+      toast.success('Password changed successfully')
       onClose()
     } catch {
-      gooeyToast.error('Something went wrong', {
+      toast.error('Something went wrong', {
         description: 'Please try again.',
       })
     } finally {

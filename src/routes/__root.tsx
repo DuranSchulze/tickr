@@ -5,7 +5,7 @@ import {
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
-import 'goey-toast/styles.css'
+import 'sileo/styles.css'
 import { Button } from '../components/ui/button'
 import { Monitoring } from '../components/dev/Monitoring'
 
@@ -14,12 +14,10 @@ import { BRAND } from '#/lib/brand'
 
 import type { QueryClient } from '@tanstack/react-query'
 
-// The toast library (goey-toast + sonner) is ~190 KB. Mount the toaster only
-// after first paint on the client so it never competes with the initial load —
-// toasts are triggered by user actions, which can't happen before then.
-// Imperative toast calls go through the matching lazy facade in #/lib/toast.
-const GooeyToaster = lazy(() =>
-  import('goey-toast').then((mod) => ({ default: mod.GooeyToaster })),
+// Load the toast renderer after the client mounts to keep it out of the
+// initial render. Toast calls use the matching lazy helper in #/lib/toast.
+const Toaster = lazy(() =>
+  import('sileo').then((mod) => ({ default: mod.Toaster })),
 )
 
 // oxlint-disable-next-line react/only-export-components
@@ -29,7 +27,16 @@ function DeferredToaster() {
   if (!mounted) return null
   return (
     <Suspense fallback={null}>
-      <GooeyToaster position="top-right" />
+      <Toaster
+        position="top-right"
+        options={{
+          fill: 'var(--foreground)',
+          styles: {
+            title: 'text-background!',
+            description: 'text-background/80!',
+          },
+        }}
+      />
     </Suspense>
   )
 }

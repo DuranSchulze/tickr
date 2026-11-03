@@ -14,7 +14,7 @@ import { deleteTimerPresetFn, listTimerPresetsFn } from '#/lib/server/tracker'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { useNetworkStatus } from '#/lib/time-tracker/useNetworkStatus'
 import type { Client, Project, Tag } from '#/lib/time-tracker/types'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { SavePresetDialog } from './SavePresetDialog'
 
 type PresetDropdownProps = {
@@ -96,7 +96,7 @@ export function PresetDropdown({
       await deleteTimerPresetFn({ data: { id: presetId } })
     } catch (err) {
       queryClient.setQueryData(presetsQueryKey, previous)
-      gooeyToast.error('Could not delete preset', {
+      toast.error('Could not delete preset', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })

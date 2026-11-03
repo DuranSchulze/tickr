@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Loader2, Mail } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { createWorkspaceInviteFn } from '#/lib/server/workspace-invites'
 import {
   Dialog,
@@ -74,7 +74,7 @@ export function InviteMemberDialog({
     await router.invalidate()
 
     if (successCount > 0) {
-      gooeyToast.success(`Invitation${successCount > 1 ? 's' : ''} sent`, {
+      toast.success(`Invitation${successCount > 1 ? 's' : ''} sent`, {
         description:
           successCount === 1
             ? `${emails[0]} will receive an email with a link to join.`
@@ -86,7 +86,7 @@ export function InviteMemberDialog({
         .map((f) => `${f.email}: ${f.error}`)
         .join('; ')
       const suffix = errors.length > 3 ? ` (and ${errors.length - 3} more)` : ''
-      gooeyToast.error('Could not send invitations', {
+      toast.error('Could not send invitations', {
         description: `${failCount} invitation${failCount > 1 ? 's' : ''} failed. ${errorMessages}${suffix}`,
       })
     }

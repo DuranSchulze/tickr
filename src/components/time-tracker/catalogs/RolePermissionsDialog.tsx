@@ -15,7 +15,7 @@ import type {
   PermissionKey,
   PermissionOverrides,
 } from '#/lib/rbac/permissions'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { canManageRoleTarget } from '#/lib/rbac/authorization'
 import { Button } from '#/components/ui/button'
 import {
@@ -91,12 +91,12 @@ export function RolePermissionsDialog({
       await updateWorkspaceRolePermissionsFn({
         data: { roleId: role.id, overrides },
       })
-      gooeyToast.success('Permissions updated', {
+      toast.success('Permissions updated', {
         description: `${role.name}'s access is now up to date.`,
       })
       await onSaved()
     } catch (error) {
-      gooeyToast.error('Could not update permissions', {
+      toast.error('Could not update permissions', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })

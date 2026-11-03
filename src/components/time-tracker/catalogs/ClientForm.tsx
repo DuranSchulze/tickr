@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { createClientFn } from '#/lib/server/tracker'
 import type { ClientStatus } from '#/db/schema'
 import {
@@ -63,7 +63,7 @@ export function ClientForm({
       parsedRate != null &&
       (!Number.isFinite(parsedRate) || parsedRate < 0)
     ) {
-      gooeyToast.error('Enter a valid default billable rate')
+      toast.error('Enter a valid default billable rate')
       return
     }
     dispatch({ pending: true })
@@ -77,7 +77,7 @@ export function ClientForm({
           },
         })
         await router.invalidate()
-        gooeyToast.success('Client created')
+        toast.success('Client created')
         dispatch({ name: '', defaultBillableRate: '', status: 'ACTIVE' })
         publishTaskChange()
         onSuccess?.()
@@ -96,7 +96,7 @@ export function ClientForm({
         dispatch({ bulkNames: '' })
       }
     } catch (err) {
-      gooeyToast.error('Could not create client', {
+      toast.error('Could not create client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

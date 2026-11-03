@@ -22,9 +22,9 @@ import { PresetDropdown } from './PresetDropdown'
 import { TimerMobileControls } from './TimerMobileControls'
 import type { EntryLocationCaptureStatus } from '#/lib/time-tracker/device-location'
 import {
-  isTimeInputWithSeconds,
-  patchDateAndTimeWithSeconds,
-  toTimeInputWithSeconds,
+  isTimeInputMinutes,
+  patchDateAndTimeWithMinutes,
+  toTimeInputMinutes,
 } from '#/lib/time-tracker/entry-timing'
 
 // Small hover hint (same pattern as the pickers' tooltips) that surfaces the
@@ -161,15 +161,15 @@ export function TimerPanel({
 
   function openStartedEdit() {
     if (!activeEntry) return
-    setDraftStarted(toTimeInputWithSeconds(activeEntry.startedAt))
+    setDraftStarted(toTimeInputMinutes(activeEntry.startedAt))
     setEditStarted(true)
   }
 
   function commitStartedAt() {
     setEditStarted(false)
-    if (!activeEntry || !isTimeInputWithSeconds(draftStarted)) return
+    if (!activeEntry || !isTimeInputMinutes(draftStarted)) return
     const updated = new Date(
-      patchDateAndTimeWithSeconds(
+      patchDateAndTimeWithMinutes(
         activeEntry.startedAt,
         new Date(activeEntry.startedAt),
         draftStarted,
@@ -414,13 +414,13 @@ export function TimerPanel({
               </div>
 
               {/* Editable start time */}
-              <div className="mt-1.5 flex items-center gap-1.5 text-xs text-smoke">
+              <div className="mt-1.5 flex min-h-9 flex-wrap items-center gap-2 text-xs text-smoke">
                 <span>Started at</span>
                 {editStarted ? (
                   <input
                     type="time"
-                    step="1"
-                    className="rounded border border-stone bg-eggshell px-1 py-px text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                    step="60"
+                    className="h-9 w-[6.75rem] rounded-md border-2 border-stone bg-warm-taupe/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors hover:border-stone/80 focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15"
                     value={draftStarted}
                     onChange={(e) => setDraftStarted(e.target.value)}
                     onBlur={commitStartedAt}
@@ -431,22 +431,24 @@ export function TimerPanel({
                     aria-label="Started at"
                   />
                 ) : (
-                  <span className="flex items-center gap-1">
-                    <span className="font-semibold text-foreground">
+                  <button
+                    type="button"
+                    onClick={openStartedEdit}
+                    className="inline-flex h-9 w-[6.75rem] items-center justify-between gap-1 rounded-md border-2 border-stone bg-warm-taupe/30 px-2 text-sm font-semibold tabular-nums text-foreground outline-none transition-colors hover:border-stone/80 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/15"
+                    aria-label="Edit start time"
+                    title="Edit start time"
+                  >
+                    <span>
                       {new Date(activeEntry.startedAt).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
                     </span>
-                    <button
-                      type="button"
-                      onClick={openStartedEdit}
-                      className="rounded-full p-0.5 text-smoke transition-colors hover:bg-accent hover:text-foreground"
-                      title="Edit start time"
-                    >
-                      <Pencil className="size-3" />
-                    </button>
-                  </span>
+                    <Pencil
+                      aria-hidden="true"
+                      className="size-3 shrink-0 text-smoke"
+                    />
+                  </button>
                 )}
               </div>
             </div>

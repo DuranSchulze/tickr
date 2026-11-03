@@ -1,6 +1,6 @@
 import { Fragment, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Copy, Play } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { getEntrySeconds } from '#/lib/time-tracker/store'
 import { getFormatterLiveTickMs } from '#/lib/time-tracker/useTimeFormat'
 import type { Project, TimeEntry, ViewMode } from '#/lib/time-tracker/types'
@@ -144,9 +144,9 @@ async function writeClipboardText(text: string) {
 async function copyDayDtrRow(group: DayGroup, runningEntry?: TimeEntry | null) {
   try {
     await writeClipboardText(getDayDtrRow(group, runningEntry))
-    gooeyToast.success('DTR row copied')
+    toast.success('DTR row copied')
   } catch {
-    gooeyToast.error('Could not copy DTR row')
+    toast.error('Could not copy DTR row')
   }
 }
 

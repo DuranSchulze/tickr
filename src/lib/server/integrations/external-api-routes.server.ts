@@ -12,6 +12,7 @@ import {
 } from './external-api-auth.server'
 import { developerSignInSchema } from './developer-accounts.shared'
 import { registerTracklyUserAccount } from './external-api-user-auth.server'
+import { recordAuthResult, reserveAuthAttempt } from '../auth-abuse.server'
 import {
   clientsListQuerySchema,
   departmentsListQuerySchema,
@@ -57,6 +58,26 @@ function invalidBodyResponse(): Response {
       },
     },
     { status: 400 },
+  )
+}
+
+/**
+ * 429 for a reserved-but-denied attempt. `Retry-After` is the only signal a
+ * client needs; the body stays generic so it cannot be used to enumerate
+ * accounts.
+ */
+function rateLimitedResponse(retryAfterSeconds: number): Response {
+  return jsonResponse(
+    {
+      error: {
+        code: 'rate_limited',
+        message: 'Too many authentication attempts. Please try again later.',
+      },
+    },
+    {
+      status: 429,
+      headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) },
+    },
   )
 }
 
@@ -229,13 +250,22 @@ export async function handleLoginRequest(request: Request): Promise<Response> {
   const parsed = externalApiLoginSchema.safeParse(body)
   if (!parsed.success) return validationError(parsed.error)
 
+  const attempt = await reserveAuthAttempt({
+    operation: 'login',
+    email: parsed.data.email,
+    request,
+  })
+  if (!attempt.admitted) return rateLimitedResponse(attempt.retryAfterSeconds)
+
   try {
     const { context, user } = await authenticateUserCredentials(
       parsed.data.email,
       parsed.data.password,
     )
+    await recordAuthResult(attempt, 'success')
     return await issueTokenResponse(context, { user })
   } catch (error) {
+    await recordAuthResult(attempt, 'failure')
     return externalApiErrorResponse(error)
   }
 }
@@ -255,6 +285,13 @@ export async function handleRegisterRequest(
   const parsed = externalApiRegisterSchema.safeParse(body)
   if (!parsed.success) return validationError(parsed.error)
 
+  const attempt = await reserveAuthAttempt({
+    operation: 'register',
+    email: parsed.data.email,
+    request,
+  })
+  if (!attempt.admitted) return rateLimitedResponse(attempt.retryAfterSeconds)
+
   let user: { id: string; name: string; email: string }
   try {
     user = await registerTracklyUserAccount({
@@ -264,8 +301,11 @@ export async function handleRegisterRequest(
       headers: request.headers,
     })
   } catch (error) {
+    await recordAuthResult(attempt, 'failure')
     return registrationErrorResponse(error)
   }
+
+  await recordAuthResult(attempt, 'success')
 
   const context = await resolveUserContext(user.id, user.email)
   if (!context) {
@@ -296,12 +336,20 @@ export async function handleDeveloperSignInRequest(
   const parsed = developerSignInSchema.safeParse(body)
   if (!parsed.success) return validationError(parsed.error)
 
+  const attempt = await reserveAuthAttempt({
+    operation: 'developer_login',
+    email: parsed.data.email,
+    request,
+  })
+  if (!attempt.admitted) return rateLimitedResponse(attempt.retryAfterSeconds)
+
   try {
     const context = await authenticateDeveloperCredentials(
       parsed.data.email,
       parsed.data.password,
     )
     if (!context.developerId || !context.permissionLevel) {
+      await recordAuthResult(attempt, 'failure')
       return jsonResponse(
         {
           error: {
@@ -312,11 +360,13 @@ export async function handleDeveloperSignInRequest(
         { status: 401 },
       )
     }
+    await recordAuthResult(attempt, 'success')
     return await issueTokenResponse(context, {
       developerId: context.developerId,
       permissionLevel: context.permissionLevel,
     })
   } catch (error) {
+    await recordAuthResult(attempt, 'failure')
     return externalApiErrorResponse(error)
   }
 }

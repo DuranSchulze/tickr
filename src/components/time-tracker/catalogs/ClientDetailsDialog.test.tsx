@@ -15,7 +15,7 @@ vi.mock('#/lib/server/tracker/catalogs/client-related', () => ({
   getClientRelatedFn: fetchRelated,
 }))
 vi.mock('#/lib/toast', () => ({
-  gooeyToast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn() },
 }))
 vi.mock('@tanstack/react-router', () => ({
   Link: ({

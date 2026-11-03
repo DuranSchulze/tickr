@@ -40,6 +40,7 @@ export function CalendarScreen({
   return (
     <div className="mx-auto grid w-full max-w-7xl min-w-0 gap-6">
       <CalendarHeader
+        todayDate={calendar.todayDate}
         month={calendar.month}
         view={view}
         selectedDate={selectedDate}
@@ -56,6 +57,7 @@ export function CalendarScreen({
         />
       )}
       <CalendarGrid
+        todayDate={calendar.todayDate}
         month={calendar.month}
         view={view}
         selectedDate={selectedDate}

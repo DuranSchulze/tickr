@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { createCohortFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { Combobox } from '#/components/ui/combobox'
@@ -46,7 +46,7 @@ export function CohortForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!departmentId) {
-      gooeyToast.error('Select a department first')
+      toast.error('Select a department first')
       return
     }
     dispatch({ pending: true })
@@ -54,7 +54,7 @@ export function CohortForm({
       if (mode === 'single') {
         await createCohortFn({ data: { name, departmentId } })
         await router.invalidate()
-        gooeyToast.success('Cohort created')
+        toast.success('Cohort created')
         dispatch({ name: '' })
         onSuccess?.()
       } else {
@@ -69,7 +69,7 @@ export function CohortForm({
         dispatch({ bulkNames: '' })
       }
     } catch (err) {
-      gooeyToast.error('Could not create cohort', {
+      toast.error('Could not create cohort', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

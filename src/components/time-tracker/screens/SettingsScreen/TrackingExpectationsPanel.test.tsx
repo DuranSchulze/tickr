@@ -23,7 +23,7 @@ vi.mock('#/lib/server/tracker', () => ({
 }))
 
 vi.mock('#/lib/toast', () => ({
-  gooeyToast: {
+  toast: {
     success: (...args: unknown[]) => toastSuccess(...args),
     error: (...args: unknown[]) => toastError(...args),
   },
@@ -43,9 +43,9 @@ const workspace: Workspace = {
 }
 
 function findButtonByText(container: HTMLElement, text: string) {
-  return Array.from(container.querySelectorAll<HTMLButtonElement>('button')).find(
-    (button) => button.textContent === text,
-  )
+  return Array.from(
+    container.querySelectorAll<HTMLButtonElement>('button'),
+  ).find((button) => button.textContent === text)
 }
 
 describe('TrackingExpectationsPanel', () => {

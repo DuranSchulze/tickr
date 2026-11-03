@@ -17,7 +17,7 @@ import {
 } from '#/lib/time-tracker/location-history-query'
 import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
 import { refreshEntryLocationFn } from '#/lib/server/tracker'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   closeLocationPanel,
   getLocationHistoryViewState,
@@ -82,10 +82,10 @@ export function LocationHistoryScreen({
         queryKey: locationHistoryQueryKey,
         exact: true,
       })
-      gooeyToast.success('Entry location updated')
+      toast.success('Entry location updated')
     },
     onError: (error) => {
-      gooeyToast.error('Location refresh failed', {
+      toast.error('Location refresh failed', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })

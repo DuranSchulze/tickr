@@ -1,7 +1,7 @@
 import { useMemo, useReducer } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Pencil, Trash2, Users } from 'lucide-react'
 import { deleteDepartmentFn } from '#/lib/server/tracker'
 import type { PaginatedDepartment } from '#/lib/server/tracker/catalogs/paginated.server'
@@ -68,9 +68,9 @@ export function DepartmentsTablePage({
     try {
       await deleteDepartmentFn({ data: { id: dept.id } })
       await router.invalidate()
-      gooeyToast.success(`"${dept.name}" deleted`)
+      toast.success(`"${dept.name}" deleted`)
     } catch (err) {
-      gooeyToast.error('Failed to delete', {
+      toast.error('Failed to delete', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

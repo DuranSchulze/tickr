@@ -23,7 +23,7 @@ import {
   purgeWorkspaceLocationDataFn,
   updateWorkspaceLocationTrackingFn,
 } from '#/lib/server/tracker'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import { cn } from '#/lib/utils'
 
@@ -59,12 +59,12 @@ export function LocationTrackingPanel({
       updateWorkspaceLocationTrackingFn({ data: { enabled } }),
     onSuccess: async ({ enabled }) => {
       await refreshLocationData()
-      gooeyToast.success(
+      toast.success(
         enabled ? 'Location tracking enabled' : 'Location tracking disabled',
       )
     },
     onError: (error) => {
-      gooeyToast.error('Could not update location tracking', {
+      toast.error('Could not update location tracking', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })
@@ -78,12 +78,12 @@ export function LocationTrackingPanel({
       setDialogOpen(false)
       setConfirmation('')
       await refreshLocationData()
-      gooeyToast.success('Location history erased', {
+      toast.success('Location history erased', {
         description: `Removed origin data from ${purgedEntryCount.toLocaleString()} ${purgedEntryCount === 1 ? 'entry' : 'entries'}.`,
       })
     },
     onError: (error) => {
-      gooeyToast.error('Could not erase location history', {
+      toast.error('Could not erase location history', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })
@@ -99,7 +99,7 @@ export function LocationTrackingPanel({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      gooeyToast.error('Could not copy', {
+      toast.error('Could not copy', {
         description: `Type "${workspaceName}" manually instead.`,
       })
     }

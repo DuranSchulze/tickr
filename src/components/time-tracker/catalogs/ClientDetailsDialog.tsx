@@ -2,7 +2,7 @@ import { lazy, Suspense, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Copy, Loader2, Pencil, Plus } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   Dialog,
   DialogContent,
@@ -92,9 +92,9 @@ export function ClientDetailsDialog({
       await writeClipboardText(
         formatClientRelatedList({ clientName: client.name, kind, items }),
       )
-      gooeyToast.success(`Copied ${items.length} ${kind}`)
+      toast.success(`Copied ${items.length} ${kind}`)
     } catch {
-      gooeyToast.error(`Could not copy ${kind}`)
+      toast.error(`Could not copy ${kind}`)
     } finally {
       setCopying(false)
     }

@@ -5,12 +5,12 @@ import {
   addWeeks,
   formatMonthTitle,
   formatWeekTitle,
-  toMonthKey,
 } from './calendar.utils'
 import type { CalendarView } from './calendar.utils'
 
 export function CalendarHeader({
   month,
+  todayDate,
   view,
   selectedDate,
   eyebrow = 'Calendar',
@@ -18,6 +18,7 @@ export function CalendarHeader({
   onChangeCalendar,
 }: {
   month: string
+  todayDate: string
   view: CalendarView
   selectedDate: string
   eyebrow?: string
@@ -28,9 +29,8 @@ export function CalendarHeader({
     date?: string
   }) => void
 }) {
-  const today = new Date()
-  const currentMonth = toMonthKey(today)
-  const currentDate = today.toISOString().slice(0, 10)
+  const currentDate = todayDate
+  const currentMonth = currentDate.slice(0, 7)
   const title =
     view === 'week' ? formatWeekTitle(selectedDate) : formatMonthTitle(month)
 

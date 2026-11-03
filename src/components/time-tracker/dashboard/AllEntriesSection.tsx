@@ -6,8 +6,7 @@ import { Button } from '#/components/ui/button'
 import { groupEntriesByDay, withActiveEntryDayGroup } from './entries-grouping'
 import { DayGroupsList } from './DayGroupEntries'
 import type { BillableFilter, SortKey } from './hooks/useEntriesFilterSort'
-import { EntriesFilters } from './EntriesFilters'
-import { EntriesDateRangeFilter } from './EntriesDateRangeFilter'
+import { EntriesFiltersDialog } from './EntriesFiltersDialog'
 import type { EntriesDateRange } from './EntriesDateRangeFilter'
 
 type InlinePatch = Partial<
@@ -91,7 +90,6 @@ export function AllEntriesSection({
   onDuplicate: (id: string) => void
   onDelete: (id: string) => void
 }) {
-  const [showFilters, setShowFilters] = useState(false)
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(
     () => new Set(),
   )
@@ -191,34 +189,15 @@ export function AllEntriesSection({
                 )}
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => setShowFilters((s) => !s)}
-              className="text-xs font-semibold text-smoke hover:text-foreground"
-            >
-              {showFilters ? 'Hide filters' : 'Filters'}
-            </button>
-          </div>
-        </div>
-
-        {showFilters && (
-          <div className="mt-3 grid gap-3 rounded-xl border border-stone bg-warm-taupe p-3">
-            <div className="grid gap-1.5">
-              <span className="text-xs font-semibold text-smoke">
-                Date range
-              </span>
-              <EntriesDateRangeFilter
-                range={dateRange}
-                onChange={onDateRangeChange}
-              />
-            </div>
-            <EntriesFilters
+            <EntriesFiltersDialog
               projects={projects}
               tags={tags}
-              {...filterControls}
+              dateRange={dateRange}
+              onDateRangeChange={onDateRangeChange}
+              filterControls={filterControls}
             />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Running entry is pinned inside the entries table by DayGroupsList. */}

@@ -1,18 +1,9 @@
-// Lazy facade over goey-toast. The real library (goey-toast + sonner,
-// ~190 KB) is loaded on demand instead of being statically imported by every
-// screen that can show a toast — keeping it out of the initial bundle.
-//
-// Import `gooeyToast` from here (`#/lib/toast`), not from 'goey-toast'.
+import type { SileoOptions, sileo } from 'sileo'
 
-type ToastOptions = { description?: string }
-
-// Structural subset of goey-toast's `gooeyToast` API — only the methods this
-// codebase actually calls.
-type ToastApi = {
-  success: (message: string, options?: ToastOptions) => unknown
-  error: (message: string, options?: ToastOptions) => unknown
-  warning: (message: string, options?: ToastOptions) => unknown
-}
+// Keep the notification library out of screens' initial bundles. This adapter
+// preserves the app's message + description API while using Sileo to render.
+type ToastOptions = Pick<SileoOptions, 'description'>
+type ToastApi = Pick<typeof sileo, 'success' | 'error' | 'warning'>
 
 let api: ToastApi | undefined
 let loading: Promise<ToastApi> | undefined
@@ -22,18 +13,24 @@ function withToast(show: (toast: ToastApi) => void): void {
     show(api)
     return
   }
-  loading ??= import('goey-toast').then((mod) => {
-    api = mod.gooeyToast
+  loading ??= import('sileo').then((mod) => {
+    api = mod.sileo
     return api
   })
   void loading.then(show)
 }
 
-export const gooeyToast = {
+export const toast = {
   success: (message: string, options?: ToastOptions) =>
-    withToast((toast) => toast.success(message, options)),
+    withToast((notification) =>
+      notification.success({ ...options, title: message }),
+    ),
   error: (message: string, options?: ToastOptions) =>
-    withToast((toast) => toast.error(message, options)),
+    withToast((notification) =>
+      notification.error({ ...options, title: message }),
+    ),
   warning: (message: string, options?: ToastOptions) =>
-    withToast((toast) => toast.warning(message, options)),
+    withToast((notification) =>
+      notification.warning({ ...options, title: message }),
+    ),
 }

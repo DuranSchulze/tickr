@@ -16,6 +16,22 @@ export function toMonthKey(date: Date): string {
   return date.toISOString().slice(0, 7)
 }
 
+const workspaceDateFormatters = new Map<string, Intl.DateTimeFormat>()
+
+export function workspaceDateKey(date: Date, timezone: string): string {
+  let formatter = workspaceDateFormatters.get(timezone)
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    workspaceDateFormatters.set(timezone, formatter)
+  }
+  return formatter.format(date)
+}
+
 export function parseMonthKey(month: string): Date {
   const [year, monthNumber] = month.split('-').map(Number)
   return new Date(Date.UTC(year, monthNumber - 1, 1))
@@ -45,13 +61,16 @@ export function formatMonthTitle(month: string): string {
   }).format(parseMonthKey(month))
 }
 
-export function buildCalendarDays(month: string): CalendarDay[] {
+export function buildCalendarDays(
+  month: string,
+  timezone = 'UTC',
+  todayKey = workspaceDateKey(new Date(), timezone),
+): CalendarDay[] {
   const monthStart = parseMonthKey(month)
   const monthIndex = monthStart.getUTCMonth()
   const mondayFirstOffset = (monthStart.getUTCDay() + 6) % 7
   const gridStart = new Date(monthStart)
   gridStart.setUTCDate(gridStart.getUTCDate() - mondayFirstOffset)
-  const todayKey = toDateKey(new Date())
 
   return Array.from({ length: 42 }, (_, index) => {
     const date = new Date(gridStart)
@@ -68,13 +87,16 @@ export function buildCalendarDays(month: string): CalendarDay[] {
   })
 }
 
-export function buildWeekDays(dateKey: string): CalendarDay[] {
+export function buildWeekDays(
+  dateKey: string,
+  timezone = 'UTC',
+  todayKey = workspaceDateKey(new Date(), timezone),
+): CalendarDay[] {
   const selected = new Date(`${dateKey}T00:00:00.000Z`)
   const mondayFirstOffset = (selected.getUTCDay() + 6) % 7
   const weekStart = new Date(selected)
   weekStart.setUTCDate(selected.getUTCDate() - mondayFirstOffset)
   const selectedMonth = selected.getUTCMonth()
-  const todayKey = toDateKey(new Date())
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(weekStart)

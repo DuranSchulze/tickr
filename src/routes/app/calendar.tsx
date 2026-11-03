@@ -1,3 +1,5 @@
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
+import { workspaceDateKey } from '#/components/time-tracker/calendar/calendar.utils'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CalendarScreen } from '#/components/time-tracker/calendar/CalendarScreen'
 import { getCalendarPageFn } from '#/lib/server/tracker'
@@ -7,20 +9,6 @@ import type { CalendarSearchState } from '#/components/time-tracker/calendar/cal
 
 const monthPattern = /^\d{4}-(0[1-9]|1[0-2])$/
 const datePattern = /^\d{4}-(0[1-9]|1[0-2])-\d{2}$/
-
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7)
-}
-
-function getCurrentDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function resolveMonth(search: CalendarSearchState): string {
-  return search.month && monthPattern.test(search.month)
-    ? search.month
-    : getCurrentMonth()
-}
 
 export const Route = createFileRoute('/app/calendar')({
   validateSearch: (search: Record<string, unknown>): CalendarSearchState => ({
@@ -39,15 +27,26 @@ export const Route = createFileRoute('/app/calendar')({
         : undefined,
   }),
   loaderDeps: ({ search }) => ({
-    month: resolveMonth(search),
+    month: search.month,
     memberId: search.memberId,
   }),
-  loader: ({ context, deps }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: trackerKeys.calendar(deps),
-      queryFn: () => getCalendarPageFn({ data: deps }),
+  loader: async ({ context, deps }) => {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    const resolved = {
+      ...deps,
+      month:
+        deps.month ??
+        workspaceDateKey(new Date(), access.workspace.timezone || 'UTC').slice(
+          0,
+          7,
+        ),
+    }
+    return context.queryClient.ensureQueryData({
+      queryKey: trackerKeys.calendar(resolved),
+      queryFn: () => getCalendarPageFn({ data: resolved }),
       staleTime: 60_000,
-    }),
+    })
+  },
   staleTime: 60_000,
   component: CalendarRoute,
 })
@@ -67,7 +66,7 @@ function CalendarRoute() {
     navigateToCalendar(navigate, {
       month: next.month,
       view: next.view ?? search.view ?? 'month',
-      date: next.date ?? search.date ?? getCurrentDate(),
+      date: next.date ?? search.date ?? calendar.todayDate,
       memberId: search.memberId,
     })
   }
@@ -87,7 +86,7 @@ function CalendarRoute() {
     <CalendarScreen
       calendar={calendar}
       view={search.view ?? 'month'}
-      selectedDate={search.date ?? getCurrentDate()}
+      selectedDate={search.date ?? calendar.todayDate}
       eyebrow={viewingAnotherMember ? 'Team calendar' : undefined}
       description={
         viewingAnotherMember

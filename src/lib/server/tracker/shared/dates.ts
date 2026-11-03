@@ -115,10 +115,20 @@ function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
   }
 }
 
-function zonedDateTimeToUtc(dateKey: string, timeZone: string): Date {
+export function zonedDateTimeToUtc(dateKey: string, timeZone: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number)
   const utcGuess = new Date(Date.UTC(year, month - 1, day))
-  return new Date(utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, utcGuess))
+  let result = utcGuess
+  // Re-evaluate at the resulting instant: the offset at UTC midnight can differ
+  // from the offset at local midnight on a daylight-saving transition day.
+  for (let i = 0; i < 4; i++) {
+    const next = new Date(
+      utcGuess.getTime() - getTimeZoneOffsetMs(timeZone, result),
+    )
+    if (next.getTime() === result.getTime()) break
+    result = next
+  }
+  return result
 }
 
 export function getWorkspaceDateRange(

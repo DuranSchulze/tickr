@@ -5,7 +5,7 @@ import { updateWorkspaceSettingsFn } from '#/lib/server/tracker'
 import type { Workspace } from '#/lib/time-tracker/types'
 import { buildPayrollPeriods } from '#/lib/time-tracker/payroll-periods'
 import { dateKeyInTimeZone } from '#/lib/time-tracker/timesheet'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { cn } from '#/lib/utils'
 
 const HOUR_PRESETS = [7, 8, 9] as const
@@ -100,9 +100,9 @@ export function TrackingExpectationsPanel({
         data: { expectedDailyHours: hours, payrollCutoffDays: cutoffDays },
       })
       await router.invalidate()
-      gooeyToast.success('Tracking expectations saved')
+      toast.success('Tracking expectations saved')
     } catch (err) {
-      gooeyToast.error('Could not save tracking expectations', {
+      toast.error('Could not save tracking expectations', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

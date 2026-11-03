@@ -44,6 +44,7 @@ export function CalendarGrid({
   selectedDate,
   member,
   timezone,
+  todayDate,
   entriesByDate,
   formatTime,
 }: {
@@ -52,11 +53,14 @@ export function CalendarGrid({
   selectedDate: string
   member: CalendarEntriesPayload['member']
   timezone: string
+  todayDate: string
   entriesByDate: Record<string, CalendarEntry[]>
   formatTime: (seconds: number) => string
 }) {
   const days =
-    view === 'week' ? buildWeekDays(selectedDate) : buildCalendarDays(month)
+    view === 'week'
+      ? buildWeekDays(selectedDate, timezone, todayDate)
+      : buildCalendarDays(month, timezone, todayDate)
   const [selectedDay, setSelectedDay] = useState<string | null>(null)
   const totalEntries = useMemo(
     () =>

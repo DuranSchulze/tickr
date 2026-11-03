@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { updateCohortFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { Combobox } from '#/components/ui/combobox'
@@ -33,10 +33,10 @@ export function EditCohortForm({
     try {
       await updateCohortFn({ data: { id: cohort.id, name, departmentId } })
       await router.invalidate()
-      gooeyToast.success('Cohort updated')
+      toast.success('Cohort updated')
       onDone()
     } catch (err) {
-      gooeyToast.error('Could not update cohort', {
+      toast.error('Could not update cohort', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

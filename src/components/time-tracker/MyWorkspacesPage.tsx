@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   BriefcaseBusiness,
   Check,
@@ -74,7 +74,7 @@ export function MyWorkspacesPage({
       await setActiveWorkspaceFn({ data: { slug } })
       window.location.assign('/app/time-tracker')
     } catch (err) {
-      gooeyToast.error('Could not switch workspace', {
+      toast.error('Could not switch workspace', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     }
@@ -87,12 +87,12 @@ export function MyWorkspacesPage({
     setCreating(true)
     try {
       const created = await createWorkspaceFn({ data: { name } })
-      gooeyToast.success(`"${created.name}" created`, {
+      toast.success(`"${created.name}" created`, {
         description: 'Switching you over now…',
       })
       window.location.assign('/app/time-tracker')
     } catch (err) {
-      gooeyToast.error('Could not create workspace', {
+      toast.error('Could not create workspace', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -109,10 +109,10 @@ export function MyWorkspacesPage({
         await deleteWorkspaceFn({
           data: { workspaceId: workspace.workspaceId },
         })
-        gooeyToast.success(`"${workspace.name}" deleted`)
+        toast.success(`"${workspace.name}" deleted`)
       } else {
         await leaveWorkspaceFn({ data: { workspaceId: workspace.workspaceId } })
-        gooeyToast.success(`Left "${workspace.name}"`)
+        toast.success(`Left "${workspace.name}"`)
       }
       setPendingAction(null)
 
@@ -131,7 +131,7 @@ export function MyWorkspacesPage({
         await router.invalidate()
       }
     } catch (err) {
-      gooeyToast.error(
+      toast.error(
         type === 'delete'
           ? 'Could not delete workspace'
           : 'Could not leave workspace',

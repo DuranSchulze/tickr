@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Mail, AlertTriangle, LogOut } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { acceptInviteFn, previewInviteFn } from '#/lib/server/workspace-invites'
@@ -61,12 +61,12 @@ function InvitePage() {
     try {
       const acceptedInvite = await acceptInviteFn({ data: { token } })
       await refreshWorkspaceState()
-      gooeyToast.success('Invitation accepted', {
+      toast.success('Invitation accepted', {
         description: `Welcome to ${acceptedInvite.name}.`,
       })
       await navigate({ to: '/app/time-tracker' })
     } catch (err) {
-      gooeyToast.error('Could not accept invitation', {
+      toast.error('Could not accept invitation', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Send } from 'lucide-react'
 import { sendResendTestFn } from '#/lib/server/resend-test'
 
@@ -18,14 +18,14 @@ export function ResendTestPanel({ defaultEmail }: { defaultEmail: string }) {
       const res = await sendResendTestFn({ data: { to: email } })
       setResult(res)
       if (res.ok) {
-        gooeyToast.success(`Test email sent to ${email}`)
+        toast.success(`Test email sent to ${email}`)
       } else {
-        gooeyToast.error('Resend test failed', { description: res.error })
+        toast.error('Resend test failed', { description: res.error })
       }
     } catch (err) {
       const error = err instanceof Error ? err.message : 'Please try again.'
       setResult({ ok: false, error })
-      gooeyToast.error('Could not send test email', { description: error })
+      toast.error('Could not send test email', { description: error })
     } finally {
       setPending(false)
     }
