@@ -34,8 +34,12 @@ describe('Sileo toast adapter', () => {
       })
     })
 
-    toast.success('Saved again')
-    expect(sileo.success).toHaveBeenLastCalledWith({ title: 'Saved again' })
+    toast.success('Saved again', { icon: '★', duration: 4500 })
+    expect(sileo.success).toHaveBeenLastCalledWith({
+      title: 'Saved again',
+      icon: '★',
+      duration: 4500,
+    })
     expect(sileo.success).toHaveBeenCalledTimes(2)
   })
 })

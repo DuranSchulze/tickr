@@ -1,3 +1,4 @@
+import { notifyTracker } from '#/lib/time-tracker/notifications'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
@@ -339,7 +340,10 @@ export function useTimerCore({
     const id = activeEntryBase.id
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     saveTimeoutRef.current = setTimeout(() => {
-      void mutations.updateActiveTimer({ id, ...next }, { invalidate: false })
+      void mutations.updateActiveTimer(
+        { id, ...next },
+        { invalidate: false, successMessage: '' },
+      )
     }, delay)
   }
 
@@ -369,7 +373,10 @@ export function useTimerCore({
       billable: timerBillable,
     }
     saveTimeoutRef.current = setTimeout(() => {
-      void mutations.updateActiveTimer({ id, ...next }, { invalidate: false })
+      void mutations.updateActiveTimer(
+        { id, ...next },
+        { invalidate: false, successMessage: '' },
+      )
     }, 0)
   }
 
@@ -550,6 +557,7 @@ export function useTimerCore({
       billable: entryToStop.billable,
     },
     requestedEndedAt = new Date().toISOString(),
+    showNotice = true,
   ) {
     const operationToken = token ?? nextOperationToken()
     const stoppedEntry = stopEntryAt(entryToStop, requestedEndedAt)
@@ -564,7 +572,13 @@ export function useTimerCore({
     })
     upsertOptimisticStoppedEntry(stoppedEntry)
 
-    toast.success('Timer stopped')
+    if (showNotice)
+      notifyTracker({
+        action: 'stopped',
+        task: fields.description,
+        durationSeconds: stoppedEntry.durationSeconds,
+        offline: !isOnline,
+      })
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
@@ -626,13 +640,16 @@ export function useTimerCore({
       })
   }
 
-  function launchTimer(input: {
-    description: string
-    projectId: string
-    taskId: string | null
-    tagIds: string[]
-    billable: boolean
-  }) {
+  function launchTimer(
+    input: {
+      description: string
+      projectId: string
+      taskId: string | null
+      tagIds: string[]
+      billable: boolean
+    },
+    noticeAction: 'started' | 'resumed' = 'started',
+  ) {
     const { description, projectId, taskId, tagIds, billable } = input
     const project = state.projects.find((p) => p.id === projectId)
     const startedAt = new Date().toISOString()
@@ -668,7 +685,11 @@ export function useTimerCore({
       optimisticId: optimisticEntry.id,
     })
     lastSyncedEntryIdRef.current = optimisticEntry.id
-    toast.success('Timer started')
+    notifyTracker({
+      action: noticeAction,
+      task: description,
+      offline: !isOnline,
+    })
 
     const nextInput = {
       description,
@@ -729,7 +750,7 @@ export function useTimerCore({
 
         if (op.kind === 'stopping') {
           removeOptimisticStoppedEntry(op.entryId)
-          performOptimisticStop(newEntry, token, op.fields, op.endedAt)
+          performOptimisticStop(newEntry, token, op.fields, op.endedAt, false)
           return
         }
 
@@ -808,13 +829,16 @@ export function useTimerCore({
       }
     }
 
-    launchTimer({
-      description: entry.description,
-      projectId: entry.projectId,
-      taskId: entry.taskId ?? null,
-      tagIds: entry.tagIds.filter(Boolean),
-      billable: entry.billable,
-    })
+    launchTimer(
+      {
+        description: entry.description,
+        projectId: entry.projectId,
+        taskId: entry.taskId ?? null,
+        tagIds: entry.tagIds.filter(Boolean),
+        billable: entry.billable,
+      },
+      'resumed',
+    )
   }
 
   function discardTimer() {
@@ -844,7 +868,11 @@ export function useTimerCore({
         state.currentMemberId,
         entryToDiscard.id,
       )
-      toast.success('Timer discarded')
+      notifyTracker({
+        action: 'discarded',
+        task: entryToDiscard.description,
+        offline: !isOnline,
+      })
       return
     }
 
@@ -856,7 +884,11 @@ export function useTimerCore({
       entryId: entryToDiscard.id,
     })
 
-    toast.success('Timer discarded')
+    notifyTracker({
+      action: 'discarded',
+      task: entryToDiscard.description,
+      offline: !isOnline,
+    })
 
     if (!isOnline) {
       enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
@@ -940,6 +972,12 @@ export function useTimerCore({
         fields,
       })
       const stoppedEntry = stopEntryAt(entryToStop, requestedEndedAt)
+      notifyTracker({
+        action: 'stopped',
+        task: fields.description,
+        durationSeconds: stoppedEntry.durationSeconds,
+        offline: !isOnline,
+      })
       upsertOptimisticStoppedEntry(stoppedEntry)
       // The start itself is waiting in the offline queue (offline start →
       // stop before reconnect). Queue the stop behind it — the drain remaps

@@ -2,7 +2,7 @@ import type { SileoOptions, sileo } from 'sileo'
 
 // Keep the notification library out of screens' initial bundles. This adapter
 // preserves the app's message + description API while using Sileo to render.
-type ToastOptions = Pick<SileoOptions, 'description'>
+type ToastOptions = Pick<SileoOptions, 'description' | 'icon' | 'duration'>
 type ToastApi = Pick<typeof sileo, 'success' | 'error' | 'warning'>
 
 let api: ToastApi | undefined
