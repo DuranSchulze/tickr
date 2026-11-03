@@ -560,7 +560,7 @@ export async function getPublicPerformance(
   })
 
   return {
-    displayName: memberRow.userName ?? memberRow.email,
+    displayName: memberRow.userName || 'Workspace member',
     timezone,
     expectedDailyHours,
     currentMonth,

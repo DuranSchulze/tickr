@@ -213,12 +213,12 @@ describe('external API account auth validation', () => {
       externalApiRegisterSchema.parse({
         name: '  Jane Doe ',
         email: 'JANE@acme.com',
-        password: 'longenough',
+        password: 'LongEnough1!',
       }),
     ).toEqual({
       name: 'Jane Doe',
       email: 'jane@acme.com',
-      password: 'longenough',
+      password: 'LongEnough1!',
     })
   })
 
@@ -227,7 +227,7 @@ describe('external API account auth validation', () => {
       externalApiRegisterSchema.parse({
         name: 'J',
         email: 'jane@acme.com',
-        password: 'longenough',
+        password: 'LongEnough1!',
       }),
     ).toThrow()
     expect(() =>

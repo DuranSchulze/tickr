@@ -11,8 +11,10 @@ import {
   cohorts,
   employeeProfiles,
   employeeGovernmentIds,
+  users,
 } from '#/db/schema'
-import { and, eq, inArray, or, asc } from 'drizzle-orm'
+import { and, eq, inArray, or, asc, isNull, sql } from 'drizzle-orm'
+import { assertVerifiedMembershipClaim } from './membership-verification'
 import { assertTrustedOrigin } from './csrf.server'
 import { getMembershipActivationDecision } from '#/lib/rbac/authorization'
 
@@ -47,7 +49,7 @@ export function setActiveWorkspaceCookie(slug: string) {
   const value = encodeURIComponent(slug)
   response.headers.append(
     'set-cookie',
-    `${ACTIVE_WORKSPACE_COOKIE}=${value}; Path=/; Max-Age=31536000; SameSite=Lax`,
+    `${ACTIVE_WORKSPACE_COOKIE}=${value}; Path=/; Max-Age=31536000; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
   )
 }
 
@@ -55,7 +57,7 @@ export function clearActiveWorkspaceCookie() {
   const response = getResponse()
   response.headers.append(
     'set-cookie',
-    `${ACTIVE_WORKSPACE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`,
+    `${ACTIVE_WORKSPACE_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`,
   )
 }
 
@@ -156,6 +158,11 @@ async function fetchMembersWithRelations(
 
 export async function listUserWorkspaces(userId: string, email: string) {
   const lowerEmail = email.toLowerCase()
+  const [identity] = await db
+    .select({ verified: users.emailVerified })
+    .from(users)
+    .where(and(eq(users.id, userId), eq(users.email, lowerEmail)))
+    .limit(1)
   const memberRows = await db
     .select()
     .from(workspaceMembers)
@@ -163,11 +170,18 @@ export async function listUserWorkspaces(userId: string, email: string) {
       and(
         inArray(workspaceMembers.status, ['ACTIVE', 'INVITED']),
         or(
-          eq(workspaceMembers.userId, userId),
           and(
-            eq(workspaceMembers.userId, null as unknown as string),
-            eq(workspaceMembers.email, lowerEmail),
+            eq(workspaceMembers.userId, userId),
+            identity?.verified === true
+              ? sql`true`
+              : eq(workspaceMembers.status, 'ACTIVE'),
           ),
+          identity?.verified === true
+            ? and(
+                isNull(workspaceMembers.userId),
+                eq(workspaceMembers.email, lowerEmail),
+              )
+            : sql`false`,
         ),
       ),
     )
@@ -230,10 +244,12 @@ async function _fetchWorkspaceAuthorization(slug?: string | null) {
     .where(
       or(
         eq(workspaceMembers.userId, userId),
-        and(
-          eq(workspaceMembers.userId, null as unknown as string),
-          eq(workspaceMembers.email, email),
-        ),
+        session.user.emailVerified === true
+          ? and(
+              isNull(workspaceMembers.userId),
+              eq(workspaceMembers.email, email),
+            )
+          : sql`false`,
       ),
     )
     .orderBy(asc(workspaceMembers.createdAt))
@@ -261,6 +277,7 @@ async function _fetchWorkspaceAuthorization(slug?: string | null) {
       'Your workspace membership is disabled. Contact a workspace administrator.',
     )
   }
+  assertVerifiedMembershipClaim(session.user.emailVerified, chosen.member)
   if (!chosen.member.userId || authorizationDecision === 'activate') {
     return _fetchWorkspaceAccess(requestedSlug, false, true)
   }
@@ -325,10 +342,12 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
     .where(
       or(
         eq(workspaceMembers.userId, userId),
-        and(
-          eq(workspaceMembers.userId, null as unknown as string),
-          eq(workspaceMembers.email, email),
-        ),
+        session.user.emailVerified === true
+          ? and(
+              isNull(workspaceMembers.userId),
+              eq(workspaceMembers.email, email),
+            )
+          : sql`false`,
       ),
     )
     .orderBy(asc(workspaceMembers.createdAt))
@@ -371,6 +390,7 @@ async function _fetchWorkspaceMembership(): Promise<WorkspaceMembership> {
       'Your workspace membership is disabled. Contact a workspace administrator.',
     )
   }
+  assertVerifiedMembershipClaim(session.user.emailVerified, chosen)
   if (!chosen.userId || membershipDecision === 'activate') {
     await db
       .update(workspaceMembers)
@@ -422,10 +442,12 @@ async function _fetchWorkspaceAccess(
     .where(
       or(
         eq(workspaceMembers.userId, userId),
-        and(
-          eq(workspaceMembers.userId, null as unknown as string),
-          eq(workspaceMembers.email, email),
-        ),
+        session.user.emailVerified === true
+          ? and(
+              isNull(workspaceMembers.userId),
+              eq(workspaceMembers.email, email),
+            )
+          : sql`false`,
       ),
     )
     .orderBy(asc(workspaceMembers.createdAt))
@@ -455,6 +477,7 @@ async function _fetchWorkspaceAccess(
       'Your workspace membership is disabled. Contact a workspace administrator.',
     )
   }
+  assertVerifiedMembershipClaim(session.user.emailVerified, chosen)
   if (!chosen.userId || accessDecision === 'activate') {
     const [updated] = await db
       .update(workspaceMembers)

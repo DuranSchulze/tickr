@@ -4,7 +4,9 @@
 **Review date:** 2026-10-29
 **Scope:** Authentication brute-force resistance, tokenized "private link" surfaces, and adjacent access-control issues
 **Method:** Read-only source review (no production probing, no code changes)
-**Status:** Findings only — nothing in this report has been fixed
+**Status:** Historical findings with an implementation follow-up on November 3, 2026. See [authentication hardening and remaining work](authentication-hardening-2026-11.md). Production rollout and credential rotation are not verified.
+
+The findings below describe the original review snapshot; consult the follow-up for current source changes, unresolved risks, and deployment prerequisites.
 
 ---
 

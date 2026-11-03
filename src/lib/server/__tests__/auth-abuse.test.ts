@@ -8,6 +8,7 @@ import {
   evaluateAdmission,
   recordAuthResult,
   resolveAuthAbuseMode,
+  reserveAuthAttempt,
 } from '../auth-abuse.server'
 
 const SECRET = 'test-secret-with-at-least-32-characters'
@@ -17,6 +18,13 @@ afterEach(() => {
 })
 
 describe('abuse mode resolution', () => {
+  it('defaults to enforcement in production, including invalid configuration', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('AUTH_ABUSE_MODE', '')
+    expect(resolveAuthAbuseMode()).toBe('enforce')
+    vi.stubEnv('AUTH_ABUSE_MODE', 'typo')
+    expect(resolveAuthAbuseMode()).toBe('enforce')
+  })
   it('defaults to shadow so a missing variable still collects signal', () => {
     vi.stubEnv('AUTH_ABUSE_MODE', '')
     expect(resolveAuthAbuseMode()).toBe('shadow')
@@ -118,11 +126,11 @@ describe('admission policy', () => {
       admitted: true,
       reason: 'shadow',
       wouldBlock: true,
-      retryAfterSeconds: 30,
+      retryAfterSeconds: ABUSE_WINDOW_SECONDS,
     })
   })
 
-  it('enforce mode denies at the account-plus-IP limit with a short cooldown', () => {
+  it('enforce mode denies at the account-plus-IP limit for the observation window', () => {
     expect(
       evaluateAdmission('enforce', {
         accountIp: ABUSE_ACCOUNT_IP_LIMIT + 1,
@@ -132,7 +140,7 @@ describe('admission policy', () => {
     ).toMatchObject({
       admitted: false,
       reason: 'account_ip',
-      retryAfterSeconds: 30,
+      retryAfterSeconds: ABUSE_WINDOW_SECONDS,
     })
   })
 
@@ -186,11 +194,25 @@ describe('recording outcomes', () => {
           mode: 'enforce',
           reason: 'account_ip',
           wouldBlock: true,
-          retryAfterSeconds: 30,
+          retryAfterSeconds: ABUSE_WINDOW_SECONDS,
           resetBuckets: ['a'.repeat(64)],
         },
         'failure',
       ),
     ).resolves.toBeUndefined()
+  })
+})
+
+describe('fail-closed configuration', () => {
+  it('does not bypass enforcement when the hashing secret is missing', async () => {
+    vi.stubEnv('AUTH_ABUSE_HMAC_SECRET', '')
+    vi.stubEnv('BETTER_AUTH_SECRET', '')
+    const attempt = await reserveAuthAttempt({
+      operation: 'login',
+      request: new Request('https://app.example.com'),
+      email: 'user@example.com',
+      mode: 'enforce',
+    })
+    expect(attempt).toMatchObject({ admitted: false, reason: 'unavailable' })
   })
 })

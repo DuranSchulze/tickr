@@ -36,6 +36,12 @@ import {
 } from '#/lib/time-tracker/work-intervals'
 import type { AnalyticsTimeEntryRow } from './analytics.server'
 import { formatDateInTimeZone, getWorkspaceDateRange } from './shared/dates'
+import { memberScopeCondition } from './shared/member-scope.server'
+import {
+  assertCanAccessMember,
+  permissionScope,
+} from './shared/role-gates.server'
+import { AuthorizationError } from '#/lib/rbac/authorization'
 import { resolveEntryRateMap } from './rates.server'
 
 export type DepartmentMemberBreakdown = {
@@ -282,7 +288,9 @@ export async function getDepartmentDashboard(data: {
   projectPage?: number
 }): Promise<DepartmentDashboard> {
   const access = await requireWorkspaceAccess()
-  const canFilterDepartments = true
+  const memberScope = memberScopeCondition(access, 'members.view')
+  const scope = permissionScope(access, 'members.view')
+  const canFilterDepartments = scope === 'workspace'
 
   const workspaceId = access.workspace.id
   const defaultRate = Number(access.workspace.defaultBillableRate ?? 0)
@@ -310,14 +318,27 @@ export async function getDepartmentDashboard(data: {
       color: departments.color,
     })
     .from(departments)
-    .where(eq(departments.workspaceId, workspaceId))
+    .where(
+      and(
+        eq(departments.workspaceId, workspaceId),
+        canFilterDepartments
+          ? undefined
+          : access.member.departmentId
+            ? eq(departments.id, access.member.departmentId)
+            : sql`false`,
+      ),
+    )
     .orderBy(asc(departments.name))
 
-  const selectedDepartmentId =
+  if (
     data.departmentId &&
-    availableDepartments.some((dept) => dept.id === data.departmentId)
-      ? data.departmentId
-      : ''
+    !availableDepartments.some((dept) => dept.id === data.departmentId)
+  ) {
+    throw new AuthorizationError('Department not found or not accessible.')
+  }
+  const selectedDepartmentId =
+    data.departmentId ||
+    (canFilterDepartments ? '' : access.member.departmentId || '')
 
   const deptRow = selectedDepartmentId
     ? availableDepartments.find((dept) => dept.id === selectedDepartmentId)
@@ -330,6 +351,7 @@ export async function getDepartmentDashboard(data: {
   if (!deptRow) throw new Error('Department not found.')
 
   const availableMemberConditions = [
+    memberScope,
     eq(workspaceMembers.workspaceId, workspaceId),
     eq(workspaceMembers.status, 'ACTIVE' as const),
   ]
@@ -354,13 +376,16 @@ export async function getDepartmentDashboard(data: {
     )
     .where(and(...availableMemberConditions))
     .orderBy(asc(users.name), asc(workspaceMembers.email))
-  const selectedMemberId = availableMemberRows.some(
-    (member) => member.id === data.memberId,
-  )
-    ? data.memberId!
-    : ''
+  if (
+    data.memberId &&
+    !availableMemberRows.some((member) => member.id === data.memberId)
+  ) {
+    throw new AuthorizationError('Member not found or not accessible.')
+  }
+  const selectedMemberId = data.memberId || ''
 
   const memberConditions = [
+    memberScope,
     eq(workspaceMembers.workspaceId, workspaceId),
     eq(workspaceMembers.status, 'ACTIVE' as const),
   ]
@@ -802,6 +827,7 @@ export async function getDepartmentMemberTodayActivity(data: {
   memberId: string
 }): Promise<DepartmentMemberActivitySummary> {
   const access = await requireWorkspaceAccess()
+  const memberScope = memberScopeCondition(access, 'members.view')
   const workspaceId = access.workspace.id
 
   const [member] = await db
@@ -822,6 +848,7 @@ export async function getDepartmentMemberTodayActivity(data: {
     )
     .where(
       and(
+        memberScope,
         eq(workspaceMembers.id, data.memberId),
         eq(workspaceMembers.workspaceId, workspaceId),
         eq(workspaceMembers.status, 'ACTIVE'),
@@ -830,6 +857,7 @@ export async function getDepartmentMemberTodayActivity(data: {
     .limit(1)
 
   if (!member) throw new Error('Member not found.')
+  assertCanAccessMember(access, member)
 
   const timeZone = access.workspace.timezone || 'UTC'
   const todayRange = getTodayRangeForTimeZone(timeZone)
@@ -971,6 +999,7 @@ export async function getDepartmentMemberDetail(data: {
   description?: string
 }): Promise<DepartmentMemberDetail> {
   const access = await requireWorkspaceAccess()
+  const memberScope = memberScopeCondition(access, 'members.view')
   const workspaceId = access.workspace.id
 
   const [member] = await db
@@ -986,6 +1015,7 @@ export async function getDepartmentMemberDetail(data: {
     .leftJoin(users, eq(workspaceMembers.userId, users.id))
     .where(
       and(
+        memberScope,
         eq(workspaceMembers.id, data.memberId),
         eq(workspaceMembers.workspaceId, workspaceId),
         eq(workspaceMembers.status, 'ACTIVE'),
@@ -994,6 +1024,7 @@ export async function getDepartmentMemberDetail(data: {
     .limit(1)
 
   if (!member) throw new Error('Member not found.')
+  assertCanAccessMember(access, member)
 
   const timezone = access.workspace.timezone || 'UTC'
   const PAGE_SIZE = 50

@@ -1,11 +1,13 @@
 import { betterAuth } from 'better-auth'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { db } from '#/db'
 import * as schema from '#/db/schema'
 import { sendEmail } from '#/lib/server/mailer'
+import { renderVerificationEmail } from '#/lib/server/email-templates/verify-email'
 import { renderResetPasswordEmail } from '#/lib/server/email-templates/reset-password'
-import { isBlockedDomain } from '#/lib/auth-validation'
+import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { checkAndSendSuspiciousLoginAlert } from '#/lib/server/auth-security.server'
 import { getTrustedOrigins } from '#/lib/server/trusted-origins.server'
 
@@ -24,13 +26,25 @@ export const auth = betterAuth({
       session: schema.sessions,
       account: schema.accounts,
       verification: schema.verifications,
-      // Prepared for `rateLimit.storage: 'database'` (see the comment below);
-      // unused while storage stays 'memory'.
+      // Persistent limiter shared by all application instances.
       rateLimit: schema.rateLimits,
     },
   }),
+  emailVerification: {
+    sendOnSignUp: true,
+    expiresIn: 60 * 60,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        ...renderVerificationEmail(user.name, url),
+      })
+    },
+  },
   emailAndPassword: {
     enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    revokeSessionsOnPasswordReset: true,
     resetPasswordTokenExpiresIn: RESET_PASSWORD_EXPIRES_IN_SECONDS,
     sendResetPassword: async ({ user, url }) => {
       const { subject, html, text } = renderResetPasswordEmail({
@@ -55,6 +69,7 @@ export const auth = betterAuth({
           .join('')
       },
     },
+    ipAddress: { ipAddressHeaders: ['x-forwarded-for'] },
     // SameSite=None is required for cookies to be sent inside the Chrome
     // extension iframe (cross-site context). Must be HTTPS-only (Secure flag).
     ...(process.env.NODE_ENV === 'production'
@@ -67,38 +82,19 @@ export const auth = betterAuth({
         }
       : {}),
   },
-  // Rate limiting prevents brute-force attacks on auth endpoints.
-  // better-auth enables this automatically in production (window: 60 s,
-  // max: 100 req) with a built-in stricter rule for /sign-in/email
-  // (window: 10 s, max: 3 req). Configuring it explicitly makes the
-  // policy visible to developers and enables testing in dev mode.
-  //
-  // Storage is "memory" for now — switch to "database" if you deploy
-  // across multiple instances (Vercel/serverless) so rate-limit state
-  // is shared.  Run `npx @better-auth/cli migrate` afterwards to create
-  // the rateLimit table.
-  //
-  // Decision (plans/quick-fix/server-hygiene.md item 3): per-instance memory is
-  // accepted for now, so the documented /sign-up/email rule is per-instance and
-  // an attacker spreading requests across instances gets more than 3 per window.
-  // The plumbing is prepared — the `rate_limit` table exists in
-  // src/db/schema.ts and its migration is generated — so enabling this is a
-  // one-line change to 'database' *after* `pnpm db:migrate` has been applied.
-  // Do not flip it before the table exists: auth fails loudly on a missing
-  // table. Note this limiter never sees the hand-written /api/v1/auth/* routes,
-  // which remain unthrottled and are tracked separately.
+  // Shared across serverless instances. Apply the rate_limit migration before deployment.
   rateLimit: {
     enabled: true, // enable in all environments (default: only prod)
     window: 60,
     max: 100,
-    storage: 'memory',
+    storage: 'database',
     customRules: {
       // Stricter limits on auth-sensitive paths
       '/sign-up/email': {
         window: 10,
         max: 3,
       },
-      '/forgot-password': {
+      '/request-password-reset': {
         window: 60,
         max: 3,
       },
@@ -107,6 +103,28 @@ export const auth = betterAuth({
         max: 5,
       },
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      const field =
+        ctx.path === '/sign-up/email' || ctx.path === '/set-password'
+          ? 'password'
+          : ['/reset-password', '/change-password'].includes(ctx.path)
+            ? 'newPassword'
+            : null
+      if (!field) return
+      const password = ctx.body?.[field]
+      if (
+        typeof password !== 'string' ||
+        password.length > 128 ||
+        !allPasswordRulesPass(password)
+      ) {
+        throw new APIError('BAD_REQUEST', {
+          message:
+            'Password must be 8–128 characters and include uppercase, lowercase, a number, and a special character.',
+        })
+      }
+    }),
   },
   databaseHooks: {
     user: {

@@ -9,10 +9,8 @@ import { readClientIp } from './client-ip.server'
 /**
  * Shared authentication abuse counters.
  *
- * Release 0 ships in `shadow` mode: every attempt is counted and threshold
- * breaches are logged, but nothing is ever rejected. Enforcement is a config
- * change (`AUTH_ABUSE_MODE`), not a code change. See
- * `plans/authentication-abuse-protection/PLAN.md` §6.
+ * Production defaults to enforcement; development defaults to observation.
+ * Both browser and public API credential checks share these database buckets.
  */
 
 /** Fixed observation window for every counter, in seconds. */
@@ -27,15 +25,17 @@ export const ABUSE_ACCOUNT_LIMIT = 10
 /** Authentication requests per source IP per window. */
 export const ABUSE_IP_LIMIT = 100
 
-/**
- * Interim account-wide pause. Deliberately short: Phase 3 replaces this with a
- * challenge so a distributed attacker cannot hold an account shut.
- */
-const INTERIM_ACCOUNT_PAUSE_SECONDS = 30
+/** Retry delay for temporarily unavailable counter storage. */
+const STORAGE_RETRY_SECONDS = 30
 
 export type AuthAbuseMode = 'off' | 'shadow' | 'enforce'
 
-export type AuthAbuseOperation = 'login' | 'developer_login' | 'register'
+export type AuthAbuseOperation =
+  | 'login'
+  | 'developer_login'
+  | 'register'
+  | 'recovery'
+  | 'join_code'
 
 type AbuseLimitReason = 'account_ip' | 'account' | 'ip'
 
@@ -79,13 +79,12 @@ const BUCKET_SCOPE = {
 } as const
 
 /**
- * Resolves the rollout mode. Defaults to `shadow` so a deployment without the
- * variable still collects signal, and never blocks anyone.
+ * Defaults to enforcement in production and observation in development.
  */
 export function resolveAuthAbuseMode(): AuthAbuseMode {
   const raw = process.env.AUTH_ABUSE_MODE?.trim().toLowerCase()
   if (raw === 'off' || raw === 'shadow' || raw === 'enforce') return raw
-  return 'shadow'
+  return process.env.NODE_ENV === 'production' ? 'enforce' : 'shadow'
 }
 
 /**
@@ -105,7 +104,7 @@ export function buildAbuseBuckets(input: {
   const ip = normalizeIp(input.ip)
   const hash = (scope: string, identifier: string) =>
     createHmac('sha256', input.secret)
-      .update(`${scope}:${input.operation}:${identifier}`)
+      .update(`auth-abuse:${scope}:${input.operation}:${identifier}`)
       .digest('hex')
 
   return {
@@ -146,8 +145,7 @@ export function evaluateAdmission(
     }
   }
 
-  const retryAfterSeconds =
-    exceeded === 'ip' ? ABUSE_WINDOW_SECONDS : INTERIM_ACCOUNT_PAUSE_SECONDS
+  const retryAfterSeconds = ABUSE_WINDOW_SECONDS
 
   if (mode === 'shadow') {
     return {
@@ -186,13 +184,22 @@ export async function reserveAuthAttempt(input: {
   const mode = input.mode ?? resolveAuthAbuseMode()
   if (mode === 'off') return disabledAttempt(mode)
 
-  const secret = process.env.AUTH_ABUSE_HMAC_SECRET?.trim()
+  const secret = (
+    process.env.AUTH_ABUSE_HMAC_SECRET || process.env.BETTER_AUTH_SECRET
+  )?.trim()
   if (!secret) {
     warnOnce(
       'missing-secret',
-      '[auth-abuse] AUTH_ABUSE_HMAC_SECRET is not set; abuse tracking is disabled.',
+      '[auth-abuse] AUTH_ABUSE_HMAC_SECRET is not set; protected requests fail closed in enforcement mode.',
     )
-    return disabledAttempt('off')
+    return {
+      admitted: mode !== 'enforce',
+      mode,
+      reason: 'unavailable',
+      wouldBlock: false,
+      retryAfterSeconds: 30,
+      resetBuckets: [],
+    }
   }
   if (secret.length < 32) {
     warnOnce(
@@ -201,7 +208,15 @@ export async function reserveAuthAttempt(input: {
     )
   }
 
-  const ip = normalizeIp(readClientIp(input.request))
+  const ip = normalizeIp(
+    process.env.VERCEL === '1' || process.env.NODE_ENV !== 'production'
+      ? readClientIp(input.request)
+      : process.env.AUTH_TRUSTED_IP_HEADER
+        ? input.request.headers
+            .get(process.env.AUTH_TRUSTED_IP_HEADER)
+            ?.split(',')[0]
+        : null,
+  )
   const buckets = buildAbuseBuckets({
     secret,
     operation: input.operation,
@@ -229,15 +244,13 @@ export async function reserveAuthAttempt(input: {
     return { ...decision, resetBuckets: resetBucketsFor(buckets) }
   } catch (error) {
     console.error('[auth-abuse] counter storage unavailable', error)
-    // The plan calls for failing closed on protected issuance (Phase 1 failure
-    // behavior). The shadow release deliberately does not enable that switch;
-    // decide it explicitly before flipping `AUTH_ABUSE_MODE=enforce`.
+    // Never issue protected credentials when enforced counters cannot be read.
     return {
       admitted: mode !== 'enforce',
       mode,
       reason: 'unavailable',
       wouldBlock: false,
-      retryAfterSeconds: INTERIM_ACCOUNT_PAUSE_SECONDS,
+      retryAfterSeconds: STORAGE_RETRY_SECONDS,
       resetBuckets: [],
     }
   }

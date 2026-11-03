@@ -1,3 +1,4 @@
+import { VerifyEmailNotice } from '#/components/auth/VerifyEmailNotice'
 import {
   createFileRoute,
   Link,
@@ -53,6 +54,7 @@ export const Route = createFileRoute('/onboarding')({
     }
     return {
       email: session.user.email,
+      emailVerified: session.user.emailVerified === true,
       name: session.user.name,
     }
   },
@@ -61,7 +63,7 @@ export const Route = createFileRoute('/onboarding')({
 
 // oxlint-disable-next-line react/only-export-components
 function OnboardingPage() {
-  const { email, name } = Route.useLoaderData()
+  const { email, name, emailVerified } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate()
   const [mode, setMode] = useState<'choose' | 'create'>('choose')
@@ -224,6 +226,7 @@ function OnboardingPage() {
                   <Hash className="size-3.5" />
                   Have a join code?
                 </p>
+                {!emailVerified && <VerifyEmailNotice email={email} />}
                 <form onSubmit={handleJoinByCode} className="flex gap-2">
                   <input
                     value={joinCode}
@@ -239,7 +242,11 @@ function OnboardingPage() {
                   />
                   <button
                     type="submit"
-                    disabled={joiningByCode || joinCode.trim().length < 4}
+                    disabled={
+                      !emailVerified ||
+                      joiningByCode ||
+                      joinCode.trim().length < 4
+                    }
                     className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {joiningByCode ? (
