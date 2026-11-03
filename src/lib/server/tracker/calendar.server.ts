@@ -10,7 +10,13 @@ import {
 } from '#/db/schema'
 import { and, asc, eq, gte, isNull, lt, or } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
-import { toDateKey } from './shared/dates'
+import {
+  toDateKey,
+  formatDateInTimeZone,
+  zonedDateTimeToUtc,
+} from './shared/dates'
+import type { RawEntry } from './shared/calendar-entries'
+import { splitEntryByDay } from './shared/calendar-entries'
 import type { calendarMonthSchema } from './shared/schemas'
 import {
   assertCanAccessMember,
@@ -41,6 +47,7 @@ export type CalendarEntry = {
 }
 
 export type CalendarEntriesPayload = {
+  todayDate: string
   month: string
   workspaceId: string
   timezone: string
@@ -63,111 +70,10 @@ export type CalendarPagePayload = {
   memberOptions: CalendarMemberOption[]
 }
 
-type RawEntry = {
-  id: string
-  description: string
-  startedAt: Date
-  endedAt: Date | null
-  durationSeconds: number
-  taskName: string | null
-  billable: boolean
-  project: { name: string; color: string } | null
-}
-
 type CalendarLoadInput = {
   month: string
   targetMemberId: string
   access: Awaited<ReturnType<typeof requireWorkspaceAccess>>
-}
-
-function splitEntryByDay(
-  entry: RawEntry,
-  monthStart: Date,
-  monthEnd: Date,
-  now: Date,
-): CalendarEntry[] {
-  const start = entry.startedAt
-  const end = entry.endedAt ?? now
-  const isActive = entry.endedAt === null
-
-  const startDayStr = toDateKey(start)
-  const endDayStr = toDateKey(isActive ? now : entry.endedAt!)
-
-  // Single-day entry — no split needed
-  if (startDayStr === endDayStr) {
-    const dayMs = start.getTime()
-    if (dayMs < monthStart.getTime() || dayMs >= monthEnd.getTime()) return []
-    return [
-      {
-        id: entry.id,
-        description: entry.description,
-        startedAt: start.toISOString(),
-        endedAt: isActive ? null : entry.endedAt!.toISOString(),
-        sourceStartedAt: start.toISOString(),
-        sourceEndedAt: isActive ? null : entry.endedAt!.toISOString(),
-        durationSeconds: isActive
-          ? Math.floor((now.getTime() - start.getTime()) / 1000)
-          : entry.durationSeconds,
-        taskName: entry.taskName,
-        billable: entry.billable,
-        project: entry.project,
-      },
-    ]
-  }
-
-  // Multi-day split — cap at 7 slices
-  const slices: CalendarEntry[] = []
-  let cursor = new Date(start)
-  const MAX_SLICES = 7
-
-  for (let i = 0; i < MAX_SLICES && cursor < end; i++) {
-    const nextMidnight = new Date(
-      Date.UTC(
-        cursor.getUTCFullYear(),
-        cursor.getUTCMonth(),
-        cursor.getUTCDate() + 1,
-      ),
-    )
-    const sliceEnd = nextMidnight < end ? nextMidnight : end
-    const sliceDuration = Math.max(
-      0,
-      Math.floor((sliceEnd.getTime() - cursor.getTime()) / 1000),
-    )
-    const isLastSlice = nextMidnight >= end
-    const sliceIsActive = isActive && isLastSlice
-    const dayKey = toDateKey(cursor)
-
-    // Only include slices that fall within the requested month window
-    const sliceDayMs = new Date(
-      Date.UTC(
-        cursor.getUTCFullYear(),
-        cursor.getUTCMonth(),
-        cursor.getUTCDate(),
-      ),
-    ).getTime()
-    if (
-      sliceDayMs >= monthStart.getTime() &&
-      sliceDayMs < monthEnd.getTime() &&
-      sliceDuration > 0
-    ) {
-      slices.push({
-        id: `${entry.id}:${dayKey}`,
-        description: entry.description,
-        startedAt: cursor.toISOString(),
-        endedAt: sliceIsActive ? null : sliceEnd.toISOString(),
-        sourceStartedAt: start.toISOString(),
-        sourceEndedAt: entry.endedAt?.toISOString() ?? null,
-        durationSeconds: sliceDuration,
-        taskName: entry.taskName,
-        billable: entry.billable,
-        project: entry.project,
-      })
-    }
-
-    cursor = nextMidnight
-  }
-
-  return slices
 }
 
 async function loadCalendarEntries({
@@ -176,14 +82,17 @@ async function loadCalendarEntries({
   access,
 }: CalendarLoadInput): Promise<CalendarEntriesPayload> {
   const [year, month] = requestedMonth.split('-').map(Number)
+  const timezone = access.workspace.timezone || 'UTC'
   const monthStart = new Date(Date.UTC(year, month - 1, 1))
   const mondayFirstOffset = (monthStart.getUTCDay() + 6) % 7
   const displayStart = new Date(monthStart)
   displayStart.setUTCDate(displayStart.getUTCDate() - mondayFirstOffset)
   const displayEnd = new Date(displayStart)
   displayEnd.setUTCDate(displayEnd.getUTCDate() + 42)
+  const windowStart = zonedDateTimeToUtc(toDateKey(displayStart), timezone)
+  const windowEnd = zonedDateTimeToUtc(toDateKey(displayEnd), timezone)
   // Go back up to 7 days before month start to catch midnight-crossing entries
-  const queryStart = new Date(displayStart.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const queryStart = new Date(windowStart.getTime() - 7 * 24 * 60 * 60 * 1000)
   const now = new Date()
 
   const [memberRow] = await db
@@ -227,8 +136,8 @@ async function loadCalendarEntries({
         eq(timeEntries.workspaceId, access.workspace.id),
         eq(timeEntries.workspaceMemberId, targetMemberId),
         gte(timeEntries.startedAt, queryStart),
-        lt(timeEntries.startedAt, displayEnd),
-        or(gte(timeEntries.endedAt, displayStart), isNull(timeEntries.endedAt)),
+        lt(timeEntries.startedAt, windowEnd),
+        or(gte(timeEntries.endedAt, windowStart), isNull(timeEntries.endedAt)),
       ),
     )
     .orderBy(timeEntries.startedAt)
@@ -250,18 +159,19 @@ async function loadCalendarEntries({
   const entriesByDate: Record<string, CalendarEntry[]> = {}
 
   for (const entry of entries) {
-    const slices = splitEntryByDay(entry, displayStart, displayEnd, now)
+    const slices = splitEntryByDay(entry, windowStart, windowEnd, now, timezone)
     for (const slice of slices) {
-      const dateKey = slice.startedAt.slice(0, 10)
+      const dateKey = formatDateInTimeZone(slice.startedAt, timezone)
       entriesByDate[dateKey] ??= []
       entriesByDate[dateKey].push(slice)
     }
   }
 
   return {
+    todayDate: formatDateInTimeZone(now, timezone),
     month: requestedMonth,
     workspaceId: access.workspace.id,
-    timezone: access.workspace.timezone || 'UTC',
+    timezone,
     member: {
       id: targetMemberId,
       name: memberRow.name ?? memberRow.email,

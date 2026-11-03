@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { Copy, KeyRound, LogIn, X } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { DEV_CREDENTIALS, DEV_PASSWORD } from '#/lib/dev-credentials'
 import type { DevCredential } from '#/lib/dev-credentials'
@@ -56,20 +56,20 @@ function DevLoginButtonInner() {
         password: cred.password,
       })
       if (result.error) {
-        gooeyToast.error('Dev sign-in failed', {
+        toast.error('Dev sign-in failed', {
           description:
             result.error.message ??
             'Did you run `pnpm db:seed`? The account may not exist yet.',
         })
         return
       }
-      gooeyToast.success(`Signed in as ${cred.roleLabel}`, {
+      toast.success(`Signed in as ${cred.roleLabel}`, {
         description: cred.email,
       })
       setOpen(false)
       await navigate({ to: '/lounge' })
     } catch {
-      gooeyToast.error('Dev sign-in failed', {
+      toast.error('Dev sign-in failed', {
         description: 'Unexpected error. Check the console.',
       })
     } finally {
@@ -80,9 +80,9 @@ function DevLoginButtonInner() {
   async function copy(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text)
-      gooeyToast.success('Copied to clipboard')
+      toast.success('Copied to clipboard')
     } catch {
-      gooeyToast.error('Could not copy')
+      toast.error('Could not copy')
     }
   }
 

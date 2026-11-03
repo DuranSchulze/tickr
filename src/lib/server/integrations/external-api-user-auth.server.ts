@@ -1,9 +1,10 @@
 import '@tanstack/react-start/server-only'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { verifyPassword } from 'better-auth/crypto'
 import { db } from '#/db'
 import { accounts, users, workspaceMembers } from '#/db/schema'
 import { auth } from '#/lib/auth'
+import { assertVerifiedMembershipClaim } from '../membership-verification'
 import { listUserWorkspaces } from '../workspace-access.server'
 
 export type TracklyUserIdentity = {
@@ -108,10 +109,25 @@ export async function resolveTracklyWorkspaceMembership(
   // Claim an unlinked/INVITED membership, matching the web flow so an invited
   // user who signs in via the API lands in the workspace they were invited to.
   if (chosen.userId == null || chosen.status !== 'ACTIVE') {
-    await db
+    const [identity] = await db
+      .select({ verified: users.emailVerified })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+    assertVerifiedMembershipClaim(identity?.verified, chosen)
+    const claimed = await db
       .update(workspaceMembers)
       .set({ userId: chosen.userId ?? userId, status: 'ACTIVE' })
-      .where(eq(workspaceMembers.id, chosen.id))
+      .where(
+        and(
+          eq(workspaceMembers.id, chosen.id),
+          chosen.userId
+            ? eq(workspaceMembers.userId, userId)
+            : isNull(workspaceMembers.userId),
+        ),
+      )
+      .returning({ id: workspaceMembers.id })
+    if (!claimed.length) return null
   }
 
   return {

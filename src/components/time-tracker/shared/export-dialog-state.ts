@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 
 export type ExportFormat = 'pdf' | 'csv'
 
@@ -98,7 +98,7 @@ export function useExportDialogState({
       await exportReport(format, range)
       closeDialog()
     } catch (err) {
-      gooeyToast.error('Export failed', {
+      toast.error('Export failed', {
         description: err instanceof Error ? err.message : errorDescription,
       })
     } finally {

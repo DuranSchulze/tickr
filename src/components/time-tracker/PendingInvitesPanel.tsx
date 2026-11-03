@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Check, Copy, Mail } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import {
@@ -42,9 +42,9 @@ export function PendingInvitesPanel() {
     try {
       await resendWorkspaceInviteFn({ data: { inviteId: id } })
       await refetch()
-      gooeyToast.success('Invitation resent')
+      toast.success('Invitation resent')
     } catch (err) {
-      gooeyToast.error('Could not resend', {
+      toast.error('Could not resend', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -58,9 +58,9 @@ export function PendingInvitesPanel() {
       await revokeWorkspaceInviteFn({ data: { inviteId: id } })
       await refetch()
       await router.invalidate()
-      gooeyToast.success('Invitation revoked')
+      toast.success('Invitation revoked')
     } catch (err) {
-      gooeyToast.error('Could not revoke', {
+      toast.error('Could not revoke', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

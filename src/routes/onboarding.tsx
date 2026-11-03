@@ -1,3 +1,4 @@
+import { VerifyEmailNotice } from '#/components/auth/VerifyEmailNotice'
 import {
   createFileRoute,
   Link,
@@ -16,7 +17,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { BRAND } from '#/lib/brand'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { listUserWorkspacesFn } from '#/lib/server/workspace-access'
@@ -53,6 +54,7 @@ export const Route = createFileRoute('/onboarding')({
     }
     return {
       email: session.user.email,
+      emailVerified: session.user.emailVerified === true,
       name: session.user.name,
     }
   },
@@ -61,7 +63,7 @@ export const Route = createFileRoute('/onboarding')({
 
 // oxlint-disable-next-line react/only-export-components
 function OnboardingPage() {
-  const { email, name } = Route.useLoaderData()
+  const { email, name, emailVerified } = Route.useLoaderData()
   const search = Route.useSearch()
   const navigate = useNavigate()
   const [mode, setMode] = useState<'choose' | 'create'>('choose')
@@ -78,7 +80,7 @@ function OnboardingPage() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (wsName.trim().length < 2) {
-      gooeyToast.error('Name too short', {
+      toast.error('Name too short', {
         description: 'Workspace name must be at least 2 characters.',
       })
       return
@@ -92,7 +94,7 @@ function OnboardingPage() {
           planSlug: search.plan,
         },
       })
-      gooeyToast.success('Workspace created', {
+      toast.success('Workspace created', {
         description: 'Welcome aboard!',
       })
       // Invalidate cached queries so the /app route picks up the new workspace
@@ -109,7 +111,7 @@ function OnboardingPage() {
       // TanStack Router redirects (from route guards) are not real errors
       const isRedirect = err && typeof err === 'object' && 'code' in err
       if (!isRedirect) {
-        gooeyToast.error('Could not create workspace', {
+        toast.error('Could not create workspace', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       }
@@ -126,7 +128,7 @@ function OnboardingPage() {
       const result = await redeemInviteByCodeFn({
         data: { code: joinCode.trim() },
       })
-      gooeyToast.success('Joined workspace', {
+      toast.success('Joined workspace', {
         description: `Welcome to ${result.name}!`,
       })
       await router.invalidate()
@@ -135,7 +137,7 @@ function OnboardingPage() {
       // TanStack Router redirects are not real errors
       const isRedirect = err && typeof err === 'object' && 'code' in err
       if (!isRedirect) {
-        gooeyToast.error('Invalid code', {
+        toast.error('Invalid code', {
           description:
             err instanceof Error
               ? err.message
@@ -224,6 +226,7 @@ function OnboardingPage() {
                   <Hash className="size-3.5" />
                   Have a join code?
                 </p>
+                {!emailVerified && <VerifyEmailNotice email={email} />}
                 <form onSubmit={handleJoinByCode} className="flex gap-2">
                   <input
                     value={joinCode}
@@ -239,7 +242,11 @@ function OnboardingPage() {
                   />
                   <button
                     type="submit"
-                    disabled={joiningByCode || joinCode.trim().length < 4}
+                    disabled={
+                      !emailVerified ||
+                      joiningByCode ||
+                      joinCode.trim().length < 4
+                    }
                     className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary-action px-4 text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {joiningByCode ? (

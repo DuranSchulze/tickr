@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import type { ColumnDef } from '@tanstack/react-table'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Archive, CheckCircle, MoreHorizontal, Pencil } from 'lucide-react'
 import { formatCurrency } from '#/lib/time-tracker/billing'
 import {
@@ -49,9 +49,9 @@ export function useArchiveActivate<
       await router.invalidate()
       publishTaskChange()
       opts.onSuccess?.()
-      gooeyToast.success(`"${item.name}" archived`)
+      toast.success(`"${item.name}" archived`)
     } catch (err) {
-      gooeyToast.error('Failed to archive', {
+      toast.error('Failed to archive', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -66,9 +66,9 @@ export function useArchiveActivate<
       await router.invalidate()
       publishTaskChange()
       opts.onSuccess?.()
-      gooeyToast.success(`"${item.name}" activated`)
+      toast.success(`"${item.name}" activated`)
     } catch (err) {
-      gooeyToast.error('Failed to activate', {
+      toast.error('Failed to activate', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

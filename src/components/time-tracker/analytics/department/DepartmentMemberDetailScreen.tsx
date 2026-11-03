@@ -10,7 +10,7 @@ import {
   deleteWorkspaceMemberEntryFn,
   updateWorkspaceMemberEntryFn,
 } from '#/lib/server/tracker'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { dateTimeLocalValue, formatDuration } from '#/lib/time-tracker/store'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
@@ -329,9 +329,9 @@ export function DepartmentMemberDetailScreen({
       // subscription. Wait for the loader to rerun so summary cards and
       // pagination totals follow the updated row.
       await refreshAnalyticsData()
-      gooeyToast.success('Entry updated')
+      toast.success('Entry updated')
     } catch (err) {
-      gooeyToast.error('Action failed', {
+      toast.error('Action failed', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })
@@ -350,9 +350,9 @@ export function DepartmentMemberDetailScreen({
       publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: [target.id] })
       await refreshAnalyticsData()
-      gooeyToast.success('Entry deleted')
+      toast.success('Entry deleted')
     } catch (err) {
-      gooeyToast.error('Could not delete entry', {
+      toast.error('Could not delete entry', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })
@@ -372,9 +372,9 @@ export function DepartmentMemberDetailScreen({
       publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: ids })
       await refreshAnalyticsData()
-      gooeyToast.success(`${ids.length} entries deleted`)
+      toast.success(`${ids.length} entries deleted`)
     } catch (err) {
-      gooeyToast.error('Could not delete selected entries', {
+      toast.error('Could not delete selected entries', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })

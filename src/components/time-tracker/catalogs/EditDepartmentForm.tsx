@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { updateDepartmentFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -39,10 +39,10 @@ export function EditDepartmentForm({
         },
       })
       await router.invalidate()
-      gooeyToast.success('Department updated')
+      toast.success('Department updated')
       onDone()
     } catch (err) {
-      gooeyToast.error('Could not update department', {
+      toast.error('Could not update department', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

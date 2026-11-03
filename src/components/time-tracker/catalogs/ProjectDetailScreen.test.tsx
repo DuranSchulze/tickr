@@ -26,7 +26,7 @@ vi.mock('#/lib/server/tracker/catalogs/project-detail', () => ({
 }))
 vi.mock('#/lib/server/tracker', () => ({ updateTaskFn: updateTask }))
 vi.mock('#/lib/toast', () => ({
-  gooeyToast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn() },
 }))
 vi.mock('../TaskSyncCoordinator', () => ({
   useTaskSyncPublisher: () => publish,

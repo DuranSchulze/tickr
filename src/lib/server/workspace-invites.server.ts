@@ -1,3 +1,7 @@
+import { getRequest } from '@tanstack/react-start/server'
+import { assertTrustedOrigin } from './csrf.server'
+import { reserveAuthAttempt } from './auth-abuse.server'
+import { assertVerifiedMembershipClaim } from './membership-verification'
 import '@tanstack/react-start/server-only'
 import crypto from 'node:crypto'
 import { db } from '#/db'
@@ -439,6 +443,7 @@ export async function previewInvite(token: string): Promise<InvitePreview> {
 }
 
 export async function acceptInvite(token: string) {
+  assertTrustedOrigin()
   const session = await getAuthSession()
   if (!session?.user) {
     throw new WorkspaceInviteError(
@@ -446,6 +451,11 @@ export async function acceptInvite(token: string) {
       'Please sign in to accept this invitation.',
     )
   }
+
+  assertVerifiedMembershipClaim(session.user.emailVerified, {
+    userId: null,
+    status: 'INVITED',
+  })
 
   const invite = await loadInviteByToken(token)
   if (!invite) throw new WorkspaceInviteError('not_found', 'Invite not found.')
@@ -518,6 +528,7 @@ export async function acceptInvite(token: string) {
 }
 
 export async function redeemInviteByCode(code: string) {
+  assertTrustedOrigin()
   const session = await getAuthSession()
   if (!session?.user) {
     throw new WorkspaceInviteError(
@@ -526,6 +537,18 @@ export async function redeemInviteByCode(code: string) {
     )
   }
 
+  assertVerifiedMembershipClaim(session.user.emailVerified, {
+    userId: null,
+    status: 'INVITED',
+  })
+
+  const attempt = await reserveAuthAttempt({
+    operation: 'join_code',
+    request: getRequest(),
+    email: session.user.email,
+  })
+  if (!attempt.admitted)
+    throw new Error('Too many join-code attempts. Please try again later.')
   const normalised = code.trim().toUpperCase()
 
   const [row] = await db

@@ -1,3 +1,5 @@
+import { fetchFreshWorkspaceAuthorization } from '#/lib/time-tracker/workspace-authorization'
+import { workspaceDateKey } from '#/components/time-tracker/calendar/calendar.utils'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { CalendarScreen } from '#/components/time-tracker/calendar/CalendarScreen'
 import { getDepartmentMemberCalendarEntriesFn } from '#/lib/server/tracker'
@@ -10,20 +12,6 @@ type CalendarSearch = {
   month?: string
   view?: 'month' | 'week'
   date?: string
-}
-
-function getCurrentMonth(): string {
-  return new Date().toISOString().slice(0, 7)
-}
-
-function getCurrentDate(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function resolveMonth(search: CalendarSearch): string {
-  return search.month && monthPattern.test(search.month)
-    ? search.month
-    : getCurrentMonth()
 }
 
 export const Route = createFileRoute(
@@ -40,19 +28,24 @@ export const Route = createFileRoute(
         ? search.date
         : undefined,
   }),
-  loaderDeps: ({ search }) => ({ month: resolveMonth(search) }),
-  loader: ({ context, deps, params }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: trackerKeys.departmentMemberCalendar({
-        memberId: params.memberId,
-        ...deps,
-      }),
-      queryFn: () =>
-        getDepartmentMemberCalendarEntriesFn({
-          data: { memberId: params.memberId, ...deps },
-        }),
+  loaderDeps: ({ search }) => ({ month: search.month }),
+  loader: async ({ context, deps, params }) => {
+    const access = await fetchFreshWorkspaceAuthorization(context.queryClient)
+    const resolved = {
+      memberId: params.memberId,
+      month:
+        deps.month ??
+        workspaceDateKey(new Date(), access.workspace.timezone || 'UTC').slice(
+          0,
+          7,
+        ),
+    }
+    return context.queryClient.ensureQueryData({
+      queryKey: trackerKeys.departmentMemberCalendar(resolved),
+      queryFn: () => getDepartmentMemberCalendarEntriesFn({ data: resolved }),
       staleTime: 60_000,
-    }),
+    })
+  },
   staleTime: 60_000,
   component: DepartmentMemberCalendarRoute,
 })
@@ -81,7 +74,7 @@ function DepartmentMemberCalendarRoute() {
       search: {
         month: next.month,
         view: next.view ?? search.view ?? 'month',
-        date: next.date ?? search.date ?? getCurrentDate(),
+        date: next.date ?? search.date ?? calendar.todayDate,
       },
     })
   }
@@ -90,7 +83,7 @@ function DepartmentMemberCalendarRoute() {
     <CalendarScreen
       calendar={calendar}
       view={search.view ?? 'month'}
-      selectedDate={search.date ?? getCurrentDate()}
+      selectedDate={search.date ?? calendar.todayDate}
       eyebrow="Member calendar"
       description={`${calendar.member.name}${memberDescription ? ` - ${memberDescription}` : ''}`}
       onChangeCalendar={changeCalendar}

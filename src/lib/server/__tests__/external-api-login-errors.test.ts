@@ -14,6 +14,12 @@ const { sign, handleError } = vi.hoisted(() => ({
     Response.json({ error: { code: 'internal_error' } }, { status: 500 }),
   ),
 }))
+vi.mock('../auth-abuse.server', () => ({
+  reserveAuthAttempt: vi
+    .fn()
+    .mockResolvedValue({ admitted: true, resetBuckets: [] }),
+  recordAuthResult: vi.fn(),
+}))
 vi.mock('../integrations/external-api-auth.server', () => {
   const context = {
     workspaceId: 'workspace',

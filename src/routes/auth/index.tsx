@@ -9,7 +9,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, BarChart3, Clock, Users } from 'lucide-react'
 import { authClient } from '#/lib/auth-client'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { ThemeToggle } from '#/components/ui/theme-toggle'
 import { BrandLogo } from '#/components/ui/BrandLogo'
 import { BRAND } from '#/lib/brand'
@@ -180,7 +180,7 @@ function AuthPage() {
               'Could not create account. Please try again.',
           )
         } else {
-          gooeyToast.error('Sign in failed', {
+          toast.error('Sign in failed', {
             description: result.error.message ?? 'Authentication failed',
           })
         }
@@ -204,7 +204,7 @@ function AuthPage() {
         })
       }
     } catch {
-      gooeyToast.error('Something went wrong', {
+      toast.error('Something went wrong', {
         description: 'Please try again.',
       })
     } finally {

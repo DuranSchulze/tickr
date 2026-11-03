@@ -1,4 +1,13 @@
+import { useId, useMemo } from 'react'
+import { Combobox } from '#/components/ui/combobox'
 import { ArrowDownUp } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '#/components/ui/select'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { BillableFilter, SortKey } from './hooks/useEntriesFilterSort'
 
@@ -25,66 +34,124 @@ export function EntriesFilters({
   sortKey: SortKey
   setSortKey: (v: SortKey) => void
 }) {
+  const id = useId()
+  const triggerClassName =
+    'w-full min-w-0 justify-between text-foreground [&_[data-slot=select-value]]:block [&_[data-slot=select-value]]:truncate'
+  const contentClassName =
+    'max-h-72 w-(--radix-select-trigger-width) max-w-[calc(100vw-2rem)] p-1'
+
+  const projectOptions = useMemo(
+    () => [
+      { value: '', label: 'All projects' },
+      ...projects.map((project) => ({
+        value: project.id,
+        label: project.name,
+      })),
+    ],
+    [projects],
+  )
+  const tagOptions = useMemo(
+    () => [
+      { value: '', label: 'All tags' },
+      ...tags.map((tag) => ({ value: tag.id, label: tag.name })),
+    ],
+    [tags],
+  )
+
   return (
-    <div className="mt-3 grid min-w-0 gap-3 rounded-xl border border-stone bg-warm-taupe p-3 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
-        Project
-        <select
-          value={filterProject}
-          onChange={(e) => setFilterProject(e.target.value)}
-          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
+    <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+      <div
+        role="group"
+        aria-labelledby={`${id}-project-label`}
+        className="grid min-w-0 gap-1.5"
+      >
+        <span
+          id={`${id}-project-label`}
+          className="text-xs font-semibold text-smoke"
         >
-          <option value="">All projects</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
-        Tag
-        <select
-          value={filterTag}
-          onChange={(e) => setFilterTag(e.target.value)}
-          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
-        >
-          <option value="">All tags</option>
-          {tags.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
-        Billable
-        <select
-          value={filterBillable}
-          onChange={(e) => setFilterBillable(e.target.value as BillableFilter)}
-          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
-        >
-          <option value="all">All entries</option>
-          <option value="yes">Billable only</option>
-          <option value="no">Non-billable only</option>
-        </select>
-      </label>
-      <label className="grid min-w-0 gap-1 text-xs font-semibold text-smoke">
-        <span className="inline-flex items-center gap-1">
-          <ArrowDownUp className="size-3" />
-          Sort by
+          Project
         </span>
-        <select
-          value={sortKey}
-          onChange={(e) => setSortKey(e.target.value as SortKey)}
-          className="h-8 min-w-0 rounded border border-stone bg-eggshell px-2 text-sm text-foreground outline-none focus:border-primary"
+        <Combobox
+          options={projectOptions}
+          value={filterProject}
+          onValueChange={setFilterProject}
+          searchPlaceholder="Search projects…"
+          maxVisibleOptions={50}
+          className="h-9"
+        />
+      </div>
+      <div
+        role="group"
+        aria-labelledby={`${id}-tag-label`}
+        className="grid min-w-0 gap-1.5"
+      >
+        <span
+          id={`${id}-tag-label`}
+          className="text-xs font-semibold text-smoke"
         >
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="longest">Longest first</option>
-          <option value="shortest">Shortest first</option>
-        </select>
-      </label>
+          Tag
+        </span>
+        <Combobox
+          options={tagOptions}
+          value={filterTag}
+          onValueChange={setFilterTag}
+          searchPlaceholder="Search tags…"
+          maxVisibleOptions={50}
+          className="h-9"
+        />
+      </div>
+      <div className="grid min-w-0 gap-1.5">
+        <label
+          htmlFor={`${id}-billable`}
+          className="text-xs font-semibold text-smoke"
+        >
+          Billable
+        </label>
+        <Select
+          value={filterBillable}
+          onValueChange={(value) => setFilterBillable(value as BillableFilter)}
+        >
+          <SelectTrigger id={`${id}-billable`} className={triggerClassName}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            align="start"
+            className={contentClassName}
+          >
+            <SelectItem value="all">All entries</SelectItem>
+            <SelectItem value="yes">Billable only</SelectItem>
+            <SelectItem value="no">Non-billable only</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid min-w-0 gap-1.5">
+        <label
+          htmlFor={`${id}-sort`}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-smoke"
+        >
+          <ArrowDownUp aria-hidden="true" className="size-3" />
+          Sort by
+        </label>
+        <Select
+          value={sortKey}
+          onValueChange={(value) => setSortKey(value as SortKey)}
+        >
+          <SelectTrigger id={`${id}-sort`} className={triggerClassName}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            align="start"
+            className={contentClassName}
+          >
+            <SelectItem value="newest">Newest first</SelectItem>
+            <SelectItem value="oldest">Oldest first</SelectItem>
+            <SelectItem value="longest">Longest first</SelectItem>
+            <SelectItem value="shortest">Shortest first</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 }

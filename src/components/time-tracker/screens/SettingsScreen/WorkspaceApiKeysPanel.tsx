@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Copy, ExternalLink, KeyRound, Plus, Trash2 } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import {
@@ -74,7 +74,7 @@ export function WorkspaceApiKeysPanel() {
     try {
       setKeys(await listWorkspaceApiKeysFn())
     } catch (err) {
-      gooeyToast.error('Could not load API keys', {
+      toast.error('Could not load API keys', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -100,9 +100,9 @@ export function WorkspaceApiKeysPanel() {
       setKeys((current) => [result.key, ...current])
       setName('')
       setExpiresAt('')
-      gooeyToast.success('API key created')
+      toast.success('API key created')
     } catch (err) {
-      gooeyToast.error('Could not create API key', {
+      toast.error('Could not create API key', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -113,9 +113,9 @@ export function WorkspaceApiKeysPanel() {
   async function handleCopy(value: string) {
     try {
       await navigator.clipboard.writeText(value)
-      gooeyToast.success('Copied')
+      toast.success('Copied')
     } catch {
-      gooeyToast.error('Could not copy API key')
+      toast.error('Could not copy API key')
     }
   }
 
@@ -126,9 +126,9 @@ export function WorkspaceApiKeysPanel() {
       await revokeWorkspaceApiKeyFn({ data: { id: keyToRevoke.id } })
       await loadKeys()
       setKeyToRevoke(null)
-      gooeyToast.success('API key revoked')
+      toast.success('API key revoked')
     } catch (err) {
-      gooeyToast.error('Could not revoke API key', {
+      toast.error('Could not revoke API key', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

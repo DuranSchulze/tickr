@@ -10,7 +10,7 @@ import {
 import { Button } from '#/components/ui/button'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { BRAND } from '#/lib/brand'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 
 /**
  * Guides the user through installing the PWA. Prefers the browser's native
@@ -39,7 +39,7 @@ export function InstallAppDialog({
     setInstalling(false)
     if (outcome === 'accepted') {
       onOpenChange(false)
-      gooeyToast.success(`${BRAND.name} installed`, {
+      toast.success(`${BRAND.name} installed`, {
         description: 'Find it on your home screen or launcher.',
       })
     }

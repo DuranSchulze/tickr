@@ -193,6 +193,38 @@ export const rateLimits = pgTable('rate_limit', {
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 })
 
+/**
+ * Authentication abuse counters — our own throttling state for every password
+ * path (browser sign-in, public-API login, developer login, registration).
+ *
+ * Kept separate from `rate_limit` on purpose: that table is owned by Better
+ * Auth's limiter and its row semantics are not ours to repurpose. See
+ * `plans/authentication-abuse-protection/PLAN.md` §7.
+ *
+ * `bucket` is an HMAC of `scope:operation:identifier`, so no raw email address
+ * or IP is ever stored. Rows are fixed-window counters (see
+ * `src/lib/server/auth-abuse.server.ts`); `strikes` and `cooldownUntil` are
+ * reserved for escalating cooldowns and are not written yet.
+ */
+export const authAbuseCounters = pgTable(
+  'auth_abuse_counters',
+  {
+    bucket: varchar('bucket', { length: 64 }).primaryKey(),
+    scope: varchar('scope', { length: 24 }).notNull(),
+    operation: varchar('operation', { length: 32 }).notNull(),
+    windowStartedAt: timestamp('window_started_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    count: integer('count').notNull().default(0),
+    strikes: integer('strikes').notNull().default(0),
+    cooldownUntil: timestamp('cooldown_until', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [index('auth_abuse_counters_updated_at_idx').on(table.updatedAt)],
+)
+
 // ── Profile tables ────────────────────────────────────────────────────────────
 
 export const userProfiles = pgTable(

@@ -12,7 +12,7 @@ import {
   getWorkspaceSubscriptionFn,
   listSubscriptionPlansFn,
 } from '#/lib/server/subscriptions'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 
 type BillingSearch = {
   plan?: 'team' | 'business'
@@ -54,7 +54,7 @@ function BillingPage() {
       const result = await createSubscriptionCheckoutFn({ data: { planSlug } })
       window.location.assign(result.checkoutUrl)
     } catch (error) {
-      gooeyToast.error('Could not open checkout', {
+      toast.error('Could not open checkout', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })

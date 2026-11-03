@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { createDepartmentFn } from '#/lib/server/tracker'
 import {
   BulkNamesInput,
@@ -52,7 +52,7 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
           data: { name, description: description || undefined, color },
         })
         await router.invalidate()
-        gooeyToast.success('Department created')
+        toast.success('Department created')
         dispatch({ name: '', description: '', color: '#6366f1' })
         onSuccess?.()
       } else {
@@ -67,7 +67,7 @@ export function DepartmentForm({ onSuccess }: { onSuccess?: () => void }) {
         dispatch({ bulkNames: '' })
       }
     } catch (err) {
-      gooeyToast.error('Could not create department', {
+      toast.error('Could not create department', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

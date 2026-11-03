@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
@@ -153,11 +153,11 @@ export function useTrackerMutations(
         void invalidateTrackerState(queryClient)
         void router.invalidate()
       }
-      if (options.successMessage) gooeyToast.success(options.successMessage)
+      if (options.successMessage) toast.success(options.successMessage)
       return result
     } catch (err) {
       options.onError?.()
-      gooeyToast.error('Action failed', {
+      toast.error('Action failed', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })

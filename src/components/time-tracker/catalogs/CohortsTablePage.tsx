@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { createColumnHelper } from '@tanstack/react-table'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Pencil, Trash2 } from 'lucide-react'
 import { deleteCohortFn } from '#/lib/server/tracker'
 import type {
@@ -55,9 +55,9 @@ export function CohortsTablePage({
     try {
       await deleteCohortFn({ data: { id: cohort.id } })
       await router.invalidate()
-      gooeyToast.success(`"${cohort.name}" deleted`)
+      toast.success(`"${cohort.name}" deleted`)
     } catch (err) {
-      gooeyToast.error('Failed to delete', {
+      toast.error('Failed to delete', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

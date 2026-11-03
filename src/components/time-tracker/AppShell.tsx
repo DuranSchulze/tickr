@@ -167,11 +167,13 @@ export function AppShell({
         icon: MapPinned,
       })
     }
-    items.push({
-      to: '/app/department-analytics' as const,
-      label: 'Department list',
-      icon: Building2,
-    })
+    if (permissions['members.view']) {
+      items.push({
+        to: '/app/department-analytics' as const,
+        label: 'Department list',
+        icon: Building2,
+      })
+    }
     return items
   }, [permissions])
 

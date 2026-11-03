@@ -2,7 +2,7 @@ import { WeeklyReportEmailsButton } from '#/components/time-tracker/shared/Weekl
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Play, Square, X } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   formatDuration,
   getEntrySeconds,
@@ -359,7 +359,7 @@ export function TimeTrackerDashboard({
             failedIds.add(item.optimisticId)
             removeOptimisticStoppedEntry(item.optimisticId)
           }
-          gooeyToast.error('Failed to sync offline action', {
+          toast.error('Failed to sync offline action', {
             description:
               err instanceof Error ? err.message : 'Something went wrong.',
           })

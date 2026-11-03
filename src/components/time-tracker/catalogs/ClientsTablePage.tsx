@@ -1,7 +1,7 @@
 import { useCallback, useReducer, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Check, PauseCircle, X } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   activateClientFn,
   archiveClientFn,
@@ -84,9 +84,9 @@ export function ClientsTablePage({
         await archiveClientFn({ data: { id: client.id } })
         await router.invalidate()
         publishTaskChange()
-        gooeyToast.success(`"${client.name}" archived`)
+        toast.success(`"${client.name}" archived`)
       } catch (err) {
-        gooeyToast.error('Failed to archive', {
+        toast.error('Failed to archive', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       } finally {
@@ -103,9 +103,9 @@ export function ClientsTablePage({
         await activateClientFn({ data: { id: client.id } })
         await router.invalidate()
         publishTaskChange()
-        gooeyToast.success(`"${client.name}" activated`)
+        toast.success(`"${client.name}" activated`)
       } catch (err) {
-        gooeyToast.error('Failed to activate', {
+        toast.error('Failed to activate', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       } finally {
@@ -122,9 +122,9 @@ export function ClientsTablePage({
         await suspendClientFn({ data: { id: client.id } })
         await router.invalidate()
         publishTaskChange()
-        gooeyToast.success(`"${client.name}" suspended`)
+        toast.success(`"${client.name}" suspended`)
       } catch (err) {
-        gooeyToast.error('Failed to suspend', {
+        toast.error('Failed to suspend', {
           description: err instanceof Error ? err.message : 'Please try again.',
         })
       } finally {
@@ -239,7 +239,7 @@ export function ClientsTablePage({
               : action === 'suspend'
                 ? 'suspended'
                 : 'marked inactive'
-          gooeyToast.success(
+          toast.success(
             `${ids.length} client${ids.length === 1 ? '' : 's'} ${label}`,
           )
         }}

@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   BulkNamesInput,
   catalogFormClass,
@@ -59,7 +59,7 @@ export function ColorCatalogForm({
       if (mode === 'single') {
         await onCreate({ name, color })
         await router.invalidate()
-        gooeyToast.success(`${title} created`)
+        toast.success(`${title} created`)
         dispatch({ name: '', color: defaultColor })
         publishTaskChange()
         onSuccess?.()
@@ -78,7 +78,7 @@ export function ColorCatalogForm({
         dispatch({ bulkNames: '' })
       }
     } catch (err) {
-      gooeyToast.error(`Could not create ${title.toLowerCase()}`, {
+      toast.error(`Could not create ${title.toLowerCase()}`, {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

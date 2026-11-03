@@ -1,3 +1,4 @@
+import { VerifyEmailNotice } from '#/components/auth/VerifyEmailNotice'
 import {
   createFileRoute,
   Link,
@@ -6,7 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Mail, AlertTriangle, LogOut } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { authClient } from '#/lib/auth-client'
 import { getSessionFn } from '#/lib/server/session'
 import { acceptInviteFn, previewInviteFn } from '#/lib/server/workspace-invites'
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/invite/$token')({
       preview,
       signedInEmail: session?.user.email ?? null,
       signedInName: session?.user.name ?? null,
+      emailVerified: session?.user.emailVerified === true,
     }
   },
   component: InvitePage,
@@ -31,7 +33,8 @@ export const Route = createFileRoute('/invite/$token')({
 
 // oxlint-disable-next-line react/only-export-components
 function InvitePage() {
-  const { token, preview, signedInEmail, signedInName } = Route.useLoaderData()
+  const { token, preview, signedInEmail, signedInName, emailVerified } =
+    Route.useLoaderData()
   const navigate = useNavigate()
   const router = useRouter()
   const [accepting, setAccepting] = useState(false)
@@ -61,12 +64,12 @@ function InvitePage() {
     try {
       const acceptedInvite = await acceptInviteFn({ data: { token } })
       await refreshWorkspaceState()
-      gooeyToast.success('Invitation accepted', {
+      toast.success('Invitation accepted', {
         description: `Welcome to ${acceptedInvite.name}.`,
       })
       await navigate({ to: '/app/time-tracker' })
     } catch (err) {
-      gooeyToast.error('Could not accept invitation', {
+      toast.error('Could not accept invitation', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -184,7 +187,10 @@ function InvitePage() {
                     Sign in or create account to accept
                   </button>
                 )}
-                {signedInEmail && emailsMatch && (
+                {signedInEmail && emailsMatch && !emailVerified && (
+                  <VerifyEmailNotice email={signedInEmail} />
+                )}
+                {signedInEmail && emailsMatch && emailVerified && (
                   <button
                     type="button"
                     onClick={handleAccept}

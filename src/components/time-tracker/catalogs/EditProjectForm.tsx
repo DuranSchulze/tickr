@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { updateProjectFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -42,11 +42,11 @@ export function EditProjectForm({
       await updateProjectFn({ data: { id: project.id, name, color, clientId } })
       await router.invalidate()
       publishTaskChange()
-      gooeyToast.success('Project updated')
+      toast.success('Project updated')
       await onSaved?.()
       onDone()
     } catch (err) {
-      gooeyToast.error('Could not update project', {
+      toast.error('Could not update project', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

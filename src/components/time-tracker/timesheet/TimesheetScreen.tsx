@@ -27,7 +27,7 @@ import {
   downloadTimesheetCsv,
   downloadTimesheetExcel,
 } from '#/lib/time-tracker/timesheet-export'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { useNowTick } from '#/components/time-tracker/dashboard/hooks/useNowTick'
 import { Button } from '#/components/ui/button'
 import { Card } from '#/components/ui/card'
@@ -130,13 +130,13 @@ export function TimesheetScreen({
       })
       if (format === 'xlsx') {
         await downloadTimesheetExcel(exported)
-        gooeyToast.success('Timesheet Excel file downloaded')
+        toast.success('Timesheet Excel file downloaded')
       } else {
         downloadTimesheetCsv(exported)
-        gooeyToast.success('Timesheet CSV downloaded')
+        toast.success('Timesheet CSV downloaded')
       }
     } catch {
-      gooeyToast.error('Could not export the timesheet', {
+      toast.error('Could not export the timesheet', {
         description: 'Please try again without leaving this page.',
       })
     } finally {

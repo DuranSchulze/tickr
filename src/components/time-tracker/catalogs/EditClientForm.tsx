@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { updateClientFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import type { ClientStatus } from '#/db/schema'
@@ -42,7 +42,7 @@ export function EditClientForm({
       parsedRate != null &&
       (!Number.isFinite(parsedRate) || parsedRate < 0)
     ) {
-      gooeyToast.error('Enter a valid default billable rate')
+      toast.error('Enter a valid default billable rate')
       return
     }
     setPending(true)
@@ -57,10 +57,10 @@ export function EditClientForm({
       })
       await router.invalidate()
       publishTaskChange()
-      gooeyToast.success('Client updated')
+      toast.success('Client updated')
       onDone()
     } catch (err) {
-      gooeyToast.error('Could not update client', {
+      toast.error('Could not update client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

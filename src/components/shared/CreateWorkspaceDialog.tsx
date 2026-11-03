@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import {
   Dialog,
@@ -27,7 +27,7 @@ export function CreateWorkspaceDialog({
     e.preventDefault()
     const trimmed = name.trim()
     if (trimmed.length < 2) {
-      gooeyToast.error('Name too short', {
+      toast.error('Name too short', {
         description: 'Workspace name must be at least 2 characters.',
       })
       return
@@ -36,12 +36,12 @@ export function CreateWorkspaceDialog({
     try {
       const created = await createWorkspaceFn({ data: { name: trimmed } })
       onOpenChange(false)
-      gooeyToast.success(`"${created.name}" created`, {
+      toast.success(`"${created.name}" created`, {
         description: 'Switching you over now…',
       })
       onCreated?.(trimmed)
     } catch (err) {
-      gooeyToast.error('Could not create workspace', {
+      toast.error('Could not create workspace', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

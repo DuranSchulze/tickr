@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { updateTagFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -34,10 +34,10 @@ export function EditTagForm({
       await updateTagFn({ data: { id: tag.id, name, color } })
       await router.invalidate()
       publishTaskChange()
-      gooeyToast.success('Tag updated')
+      toast.success('Tag updated')
       onDone()
     } catch (err) {
-      gooeyToast.error('Could not update tag', {
+      toast.error('Could not update tag', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

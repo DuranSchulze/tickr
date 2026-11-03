@@ -21,7 +21,7 @@ import {
   deleteWorkspaceMemberEntryFn,
   updateWorkspaceMemberEntryFn,
 } from '#/lib/server/tracker'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   dateTimeLocalValue,
   formatDurationDdhms,
@@ -573,9 +573,9 @@ function MemberDetailView({
       }
       dispatch({ type: 'closeEdit' })
       await refreshAnalyticsData()
-      gooeyToast.success('Entry updated')
+      toast.success('Entry updated')
     } catch (err) {
-      gooeyToast.error('Action failed', {
+      toast.error('Action failed', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })
@@ -594,9 +594,9 @@ function MemberDetailView({
       publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: [target.id] })
       await refreshAnalyticsData()
-      gooeyToast.success('Entry deleted')
+      toast.success('Entry deleted')
     } catch (err) {
-      gooeyToast.error('Could not delete entry', {
+      toast.error('Could not delete entry', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })
@@ -616,9 +616,9 @@ function MemberDetailView({
       publishTaskChange()
       dispatch({ type: 'deleteEntries', entryIds: ids })
       await refreshAnalyticsData()
-      gooeyToast.success(`${ids.length} entries deleted`)
+      toast.success(`${ids.length} entries deleted`)
     } catch (err) {
-      gooeyToast.error('Could not delete selected entries', {
+      toast.error('Could not delete selected entries', {
         description:
           err instanceof Error ? err.message : 'Something went wrong.',
       })

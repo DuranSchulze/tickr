@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
 import {
   enqueueOfflineMutation,
@@ -126,7 +126,7 @@ export function useDraftAndEdit({
         notes: payload.notes,
         entrySource: 'MANUAL',
       })
-      gooeyToast.success('Entry saved offline', {
+      toast.success('Entry saved offline', {
         description: 'It will sync when you reconnect.',
       })
       resetDraft()

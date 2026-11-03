@@ -32,7 +32,7 @@ import {
   unsetMemberClientBillableRateFn,
   updateMemberBillableRateFn,
 } from '#/lib/server/tracker'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   computeBillableRate,
   computeEffectiveRate,
@@ -254,12 +254,12 @@ function MemberRateDialog({
       setDefaultRate(parsedDefaultRate == null ? '' : String(parsedDefaultRate))
       setDrafts(buildClientDrafts(clientList, nextRates))
       void router.invalidate()
-      gooeyToast.success('Billing rates updated', {
+      toast.success('Billing rates updated', {
         description:
           changes === 1 ? '1 change saved.' : `${changes} changes saved.`,
       })
     } catch (err) {
-      gooeyToast.error('Could not save billing rates', {
+      toast.error('Could not save billing rates', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

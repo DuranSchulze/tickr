@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { allPasswordRulesPass } from '#/lib/auth-validation'
 
 export const listQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -144,7 +145,14 @@ export const externalApiLoginSchema = z.object({
 export const externalApiRegisterSchema = z.object({
   name: z.string().trim().min(2).max(150),
   email: z.string().trim().toLowerCase().email().max(255),
-  password: z.string().min(8).max(500),
+  password: z
+    .string()
+    .min(8)
+    .max(128)
+    .refine(
+      allPasswordRulesPass,
+      'Password must include uppercase, lowercase, a number, and a special character.',
+    ),
 })
 
 export type ListQuery = z.infer<typeof listQuerySchema>

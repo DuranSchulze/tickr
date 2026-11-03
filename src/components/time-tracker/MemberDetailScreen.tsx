@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { DollarSign, IdCard, UserRound } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
@@ -140,9 +140,9 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
       })
       await router.invalidate()
       setRate(nextRate == null ? '' : String(nextRate))
-      gooeyToast.success('Billable rate updated')
+      toast.success('Billable rate updated')
     } catch (err) {
-      gooeyToast.error('Could not update rate', {
+      toast.error('Could not update rate', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -153,7 +153,7 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
   function handleSaveRate(event: React.FormEvent) {
     event.preventDefault()
     if (rateInputInvalid) {
-      gooeyToast.error('Enter a valid hourly rate', {
+      toast.error('Enter a valid hourly rate', {
         description: 'Use a positive number, or leave it blank for default.',
       })
       return
@@ -173,9 +173,9 @@ export function MemberDetailScreen({ detail }: { detail: MemberDetail }) {
         },
       })
       await router.invalidate()
-      gooeyToast.success('Member details saved')
+      toast.success('Member details saved')
     } catch (err) {
-      gooeyToast.error('Could not save member details', {
+      toast.error('Could not save member details', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

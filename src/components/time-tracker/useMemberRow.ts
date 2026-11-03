@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import {
   setMemberStatusFn,
   updateWorkspaceMemberFn,
@@ -42,9 +42,9 @@ export function useMemberRow(member: Member) {
         },
       })
       await router.invalidate()
-      gooeyToast.success('Member updated')
+      toast.success('Member updated')
     } catch (err) {
-      gooeyToast.error('Could not update member', {
+      toast.error('Could not update member', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -58,11 +58,11 @@ export function useMemberRow(member: Member) {
     try {
       await setMemberStatusFn({ data: { memberId: member.id, status: next } })
       await router.invalidate()
-      gooeyToast.success(
+      toast.success(
         `Member ${next === 'DISABLED' ? 'disabled' : 'reactivated'}`,
       )
     } catch (err) {
-      gooeyToast.error('Could not update status', {
+      toast.error('Could not update status', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

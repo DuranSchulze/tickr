@@ -50,21 +50,35 @@ export const listWorkspaceInvitesFn = createServerFn({ method: 'GET' }).handler(
 )
 
 export const previewInviteFn = createServerFn({ method: 'GET' })
-  .inputValidator((input: { token: string }) => input)
+  .inputValidator((input) =>
+    z.object({ token: z.string().min(20).max(64) }).parse(input),
+  )
   .handler(async ({ data }) => {
     const { previewInvite } = await import('./workspace-invites.server')
     return previewInvite(data.token)
   })
 
 export const acceptInviteFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: { token: string }) => input)
+  .inputValidator((input) =>
+    z.object({ token: z.string().min(20).max(64) }).parse(input),
+  )
   .handler(async ({ data }) => {
     const { acceptInvite } = await import('./workspace-invites.server')
     return acceptInvite(data.token)
   })
 
 export const redeemInviteByCodeFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: { code: string }) => input)
+  .inputValidator((input) =>
+    z
+      .object({
+        code: z
+          .string()
+          .trim()
+          .length(6)
+          .regex(/^[A-Za-z0-9]+$/),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     const { redeemInviteByCode } = await import('./workspace-invites.server')
     return redeemInviteByCode(data.code)

@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { updateTaskFn } from '#/lib/server/tracker'
 import { createCatalogProjectTaskFn } from '#/lib/server/tracker/catalogs/project-detail'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { useTaskSyncPublisher } from '../TaskSyncCoordinator'
 import {
   CancelButton,
@@ -40,9 +40,9 @@ export function ProjectTaskForm({
       await router.invalidate()
       publishTaskChange()
       await onSaved()
-      gooeyToast.success(task ? 'Task updated' : 'Task created')
+      toast.success(task ? 'Task updated' : 'Task created')
     } catch (error) {
-      gooeyToast.error('Could not save task', {
+      toast.error('Could not save task', {
         description:
           error instanceof Error ? error.message : 'Please try again.',
       })

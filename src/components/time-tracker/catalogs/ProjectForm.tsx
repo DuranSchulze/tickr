@@ -2,7 +2,7 @@ import { useReducer } from 'react'
 import type { Dispatch, FormEvent } from 'react'
 import { Plus } from 'lucide-react'
 import { useRouter } from '@tanstack/react-router'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { createClientFn, createProjectFn } from '#/lib/server/tracker'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import {
@@ -98,7 +98,7 @@ export function ProjectForm({
         addingClient: false,
       })
     } catch (err) {
-      gooeyToast.error('Could not create client', {
+      toast.error('Could not create client', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
@@ -109,7 +109,7 @@ export function ProjectForm({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!resolvedClientId) {
-      gooeyToast.error('Choose a client first')
+      toast.error('Choose a client first')
       return
     }
     dispatch({ pending: true })
@@ -119,7 +119,7 @@ export function ProjectForm({
           data: { name, color, clientId: resolvedClientId },
         })
         await router.invalidate()
-        gooeyToast.success('Project created')
+        toast.success('Project created')
         dispatch({ name: '', color: '#2563eb' })
         publishTaskChange()
         onSuccess?.()
@@ -141,7 +141,7 @@ export function ProjectForm({
         dispatch({ bulkNames: '' })
       }
     } catch (err) {
-      gooeyToast.error('Could not create project', {
+      toast.error('Could not create project', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {

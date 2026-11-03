@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
 import { Info, Pencil } from 'lucide-react'
-import { gooeyToast } from '#/lib/toast'
+import { toast } from '#/lib/toast'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import {
@@ -79,7 +79,7 @@ export function WorkspaceBillingPanel({
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (defaultRateInvalid || currencyInvalid) {
-      gooeyToast.error('Enter valid billing settings', {
+      toast.error('Enter valid billing settings', {
         description:
           'Use a positive hourly rate and select a currency from the list.',
       })
@@ -97,9 +97,9 @@ export function WorkspaceBillingPanel({
       await router.invalidate()
       setCurrency(normalizedCurrency)
       setOpen(false)
-      gooeyToast.success('Workspace billing updated')
+      toast.success('Workspace billing updated')
     } catch (err) {
-      gooeyToast.error('Could not update billing', {
+      toast.error('Could not update billing', {
         description: err instanceof Error ? err.message : 'Please try again.',
       })
     } finally {
