@@ -1,3 +1,5 @@
+import { notifyTracker } from '#/lib/time-tracker/notifications'
+import type { TrackerNotice } from '#/lib/time-tracker/notifications'
 import { useRef, useState } from 'react'
 import { toast } from '#/lib/toast'
 import { useRouter } from '@tanstack/react-router'
@@ -63,6 +65,7 @@ type EntryPayload = {
 type MutationOptions<T> = {
   invalidate?: boolean
   successMessage?: string
+  successNotice?: TrackerNotice
   onSuccess?: (result: T) => void
   onError?: () => void
 }
@@ -153,7 +156,11 @@ export function useTrackerMutations(
         void invalidateTrackerState(queryClient)
         void router.invalidate()
       }
-      if (options.successMessage) toast.success(options.successMessage)
+      if (options.successMessage !== undefined) {
+        if (options.successMessage) toast.success(options.successMessage)
+      } else if (options.successNotice) {
+        notifyTracker(options.successNotice)
+      }
       return result
     } catch (err) {
       options.onError?.()
@@ -218,7 +225,7 @@ export function useTrackerMutations(
       options?: MutationOptions<TimeEntry>,
     ) =>
       run(() => updateActiveTimerFn({ data: input }), {
-        successMessage: 'Entry updated',
+        successNotice: { action: 'updated', task: input.description },
         ...options,
       }),
     addManualEntry: async (
@@ -245,7 +252,11 @@ export function useTrackerMutations(
           return created
         },
         {
-          successMessage: 'Entry added',
+          successNotice: {
+            action: 'created',
+            task: payload.description,
+            durationSeconds: payload.durationSeconds,
+          },
           ...options,
         },
       )
@@ -262,7 +273,7 @@ export function useTrackerMutations(
       })
       if (!confirmed) return undefined
       return run(async () => updateEntryFn({ data: { id, ...payload } }), {
-        successMessage: 'Entry updated',
+        successNotice: { action: 'updated', task: payload.description },
         ...options,
       })
     },
@@ -274,7 +285,7 @@ export function useTrackerMutations(
           removeTrackerStateEntry(queryClient, id)
         },
         {
-          successMessage: 'Entry deleted',
+          successNotice: { action: 'deleted' },
           ...options,
         },
       ).finally(() => setDeletingEntryId(null))
@@ -290,7 +301,7 @@ export function useTrackerMutations(
           return duplicated
         },
         {
-          successMessage: 'Entry duplicated',
+          successNotice: { action: 'duplicated' },
           ...options,
         },
       ),

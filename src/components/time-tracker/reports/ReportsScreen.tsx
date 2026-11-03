@@ -1,3 +1,4 @@
+import { notifyTracker } from '#/lib/time-tracker/notifications'
 import { ArrowLeft, FileText, PanelRightOpen } from 'lucide-react'
 import type { ReportsPayload } from '#/lib/server/tracker/reports.server'
 import type { DepartmentMemberDetail } from '#/lib/server/tracker/department-dashboard.server'
@@ -573,7 +574,7 @@ function MemberDetailView({
       }
       dispatch({ type: 'closeEdit' })
       await refreshAnalyticsData()
-      toast.success('Entry updated')
+      notifyTracker({ action: 'updated', task: editingDraft.description })
     } catch (err) {
       toast.error('Action failed', {
         description:
