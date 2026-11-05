@@ -5,12 +5,14 @@ import { Button } from '#/components/ui/button'
 import type { ExportFormat } from './export-dialog-state'
 
 export interface ExportActionsFooterProps {
+  includeExcel?: boolean
   exporting: ExportFormat | null
   invalid: boolean
   onExport: (format: ExportFormat) => void
 }
 
 export function ExportActionsFooter({
+  includeExcel = false,
   exporting,
   invalid,
   onExport,
@@ -34,6 +36,20 @@ export function ExportActionsFooter({
         )}
         CSV
       </Button>
+      {includeExcel && (
+        <Button
+          variant="outline"
+          onClick={() => onExport('xlsx')}
+          disabled={invalid || exporting !== null}
+        >
+          {exporting === 'xlsx' ? (
+            <Loader2 className="mr-2 size-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="mr-2 size-4" />
+          )}
+          Excel
+        </Button>
+      )}
       <Button
         onClick={() => onExport('pdf')}
         disabled={invalid || exporting !== null}

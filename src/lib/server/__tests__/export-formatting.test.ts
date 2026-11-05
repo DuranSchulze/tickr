@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { BulkReport } from '#/lib/server/tracker/bulk-report.server'
-import { buildGroupedTimeReportCsv } from '#/lib/time-tracker/bulk-report-export'
+import {
+  buildGroupedTimeReportCsv,
+  buildGroupedTimeReportExcelWorkbook,
+} from '#/lib/time-tracker/bulk-report-export'
 import {
   buildCsv,
   formatDecimalHours,
@@ -68,7 +71,7 @@ describe('export formatting', () => {
     ])
   })
 
-  it('keeps grouped export detail rows aligned with the header', () => {
+  it('keeps grouped CSV and Excel detail rows aligned with the header', async () => {
     const report: BulkReport = {
       scopeType: 'all',
       scopeLabel: 'All workspace activity',
@@ -138,6 +141,22 @@ describe('export formatting', () => {
 
     const rows = parseCsvRows(buildGroupedTimeReportCsv(report))
     const headerIndex = rows.findIndex((row) => row[0] === 'Member')
+    const workbook = await buildGroupedTimeReportExcelWorkbook(report)
+    const { default: ExcelJS } = await import('exceljs')
+    const restored = new ExcelJS.Workbook()
+    await restored.xlsx.load(await workbook.xlsx.writeBuffer())
+    const sheet = restored.getWorksheet('Time Report')!
+    const detail = sheet.getRow(headerIndex + 2)
+    expect(detail.getCell(12).value).toBe('=unsafe\nlong description')
+    expect(detail.getCell(12).type).toBe(ExcelJS.ValueType.String)
+    expect(detail.getCell(14).value).toBe(1.5)
+    expect(detail.getCell(16).value).toBe(150.5)
+    expect(detail.getCell(17).value).toBe(225.75)
+    expect(sheet.getRow(headerIndex + 3).getCell(16).value).toBe('')
+    expect(sheet.getRow(headerIndex + 3).getCell(17).value).toBe('')
+    expect(detail.getCell(3).value).toBe('2026-06-19')
+    expect(detail.getCell(5).value).toBe('2026-06-20')
+
     const header = rows[headerIndex]
     const billableRow = rows[headerIndex + 1]
     const nonBillableRow = rows[headerIndex + 2]
@@ -163,12 +182,7 @@ describe('export formatting', () => {
     expect(header).toHaveLength(17)
     expect(billableRow).toHaveLength(header.length)
     expect(nonBillableRow).toHaveLength(header.length)
-    expect(header.slice(6, 10)).toEqual([
-      'Manual',
-      'Project',
-      'Client',
-      'Task',
-    ])
+    expect(header.slice(6, 10)).toEqual(['Manual', 'Project', 'Client', 'Task'])
     expect(billableRow.slice(2, 6)).toEqual([
       '2026-06-19',
       '11:30 PM',

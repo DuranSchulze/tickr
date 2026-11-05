@@ -2,6 +2,7 @@ import type { MemberMonthlyReport } from '#/lib/server/tracker/member-report.ser
 import type { BulkReport } from '#/lib/server/tracker/bulk-report.server'
 import {
   buildGroupedTimeReportPdf,
+  downloadGroupedTimeReportExcel,
   downloadGroupedTimeReportCsv,
   downloadGroupedTimeReportPdf,
 } from './bulk-report-export'
@@ -81,4 +82,16 @@ export async function buildWeeklyMemberReportPdf(
     orientation: 'landscape',
   })
   return new Uint8Array(doc.output('arraybuffer'))
+}
+
+/** Downloads the member report as a native Excel workbook. */
+export async function downloadMemberReportExcel(
+  report: MemberMonthlyReport,
+): Promise<void> {
+  await downloadGroupedTimeReportExcel(toGroupedReport(report), {
+    title: 'Member Time & Billing Report',
+    subtitle:
+      'Individual member time entries with task detail, client rates, billable status, and computed amounts.',
+    filenamePrefix: 'member-time-billing-report',
+  })
 }

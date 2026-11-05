@@ -13,6 +13,7 @@ import {
 } from '#/lib/server/tracker'
 import {
   downloadMemberReportCsv,
+  downloadMemberReportExcel,
   downloadMemberReportPdf,
 } from '#/lib/time-tracker/member-report-export'
 import { ExportDateRangePicker } from './ExportDateRangePicker'
@@ -30,7 +31,7 @@ import type { ExportOngoingTaskSummary } from '#/lib/time-tracker/export-ongoing
 
 /**
  * Single source of truth for per-member report export. Lets the user pick a
- * date range and download the report as PDF or CSV. Permissions are enforced
+ * date range and download the report as PDF, CSV, or Excel. Permissions are enforced
  * server-side by `getMemberMonthlyReport` (OWNER/ADMIN: anyone, MANAGER: their
  * department, EMPLOYEE: self), so there's no client-side gating here.
  *
@@ -88,6 +89,8 @@ export function MemberExportDialog({
       })
       if (format === 'pdf') {
         await downloadMemberReportPdf(report)
+      } else if (format === 'xlsx') {
+        await downloadMemberReportExcel(report)
       } else {
         downloadMemberReportCsv(report)
       }
@@ -171,6 +174,7 @@ export function MemberExportDialog({
           </div>
 
           <ExportActionsFooter
+            includeExcel
             exporting={checkingFormat ?? exporting}
             invalid={invalidRange}
             onExport={handleExport}
