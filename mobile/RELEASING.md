@@ -117,8 +117,15 @@ APK. The `applicationId` is `com.trackly.internal` (debug builds use
   the app version matches the tag (`0.1.0`).
 - Confirm the version code increased versus the previous release.
 
-## Rollback
+## Rollback and retries
 
 Prefer publishing a new patch release. If a release must be withdrawn, delete
 the GitHub release and the tag (`git push --delete origin vX.Y.Z`). Do not reuse
 a published version code for a different build.
+
+> **Do not delete or force-update a tag that already has a published release.**
+> GitHub ties the release to the tag and removes the release, which is what
+> happened while this workflow was being set up. To retry a failed build, push a
+> new patch tag (for example `v0.1.2`) — or, once this workflow is on `main`, use
+> **Run workflow**. Re-running the workflow for the same tag updates the existing
+> release in place instead of failing.
