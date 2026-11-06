@@ -1,0 +1,218 @@
+# Builds the Android APK/AAB and publishes it as a GitHub Release.
+#
+# The web app keeps deploying to DigitalOcean App Platform from `main`; this
+# workflow only adds the downloadable Android artifact to the release page.
+#
+# Cut a release by pushing a semver tag:
+#   git tag -a v0.1.0 -m "Tickr v0.1.0"
+#   git push origin v0.1.0
+#
+# Or run the workflow manually with the "Run workflow" button (version input).
+# See mobile/RELEASING.md for signing setup and the release checklist.
+name: release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the v prefix (for example 0.1.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Publish as a pre-release even when the build is signed'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '22'
+  # Origin loaded by the APK shell. Override with the TRACKLY_ANDROID_SERVER_URL
+  # repository/org variable instead of editing this workflow.
+  MOBILE_SERVER_URL: ${{ vars.TRACKLY_ANDROID_SERVER_URL || 'https://trackly.ph' }}
+
+jobs:
+  android-release:
+    name: Build and publish Android release
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version and previous tag
+        id: vars
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="v${INPUT_VERSION#v}"
+            VERSION="${TAG#v}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            VERSION="${TAG#v}"
+          fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$VERSION' is not a semver version (MAJOR.MINOR.PATCH[-prerelease])."
+            exit 1
+          fi
+          PREVIOUS_TAG="$(git describe --tags --abbrev=0 --exclude "$TAG" HEAD 2>/dev/null || true)"
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "previous_tag=$PREVIOUS_TAG"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "## Release $TAG"
+            echo ""
+            echo "- Version: \`$VERSION\`"
+            echo "- Previous tag: \`${PREVIOUS_TAG:-none}\`"
+            echo "- Server origin: \`$MOBILE_SERVER_URL\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform and build tools
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate mobile configuration
+        run: pnpm --dir mobile test
+
+      - name: Prepare optional release keystore
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "keystore=$RUNNER_TEMP/release.keystore" >> "$GITHUB_OUTPUT"
+            echo "Release keystore found; building a signed APK and AAB."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not configured. Publishing a debug-signed test APK instead."
+          fi
+
+      - name: Build signed APK and AAB
+        if: steps.signing.outputs.signed == 'true'
+        env:
+          ANDROID_VERSION_NAME: ${{ steps.vars.outputs.version }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          ANDROID_KEYSTORE_PATH: ${{ steps.signing.outputs.keystore }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          pnpm --dir mobile sync
+          pnpm --dir mobile exec node scripts/gradle.mjs assembleRelease
+          pnpm --dir mobile exec node scripts/gradle.mjs bundleRelease
+
+      - name: Build debug test APK
+        if: steps.signing.outputs.signed != 'true'
+        env:
+          ANDROID_VERSION_NAME: ${{ steps.vars.outputs.version }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+        run: pnpm --dir mobile build:debug
+
+      - name: Collect release assets
+        id: assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.vars.outputs.version }}"
+          mkdir -p artifacts
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            test -f mobile/android/app/build/outputs/apk/release/app-release.apk
+            cp mobile/android/app/build/outputs/apk/release/app-release.apk "artifacts/Tickr-${VERSION}.apk"
+            cp mobile/android/app/build/outputs/bundle/release/app-release.aab "artifacts/Tickr-${VERSION}.aab"
+          else
+            test -f mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            cp mobile/android/app/build/outputs/apk/debug/app-debug.apk "artifacts/Tickr-${VERSION}-debug.apk"
+          fi
+          shopt -s nullglob
+          ( cd artifacts && sha256sum ./*.apk ./*.aab > SHA256SUMS.txt )
+          NAMES="$(cd artifacts && printf '%s\n' *.apk *.aab SHA256SUMS.txt | paste -sd, -)"
+          echo "names=$NAMES" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Release assets"
+            ( cd artifacts && ls -lh )
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate release notes
+        env:
+          RELEASE_VERSION: ${{ steps.vars.outputs.version }}
+          RELEASE_TAG: ${{ steps.vars.outputs.tag }}
+          RELEASE_PREVIOUS_TAG: ${{ steps.vars.outputs.previous_tag }}
+          RELEASE_SIGNED: ${{ steps.signing.outputs.signed }}
+          RELEASE_ASSETS: ${{ steps.assets.outputs.names }}
+          RELEASE_SERVER_URL: ${{ env.MOBILE_SERVER_URL }}
+        run: node scripts/release-notes.mjs > artifacts/release-notes.md
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tickr-android-v${{ steps.vars.outputs.version }}
+          path: artifacts/*
+          retention-days: 14
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.vars.outputs.tag }}
+          VERSION: ${{ steps.vars.outputs.version }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PRERELEASE=()
+          if [ "$SIGNED" != "true" ] || [ "$INPUT_PRERELEASE" = "true" ] || [[ "$VERSION" == *-* ]]; then
+            PRERELEASE+=(--prerelease)
+          fi
+          shopt -s nullglob
+          ASSETS=(artifacts/*.apk artifacts/*.aab artifacts/SHA256SUMS.txt)
+          if [ ${#ASSETS[@]} -eq 0 ]; then
+            echo "::error::No release assets were produced."
+            exit 1
+          fi
+          gh release create "$TAG" \
+            --title "Tickr $TAG" \
+            --notes-file artifacts/release-notes.md \
+            --target "$GITHUB_SHA" \
+            "${PRERELEASE[@]}" \
+            "${ASSETS[@]}"
