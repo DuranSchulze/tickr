@@ -107,6 +107,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check release origin reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A dead origin still produces an installable APK, but it would open
+          # to a connection error. Warn instead of blocking so a release can be
+          # cut while the web deployment is being repaired.
+          if ! curl -fsS --max-time 15 "${MOBILE_SERVER_URL}/api/health" > /dev/null; then
+            echo "::warning::${MOBILE_SERVER_URL}/api/health did not respond. The APK will not load until that origin is live. Set the TRACKLY_ANDROID_SERVER_URL variable if the web app moved."
+          fi
+
       - name: Validate mobile configuration
         run: pnpm --dir mobile test
 
@@ -200,9 +211,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PRERELEASE=()
+          PRERELEASE=(--prerelease=false)
           if [ "$SIGNED" != "true" ] || [ "$INPUT_PRERELEASE" = "true" ] || [[ "$VERSION" == *-* ]]; then
-            PRERELEASE+=(--prerelease)
+            PRERELEASE=(--prerelease)
           fi
           shopt -s nullglob
           ASSETS=(artifacts/*.apk artifacts/*.aab artifacts/SHA256SUMS.txt)
@@ -210,9 +221,20 @@ jobs:
             echo "::error::No release assets were produced."
             exit 1
           fi
-          gh release create "$TAG" \
-            --title "Tickr $TAG" \
-            --notes-file artifacts/release-notes.md \
-            --target "$GITHUB_SHA" \
-            "${PRERELEASE[@]}" \
-            "${ASSETS[@]}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # Re-running a release (for example after moving a tag or fixing a
+            # failed build) updates the existing release instead of failing.
+            echo "Release $TAG already exists; updating its assets and notes."
+            gh release upload "$TAG" "${ASSETS[@]}" --clobber
+            gh release edit "$TAG" \
+              --title "Tickr $TAG" \
+              --notes-file artifacts/release-notes.md \
+              "${PRERELEASE[@]}"
+          else
+            gh release create "$TAG" \
+              --title "Tickr $TAG" \
+              --notes-file artifacts/release-notes.md \
+              --target "$GITHUB_SHA" \
+              "${PRERELEASE[@]}" \
+              "${ASSETS[@]}"
+          fi
