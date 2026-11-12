@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Button } from '#/components/ui/button'
+import { OverflowReveal, useCanHover } from '#/components/ui/overflow-reveal'
 import { cn } from '#/lib/utils'
 import { getCreatedTaskSelection } from './client-project-selection'
 import type { CreatedProjectTask } from './client-project-selection'
@@ -65,6 +66,8 @@ interface Props {
   bare?: boolean
   /** Compact badge style — minimal text-only trigger for table rows. */
   compact?: boolean
+  /** Let the selection label wrap onto two lines for touch-first layouts. */
+  wrap?: boolean
 }
 
 type GroupedRow =
@@ -85,6 +88,14 @@ function matchesTokens(tokens: string[], ...values: Array<string | undefined>) {
   return tokens.every((token) => haystack.includes(token))
 }
 
+function formatSelectionLabel(
+  client: ClientItem | undefined,
+  task: ProjectTaskItem | undefined,
+  project: ProjectItem | undefined,
+) {
+  return `${client?.name ? `${client.name} / ` : ''}${task ? `${task.name} - ` : ''}${project?.name ?? ''}`
+}
+
 export function ClientProjectPicker({
   clients,
   projects,
@@ -99,6 +110,7 @@ export function ClientProjectPicker({
   placeholder = 'Client / Project',
   bare = false,
   compact = false,
+  wrap = false,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -120,26 +132,15 @@ export function ClientProjectPicker({
 
   const inputRef = useRef<HTMLInputElement>(null)
   const newTaskInputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
 
   function seedCollapsedProjects() {
     setCollapsedProjects(new Set(projects.map((p) => p.id)))
-  }
-
-  function scrollSelectedIntoView() {
-    requestAnimationFrame(() => {
-      const el = listRef.current?.querySelector<HTMLElement>(
-        '[data-selected="true"]',
-      )
-      el?.scrollIntoView({ block: 'nearest' })
-    })
   }
 
   function handleOpenChange(nextOpen: boolean) {
     if (nextOpen) {
       seedCollapsedProjects()
       setOpen(true)
-      scrollSelectedIntoView()
     } else {
       setOpen(false)
       setSearch('')
@@ -162,6 +163,13 @@ export function ClientProjectPicker({
   )
 
   const hasSelection = !!clientId && !!projectId && !!selectedProject
+  const canHover = useCanHover()
+  // Touch devices can't hover, so show more of the label by wrapping it instead
+  // of truncating to a single unreadable line.
+  const wrapLabel = !compact && !bare && (wrap || !canHover)
+  const selectionLabel = hasSelection
+    ? formatSelectionLabel(selectedClient, selectedTask, selectedProject)
+    : placeholder
 
   const projectsByClient = useMemo(() => {
     const map = new Map<string, ProjectItem[]>()
@@ -344,66 +352,86 @@ export function ClientProjectPicker({
         onOpenChange={disabled ? undefined : handleOpenChange}
       >
         {/* Trigger */}
-        <div
-          className={
-            bare
-              ? 'group relative h-full'
-              : compact
-                ? 'group relative'
-                : 'group relative'
-          }
-        >
+        <div className={cn('group relative min-w-0 w-full', bare && 'h-full')}>
           <PopoverTrigger asChild>
             <button
               type="button"
               disabled={disabled}
-              title={
-                compact && hasSelection
-                  ? `${selectedClient?.name ? selectedClient.name + ' / ' : ''}${selectedTask ? selectedTask.name + ' - ' : ''}${selectedProject.name}`
-                  : undefined
-              }
               className={
                 compact
                   ? 'flex h-9 w-full min-w-0 items-center justify-start overflow-hidden rounded-full px-1.5 py-0.5 text-xs font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:text-smoke'
                   : bare
                     ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-smoke'
-                    : 'flex h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-stone/80 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke'
+                    : wrapLabel
+                      ? 'flex min-h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:border-stone/80 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke'
+                      : 'flex h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-stone/80 disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke'
               }
             >
-              <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+              <span
+                className={cn(
+                  'flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden',
+                  hasSelection && !compact && 'mr-5',
+                )}
+              >
                 {hasSelection ? (
                   compact ? (
-                    <>
+                    <OverflowReveal
+                      label={selectionLabel}
+                      className="flex min-w-0 flex-1 items-center gap-1.5"
+                    >
                       <span
                         className="size-2 shrink-0 rounded-full"
                         style={{ backgroundColor: selectedProject.color }}
                       />
-                      <span className="block min-w-0 flex-1 truncate text-left leading-tight">
-                        {selectedClient?.name
-                          ? `${selectedClient.name} / `
-                          : ''}
-                        {selectedTask ? `${selectedTask.name} - ` : ''}
-                        {selectedProject.name}
+                      <span
+                        data-overflow-check
+                        className="block min-w-0 flex-1 truncate text-left leading-tight"
+                      >
+                        {selectionLabel}
                       </span>
                       {selectedClient?.clientStatus === 'SUSPENDED' && (
                         <span className="ml-1 shrink-0 rounded bg-amber-500/10 px-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
                           Suspended
                         </span>
                       )}
-                    </>
+                    </OverflowReveal>
+                  ) : wrapLabel ? (
+                    <span className="line-clamp-2 min-w-0 flex-1 text-left leading-snug [overflow-wrap:anywhere]">
+                      {selectedClient?.name ? (
+                        <>
+                          {selectedClient.name}
+                          {selectedClient.clientStatus === 'SUSPENDED' && (
+                            <span className="ml-1 rounded bg-amber-500/10 px-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                              Suspended
+                            </span>
+                          )}
+                          <span className="text-smoke"> / </span>
+                        </>
+                      ) : null}
+                      {selectedTask ? (
+                        <>
+                          {selectedTask.name}
+                          <span className="text-smoke"> - </span>
+                        </>
+                      ) : null}
+                      {selectedProject.name}
+                    </span>
                   ) : (
-                    <>
+                    <OverflowReveal
+                      label={selectionLabel}
+                      className="flex min-w-0 flex-1 items-center gap-1.5"
+                    >
                       <span
                         className="size-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: selectedProject.color }}
                       />
-                      <div
-                        className="flex min-w-0 items-center gap-0 text-left"
-                        title={`${selectedClient?.name ? selectedClient.name + ' / ' : ''}${selectedTask ? selectedTask.name + ' - ' : ''}${selectedProject.name}`}
-                      >
+                      <span className="flex min-w-0 flex-1 items-center gap-0 text-left">
                         {selectedClient?.name ? (
                           <>
-                            <span className="truncate max-w-[100px]">
+                            <span
+                              data-overflow-check
+                              className="min-w-0 max-w-[100px] truncate"
+                            >
                               {selectedClient.name}
                             </span>
                             {selectedClient.clientStatus === 'SUSPENDED' && (
@@ -418,7 +446,10 @@ export function ClientProjectPicker({
                         ) : null}
                         {selectedTask ? (
                           <>
-                            <span className="shrink-0 whitespace-nowrap text-foreground">
+                            <span
+                              data-overflow-check
+                              className="min-w-0 truncate text-foreground"
+                            >
                               {selectedTask.name}
                             </span>
                             <span className="shrink-0 text-smoke">
@@ -426,16 +457,21 @@ export function ClientProjectPicker({
                             </span>
                           </>
                         ) : null}
-                        <span className="truncate text-foreground">
+                        <span
+                          data-overflow-check
+                          className="min-w-0 truncate text-foreground"
+                        >
                           {selectedProject.name}
                         </span>
-                      </div>
-                    </>
+                      </span>
+                    </OverflowReveal>
                   )
                 ) : (
-                  <span className="text-smoke">{placeholder}</span>
+                  <span className="min-w-0 flex-1 truncate text-smoke">
+                    {placeholder}
+                  </span>
                 )}
-              </div>
+              </span>
 
               {!compact && (
                 <div className="flex shrink-0 items-center gap-1">
@@ -455,36 +491,6 @@ export function ClientProjectPicker({
               <X className="size-3" />
             </button>
           )}
-
-          {/* Tooltip */}
-          {hasSelection && !open && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-            >
-              <div className="whitespace-nowrap rounded-lg border border-stone bg-popover px-2.5 py-1.5 shadow-[var(--shadow-whisper)]">
-                <p className="text-xs text-smoke">
-                  {selectedClient?.name ? (
-                    <>
-                      {selectedClient.name}
-                      <span className="mx-1">/</span>
-                    </>
-                  ) : null}
-                  {selectedTask ? (
-                    <>
-                      {selectedTask.name}
-                      <span className="mx-1">-</span>
-                    </>
-                  ) : null}
-                  <span className="font-semibold text-foreground">
-                    {selectedProject.name}
-                  </span>
-                </p>
-              </div>
-              <div className="absolute left-1/2 top-full -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-stone" />
-              <div className="absolute left-1/2 top-[calc(100%-1px)] -translate-x-1/2 border-x-4 border-t-4 border-x-transparent border-t-popover" />
-            </div>
-          )}
         </div>
 
         {/* Dropdown */}
@@ -494,7 +500,7 @@ export function ClientProjectPicker({
           collisionPadding={12}
           onOpenAutoFocus={(e) => {
             e.preventDefault()
-            inputRef.current?.focus()
+            if (canHover) inputRef.current?.focus()
           }}
           className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(24rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-xl border border-stone bg-eggshell p-0 shadow-[var(--shadow-whisper)]"
         >
@@ -511,10 +517,13 @@ export function ClientProjectPicker({
           </div>
 
           {/* Results */}
-          <div
-            ref={listRef}
-            className="max-h-[min(22rem,calc(100dvh-10rem))] min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]"
-          >
+          <div className="max-h-[22rem] min-h-0 flex-1 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
+            {hasSelection && (
+              <p className="mx-2 mb-1 rounded-md bg-warm-taupe px-2 py-1.5 text-xs [overflow-wrap:anywhere]">
+                <span className="font-semibold">Selected: </span>
+                {selectionLabel}
+              </p>
+            )}
             {rows.length === 0 ? (
               <p className="px-3 py-2 text-xs text-smoke">
                 No clients, projects or tasks found
@@ -541,7 +550,9 @@ export function ClientProjectPicker({
                         <ChevronDown className="size-3.5 shrink-0" />
                       )}
                       <Building2 className="size-3 shrink-0" />
-                      <span className="truncate">{row.client.name}</span>
+                      <span className="min-w-0 text-left [overflow-wrap:anywhere]">
+                        {row.client.name}
+                      </span>
                       {row.client.clientStatus === 'SUSPENDED' && (
                         <span className="shrink-0 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
                           Suspended
@@ -589,12 +600,11 @@ export function ClientProjectPicker({
                       {/* Select project */}
                       <button
                         type="button"
-                        data-selected={pActive ? 'true' : undefined}
                         onClick={() =>
                           handleSelect(row.client.id, row.project.id)
                         }
                         className={cn(
-                          'flex flex-1 items-center gap-2 rounded py-0.5 -my-0.5',
+                          'flex min-w-0 flex-1 items-center gap-2 rounded py-0.5 -my-0.5 text-left',
                           pActive
                             ? 'font-medium text-foreground'
                             : 'font-normal text-smoke',
@@ -604,7 +614,9 @@ export function ClientProjectPicker({
                           className="size-2 shrink-0 rounded-full"
                           style={{ backgroundColor: row.project.color }}
                         />
-                        <span className="truncate">{row.project.name}</span>
+                        <span className="min-w-0 [overflow-wrap:anywhere]">
+                          {row.project.name}
+                        </span>
                         {pActive && (
                           <span className="size-1.5 shrink-0 rounded-full bg-primary" />
                         )}
@@ -635,7 +647,6 @@ export function ClientProjectPicker({
                   return (
                     <div
                       key={`task-${row.task.id}`}
-                      data-selected={tActive ? 'true' : undefined}
                       className={cn(
                         'group/task flex min-h-10 w-full items-center gap-2 py-1.5 pl-16 pr-3 text-left text-xs transition-colors hover:bg-accent sm:min-h-0',
                         tActive
@@ -657,7 +668,7 @@ export function ClientProjectPicker({
                           tActive && 'font-medium',
                         )}
                       >
-                        <span className="min-w-0 flex-1 truncate">
+                        <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">
                           {row.task.name}
                         </span>
                         {tActive && (

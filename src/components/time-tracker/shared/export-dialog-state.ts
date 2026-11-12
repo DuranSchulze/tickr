@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { toast } from '#/lib/toast'
 
-export type ExportFormat = 'pdf' | 'csv'
+export type ExportFormat = 'pdf' | 'csv' | 'xlsx'
 
 type ExportRange = {
   startDate: string

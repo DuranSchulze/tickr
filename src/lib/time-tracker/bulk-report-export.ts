@@ -310,10 +310,10 @@ export async function downloadGroupedTimeReportPdf(
  * grand-total row. Durations are emitted as both exact HH:MM:SS strings and
  * decimal hours.
  */
-export function buildGroupedTimeReportCsv(
+function buildGroupedTimeReportRows(
   report: BulkReport,
   options: GroupedReportExportOptions = {},
-): string {
+) {
   const currency = (report.currency || 'PHP').toUpperCase()
 
   const rows: (string | number | null | undefined)[][] = [
@@ -402,7 +402,76 @@ export function buildGroupedTimeReportCsv(
     summaryRow('OVERLAP', s.overlapSeconds),
   )
 
-  return buildCsv(rows)
+  return rows
+}
+
+export function buildGroupedTimeReportCsv(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+): string {
+  return buildCsv(buildGroupedTimeReportRows(report, options))
+}
+
+export async function buildGroupedTimeReportExcelWorkbook(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+) {
+  const { default: ExcelJS } = await import('exceljs')
+  const workbook = new ExcelJS.Workbook()
+  const sheet = workbook.addWorksheet('Time Report')
+  const rows = buildGroupedTimeReportRows(report, options)
+  const headerIndex = rows.findIndex((row) => row[0] === 'Member')
+  for (const [index, row] of rows.entries()) {
+    const values = row.map((value, column) => {
+      // Keep user text as literal strings; only convert known numeric columns.
+      if (
+        index > headerIndex &&
+        [13, 15, 16].includes(column) &&
+        typeof value === 'string' &&
+        value !== ''
+      )
+        return Number(value)
+      return value ?? ''
+    })
+    const added = sheet.addRow(values)
+    if (index === 0 || index === headerIndex) added.font = { bold: true }
+    if (index > headerIndex) {
+      for (const column of [14, 16, 17]) added.getCell(column).numFmt = '0.00'
+    }
+  }
+  sheet.columns.forEach((column, index) => {
+    column.width = index === 11 ? 48 : index === 1 ? 30 : 20
+  })
+  sheet.views = [{ state: 'frozen', ySplit: headerIndex + 1 }]
+  const entryCount = report.groups.reduce(
+    (count, group) => count + group.entries.length,
+    0,
+  )
+  sheet.autoFilter = {
+    from: { row: headerIndex + 1, column: 1 },
+    to: { row: headerIndex + 1 + entryCount, column: 17 },
+  }
+  return workbook
+}
+
+export async function downloadGroupedTimeReportExcel(
+  report: BulkReport,
+  options: GroupedReportExportOptions = {},
+): Promise<void> {
+  const workbook = await buildGroupedTimeReportExcelWorkbook(report, options)
+  const bytes = new Uint8Array(await workbook.xlsx.writeBuffer())
+  const url = URL.createObjectURL(
+    new Blob([bytes], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+  )
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = reportFilename(report, 'xlsx', options.filenamePrefix)
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  URL.revokeObjectURL(url)
 }
 
 export function downloadGroupedTimeReportCsv(
