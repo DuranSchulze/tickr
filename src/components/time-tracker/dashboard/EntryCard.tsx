@@ -211,7 +211,7 @@ export const EntryCard = memo(function EntryCard({
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
         <p
-          className="m-0 min-w-0 truncate font-semibold leading-snug text-foreground"
+          className="m-0 line-clamp-2 min-w-0 font-semibold leading-snug break-words text-foreground"
           title={entry.description || undefined}
         >
           {entry.description || (
@@ -233,15 +233,16 @@ export const EntryCard = memo(function EntryCard({
               className="size-2 shrink-0 rounded-full"
               style={{ backgroundColor: project.color }}
             />
-            <span className="min-w-0 truncate">{project.name}</span>
+            <span className="min-w-0 break-words text-left">
+              {project.name}
+            </span>
           </span>
         )}
         {entryTags.map((tag) => (
           <span
             key={tag.id}
-            className="max-w-full truncate rounded-full border px-2 py-0.5 text-xs font-semibold"
+            className="max-w-full break-words rounded-full border px-2 py-0.5 text-xs font-semibold"
             style={{ color: tag.color, borderColor: `${tag.color}55` }}
-            title={tag.name}
           >
             {tag.name}
           </span>

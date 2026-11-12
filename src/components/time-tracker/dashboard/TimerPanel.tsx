@@ -9,6 +9,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Kbd } from '#/components/ui/kbd'
+import { OverflowReveal } from '#/components/ui/overflow-reveal'
 import type { SearchableItem } from '#/components/ui/searchable-create-popover'
 import type { CreateProjectTask } from '../pickers/ClientProjectPicker'
 import type { Client, Project, TimeEntry, Tag } from '#/lib/time-tracker/types'
@@ -226,8 +227,8 @@ export function TimerPanel({
             it sits in (24px) and the running-entry panel below it (20px) —
             matching the pill-shaped Start button beside it. Fields are inset
             by their own padding, so nothing needs clipping. */}
-        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-xl border border-stone bg-eggshell transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:h-12">
-          <div className="min-w-0 flex-[1.2]">
+        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-xl border border-stone bg-eggshell transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:grid sm:h-auto sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] lg:flex lg:h-12">
+          <div className="min-w-0 flex-[1.2] sm:col-span-full sm:h-11 sm:border-b sm:border-stone lg:h-auto lg:border-b-0">
             <DescriptionAutocomplete
               value={description}
               onChange={onDescriptionChange}
@@ -240,8 +241,8 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-stone sm:block" />
-          <div className="hidden min-w-0 flex-[1] sm:flex">
+          <div className="my-2.5 hidden w-px bg-stone lg:block" />
+          <div className="hidden min-h-11 min-w-0 flex-[1] sm:flex">
             <ClientProjectPicker
               clients={selectableClients}
               projects={projects}
@@ -260,7 +261,7 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="hidden min-w-0 flex-[0.4] lg:flex">
+          <div className="hidden min-h-11 min-w-0 flex-[0.7] border-l border-stone sm:flex lg:border-l-0">
             <TagPicker
               tags={tags}
               value={tagIds}
@@ -271,8 +272,8 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-stone md:block" />
-          <div className="hidden items-center gap-0.5 px-1.5 md:flex">
+          <div className="my-2.5 hidden w-px bg-stone lg:block" />
+          <div className="hidden items-center gap-0.5 border-l border-stone px-1.5 md:flex lg:border-l-0">
             <BillableToggleButton
               pressed={billable}
               onPressedChange={onBillableChange}
@@ -385,13 +386,18 @@ export function TimerPanel({
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {activeProject && (
-                  <span className="flex items-center gap-1 text-xs text-smoke">
+                  <OverflowReveal
+                    label={activeProject.name}
+                    className="flex min-w-0 max-w-full items-center gap-1 text-xs text-smoke"
+                  >
                     <span
-                      className="inline-block size-2 rounded-full"
+                      className="inline-block size-2 shrink-0 rounded-full"
                       style={{ backgroundColor: activeProject.color }}
                     />
-                    {activeProject.name}
-                  </span>
+                    <span data-overflow-check className="min-w-0 truncate">
+                      {activeProject.name}
+                    </span>
+                  </OverflowReveal>
                 )}
                 {activeEntry.billable && (
                   <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -399,17 +405,26 @@ export function TimerPanel({
                   </span>
                 )}
                 {activeTags.map((tag) => (
-                  <span
+                  <OverflowReveal
                     key={tag.id}
-                    className="rounded px-1.5 py-0.5 text-xs font-medium"
-                    style={{
-                      backgroundColor: tag.color ? `${tag.color}22` : undefined,
-                      color: tag.color,
-                      border: `1px solid ${tag.color}`,
-                    }}
+                    label={tag.name}
+                    className="max-w-full text-xs"
+                    contentClassName="font-medium"
                   >
-                    {tag.name}
-                  </span>
+                    <span
+                      data-overflow-check
+                      className="block min-w-0 truncate rounded px-1.5 py-0.5 font-medium"
+                      style={{
+                        backgroundColor: tag.color
+                          ? `${tag.color}22`
+                          : undefined,
+                        color: tag.color,
+                        border: `1px solid ${tag.color}`,
+                      }}
+                    >
+                      {tag.name}
+                    </span>
+                  </OverflowReveal>
                 ))}
               </div>
 

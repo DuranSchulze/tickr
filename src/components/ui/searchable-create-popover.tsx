@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown, Plus } from 'lucide-react'
+import { useCanHover } from './overflow-reveal'
 import { Popover, PopoverContent, PopoverTrigger } from './popover'
 
 export type SearchableItem = { id: string; name: string; color: string }
@@ -17,6 +18,7 @@ type CommonProps = {
   canCreate?: boolean
   /** Borderless trigger variant for use inside the unified timer bar / rows. */
   bare?: boolean
+  wrapTrigger?: boolean
   searchPlaceholder?: string
   emptyText?: string
   createLabel: string
@@ -44,6 +46,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
     disabled = false,
     canCreate = true,
     bare = false,
+    wrapTrigger = false,
     searchPlaceholder = 'Search…',
     emptyText = 'Nothing found',
     createLabel,
@@ -58,6 +61,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
   const [newName, setNewName] = useState('')
   const [newColor, setNewColor] = useState(defaultColor)
   const [createPending, setCreatePending] = useState(false)
+  const canHover = useCanHover()
   const inputRef = useRef<HTMLInputElement>(null)
 
   function handleOpenChange(nextOpen: boolean) {
@@ -127,13 +131,13 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
           disabled={disabled}
           className={
             bare
-              ? 'flex h-full w-full items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-smoke'
-              : 'flex h-10 w-full items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-graphite disabled:cursor-not-allowed disabled:bg-muted disabled:text-smoke'
+              ? 'flex h-full w-full min-w-0 items-center gap-2 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-accent/50 disabled:cursor-not-allowed disabled:text-smoke'
+              : `flex w-full min-w-0 items-center gap-2 rounded-md border border-stone bg-eggshell px-3 text-sm font-semibold text-foreground transition-colors hover:border-graphite disabled:cursor-not-allowed disabled:bg-muted disabled:text-smoke ${wrapTrigger ? 'min-h-10 py-1.5' : 'h-10'}`
           }
         >
-          <div className="flex flex-1 items-center gap-1 overflow-hidden">
+          <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
             {renderTrigger(selectedItems)}
-          </div>
+          </span>
           <ChevronDown className="size-3.5 shrink-0 text-smoke" />
         </button>
       </PopoverTrigger>
@@ -146,7 +150,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
         collisionPadding={8}
         onOpenAutoFocus={(e) => {
           e.preventDefault()
-          inputRef.current?.focus()
+          if (canHover) inputRef.current?.focus()
         }}
         className="max-h-[min(var(--radix-popover-content-available-height),calc(100dvh-1rem))] w-[min(22rem,calc(100vw-1rem))] gap-0 overflow-hidden rounded-lg border border-stone bg-eggshell p-0 shadow-[var(--shadow-whisper)]"
       >
@@ -160,7 +164,7 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
             className="h-10 w-full scroll-mt-24 rounded-md border border-stone bg-eggshell px-3 text-sm text-foreground outline-none focus:border-ink sm:h-8"
           />
         </div>
-        <div className="max-h-[min(18rem,calc(100dvh-12rem))] overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
+        <div className="max-h-72 min-h-0 overflow-y-auto overscroll-contain py-1 [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
           {filtered.length === 0 ? (
             <p className="px-3 py-2 text-xs text-smoke">{emptyText}</p>
           ) : (
@@ -181,8 +185,12 @@ export function SearchableCreatePopover(props: SingleProps | MultiProps) {
                     className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="flex-1 truncate text-left">{item.name}</span>
-                  {checked && <Check className="size-3.5 text-primary" />}
+                  <span className="min-w-0 flex-1 text-left [overflow-wrap:anywhere]">
+                    {item.name}
+                  </span>
+                  {checked && (
+                    <Check className="size-3.5 shrink-0 text-primary" />
+                  )}
                 </button>
               )
             })
