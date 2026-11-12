@@ -82,8 +82,8 @@ export function TimerMobileControls({
   )
 
   return (
-    <div className="grid gap-2 sm:hidden">
-      <div className="grid gap-2 rounded-xl border border-stone bg-eggshell p-2">
+    <div className="grid min-w-0 grid-cols-1 gap-2 sm:hidden">
+      <div className="grid min-w-0 grid-cols-1 gap-2 rounded-xl border border-stone bg-eggshell p-2">
         <ClientProjectPicker
           clients={selectableClients}
           projects={projects}
@@ -98,6 +98,7 @@ export function TimerMobileControls({
           }}
           onCreateTask={onCreateTask}
           onDeleteTask={onDeleteTask}
+          wrap
         />
         {selectedClient?.clientStatus === 'SUSPENDED' && (
           <SuspendedClientWarning clientName={selectedClient.name} />
@@ -108,6 +109,7 @@ export function TimerMobileControls({
           onChange={onTagIdsChange}
           onCreate={onCreateTag}
           canCreate={canManageCatalog}
+          wrap
         />
         <div className="flex h-10 items-center gap-2 rounded-md border border-stone bg-eggshell px-3">
           <span className="min-w-0 text-sm font-semibold text-foreground">
