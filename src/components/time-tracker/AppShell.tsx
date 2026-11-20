@@ -24,6 +24,7 @@ import type { Workspace } from '#/lib/time-tracker/types'
 import { SubscriptionStatusBanner } from '#/components/subscription/SubscriptionStatusBanner'
 import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
 import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSubscriptionGate'
+import { MissingWeekdayDialog } from './shared/MissingWeekdayDialog'
 import { TaskSyncCoordinator } from './TaskSyncCoordinator'
 import type { EffectivePermissions } from '#/lib/rbac/permissions'
 import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
@@ -219,6 +220,9 @@ export function AppShell({
 
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
+      {showAppChrome && subscription.access.canAccess && (
+        <MissingWeekdayDialog workspaceId={workspace.id} userId={user.id} />
+      )}
       <div className="relative flex h-screen w-full flex-col overflow-hidden bg-sidebar text-foreground">
         {showAppChrome && (
           <>

@@ -45,7 +45,7 @@ import {
   loadOfflineQueue,
   removeOfflineQueueItem,
 } from '#/lib/time-tracker/offline-queue'
-import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
+import { invalidateTrackerState, trackerKeys } from '#/lib/time-tracker/query-keys'
 import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
@@ -370,6 +370,10 @@ export function TimeTrackerDashboard({
       if (replayedAny) {
         publishTaskDataChange(state.workspace.id)
         void invalidateTrackerState(queryClient)
+        void queryClient.invalidateQueries({ queryKey: trackerKeys.timesheets })
+        void queryClient.invalidateQueries({
+          queryKey: trackerKeys.missingWeekdays(state.workspace.id),
+        })
         void router.invalidate()
       }
     }
@@ -634,10 +638,13 @@ export function TimeTrackerDashboard({
           memberId={state.currentMemberId}
           label="Export my time"
         />
-        <WeeklyReportEmailsButton memberId={state.currentMemberId} />
+        {(currentUser.permissionLevel === 'OWNER' ||
+          currentUser.permissionLevel === 'ADMIN') && (
+          <WeeklyReportEmailsButton memberId={state.currentMemberId} />
+        )}
       </div>
     ),
-    [state.currentMemberId],
+    [state.currentMemberId, currentUser.permissionLevel],
   )
 
   return (

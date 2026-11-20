@@ -15,6 +15,7 @@ import { Route as LoungeRouteImport } from './routes/lounge'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
+import { Route as WeeklyDepartmentReportReportIdRouteImport } from './routes/weekly-department-report.$reportId'
 import { Route as PerformanceTokenRouteImport } from './routes/performance.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -74,6 +75,7 @@ import { Route as ApiV1AuthLoginRouteImport } from './routes/api/v1/auth/login'
 import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
 import { Route as AppWorkspaceCatalogsProjectsProjectIdRouteImport } from './routes/app/workspace/catalogs_.projects_.$projectId'
 import { Route as AppWorkspaceCatalogsClientsClientIdRouteImport } from './routes/app/workspace/catalogs.clients.$clientId'
+import { Route as ApiReportsWeeklyDepartmentReportIdFormatRouteImport } from './routes/api/reports/weekly-department.$reportId.$format'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -105,6 +107,12 @@ const AuthIndexRoute = AuthIndexRouteImport.update({
   path: '/auth/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WeeklyDepartmentReportReportIdRoute =
+  WeeklyDepartmentReportReportIdRouteImport.update({
+    id: '/weekly-department-report/$reportId',
+    path: '/weekly-department-report/$reportId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PerformanceTokenRoute = PerformanceTokenRouteImport.update({
   id: '/performance/$token',
   path: '/performance/$token',
@@ -412,6 +420,12 @@ const AppWorkspaceCatalogsClientsClientIdRoute =
     path: '/$clientId',
     getParentRoute: () => AppWorkspaceCatalogsClientsRoute,
   } as any)
+const ApiReportsWeeklyDepartmentReportIdFormatRoute =
+  ApiReportsWeeklyDepartmentReportIdFormatRouteImport.update({
+    id: '/api/reports/weekly-department/$reportId/$format',
+    path: '/api/reports/weekly-department/$reportId/$format',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -436,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
   '/performance/$token': typeof PerformanceTokenRoute
+  '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
@@ -477,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/api/reports/weekly-department/$reportId/$format': typeof ApiReportsWeeklyDepartmentReportIdFormatRoute
   '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
   '/app/workspace/catalogs/projects/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
@@ -503,6 +519,7 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
   '/performance/$token': typeof PerformanceTokenRoute
+  '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
@@ -544,6 +561,7 @@ export interface FileRoutesByTo {
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/api/reports/weekly-department/$reportId/$format': typeof ApiReportsWeeklyDepartmentReportIdFormatRoute
   '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
   '/app/workspace/catalogs/projects/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
@@ -571,6 +589,7 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
   '/performance/$token': typeof PerformanceTokenRoute
+  '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
@@ -612,6 +631,7 @@ export interface FileRoutesById {
   '/app/workspace/catalogs/roles': typeof AppWorkspaceCatalogsRolesRoute
   '/app/workspace/catalogs/tags': typeof AppWorkspaceCatalogsTagsRoute
   '/app/workspace/members/$memberId': typeof AppWorkspaceMembersMemberIdRoute
+  '/api/reports/weekly-department/$reportId/$format': typeof ApiReportsWeeklyDepartmentReportIdFormatRoute
   '/app/workspace/catalogs/clients/$clientId': typeof AppWorkspaceCatalogsClientsClientIdRoute
   '/app/workspace/catalogs_/projects_/$projectId': typeof AppWorkspaceCatalogsProjectsProjectIdRoute
 }
@@ -640,6 +660,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/invite/$token'
     | '/performance/$token'
+    | '/weekly-department-report/$reportId'
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
@@ -681,6 +702,7 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/api/reports/weekly-department/$reportId/$format'
     | '/app/workspace/catalogs/clients/$clientId'
     | '/app/workspace/catalogs/projects/$projectId'
   fileRoutesByTo: FileRoutesByTo
@@ -707,6 +729,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/invite/$token'
     | '/performance/$token'
+    | '/weekly-department-report/$reportId'
     | '/auth'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
@@ -748,6 +771,7 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/api/reports/weekly-department/$reportId/$format'
     | '/app/workspace/catalogs/clients/$clientId'
     | '/app/workspace/catalogs/projects/$projectId'
   id:
@@ -774,6 +798,7 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/invite/$token'
     | '/performance/$token'
+    | '/weekly-department-report/$reportId'
     | '/auth/'
     | '/api/auth/$'
     | '/api/cron/timer-reminders'
@@ -815,6 +840,7 @@ export interface FileRouteTypes {
     | '/app/workspace/catalogs/roles'
     | '/app/workspace/catalogs/tags'
     | '/app/workspace/members/$memberId'
+    | '/api/reports/weekly-department/$reportId/$format'
     | '/app/workspace/catalogs/clients/$clientId'
     | '/app/workspace/catalogs_/projects_/$projectId'
   fileRoutesById: FileRoutesById
@@ -832,6 +858,7 @@ export interface RootRouteChildren {
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
   PerformanceTokenRoute: typeof PerformanceTokenRoute
+  WeeklyDepartmentReportReportIdRoute: typeof WeeklyDepartmentReportReportIdRoute
   AuthIndexRoute: typeof AuthIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
@@ -852,6 +879,7 @@ export interface RootRouteChildren {
   ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
   ApiV1AuthRegisterRoute: typeof ApiV1AuthRegisterRoute
   ApiV1AuthSignInRoute: typeof ApiV1AuthSignInRoute
+  ApiReportsWeeklyDepartmentReportIdFormatRoute: typeof ApiReportsWeeklyDepartmentReportIdFormatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -896,6 +924,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth/'
       preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/weekly-department-report/$reportId': {
+      id: '/weekly-department-report/$reportId'
+      path: '/weekly-department-report/$reportId'
+      fullPath: '/weekly-department-report/$reportId'
+      preLoaderRoute: typeof WeeklyDepartmentReportReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/performance/$token': {
@@ -1311,6 +1346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWorkspaceCatalogsClientsClientIdRouteImport
       parentRoute: typeof AppWorkspaceCatalogsClientsRoute
     }
+    '/api/reports/weekly-department/$reportId/$format': {
+      id: '/api/reports/weekly-department/$reportId/$format'
+      path: '/api/reports/weekly-department/$reportId/$format'
+      fullPath: '/api/reports/weekly-department/$reportId/$format'
+      preLoaderRoute: typeof ApiReportsWeeklyDepartmentReportIdFormatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1436,6 +1478,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
   PerformanceTokenRoute: PerformanceTokenRoute,
+  WeeklyDepartmentReportReportIdRoute: WeeklyDepartmentReportReportIdRoute,
   AuthIndexRoute: AuthIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
@@ -1456,6 +1499,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
   ApiV1AuthRegisterRoute: ApiV1AuthRegisterRoute,
   ApiV1AuthSignInRoute: ApiV1AuthSignInRoute,
+  ApiReportsWeeklyDepartmentReportIdFormatRoute:
+    ApiReportsWeeklyDepartmentReportIdFormatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

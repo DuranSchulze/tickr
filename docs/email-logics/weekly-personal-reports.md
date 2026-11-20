@@ -1,63 +1,34 @@
-# Weekly personal PDF emails
+# Weekly department reports
 
-Active account-linked workspace members receive only their own completed entries, Sunday–Saturday, beginning Sunday at 08:00 in the workspace timezone. Each workspace produces a separate private email. Empty reports are skipped; running timers are excluded and the PDF/email explain this. The existing member-report query, clipping, totals, rates, and PDF renderer are reused.
+The weekly worker sends one consolidated department report to each active, account-linked workspace owner or admin assigned to that department who opted in by the scheduled send time. All seven dates appear for each included member, even when no work was recorded. Weekly emails and delivery history are available to owners and admins. Members can still export their own time from the tracker.
+
+Each email links to a signed-in Trackly page that offers PDF and Excel for that department and week. The PDF is attached when its raw size is at most 10 MiB and the worker can prepare it within its budget. The worker sends the link alone when PDF preparation is unavailable, over budget, or the roster exceeds 100 members.
 
 ## Rollout
 
-1. Run `pnpm db:migrate` to apply `0026_weekly_personal_reports.sql` in the intended environment. The migration is additive; no production migration is run by the implementation workflow.
-2. Configure `CRON_SECRET`, `RESEND_API_KEY`, a verified `RESEND_FROM` (or `EMAIL_FROM`), and HTTPS `APP_URL`. Weekly reports require Resend and never fall back to SMTP.
-3. Set `WEEKLY_REPORT_EMAILS_ENABLED=true` and `WEEKLY_REPORT_WORKSPACE_IDS=<test-workspace-id>` to activate a test workspace. The switch defaults off; member preferences default on for existing/new members.
-4. Deploy on a Vercel plan supporting five-minute cron. `vercel.json` invokes `/api/cron/weekly-reports`; Nitro gives this route a 60-second maximum, while the worker targets 40 seconds. GET and POST require the bearer cron secret. Preview deployments must keep the switch off unless explicitly used as the test environment.
-5. Activation registers future Sundays only; activate before the desired Sunday. There is no initial historical backfill. Validate the PDF/email in a test inbox, opt-out, cron heartbeat, quota, and queue drain before clearing the workspace allowlist for global rollout.
-6. Roll back delivery immediately with `WEEKLY_REPORT_EMAILS_ENABLED=false`. An already submitted email cannot be recalled. Keep the additive schema and preferences; resume safely after investigation.
+1. Set `WEEKLY_REPORT_EMAILS_ENABLED=false` for the legacy deployment. Cut over between weekly runs, after the previous delivery window and before the next Sunday occurrence. Wait for running invocations to finish before applying the migration. Confirm no workspace has a partially processed member cursor for the next occurrence.
+2. Apply migration `0028_weekly_department_reports`, then deploy the department worker and report routes. The migration retires pending or retryable personal jobs. It records a legacy processing job with a started attempt as `uncertain` and preserves sent and uncertain history. The department worker claims department jobs only.
+3. Configure `CRON_SECRET`, `RESEND_API_KEY`, a verified `RESEND_FROM` or `EMAIL_FROM`, and HTTPS `APP_URL`. Weekly delivery uses Resend.
+4. Set `WEEKLY_REPORT_WORKSPACE_IDS=<test-workspace-id>` and `WEEKLY_REPORT_EMAILS_ENABLED=true`. Verify the department scope, both downloads, an attached PDF, and a link-only message in a test inbox. Check that job age stays within the delivery window for a representative large department before expanding the allowlist.
+5. Set `WEEKLY_REPORT_EMAILS_ENABLED=false` to pause future delivery. Trackly cannot recall a message already accepted by Resend. Previously published links remain available until they expire.
 
-Members manage the preference via **Time tracker → Weekly emails**, beside **Export my time**. The dialog shows recipient, workspace, timezone, next period, last outcome, and rollout activation. Turning it off cancels unsent jobs. Turning it on records a fresh eligibility boundary, so already-due periods are not backfilled. No recipient input or admin controls exist.
+## Schedule and privacy
 
-## Scheduling and capacity
+The authenticated cron uses the workspace’s local Sunday 8 AM occurrence. Its report covers the preceding Sunday to Saturday in the timezone recorded for that occurrence. During an outage it recovers only the latest occurrence still within the 48-hour delivery window. It preserves the existing bounded claims, provider throttling, and retry window. A delivery whose acceptance is uncertain has no automatic retry.
 
-Schedules initialize 100 workspaces per invocation and page 250 members per due workspace, with at most 25 due workspaces considered before the scheduling time budget. Cursor advancement and job insertion share an atomic SQL statement. Jobs are unique by workspace/member/week. Outages catch up only the latest scheduled week within 48 hours; older periods are skipped. Invalid timezone names cannot initialize a schedule and should be corrected in workspace settings.
+Each department and reporting week has a shared report link, independent of individual delivery jobs. It expires 90 days after the scheduled occurrence, even with delivery paused. Access requires a current active owner or admin assignment to that exact department and workspace. Opting out of email does not revoke download access. Generated files use current data for the stored dates so late corrections can differ from the emailed PDF.
 
-Workers claim at most 25 jobs per invocation using row locks and `SKIP LOCKED`, with two generators and two-minute leases. Claims stop after 20 seconds to leave time for the 15-second provider timeout and persistence within the 40-second budget. All work is awaited before responding. A database-backed shared reservation limits weekly-report sends to one request/second, with provider `Retry-After` suppression across invocations. Other app emails share the provider quota and can cause additional rate limits.
-
-The theoretical upper bound is 300 reports/hour (25 jobs × 12 invocations); actual capacity is lower when generation, retries, or scheduling consume time. A 1,000-report backlog therefore needs at least 3h20m at this configuration. Before global activation, measure the eligible count, representative large PDF generation time/memory, provider quota, actual sent/hour, and oldest pending age. Increase worker cadence/capacity only after measuring; adopt an external worker queue if the delivery window cannot be met. The local integration suite tests 251-member pagination and concurrent invocations, not production provider throughput.
-
-## Delivery safety
-
-PDF attachment limit is 10 MiB before base64 encoding. Frozen payloads include recipient, sender, subject, body, and PDF. Jobs record sanitized failure codes only; attachment bytes and message bodies are never logged. Frozen payloads are cleared on terminal outcomes and retained only while work is pending/retrying. A changed account email causes the frozen job to be skipped rather than altering the idempotent request.
-
-Provider acceptance is `sent`, not inbox delivery. A stable per-job Resend idempotency key protects retries. Explicit rate-limit rejections retry with exponential backoff and `Retry-After`, up to five attempts and strictly within 20 hours of the first provider attempt. Ambiguous timeouts, 5xx responses, or failure to persist acceptance become `uncertain`, with no automatic resend. Investigate in the provider dashboard before any manual intervention. An expired lease with prior delivery attempts is likewise quarantined; an expired pre-send lease returns to pending.
-
-Resend references: [idempotency](https://resend.com/docs/dashboard/emails/idempotency-keys), [error classification](https://resend.com/docs/api-reference/errors).
-
-## Monitoring and retention
-
-Every successful enabled invocation logs a timestamped heartbeat, duration, per-run outcome counts, pending count, and oldest pending age. Failed invocations return HTTP 500 with a sanitized error. Alert externally when heartbeat is absent for 15 minutes, backlog grows across runs, oldest pending exceeds the agreed delivery window, or any terminal/uncertain outcome occurs. No new monitoring SaaS or alert destination is provisioned by this change.
-
-Inspect job metadata without payloads:
-
-```sql
-SELECT status, count(*), min(due_at) AS oldest_due
-FROM weekly_report_jobs GROUP BY status;
-
-SELECT id, workspace_id, member_id, week_start, status, attempts,
-       provider_id, error, updated_at
-FROM weekly_report_jobs
-WHERE status IN ('terminal_failure', 'uncertain')
-ORDER BY updated_at DESC;
-```
-
-Completed metadata is retained for 90 days and pruned in batches of 500. Keep the cron enabled for cleanup, even when there is no due work. The global kill switch pauses cleanup too.
+Reports use the active department roster and clip work to the start of each member’s current department assignment. New assignments are tracked from the migration onward. For earlier assignments Trackly uses the membership creation date as the starting point. Dates before the assignment are marked `OUT_OF_SCOPE`. Worked and billable totals sum clipped completed entry durations, including overlapping entries. Running timers contribute zero completed time. A confirmed weekday without overlapping time is `N/A` from 8 AM to 5 PM. That confirmation is a separate record and adds no worked, billable, or payroll hours. An unresolved gap stays `NO_TIME`.
 
 ## Verification
 
 ```sh
-pnpm typecheck
-pnpm lint
-pnpm test
+pnpm check-all
 pnpm build
-# Disposable local Postgres only; the integration suite refuses remote hosts.
+pnpm test src/lib/server/__tests__/weekly-reports.integration.test.ts
+# Optional multi-connection run against a disposable local PostgreSQL server.
 WEEKLY_REPORT_TEST_DATABASE_URL=postgres://postgres:weekly-local-test@127.0.0.1:55439/weekly_test \
   pnpm test src/lib/server/__tests__/weekly-reports.integration.test.ts
 ```
 
-The integration suite creates an isolated schema, applies the actual migration, exercises real PostgreSQL locking/cursors, and drops its schema afterward. PDF and provider delivery are mocked in those queue tests. The PDF renderer and mail transport have separate tests. Staging inbox delivery, production quota checks, and production load measurements remain rollout requirements.
+The default integration run applies the real weekly migrations to an embedded PostgreSQL database. The optional local PostgreSQL run exercises the job logic across separate connections. Resend calls are mocked in tests.

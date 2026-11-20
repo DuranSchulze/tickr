@@ -20,16 +20,19 @@ import ColorBends from '#/components/ColorBends'
 import { cn } from '#/lib/utils'
 import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { getSessionFn } from '#/lib/server/session'
+import { weeklyDepartmentReportId } from '#/lib/time-tracker/weekly-department-report'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 type AuthSearch = {
   invite?: string
+  weeklyReport?: string
   email?: string
   plan?: 'team' | 'business'
 }
 
 export const Route = createFileRoute('/auth/')({
   validateSearch: (search: Record<string, unknown>): AuthSearch => ({
+    weeklyReport: weeklyDepartmentReportId.safeParse(search.weeklyReport).data,
     invite: typeof search.invite === 'string' ? search.invite : undefined,
     email: typeof search.email === 'string' ? search.email : undefined,
     plan:
@@ -37,7 +40,11 @@ export const Route = createFileRoute('/auth/')({
         ? search.plan
         : undefined,
   }),
-  loaderDeps: ({ search }) => ({ invite: search.invite, plan: search.plan }),
+  loaderDeps: ({ search }) => ({
+    invite: search.invite,
+    plan: search.plan,
+    weeklyReport: search.weeklyReport,
+  }),
   loader: async ({ deps }) => {
     const session = await getSessionFn()
     if (session?.user) {
@@ -45,6 +52,12 @@ export const Route = createFileRoute('/auth/')({
         throw redirect({
           to: '/invite/$token',
           params: { token: deps.invite },
+        })
+      }
+      if (deps.weeklyReport) {
+        throw redirect({
+          to: '/weekly-department-report/$reportId',
+          params: { reportId: deps.weeklyReport },
         })
       }
       let hasWorkspaceAccess = false
@@ -195,6 +208,11 @@ function AuthPage() {
         await navigate({
           to: '/invite/$token',
           params: { token: search.invite },
+        })
+      } else if (search.weeklyReport) {
+        await navigate({
+          to: '/weekly-department-report/$reportId',
+          params: { reportId: search.weeklyReport },
         })
       } else {
         await router.invalidate()

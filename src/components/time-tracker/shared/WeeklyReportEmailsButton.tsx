@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useId, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -60,13 +61,11 @@ const statusLabels: Record<string, string> = {
   uncertain: 'Delivery could not be confirmed',
 }
 const reasonLabels: Record<string, string> = {
-  empty_week: 'No completed entries this week.',
   preference_disabled: 'Weekly emails were turned off.',
   report_expired: 'The delivery window has passed.',
   member_ineligible: 'Workspace access or email preferences changed.',
   recipient_or_preference_changed: 'Your email address or preferences changed.',
-  attachment_too_large:
-    'The PDF was too large to email. You can export this period manually.',
+  recipient_or_roster_changed: 'Department membership changed before delivery.',
   app_url_missing: 'Automatic delivery is temporarily unavailable.',
   provider_throttled: 'Delivery is taking a little longer.',
   provider_rate_limited: 'Delivery is taking a little longer.',
@@ -137,9 +136,11 @@ function WeeklyDeliverySettings({
             Automatic delivery
           </p>
           <p id={descriptionId} className="m-0 text-xs leading-5 text-smoke">
-            {data.enabled
-              ? 'A weekly PDF, without the manual export.'
-              : 'Turn on to receive your next weekly report.'}
+            {!data.departmentName
+              ? 'A department assignment is required for weekly delivery.'
+              : data.enabled
+                ? 'Receive a weekly link to your department’s PDF and Excel reports.'
+                : 'Turn on to receive your next weekly report.'}
           </p>
         </div>
         <button
@@ -148,7 +149,7 @@ function WeeklyDeliverySettings({
           aria-checked={data.enabled}
           aria-labelledby={labelId}
           aria-describedby={descriptionId}
-          disabled={pending}
+          disabled={pending || !data.departmentName}
           onClick={() => onToggle(!data.enabled)}
           className={`inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover disabled:cursor-wait disabled:opacity-50 ${data.enabled ? 'bg-primary-action' : 'bg-stone'}`}
         >
@@ -167,7 +168,7 @@ function WeeklyDeliverySettings({
             <span className="font-medium">Weekly schedule</span>
             <span className="inline-flex items-center gap-1.5 rounded-md border border-stone bg-eggshell px-2 py-1 text-[11px] font-medium">
               <FileText className="size-3" aria-hidden="true" />
-              PDF report
+              PDF and Excel
             </span>
           </div>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -183,19 +184,21 @@ function WeeklyDeliverySettings({
         <div className="space-y-2 border-t border-stone px-5 py-3.5 text-xs">
           <div className="flex flex-wrap justify-between gap-x-4 gap-y-1">
             <span className="text-smoke">
-              {data.enabled ? 'Next report' : 'Upcoming reporting period'}
+              {data.enabled && data.departmentName
+                ? 'Next report'
+                : 'Upcoming reporting period'}
             </span>
             <span className="font-medium tabular-nums">
               {formatPeriod(data.next.weekStart, data.next.weekEnd)}
             </span>
           </div>
-          {data.enabled && (
+          {data.enabled && data.departmentName && (
             <p className="m-0 leading-5 text-smoke">
               Scheduled for {formatDelivery(data.next.dueAt, data.timezone)}.
               Delivery may take a little time.
             </p>
           )}
-          {!data.enabled && (
+          {!data.enabled && data.departmentName && (
             <p className="m-0 leading-5 text-smoke">
               Delivery is paused. Re-enabling resumes future reports.
             </p>
@@ -230,6 +233,15 @@ function WeeklyDeliverySettings({
           Last report
         </p>
         <DeliveryHistory last={data.last} />
+        {data.reportId && (
+          <Link
+            to="/weekly-department-report/$reportId"
+            params={{ reportId: data.reportId }}
+            className="mt-3 inline-flex text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            Open latest department report
+          </Link>
+        )}
       </div>
     </div>
   )
@@ -284,7 +296,7 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
                   Weekly report emails
                 </DialogTitle>
                 <DialogDescription className="text-[13px] leading-5">
-                  Your week of work, delivered to your inbox.
+                  Your department’s weekly time report, delivered to your inbox.
                 </DialogDescription>
               </div>
             </div>
@@ -297,7 +309,9 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
                 <span className="px-1 text-ash" aria-hidden="true">
                   /
                 </span>{' '}
-                <span className="font-normal text-smoke">Personal reports</span>
+                <span className="font-normal text-smoke">
+                  {data.departmentName ?? 'No department assigned'}
+                </span>
               </p>
             )}
           </DialogHeader>
@@ -364,7 +378,7 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
           </div>
           <div className="flex shrink-0 items-center justify-between gap-4 border-t border-stone bg-warm-taupe/50 px-6 py-4 sm:px-7">
             <p className="m-0 max-w-64 text-[11px] leading-5 text-smoke">
-              Only your completed entries are included. Empty weeks are skipped.
+              Reports include every day of the week, including weekends.
             </p>
             <DialogClose asChild>
               <Button type="button" className="px-5">

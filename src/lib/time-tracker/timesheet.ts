@@ -13,7 +13,7 @@ export type TimesheetDayCell = {
   snapshotSeconds: number
   entryCount: number
   runningStartedAts: string[]
-  status: 'WORK' | 'RUNNING' | 'NO_TIME'
+  status: 'WORK' | 'RUNNING' | 'NO_TIME' | 'N/A'
 }
 
 export type TimesheetPermissionLevel =
