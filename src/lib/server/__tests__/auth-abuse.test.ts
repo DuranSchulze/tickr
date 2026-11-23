@@ -11,6 +11,8 @@ import {
   reserveAuthAttempt,
 } from '../auth-abuse.server'
 
+vi.mock('#/db', () => ({ db: {} }))
+
 const SECRET = 'test-secret-with-at-least-32-characters'
 
 afterEach(() => {

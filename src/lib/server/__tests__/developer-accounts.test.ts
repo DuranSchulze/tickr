@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   hashPassword,
   verifyPassword,
@@ -7,6 +7,11 @@ import {
   createDeveloperAccountSchema,
   developerSignInSchema,
 } from '../integrations/developer-accounts.shared'
+
+vi.mock('#/db', () => ({ db: {} }))
+vi.mock('../workspace-access.server', () => ({
+  requireWorkspaceAccess: vi.fn(),
+}))
 
 describe('developer account password hashing', () => {
   it('verifies the correct password', () => {

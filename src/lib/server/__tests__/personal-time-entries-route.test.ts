@@ -7,6 +7,10 @@ const { authenticate, personal, legacy } = vi.hoisted(() => ({
   personal: vi.fn(),
   legacy: vi.fn(),
 }))
+vi.mock('../auth-abuse.server', () => ({
+  recordAuthResult: vi.fn(),
+  reserveAuthAttempt: vi.fn(),
+}))
 vi.mock('../integrations/external-api-user-auth.server', () => ({
   registerTracklyUserAccount: vi.fn(),
 }))
