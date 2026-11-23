@@ -6,16 +6,26 @@
       "id": "hosting-security-2026-11-23",
       "publishedAt": "2026-11-23",
       "title": "DigitalOcean hosting security notice",
-      "body": "On November 18, 2026, the makers of NGINX released fixes for two security flaws. NGINX is software some websites use to handle incoming traffic. DigitalOcean, our hosting provider, alerted us because someone could use the flaws to run programs on an affected server without signing in.",
+      "body": "DigitalOcean, the company that hosts Trackly, told us about two security flaws in NGINX, a common piece of software that many websites use to direct visitors’ traffic. Fixes were released on November 18, 2026. On a server that uses an affected version, someone could take control of that server without signing in. We want you to know what this means for you and what we’re doing about it.",
       "features": [
         {
-          "title": "What this means for Trackly",
-          "description": "The flaws affect certain server setups. We have yet to confirm whether Trackly’s hosting uses an affected setup.",
+          "title": "Is my data safe?",
+          "description": "We have no sign that anyone has accessed Trackly or your information because of these flaws. Your time entries, workspaces, and account details are kept with a separate database provider, apart from the part of our hosting this notice is about.",
+          "image": null
+        },
+        {
+          "title": "Does this affect Trackly?",
+          "description": "Trackly’s own app isn’t set up to use NGINX. DigitalOcean also runs systems that sit in front of Trackly and pass traffic to it, and we’re checking with them whether those systems were affected and, if so, that they’ve been fixed.",
+          "image": null
+        },
+        {
+          "title": "What happens next",
+          "description": "We’ll update this notice as soon as we hear back. If anything turns out to affect your account, we’ll tell you and explain exactly what to do.",
           "image": null
         },
         {
           "title": "What you need to do",
-          "description": "You don’t need to do anything in Trackly in response to this notice. The fixes are for the teams that run affected servers.",
+          "description": "Nothing right now. You can keep using Trackly as usual.",
           "image": null
         }
       ]
