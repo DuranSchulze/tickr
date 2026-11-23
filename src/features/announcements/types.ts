@@ -4,14 +4,15 @@ export interface ChangelogFeature {
   image: string | null
 }
 
-export interface ChangelogEntry {
-  version: string
+type ChangelogEntryDetails = {
   publishedAt: string
   title: string
-  /** A high-level summary of the release */
   body: string
   features: ChangelogFeature[]
 }
+
+export type ChangelogEntry = ChangelogEntryDetails &
+  ({ version: string; kind?: never } | { kind: 'notice'; id: string })
 
 export interface FeatureManifest {
   appVersion: string
