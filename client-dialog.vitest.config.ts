@@ -1,14 +1,7 @@
-import { defineConfig } from 'vitest/config'
-import { fileURLToPath } from 'node:url'
+import { mergeConfig } from 'vitest/config'
+import config from './vitest.config'
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      '#': fileURLToPath(new URL('./src', import.meta.url)),
-      react: fileURLToPath(new URL('./node_modules/react', import.meta.url)),
-    },
-    dedupe: ['react', 'react-dom'],
-  },
+export default mergeConfig(config, {
   test: {
     include: [
       'src/components/time-tracker/dashboard/hooks/tracker-notifications.test.tsx',
@@ -16,6 +9,5 @@ export default defineConfig({
       'src/components/time-tracker/catalogs/ClientDetailsDialog.test.tsx',
       'src/components/time-tracker/catalogs/ProjectDetailScreen.test.tsx',
     ],
-    server: { deps: { inline: ['@tanstack/react-query', 'radix-ui'] } },
   },
 })
