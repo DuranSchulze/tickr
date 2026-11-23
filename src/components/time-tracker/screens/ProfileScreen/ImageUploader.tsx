@@ -38,16 +38,16 @@ export function ImageUploader({
   }
 
   function startCooldown() {
-    setCooldownLeft(UPLOAD_COOLDOWN_S)
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    let remaining = UPLOAD_COOLDOWN_S
+    setCooldownLeft(remaining)
     intervalRef.current = setInterval(() => {
-      setCooldownLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current!)
-          intervalRef.current = null
-          return 0
-        }
-        return prev - 1
-      })
+      remaining -= 1
+      setCooldownLeft(Math.max(0, remaining))
+      if (remaining <= 0 && intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
     }, 1000)
   }
 

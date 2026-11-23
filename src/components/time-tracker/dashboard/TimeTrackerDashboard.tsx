@@ -1,5 +1,12 @@
 import { WeeklyReportEmailsButton } from '#/components/time-tracker/shared/WeeklyReportEmailsButton'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Play, Square, X } from 'lucide-react'
 import { toast } from '#/lib/toast'
@@ -89,9 +96,10 @@ export function TimeTrackerDashboard({
     section.scrollIntoView({ behavior: 'smooth', block: 'center' })
     if (window.matchMedia('(min-width: 640px)').matches) {
       const input = section.querySelector<HTMLInputElement>('input')
-      window.setTimeout(() => {
+      const timeoutId = window.setTimeout(() => {
         input?.focus({ preventScroll: true })
       }, 400)
+      return () => window.clearTimeout(timeoutId)
     }
   }, [focusTimer])
 
@@ -419,7 +427,9 @@ export function TimeTrackerDashboard({
   // re-renders (activeEntry gets a fresh identity on each one) and is only
   // re-created when the timer actually starts or stops.
   const activeEntryRef = useRef(activeEntry)
-  activeEntryRef.current = activeEntry
+  useLayoutEffect(() => {
+    activeEntryRef.current = activeEntry
+  })
   const activeEntryId = activeEntry?.id
   useEffect(() => {
     function update() {

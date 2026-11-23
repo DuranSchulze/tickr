@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { subscribeToTaskDataChanges } from '#/lib/time-tracker/task-sync'
 
 // Direct broadcast subscription for views whose data lives outside the
@@ -19,7 +19,9 @@ export function useRemoteTaskDataSync(
   refresh: () => void,
 ) {
   const refreshRef = useRef(refresh)
-  refreshRef.current = refresh
+  useLayoutEffect(() => {
+    refreshRef.current = refresh
+  })
 
   useEffect(() => {
     let disposed = false

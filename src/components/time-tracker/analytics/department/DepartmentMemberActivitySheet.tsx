@@ -184,15 +184,17 @@ function SummaryHero({ data }: { data: DepartmentMemberActivitySummary }) {
           aria-label={`${formatDuration(today.completedSeconds)} ended, ${formatDuration(today.activeSeconds)} active`}
         >
           <motion.div
-            className="h-full bg-primary/70"
-            initial={{ width: 0 }}
-            animate={{ width: `${completedPct}%` }}
+            className="h-full origin-left bg-primary/70"
+            style={{ width: `${completedPct}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
             transition={{ duration: 0.45, ease: SHEET_EASE, delay: 0.15 }}
           />
           <motion.div
-            className="h-full bg-emerald-500"
-            initial={{ width: 0 }}
-            animate={{ width: `${activePct}%` }}
+            className="h-full origin-left bg-emerald-500"
+            style={{ width: `${activePct}%` }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
             transition={{ duration: 0.45, ease: SHEET_EASE, delay: 0.25 }}
           />
         </div>
@@ -386,13 +388,14 @@ function HourlyChart({
               </span>
               <div className="h-2.5 min-w-0 overflow-hidden rounded-full bg-warm-taupe">
                 <motion.div
-                  className={`h-full rounded-full ${
+                  className={`h-full origin-left rounded-full ${
                     isPeak ? 'bg-primary-action' : 'bg-primary/55'
                   }`}
-                  initial={{ width: 0 }}
-                  animate={{
+                  style={{
                     width: `${Math.max(4, (row.seconds / max) * 100)}%`,
                   }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
                   transition={{
                     duration: 0.4,
                     ease: SHEET_EASE,

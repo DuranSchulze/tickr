@@ -12,6 +12,7 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -262,7 +263,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   const isControlled = viewport !== undefined && onViewportChange !== undefined
 
   const onViewportChangeRef = useRef(onViewportChange)
-  onViewportChangeRef.current = onViewportChange
+  useLayoutEffect(() => {
+    onViewportChangeRef.current = onViewportChange
+  })
 
   const stableStyles = useStableValue(styles)
 
@@ -472,14 +475,16 @@ function MapMarker({
     onDrag,
     onDragEnd,
   })
-  callbacksRef.current = {
-    onClick,
-    onMouseEnter,
-    onMouseLeave,
-    onDragStart,
-    onDrag,
-    onDragEnd,
-  }
+  useLayoutEffect(() => {
+    callbacksRef.current = {
+      onClick,
+      onMouseEnter,
+      onMouseLeave,
+      onDragStart,
+      onDrag,
+      onDragEnd,
+    }
+  })
 
   const marker = useMemo(() => {
     const markerInstance = new MapLibreGL.Marker({
@@ -721,12 +726,13 @@ function MarkerTooltip({
     }
     const handleMouseLeave = () => tooltip.remove()
 
-    marker.getElement()?.addEventListener('mouseenter', handleMouseEnter)
-    marker.getElement()?.addEventListener('mouseleave', handleMouseLeave)
+    const element = marker.getElement()
+    element.addEventListener('mouseenter', handleMouseEnter)
+    element.addEventListener('mouseleave', handleMouseLeave)
 
     return () => {
-      marker.getElement()?.removeEventListener('mouseenter', handleMouseEnter)
-      marker.getElement()?.removeEventListener('mouseleave', handleMouseLeave)
+      element.removeEventListener('mouseenter', handleMouseEnter)
+      element.removeEventListener('mouseleave', handleMouseLeave)
       tooltip.remove()
     }
   }, [map])
@@ -1026,7 +1032,9 @@ function MapPopup({
 }: MapPopupProps) {
   const { map } = useMap()
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose
+  })
   const container = useMemo(() => document.createElement('div'), [])
   const { offset, maxWidth } = popupOptions
 
@@ -1349,7 +1357,9 @@ function MapGeoJSON<
     [defaults.line, linePaint],
   )
   const latestRef = useRef({ onClick, onHover })
-  latestRef.current = { onClick, onHover }
+  useLayoutEffect(() => {
+    latestRef.current = { onClick, onHover }
+  })
 
   // Add source on mount.
   useEffect(() => {
@@ -1697,7 +1707,9 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
   )
 
   const latestRef = useRef({ data, onClick, onHover })
-  latestRef.current = { data, onClick, onHover }
+  useLayoutEffect(() => {
+    latestRef.current = { data, onClick, onHover }
+  })
 
   // Add source and layers on mount.
   useEffect(() => {
