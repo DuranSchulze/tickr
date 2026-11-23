@@ -86,7 +86,7 @@ describe('timesheet spreadsheet export', () => {
     const sheet = reloaded.getWorksheet('Payroll DTR')
     expect(sheet).toBeDefined()
     expect(sheet?.rowCount).toBe(8)
-    expect(sheet?.autoFilter).toBe('A1:K1')
+    expect(sheet?.autoFilter).toBe('A1:M1')
     expect(sheet?.views[0]).toMatchObject({ state: 'frozen', ySplit: 1 })
     expect(sheet?.getCell('A2').value).toBe("'=Payroll Formula")
     expect(sheet?.getCell('H2').value).toBeInstanceOf(Date)

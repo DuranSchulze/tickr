@@ -4,4 +4,5 @@
     <string name="title_activity_main">Trackly</string>
     <string name="package_name">com.trackly.internal</string>
     <string name="custom_url_scheme">com.trackly.internal</string>
+    <string name="report_download_failed">Could not start the report download. Please try again.</string>
 </resources>

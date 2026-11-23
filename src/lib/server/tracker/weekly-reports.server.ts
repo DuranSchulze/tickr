@@ -2,9 +2,17 @@ import '@tanstack/react-start/server-only'
 import { randomUUID } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { db } from '#/db'
-import { buildMemberReport } from './member-report.server'
-import { buildWeeklyMemberReportPdf } from '#/lib/time-tracker/member-report-export'
-import { formatHms } from '#/lib/time-tracker/export-utils'
+import {
+  buildDepartmentReport,
+  departmentReportRoster,
+  departmentReportRosterIsCurrent,
+} from './weekly-department-report.server'
+import {
+  buildWeeklyDepartmentPdf,
+  weeklyDepartmentReportFilename,
+} from '#/lib/time-tracker/weekly-department-report-export'
+import { weeklyDepartmentReportPath } from '#/lib/time-tracker/weekly-department-report'
+import type { DepartmentReportScope } from '#/lib/time-tracker/weekly-department-report'
 import {
   retryAllowed,
   retryDelayMs,
@@ -47,24 +55,34 @@ function escapeHtml(text: string) {
 type Job = {
   id: string
   workspace_id: string
-  member_id: string
-  timezone: string
-  week_start: string
-  week_end: string
   due_at: string
   attempts: number
   first_attempt_at: string | null
   lease_token: string
   payload: SendEmailInput | null
+  attachment_roster: Record<string, string> | null
 }
-type Recipient = { email: string; workspace_name: string }
+type Recipient = DepartmentReportScope & { email: string }
+
+function eligibleRecipient(dueAt: ReturnType<typeof sql>) {
+  return sql`m.status = 'ACTIVE' and m.weekly_report_email_enabled
+    and m.weekly_report_enabled_at <= ${dueAt} and role.permission_level in ('OWNER', 'ADMIN')`
+}
+
 async function recipient(job: Job): Promise<Recipient | undefined> {
   const result = await db.execute<Recipient>(sql`
-    select u.email, w.name as workspace_name from workspace_members m
-    join users u on u.id = m.user_id join workspaces w on w.id = m.workspace_id
-    where m.id = ${job.member_id} and m.workspace_id = ${job.workspace_id}
-      and m.status = 'ACTIVE' and m.weekly_report_email_enabled
-      and m.weekly_report_enabled_at <= ${job.due_at}::timestamptz`)
+    select r.id, r.workspace_id, r.department_id, r.week_start::text, r.week_end::text,
+      r.timezone, u.email, w.name as workspace_name, d.name as department_name
+    from weekly_report_jobs j
+    join weekly_department_reports r on r.id = j.report_id and r.workspace_id = j.workspace_id
+    join departments d on d.id = r.department_id and d.workspace_id = r.workspace_id
+    join workspace_members m on m.id = j.member_id and m.workspace_id = r.workspace_id
+      and m.department_id = r.department_id
+    join workspace_roles role on role.id = m.workspace_role_id and role.workspace_id = m.workspace_id
+    join users u on u.id = m.user_id join workspaces w on w.id = r.workspace_id
+    where j.id = ${job.id} and j.report_type = 'department' and r.expires_at > now()
+      and ${eligibleRecipient(sql`j.due_at`)}
+  `)
   return result.rows[0]
 }
 
@@ -108,15 +126,27 @@ async function enqueue(deadline: number) {
       ), members as (
         select m.id from workspace_members m join locked s on s.workspace_id = m.workspace_id
         where m.id > s.member_cursor order by m.id limit 250
+      ), eligible as (
+        select m.id, m.department_id from locked s
+        join workspace_members m on m.workspace_id = s.workspace_id
+        join members page on page.id = m.id
+        join users u on u.id = m.user_id
+        join workspace_roles role on role.id = m.workspace_role_id and role.workspace_id = m.workspace_id
+        join departments d on d.id = m.department_id and d.workspace_id = m.workspace_id
+        where ${eligibleRecipient(sql`s.due_at`)} and s.due_at >= now() - interval '48 hours'
+      ), reports as (
+        insert into weekly_department_reports (workspace_id, department_id, week_start, week_end, timezone, due_at, expires_at)
+        select s.workspace_id, dep.department_id, (s.due_at at time zone s.timezone)::date - 7,
+          (s.due_at at time zone s.timezone)::date - 1, s.timezone, s.due_at, s.due_at + interval '90 days'
+        from locked s cross join (select distinct department_id from eligible) dep
+        on conflict (workspace_id, department_id, week_start)
+          do update set due_at = weekly_department_reports.due_at
+        returning id, workspace_id, department_id, week_start, week_end, timezone, due_at
       ), inserted as (
-        insert into weekly_report_jobs (id, workspace_id, member_id, week_start, week_end, timezone, due_at)
-        select s.workspace_id || ':' || m.id || ':' || ((s.due_at at time zone s.timezone)::date - 7)::text,
-          s.workspace_id, m.id, (s.due_at at time zone s.timezone)::date - 7,
-          (s.due_at at time zone s.timezone)::date - 1, s.timezone, s.due_at
-        from locked s join workspace_members m on m.workspace_id = s.workspace_id
-        join users u on u.id = m.user_id join members page on page.id = m.id
-        where m.status = 'ACTIVE' and m.weekly_report_email_enabled
-          and m.weekly_report_enabled_at <= s.due_at and s.due_at >= now() - interval '48 hours'
+        insert into weekly_report_jobs (id, workspace_id, member_id, week_start, week_end, timezone, due_at, report_type, report_id)
+        select 'dept:' || r.workspace_id || ':' || m.id || ':' || r.week_start::text,
+          r.workspace_id, m.id, r.week_start, r.week_end, r.timezone, r.due_at, 'department', r.id
+        from reports r join eligible m on m.department_id = r.department_id
         on conflict do nothing returning id
       )
       update weekly_report_schedules s set
@@ -135,11 +165,11 @@ async function claim(): Promise<Job | undefined> {
   const token = randomUUID()
   const result = await db.execute<Job>(sql`
     with candidate as (
-      select id from weekly_report_jobs where status in ('pending', 'retryable_failure')
+      select id from weekly_report_jobs where report_type = 'department' and status in ('pending', 'retryable_failure')
         and next_attempt_at <= now() and ${scopeFilter(sql`workspace_id`)}
       order by due_at, id for update skip locked limit 1
     ) update weekly_report_jobs j set status = 'processing', lease_until = now() + interval '2 minutes',
-      lease_token = ${token}, updated_at = now() from candidate c where j.id = c.id returning j.*`)
+      lease_token = ${token}, attempt_started_in_lease = false, updated_at = now() from candidate c where j.id = c.id returning j.*`)
   return result.rows[0]
 }
 async function finish(
@@ -149,12 +179,12 @@ async function finish(
   providerId: string | null = null,
 ) {
   await db.execute(sql`update weekly_report_jobs set status = ${status}, error = ${error}, provider_id = ${providerId},
-    payload = null, lease_until = null, lease_token = null, updated_at = now()
+    payload = null, attachment_roster = null, attempt_started_in_lease = false, lease_until = null, lease_token = null, updated_at = now()
     where id = ${job.id} and lease_token = ${job.lease_token} and status = 'processing'`)
 }
 async function release(job: Job, next: Date, error: string | null) {
   await db.execute(sql`update weekly_report_jobs set status = 'retryable_failure', error = ${error},
-    lease_until = null, lease_token = null, next_attempt_at = ${next.toISOString()}::timestamptz, updated_at = now()
+    lease_until = null, lease_token = null, attempt_started_in_lease = false, next_attempt_at = ${next.toISOString()}::timestamptz, updated_at = now()
     where id = ${job.id} and lease_token = ${job.lease_token} and status = 'processing'`)
 }
 
@@ -166,39 +196,57 @@ async function reserveSend(): Promise<number | null> {
     returning greatest(0, extract(epoch from (next_allowed_at - interval '1 second' - now())) * 1000)::int as wait_ms`)
   return result.rows[0]?.wait_ms ?? null
 }
-async function prepare(
-  job: Job,
-  target: Recipient,
-): Promise<SendEmailInput | null> {
-  const report = await buildMemberReport({
-    workspaceId: job.workspace_id,
-    memberId: job.member_id,
-    startDate: job.week_start,
-    endDate: job.week_end,
-    timezone: job.timezone,
-  })
-  if (!report.entries.length) return null
-  const pdf = await buildWeeklyMemberReportPdf(report, target.workspace_name)
-  if (pdf.byteLength > 10 * 1024 * 1024) throw new Error('attachment_too_large')
+const attachmentBudget = 10 * 1024 * 1024
+const maxAttachmentMembers = 100
+
+async function prepare(target: Recipient, deadline: number) {
   const appUrl = process.env.APP_URL ?? process.env.BETTER_AUTH_URL
   if (!appUrl) throw new Error('app_url_missing')
-  // The message names the workspace because the active-workspace cookie may differ.
-  const text = `${target.workspace_name}\nWeekly personal time report: ${job.week_start} to ${job.week_end}\nTimezone: ${job.timezone}\nTotal time: ${formatHms(report.summary.totalSeconds)}\nCompleted entries only. Running timers are excluded.\nManage weekly personal report emails: ${appUrl.replace(/\/$/, '')}/app/time-tracker\nSelect ${target.workspace_name}, then Weekly emails beside Export my time.`
-  return {
+  const link = new URL(weeklyDepartmentReportPath(target.id), appUrl).href
+  const period = `${target.week_start} to ${target.week_end}`
+  let attachments: SendEmailInput['attachments']
+  let roster: Record<string, string> | null = null
+  // Leave time for the provider call and avoid entering an unbounded PDF render.
+  if (Date.now() < deadline - 25_000) {
+    try {
+      const rows = await buildDepartmentReport(target, maxAttachmentMembers)
+      if (rows && Date.now() < deadline - 22_000) {
+        const pdf = await buildWeeklyDepartmentPdf(target, rows)
+        if (
+          pdf.byteLength <= attachmentBudget &&
+          Date.now() < deadline - 19_000
+        ) {
+          attachments = [
+            {
+              filename: weeklyDepartmentReportFilename(target, 'pdf'),
+              content: Buffer.from(pdf).toString('base64'),
+              contentType: 'application/pdf',
+            },
+          ]
+          roster = departmentReportRoster(rows)
+        }
+      }
+    } catch {
+      // The signed-in report remains available when the optional PDF fails.
+    }
+  }
+  const heading = `${target.workspace_name} — ${target.department_name}`
+  const note = attachments
+    ? 'The PDF is attached. Download the Excel or PDF version in Trackly.'
+    : 'Sign in to Trackly to download the PDF or Excel version.'
+  const text = `${heading}\nWeekly department report: ${period} (${target.timezone})\n${note}\n${link}`
+  const payload: SendEmailInput = {
     from: getResendFromAddress(),
     to: target.email,
-    subject: `${target.workspace_name} — Weekly time report (${job.week_start} to ${job.week_end})`,
+    subject: `${heading} — Weekly department report (${period})`,
     text,
-    html: `<p style="white-space:pre-line">${escapeHtml(text)}</p>`,
-    attachments: [
-      {
-        filename: `weekly-time-report-${job.week_start}-to-${job.week_end}.pdf`,
-        content: Buffer.from(pdf).toString('base64'),
-        contentType: 'application/pdf',
-      },
-    ],
+    html: `<p>${escapeHtml(heading)}<br>Weekly department report: ${escapeHtml(period)} (${escapeHtml(target.timezone)})</p>
+      <p>${escapeHtml(note)} <a href="${escapeHtml(link)}">Open weekly report</a></p>`,
+    ...(attachments ? { attachments } : {}),
   }
+  return { payload, roster }
 }
+
 async function processJob(job: Job, deadline: number): Promise<string> {
   let deliveryStarted = false
   try {
@@ -223,14 +271,12 @@ async function processJob(job: Job, deadline: number): Promise<string> {
       await finish(job, 'terminal_failure', 'retry_window_exhausted')
       return 'terminal_failure'
     }
-    const payload = job.payload ?? (await prepare(job, target))
-    if (!payload) {
-      await finish(job, 'skipped', 'empty_week')
-      return 'skipped'
-    }
+    const { payload, roster } = job.payload
+      ? { payload: job.payload, roster: job.attachment_roster }
+      : await prepare(target, deadline)
     if (!job.payload) {
-      const frozen =
-        await db.execute(sql`update weekly_report_jobs set payload = ${JSON.stringify(payload)}::jsonb
+      const frozen = await db.execute(sql`update weekly_report_jobs
+        set payload = ${JSON.stringify(payload)}::jsonb, attachment_roster = ${roster ? JSON.stringify(roster) : null}::jsonb
         where id = ${job.id} and lease_token = ${job.lease_token} and status = 'processing' returning id`)
       if (!frozen.rows.length) return 'cancelled'
     }
@@ -257,15 +303,26 @@ async function processJob(job: Job, deadline: number): Promise<string> {
       attempts: number
       first_attempt_at: string
     }>(sql`
-      update weekly_report_jobs set attempts = attempts + 1, first_attempt_at = coalesce(first_attempt_at, now())
-      where id = ${job.id} and lease_token = ${job.lease_token} and status = 'processing'
-        and lease_until > now()
-        and exists (select 1 from workspace_members m join users u on u.id = m.user_id
-          where m.id = ${job.member_id} and m.workspace_id = ${job.workspace_id}
-            and m.status = 'ACTIVE' and m.weekly_report_email_enabled
-            and m.weekly_report_enabled_at <= ${job.due_at}::timestamptz and u.email = ${payload.to})
+      update weekly_report_jobs j
+      set attempts = attempts + 1, first_attempt_at = coalesce(first_attempt_at, now()), attempt_started_in_lease = true
+      where j.id = ${job.id} and j.lease_token = ${job.lease_token} and j.status = 'processing'
+        and j.lease_until > now() and j.report_type = 'department'
+        and exists (
+          select 1 from weekly_department_reports r
+          join departments d on d.id = r.department_id and d.workspace_id = r.workspace_id
+          join workspace_members m on m.id = j.member_id and m.workspace_id = r.workspace_id
+            and m.department_id = r.department_id
+          join workspace_roles role on role.id = m.workspace_role_id and role.workspace_id = m.workspace_id
+          join users u on u.id = m.user_id
+          where r.id = j.report_id and r.workspace_id = j.workspace_id and r.expires_at > now()
+            and u.email = ${payload.to} and ${eligibleRecipient(sql`j.due_at`)}
+        )
+        and ${roster ? departmentReportRosterIsCurrent(job.workspace_id, target.department_id, roster) : sql`true`}
         returning attempts, first_attempt_at`)
-    if (!started.rows[0]) return 'cancelled'
+    if (!started.rows[0]) {
+      await finish(job, 'skipped', 'recipient_or_roster_changed')
+      return 'cancelled'
+    }
     job.attempts = started.rows[0].attempts
     job.first_attempt_at = started.rows[0].first_attempt_at
     deliveryStarted = true
@@ -300,8 +357,7 @@ async function processJob(job: Job, deadline: number): Promise<string> {
       status,
       deliveryStarted
         ? 'delivery_persistence_failed'
-        : error instanceof Error &&
-            ['attachment_too_large', 'app_url_missing'].includes(error.message)
+        : error instanceof Error && error.message === 'app_url_missing'
           ? error.message
           : 'report_generation_failed',
     )
@@ -317,13 +373,17 @@ export async function runWeeklyReports() {
   await db.execute(
     sql`insert into weekly_report_throttle (id) values ('resend') on conflict do nothing`,
   )
-  await db.execute(sql`update weekly_report_jobs set status = case when attempts > 0 then 'uncertain' else 'pending' end,
-    payload = case when attempts > 0 then null else payload end, error = 'worker_lease_expired',
+  await db.execute(sql`update weekly_report_jobs set status = case when attempt_started_in_lease then 'uncertain' else 'pending' end,
+    payload = case when attempt_started_in_lease then null else payload end,
+    attachment_roster = case when attempt_started_in_lease then null else attachment_roster end,
+    attempt_started_in_lease = false, error = 'worker_lease_expired',
     lease_until = null, lease_token = null, updated_at = now()
-    where status = 'processing' and lease_until < now()`)
+    where report_type = 'department' and status = 'processing' and lease_until < now()`)
   await db.execute(sql`delete from weekly_report_jobs where id in (
     select id from weekly_report_jobs where status in ('sent', 'skipped', 'terminal_failure', 'uncertain')
       and updated_at < now() - interval '90 days' limit 500)`)
+  await db.execute(sql`delete from weekly_department_reports where id in (
+    select id from weekly_department_reports where expires_at <= now() order by expires_at limit 500)`)
   await enqueue(start + 10000)
   let claimed = 0
   const outcomes: Record<string, number> = {}

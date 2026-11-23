@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import {
   Building2,
@@ -17,6 +17,7 @@ import {
 import type { TimesheetPayload } from '#/lib/server/tracker/timesheet.server'
 import { getTimesheetExportFn, getTimesheetFn } from '#/lib/server/tracker'
 import type { TimesheetSearch } from '#/routes/app/timesheet'
+import { undoMissingWeekdayFn } from '#/lib/server/missing-weekday'
 import { trackerKeys } from '#/lib/time-tracker/query-keys'
 import {
   addDateKeyDays,
@@ -95,6 +96,19 @@ export function TimesheetScreen({
     staleTime: 30_000,
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,
+  })
+  const queryClient = useQueryClient()
+  const undo = useMutation({
+    mutationFn: async (date: string) => {
+      if (!data.viewer) return
+      const { workspaceId, userId } = data.viewer
+      await undoMissingWeekdayFn({ data: { workspaceId, userId, date } })
+      await queryClient.invalidateQueries({ queryKey: trackerKeys.timesheets })
+      await queryClient.invalidateQueries({
+        queryKey: trackerKeys.missingWeekday(workspaceId, userId),
+      })
+    },
+    onError: () => toast.error('Could not undo the confirmation'),
   })
   const [exporting, setExporting] = useState<'csv' | 'xlsx' | null>(null)
   const hasRunning = data.members.some((member) =>
@@ -296,6 +310,7 @@ export function TimesheetScreen({
             data={data}
             nowMs={nowMs}
             dailyTotals={liveDailyTotals}
+            onUndo={!undo.isPending ? (date) => undo.mutate(date) : undefined}
           />
         )}
 
@@ -489,10 +504,12 @@ export function TimesheetGrid({
   data,
   nowMs,
   dailyTotals,
+  onUndo,
 }: {
   data: TimesheetPayload
   nowMs: number
   dailyTotals: number[]
+  onUndo?: (date: string) => void
 }) {
   return (
     <div
@@ -578,6 +595,17 @@ export function TimesheetGrid({
                     className="min-w-0 px-1.5 py-3 align-top sm:px-2.5 xl:px-3"
                   >
                     <DayCell day={day} timezone={data.timezone} nowMs={nowMs} />
+                    {day.status === 'N/A' &&
+                      data.viewer?.memberId === member.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={!onUndo}
+                          onClick={() => onUndo?.(day.date)}
+                        >
+                          Undo N/A
+                        </Button>
+                      )}
                   </td>
                 ))}
                 <td className="bg-eggshell px-3 py-4 text-right sm:px-4 lg:sticky lg:right-0 lg:z-20 lg:shadow-[-1px_0_0_var(--stone)]">
@@ -631,6 +659,11 @@ function DayCell({
   timezone: string
   nowMs: number
 }) {
+  if (day.status === 'N/A') {
+    return (
+      <span className="text-sm font-medium text-smoke">N/A · 8 AM–5 PM</span>
+    )
+  }
   if (day.status === 'NO_TIME') {
     return <span className="text-lg text-smoke/45">—</span>
   }
