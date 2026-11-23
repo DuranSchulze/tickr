@@ -2,6 +2,25 @@
   "appVersion": "1.14.0",
   "updates": [
     {
+      "kind": "notice",
+      "id": "hosting-security-2026-11-23",
+      "publishedAt": "2026-11-23",
+      "title": "DigitalOcean hosting security notice",
+      "body": "On November 18, 2026, the makers of NGINX released fixes for two security flaws. NGINX is software some websites use to handle incoming traffic. DigitalOcean, our hosting provider, alerted us because someone could use the flaws to run programs on an affected server without signing in.",
+      "features": [
+        {
+          "title": "What this means for Trackly",
+          "description": "The flaws affect certain server setups. We have yet to confirm whether Trackly’s hosting uses an affected setup.",
+          "image": null
+        },
+        {
+          "title": "What you need to do",
+          "description": "You don’t need to do anything in Trackly in response to this notice. The fixes are for the teams that run affected servers.",
+          "image": null
+        }
+      ]
+    },
+    {
       "version": "1.14.0",
       "publishedAt": "2026-10-20",
       "title": "Your Weekly Time Report, Automatically Emailed",
