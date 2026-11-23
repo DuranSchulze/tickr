@@ -218,7 +218,7 @@ export function BulkExportButton({
       </button>
 
       <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[68rem]">
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-4 sm:max-w-[min(68rem,calc(100%-2rem))]">
           <DialogHeader>
             <DialogTitle>Export</DialogTitle>
             <DialogDescription>
@@ -227,67 +227,69 @@ export function BulkExportButton({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(17rem,21rem)_minmax(0,1fr)] lg:items-start">
-            <div className="grid min-w-0 gap-4">
-              <ScopeSelector
-                scopeType={scopeType}
-                onChange={(nextScopeType) =>
-                  setScopeState((prev) => ({
-                    ...prev,
-                    scopeType: nextScopeType,
-                    scopeId: '',
-                    clientId: nextScopeType === 'client' ? '' : prev.clientId,
-                  }))
-                }
-              />
-
-              {needsScopeId && (
-                <ScopeValueSelector
+          <div className="-mx-6 grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain px-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(17rem,21rem)_minmax(0,1fr)] lg:items-start">
+              <div className="grid min-w-0 gap-4">
+                <ScopeSelector
                   scopeType={scopeType}
-                  scopeId={scopeId}
-                  options={scopeEntityOptions}
-                  hasEntities={scopeEntities.length > 0}
-                  onChange={(value) =>
+                  onChange={(nextScopeType) =>
                     setScopeState((prev) => ({
                       ...prev,
-                      scopeId: value,
+                      scopeType: nextScopeType,
+                      scopeId: '',
+                      clientId: nextScopeType === 'client' ? '' : prev.clientId,
                     }))
                   }
                 />
-              )}
 
-              <ReportFilters
-                memberOptions={memberOptions}
-                memberId={memberId}
-                onMemberChange={(value) =>
-                  setScopeState((prev) => ({ ...prev, memberId: value }))
-                }
-                showClient={!clientFilterHidden}
-                clientOptions={clientOptions}
-                clientId={clientId}
-                onClientChange={(value) =>
-                  setScopeState((prev) => ({
-                    ...prev,
-                    clientId: value,
-                  }))
-                }
-                sortBy={sortBy}
-                onSortByChange={(value) =>
-                  setScopeState((prev) => ({ ...prev, sortBy: value }))
-                }
-                sortOrder={sortOrder}
-                onSortOrderChange={(value) =>
-                  setScopeState((prev) => ({ ...prev, sortOrder: value }))
-                }
-              />
-            </div>
+                {needsScopeId && (
+                  <ScopeValueSelector
+                    scopeType={scopeType}
+                    scopeId={scopeId}
+                    options={scopeEntityOptions}
+                    hasEntities={scopeEntities.length > 0}
+                    onChange={(value) =>
+                      setScopeState((prev) => ({
+                        ...prev,
+                        scopeId: value,
+                      }))
+                    }
+                  />
+                )}
 
-            <div className="min-w-0">
-              <ExportDateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onChangeRange={setRange}
-              />
+                <ReportFilters
+                  memberOptions={memberOptions}
+                  memberId={memberId}
+                  onMemberChange={(value) =>
+                    setScopeState((prev) => ({ ...prev, memberId: value }))
+                  }
+                  showClient={!clientFilterHidden}
+                  clientOptions={clientOptions}
+                  clientId={clientId}
+                  onClientChange={(value) =>
+                    setScopeState((prev) => ({
+                      ...prev,
+                      clientId: value,
+                    }))
+                  }
+                  sortBy={sortBy}
+                  onSortByChange={(value) =>
+                    setScopeState((prev) => ({ ...prev, sortBy: value }))
+                  }
+                  sortOrder={sortOrder}
+                  onSortOrderChange={(value) =>
+                    setScopeState((prev) => ({ ...prev, sortOrder: value }))
+                  }
+                />
+              </div>
+
+              <div className="min-w-0">
+                <ExportDateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChangeRange={setRange}
+                />
+              </div>
             </div>
           </div>
 

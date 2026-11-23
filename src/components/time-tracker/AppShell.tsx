@@ -24,6 +24,7 @@ import type { Workspace } from '#/lib/time-tracker/types'
 import { SubscriptionStatusBanner } from '#/components/subscription/SubscriptionStatusBanner'
 import type { SubscriptionSummary } from '#/components/subscription/SubscriptionStatusBanner'
 import { WorkspaceSubscriptionGate } from '#/components/subscription/WorkspaceSubscriptionGate'
+import { DailyRecapDialog } from './shared/DailyRecapDialog'
 import { TaskSyncCoordinator } from './TaskSyncCoordinator'
 import type { EffectivePermissions } from '#/lib/rbac/permissions'
 import { workspaceAuthorizationKeys } from '#/lib/time-tracker/workspace-authorization'
@@ -219,7 +220,10 @@ export function AppShell({
 
   return (
     <TaskSyncCoordinator workspaceId={workspace.id} pathname={pathname}>
-      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-sidebar text-foreground">
+      {showAppChrome && subscription.access.canAccess && (
+        <DailyRecapDialog workspaceId={workspace.id} userId={user.id} />
+      )}
+      <div className="relative flex h-screen w-full flex-col overflow-hidden bg-sidebar text-foreground supports-[height:100dvh]:h-dvh">
         {showAppChrome && (
           <>
             <BirthdayCelebration

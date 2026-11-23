@@ -3,7 +3,7 @@ import type { DateRange } from 'react-day-picker'
 import { CalendarDays, Check } from 'lucide-react'
 import { Calendar } from '#/components/ui/calendar'
 
-const DESKTOP_QUERY = '(min-width: 640px)'
+const DESKTOP_QUERY = '(min-width: 768px)'
 
 const presets = [
   { label: 'Today', kind: 'today' },

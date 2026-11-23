@@ -216,6 +216,7 @@ export class WeeklyEmailError extends Error {
   constructor(
     public outcome: 'retryable' | 'terminal' | 'uncertain',
     public retryAfterSeconds = 0,
+    public status: number | null = null,
   ) {
     super(`Weekly email ${outcome}`)
   }
@@ -265,6 +266,7 @@ export async function sendWeeklyReportEmail(
           ? 'uncertain'
           : 'terminal',
       Number.isFinite(seconds) ? seconds : 0,
+      response.status,
     )
   }
   try {

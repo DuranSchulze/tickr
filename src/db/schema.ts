@@ -12,6 +12,7 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  uuid,
   check,
   jsonb,
   doublePrecision,
@@ -435,6 +436,9 @@ export const workspaceMembers = pgTable(
       () => departments.id,
       { onDelete: 'set null' },
     ),
+    departmentAssignedAt: timestamp('department_assigned_at', {
+      withTimezone: true,
+    }),
     invitedById: varchar('invited_by_id', { length: 30 }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -1429,6 +1433,57 @@ export type SubscriptionStatus =
 export type SubscriptionPaymentStatus =
   (typeof subscriptionPaymentStatusEnum.enumValues)[number]
 
+export const weekdayConfirmations = pgTable(
+  'weekday_confirmations',
+  {
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    memberId: varchar('member_id', { length: 30 })
+      .notNull()
+      .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    localDate: date('local_date').notNull(),
+    confirmedAt: timestamp('confirmed_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    primaryKey({
+      columns: [table.workspaceId, table.memberId, table.localDate],
+    }),
+    check(
+      'weekday_confirmation_weekday',
+      sql`extract(isodow from ${table.localDate}) between 1 and 5`,
+    ),
+  ],
+)
+
+export const weeklyDepartmentReports = pgTable(
+  'weekly_department_reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workspaceId: varchar('workspace_id', { length: 30 })
+      .notNull()
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    departmentId: varchar('department_id', { length: 30 })
+      .notNull()
+      .references(() => departments.id, { onDelete: 'cascade' }),
+    weekStart: date('week_start').notNull(),
+    weekEnd: date('week_end').notNull(),
+    timezone: varchar('timezone', { length: 80 }).notNull(),
+    dueAt: timestamp('due_at', { withTimezone: true }).notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('weekly_department_report_week_unique').on(
+      table.workspaceId,
+      table.departmentId,
+      table.weekStart,
+    ),
+    index('weekly_department_report_expiry_idx').on(table.expiresAt),
+  ],
+)
+
 // Durable weekly report scheduling and delivery. Payloads are cleared on completion.
 export const weeklyReportSchedules = pgTable(
   'weekly_report_schedules',
@@ -1455,6 +1510,15 @@ export const weeklyReportJobs = pgTable(
     memberId: varchar('member_id', { length: 30 })
       .notNull()
       .references(() => workspaceMembers.id, { onDelete: 'cascade' }),
+    reportType: text('report_type').notNull().default('personal'),
+    reportId: uuid('report_id').references(() => weeklyDepartmentReports.id, {
+      onDelete: 'set null',
+    }),
+    attachmentRoster:
+      jsonb('attachment_roster').$type<Record<string, string>>(),
+    attemptStartedInLease: boolean('attempt_started_in_lease')
+      .notNull()
+      .default(false),
     weekStart: date('week_start').notNull(),
     weekEnd: date('week_end').notNull(),
     timezone: varchar('timezone', { length: 80 }).notNull(),
@@ -1482,6 +1546,11 @@ export const weeklyReportJobs = pgTable(
       table.workspaceId,
       table.memberId,
       table.weekStart,
+      table.reportType,
+    ),
+    check(
+      'weekly_report_type_check',
+      sql`${table.reportType} in ('personal', 'department')`,
     ),
     index('weekly_report_pending_idx').on(table.status, table.nextAttemptAt),
     index('weekly_report_retention_idx').on(table.updatedAt),

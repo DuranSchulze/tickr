@@ -47,6 +47,15 @@ export const PERMISSIONS = {
     dataScope: 'hierarchy',
     delegation: 'delegable',
   },
+  'reports.daily_digest': {
+    group: 'Analytics & reports',
+    label: 'Receive daily attendance digest',
+    description:
+      'Receive the nightly workspace-wide email listing every member’s logged hours, short days, and days without time. Admins already get their own department’s report.',
+    defaults: ['OWNER'],
+    dataScope: 'workspace',
+    delegation: 'delegable',
+  },
   'members.view': {
     group: 'People',
     label: 'View members',

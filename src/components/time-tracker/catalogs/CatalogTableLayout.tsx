@@ -624,11 +624,11 @@ export function CatalogTablePage<TData>({
 
       {/* Bulk action bar */}
       {canManage && onBulkAction && selectionCount > 0 && (
-        <div className="sticky bottom-6 z-30 mx-auto flex items-center gap-4 rounded-xl border border-stone bg-eggshell px-5 py-3 shadow-[var(--shadow-whisper)] backdrop-blur-sm">
+        <div className="sticky bottom-6 z-30 mx-auto flex w-[calc(100%-1rem)] flex-wrap items-center gap-2 rounded-xl border border-stone bg-eggshell px-3 py-3 shadow-[var(--shadow-whisper)] backdrop-blur-sm sm:w-fit sm:gap-4 sm:px-5">
           <p className="text-sm font-bold text-foreground whitespace-nowrap">
             {selectionCount} selected
           </p>
-          <div className="h-5 w-px bg-stone" />
+          <div className="hidden h-5 w-px bg-stone sm:block" />
           {bulkActions.map((action) => (
             <button
               key={action.value}

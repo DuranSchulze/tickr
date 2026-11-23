@@ -1,0 +1,1404 @@
+# Pages — dependency trees
+
+Local imports traced recursively (alias `#/` → `src/`; node_modules, CSS and `*.server.ts` skipped). Every page below also renders inside the shell: `src/routes/app.tsx` → `src/components/time-tracker/AppShell.tsx` (see layouts.md). Use these as the CANDIDATE `--context-file` set, then apply the payload budget.
+
+## /app/time-tracker (dashboard)
+
+Entry: src/routes/app/time-tracker/index.tsx
+Dependencies:
+
+- src/components/time-tracker/dashboard/TimeTrackerDashboard.tsx
+  - src/components/time-tracker/dashboard/AllEntriesSection.tsx
+    - src/components/time-tracker/dashboard/DayGroupEntries.tsx
+      - src/components/time-tracker/dashboard/EntryCard.tsx
+        - src/components/time-tracker/dashboard/ConfirmDialog.tsx
+          - src/components/ui/button.tsx
+            - src/lib/utils.ts
+          - src/components/ui/dialog.tsx
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/overlay-portal-context.ts
+            - src/lib/utils.ts
+        - src/components/time-tracker/dashboard/hooks/useNowTick.ts
+        - src/components/ui/searchable-create-popover.tsx
+          - src/components/ui/overflow-reveal.tsx
+            - src/components/ui/tooltip.tsx
+            - src/lib/utils.ts
+          - src/components/ui/popover.tsx
+            - src/components/ui/overlay-portal-context.ts
+            - src/lib/utils.ts
+        - src/lib/time-tracker/billing.ts
+        - src/lib/time-tracker/entry-timing.ts
+          - src/lib/time-tracker/types.ts
+        - src/lib/time-tracker/store.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/useTimeFormat.ts
+          - src/lib/time-tracker/time-format.ts
+            - src/lib/time-tracker/store.ts (see above)
+      - src/components/time-tracker/dashboard/EntryRow.tsx
+        - src/components/time-tracker/catalogs/CatalogFormParts.tsx
+          - src/components/ui/combobox.tsx
+            - src/components/ui/popover.tsx (see above)
+            - src/lib/utils.ts
+        - src/components/time-tracker/dashboard/BillableToggleButton.tsx
+        - src/components/time-tracker/dashboard/ConfirmDialog.tsx (see above)
+        - src/components/time-tracker/dashboard/hooks/useNowTick.ts (see above)
+        - src/components/time-tracker/pickers/ClientProjectPicker.tsx
+          - src/components/time-tracker/pickers/client-project-selection.ts
+          - src/components/ui/button.tsx (see above)
+          - src/components/ui/dialog.tsx (see above)
+          - src/components/ui/overflow-reveal.tsx (see above)
+          - src/components/ui/popover.tsx (see above)
+          - src/lib/utils.ts
+        - src/components/time-tracker/pickers/TagPicker.tsx
+          - src/components/ui/overflow-reveal.tsx (see above)
+          - src/components/ui/searchable-create-popover.tsx (see above)
+        - src/components/ui/calendar.tsx
+          - src/components/ui/button.tsx (see above)
+          - src/lib/utils.ts (see above)
+        - src/components/ui/dropdown-menu.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/popover.tsx (see above)
+        - src/components/ui/searchable-create-popover.tsx (see above)
+        - src/components/ui/table.tsx
+          - src/lib/utils.ts (see above)
+        - src/lib/time-tracker/duration-input.ts
+        - src/lib/time-tracker/entry-timing.ts (see above)
+        - src/lib/time-tracker/store.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/useTimeFormat.ts (see above)
+      - src/components/time-tracker/dashboard/entries-grouping.ts
+        - src/lib/time-tracker/entry-timing.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+      - src/components/time-tracker/dashboard/hooks/useIsDesktop.ts
+      - src/components/time-tracker/dashboard/hooks/useNowTick.ts (see above)
+      - src/components/time-tracker/dashboard/hooks/useStableCallback.ts
+      - src/components/ui/searchable-create-popover.tsx (see above)
+      - src/components/ui/table.tsx (see above)
+      - src/lib/time-tracker/store.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/time-tracker/useTimeFormat.ts (see above)
+      - src/lib/toast.ts
+    - src/components/time-tracker/dashboard/EntriesDateRangeFilter.tsx
+      - src/components/ui/calendar.tsx (see above)
+      - src/components/ui/popover.tsx (see above)
+    - src/components/time-tracker/dashboard/EntriesFiltersDialog.tsx
+      - src/components/time-tracker/dashboard/EntriesDateRangeFilter.tsx (see above)
+      - src/components/time-tracker/dashboard/EntriesFilters.tsx
+        - src/components/time-tracker/dashboard/hooks/useEntriesFilterSort.ts
+          - src/components/time-tracker/dashboard/hooks/useNowTick.ts (see above)
+          - src/lib/time-tracker/store.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+        - src/components/ui/combobox.tsx (see above)
+        - src/components/ui/searchable-create-popover.tsx (see above)
+        - src/components/ui/select.tsx
+          - src/lib/utils.ts (see above)
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/dashboard/entries-grouping.ts (see above)
+    - src/components/time-tracker/dashboard/hooks/useEntriesFilterSort.ts (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/searchable-create-popover.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/DashboardHeader.tsx
+    - src/components/time-tracker/dashboard/hooks/useNowTick.ts (see above)
+    - src/lib/time-tracker/store.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/time-tracker/useTimeFormat.ts (see above)
+  - src/components/time-tracker/dashboard/EditEntryDrawer.tsx
+    - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+    - src/components/time-tracker/dashboard/EntryDraftForm.tsx
+      - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+      - src/components/time-tracker/dashboard/DraftTimeEditor.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/calendar.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/lib/time-tracker/entry-timing.ts (see above)
+        - src/lib/time-tracker/store.ts (see above)
+      - src/components/time-tracker/dashboard/utils.ts
+        - src/lib/time-tracker/store.ts (see above)
+      - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+      - src/components/time-tracker/pickers/TagPicker.tsx (see above)
+    - src/components/time-tracker/dashboard/EntryOriginSection.tsx
+      - src/components/time-tracker/dashboard/EntryLocationMap.tsx
+        - src/components/ui/map.tsx
+          - src/lib/utils.ts (see above)
+        - src/hooks/useAppTheme.ts
+          - src/lib/theme.ts
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/dashboard/utils.ts (see above)
+    - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/components/ui/searchable-create-popover.tsx (see above)
+    - src/lib/time-tracker/entry-timing.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/EntriesDateRangeFilter.tsx (see above)
+  - src/components/time-tracker/dashboard/FeedbackForm.tsx
+  - src/components/time-tracker/dashboard/InputSection.tsx
+    - src/components/time-tracker/dashboard/ManualEntryPanel.tsx
+      - src/components/time-tracker/dashboard/EntryDraftForm.tsx (see above)
+      - src/components/time-tracker/dashboard/PresetDropdown.tsx
+        - src/components/time-tracker/dashboard/SavePresetDialog.tsx
+          - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+          - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+          - src/components/time-tracker/pickers/TagPicker.tsx (see above)
+          - src/components/ui/button.tsx (see above)
+          - src/components/ui/dialog.tsx (see above)
+          - src/components/ui/input.tsx
+            - src/lib/utils.ts (see above)
+          - src/components/ui/label.tsx
+            - src/lib/utils.ts (see above)
+          - src/components/ui/searchable-create-popover.tsx (see above)
+          - src/lib/server/tracker.ts
+            - src/lib/server/tracker/shared/schemas.ts
+            - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/presets.ts
+          - src/lib/time-tracker/query-keys.ts
+            - src/lib/time-tracker/types.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dropdown-menu.tsx (see above)
+        - src/lib/server/tracker.ts (see above)
+        - src/lib/time-tracker/presets.ts (see above)
+        - src/lib/time-tracker/query-keys.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/useNetworkStatus.ts
+        - src/lib/toast.ts (see above)
+      - src/components/time-tracker/dashboard/utils.ts (see above)
+      - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+      - src/components/ui/searchable-create-popover.tsx (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/dashboard/TimerPanel.tsx
+      - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+      - src/components/time-tracker/dashboard/BillableToggleButton.tsx (see above)
+      - src/components/time-tracker/dashboard/DescriptionAutocomplete.tsx
+      - src/components/time-tracker/dashboard/PresetDropdown.tsx (see above)
+      - src/components/time-tracker/dashboard/RunningTimer.tsx
+        - src/components/time-tracker/dashboard/hooks/useNowTick.ts (see above)
+        - src/lib/time-tracker/store.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/useTimeFormat.ts (see above)
+      - src/components/time-tracker/dashboard/TimerMobileControls.tsx
+        - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+        - src/components/time-tracker/dashboard/BillableToggleButton.tsx (see above)
+        - src/components/time-tracker/dashboard/PresetDropdown.tsx (see above)
+        - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+        - src/components/time-tracker/pickers/TagPicker.tsx (see above)
+        - src/components/ui/searchable-create-popover.tsx (see above)
+        - src/lib/time-tracker/types.ts (see above)
+      - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+      - src/components/time-tracker/pickers/TagPicker.tsx (see above)
+      - src/components/ui/kbd.tsx
+        - src/lib/utils.ts (see above)
+      - src/components/ui/overflow-reveal.tsx (see above)
+      - src/components/ui/searchable-create-popover.tsx (see above)
+      - src/lib/time-tracker/device-location.ts
+      - src/lib/time-tracker/entry-timing.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/dashboard/utils.ts (see above)
+    - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+    - src/components/ui/searchable-create-popover.tsx (see above)
+    - src/lib/time-tracker/device-location.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/SubsecondStopDialog.tsx
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+  - src/components/time-tracker/dashboard/entries-merge.ts
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useDraftAndEdit.ts
+    - src/components/time-tracker/dashboard/hooks/useTrackerMutations.ts
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/device-location.ts (see above)
+      - src/lib/time-tracker/notifications.tsx
+        - src/lib/toast.ts (see above)
+      - src/lib/time-tracker/overlap-confirmation.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/lib/server/tracker.ts (see above)
+        - src/lib/toast.ts (see above)
+      - src/lib/time-tracker/query-keys.ts (see above)
+      - src/lib/time-tracker/task-sync.ts
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/dashboard/utils.ts (see above)
+    - src/lib/time-tracker/device-location.ts (see above)
+    - src/lib/time-tracker/notifications.tsx (see above)
+    - src/lib/time-tracker/offline-queue.ts
+      - src/lib/time-tracker/device-location.ts (see above)
+    - src/lib/time-tracker/query-keys.ts (see above)
+    - src/lib/time-tracker/store.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useEntriesFilterSort.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useRemoteTaskDataSync.ts
+    - src/lib/time-tracker/task-sync.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useTimerCore.ts
+    - src/components/time-tracker/dashboard/hooks/useDescriptionSuggestions.ts
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/dashboard/hooks/useTrackerMutations.ts (see above)
+    - src/components/time-tracker/dashboard/utils.ts (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/device-location.ts (see above)
+    - src/lib/time-tracker/entry-timing.ts (see above)
+    - src/lib/time-tracker/notifications.tsx (see above)
+    - src/lib/time-tracker/offline-queue.ts (see above)
+    - src/lib/time-tracker/overlap-confirmation.tsx (see above)
+    - src/lib/time-tracker/pending-entries.ts
+      - src/lib/time-tracker/types.ts (see above)
+    - src/lib/time-tracker/query-keys.ts (see above)
+    - src/lib/time-tracker/task-sync.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/toast.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useTimerKeyboard.ts
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/hooks/useTrackerMutations.ts (see above)
+  - src/components/time-tracker/shared/MemberExportDialog.tsx
+    - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+      - src/components/ui/calendar.tsx (see above)
+    - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/time-tracker/export-ongoing-tasks.ts
+    - src/components/time-tracker/shared/ExportSortControls.tsx
+      - src/lib/time-tracker/export-sort.ts
+    - src/components/time-tracker/shared/export-dialog-footer.tsx
+      - src/components/time-tracker/shared/export-dialog-state.ts
+        - src/lib/toast.ts (see above)
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+    - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/member-report-export.ts
+      - src/lib/time-tracker/bulk-report-export.ts
+        - src/lib/time-tracker/entry-source.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/export-utils.ts
+  - src/components/time-tracker/shared/WeeklyReportEmailsButton.tsx
+    - src/components/time-tracker/shared/DailyReportEmailsSection.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/server/daily-report.ts
+        - src/lib/time-tracker/daily-report-link.ts
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/weekly-report-preferences.ts
+  - src/components/ui/dialog.tsx (see above)
+  - src/lib/brand.ts
+  - src/lib/server/tracker.ts (see above)
+  - src/lib/time-tracker/billing.ts (see above)
+  - src/lib/time-tracker/offline-queue.ts (see above)
+  - src/lib/time-tracker/query-keys.ts (see above)
+  - src/lib/time-tracker/store.ts (see above)
+  - src/lib/time-tracker/task-sync.ts (see above)
+  - src/lib/time-tracker/types.ts (see above)
+  - src/lib/time-tracker/useNetworkStatus.ts (see above)
+  - src/lib/time-tracker/useTimeFormat.ts (see above)
+  - src/lib/toast.ts (see above)
+- src/lib/brand.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts (see above)
+- src/lib/time-tracker/types.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts
+      - src/db/schema.ts
+
+## /app/timesheet
+
+Entry: src/routes/app/timesheet.tsx
+Dependencies:
+
+- src/components/time-tracker/timesheet/TimesheetScreen.tsx
+  - src/components/time-tracker/dashboard/hooks/useNowTick.ts
+  - src/components/ui/button.tsx
+    - src/lib/utils.ts
+  - src/components/ui/card.tsx
+    - src/lib/utils.ts (see above)
+  - src/components/ui/combobox.tsx
+    - src/components/ui/popover.tsx
+      - src/components/ui/overlay-portal-context.ts
+      - src/lib/utils.ts (see above)
+    - src/lib/utils.ts (see above)
+  - src/components/ui/dropdown-menu.tsx
+    - src/lib/utils.ts (see above)
+  - src/components/ui/select.tsx
+    - src/lib/utils.ts (see above)
+  - src/lib/server/missing-weekday.ts
+    - src/lib/time-tracker/timesheet.ts
+  - src/lib/server/tracker.ts
+    - src/lib/server/tracker/shared/schemas.ts
+    - src/lib/time-tracker/export-sort.ts
+  - src/lib/time-tracker/query-keys.ts
+    - src/lib/time-tracker/types.ts
+  - src/lib/time-tracker/timesheet-export.ts
+    - src/lib/time-tracker/export-utils.ts
+    - src/lib/time-tracker/timesheet.ts (see above)
+  - src/lib/time-tracker/timesheet.ts (see above)
+  - src/lib/toast.ts
+  - src/routes/app/timesheet.tsx (see above)
+- src/components/ui/button.tsx (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts (see above)
+- src/lib/time-tracker/timesheet.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts
+      - src/db/schema.ts
+
+## /app/analytics
+
+Entry: src/routes/app/analytics.tsx
+Dependencies:
+
+- src/components/time-tracker/analytics/AnalyticsScreen.tsx
+  - src/components/time-tracker/analytics/AnalyticsCharts.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts
+    - src/lib/time-tracker/store.ts
+      - src/lib/time-tracker/types.ts
+  - src/components/time-tracker/analytics/AnalyticsDateRange.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+    - src/components/ui/calendar.tsx
+      - src/components/ui/button.tsx
+        - src/lib/utils.ts
+      - src/lib/utils.ts (see above)
+    - src/components/ui/popover.tsx
+      - src/components/ui/overlay-portal-context.ts
+      - src/lib/utils.ts (see above)
+  - src/components/time-tracker/analytics/AnalyticsEntriesTable.tsx
+    - src/components/time-tracker/analytics/EntriesSearchForm.tsx
+    - src/components/ui/pagination.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/utils.ts (see above)
+    - src/lib/time-tracker/useTimeFormat.ts
+      - src/lib/time-tracker/time-format.ts
+        - src/lib/time-tracker/store.ts (see above)
+  - src/components/time-tracker/analytics/AnalyticsFilterBar.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/popover.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/utils.ts (see above)
+  - src/components/time-tracker/analytics/AnalyticsHeatmap.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+    - src/lib/time-tracker/store.ts (see above)
+  - src/components/time-tracker/analytics/AnalyticsSummaryCards.tsx
+    - src/lib/time-tracker/store.ts (see above)
+  - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+  - src/components/time-tracker/shared/BulkExportDialog.tsx
+    - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+      - src/components/ui/calendar.tsx (see above)
+    - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/overlay-portal-context.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/lib/time-tracker/export-ongoing-tasks.ts
+    - src/components/time-tracker/shared/ExportSortControls.tsx
+      - src/lib/time-tracker/export-sort.ts
+    - src/components/time-tracker/shared/export-dialog-footer.tsx
+      - src/components/time-tracker/shared/export-dialog-state.ts
+        - src/lib/toast.ts
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+    - src/components/ui/combobox.tsx
+      - src/components/ui/popover.tsx (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts
+      - src/lib/server/tracker/shared/schemas.ts
+      - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/bulk-report-export.ts
+      - src/lib/time-tracker/entry-source.ts
+        - src/lib/time-tracker/types.ts (see above)
+      - src/lib/time-tracker/export-utils.ts
+    - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+    - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/shared/MemberExportDialog.tsx
+    - src/components/time-tracker/shared/ExportDateRangePicker.tsx (see above)
+    - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx (see above)
+    - src/components/time-tracker/shared/ExportSortControls.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-footer.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+    - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/member-report-export.ts
+      - src/lib/time-tracker/bulk-report-export.ts (see above)
+  - src/components/ui/button.tsx (see above)
+  - src/lib/time-tracker/export-utils.ts (see above)
+  - src/lib/time-tracker/store.ts (see above)
+  - src/lib/time-tracker/types.ts (see above)
+- src/components/time-tracker/analytics/analytics.utils.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts
+  - src/lib/time-tracker/types.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts
+      - src/db/schema.ts
+
+## /app/reports
+
+Entry: src/routes/app/reports.tsx
+Dependencies:
+
+- src/components/time-tracker/analytics/analytics.utils.ts
+- src/components/time-tracker/reports/ReportsScreen.tsx
+  - src/components/time-tracker/TaskSyncCoordinator.tsx
+    - src/lib/server/tracker.ts
+      - src/lib/server/tracker/shared/schemas.ts
+      - src/lib/time-tracker/export-sort.ts
+    - src/lib/time-tracker/task-sync.ts
+    - src/lib/time-tracker/tracker-pulse.ts
+  - src/components/time-tracker/analytics/AnalyticsDateRange.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+    - src/components/ui/calendar.tsx
+      - src/components/ui/button.tsx
+        - src/lib/utils.ts
+      - src/lib/utils.ts (see above)
+    - src/components/ui/popover.tsx
+      - src/components/ui/overlay-portal-context.ts
+      - src/lib/utils.ts (see above)
+  - src/components/time-tracker/analytics/AnalyticsEntriesTable.tsx
+    - src/components/time-tracker/analytics/EntriesSearchForm.tsx
+    - src/components/ui/pagination.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/utils.ts (see above)
+    - src/lib/time-tracker/useTimeFormat.ts
+      - src/lib/time-tracker/time-format.ts
+        - src/lib/time-tracker/store.ts
+          - src/lib/time-tracker/types.ts
+  - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+  - src/components/time-tracker/analytics/department/DepartmentMemberActivitySheet.tsx
+    - src/components/ui/dialog.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/overlay-portal-context.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/lib/server/tracker.ts (see above)
+  - src/components/time-tracker/dashboard/ConfirmDialog.tsx
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+  - src/components/time-tracker/dashboard/EditEntryDrawer.tsx
+    - src/components/time-tracker/catalogs/CatalogFormParts.tsx
+      - src/components/ui/combobox.tsx
+        - src/components/ui/popover.tsx (see above)
+        - src/lib/utils.ts (see above)
+    - src/components/time-tracker/dashboard/EntryDraftForm.tsx
+      - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+      - src/components/time-tracker/dashboard/DraftTimeEditor.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/calendar.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/lib/time-tracker/entry-timing.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/store.ts (see above)
+      - src/components/time-tracker/dashboard/utils.ts
+        - src/lib/time-tracker/store.ts (see above)
+      - src/components/time-tracker/pickers/ClientProjectPicker.tsx
+        - src/components/time-tracker/pickers/client-project-selection.ts
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/components/ui/overflow-reveal.tsx
+          - src/components/ui/tooltip.tsx
+            - src/components/ui/overlay-portal-context.ts (see above)
+            - src/lib/utils.ts (see above)
+          - src/lib/utils.ts (see above)
+        - src/components/ui/popover.tsx (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/time-tracker/pickers/TagPicker.tsx
+        - src/components/ui/overflow-reveal.tsx (see above)
+        - src/components/ui/searchable-create-popover.tsx
+          - src/components/ui/overflow-reveal.tsx (see above)
+          - src/components/ui/popover.tsx (see above)
+    - src/components/time-tracker/dashboard/EntryOriginSection.tsx
+      - src/components/time-tracker/dashboard/EntryLocationMap.tsx
+        - src/components/ui/map.tsx
+          - src/lib/utils.ts (see above)
+        - src/hooks/useAppTheme.ts
+          - src/lib/theme.ts
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/dashboard/utils.ts (see above)
+    - src/components/time-tracker/pickers/ClientProjectPicker.tsx (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/components/ui/searchable-create-popover.tsx (see above)
+    - src/lib/time-tracker/entry-timing.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/dashboard/utils.ts (see above)
+  - src/components/time-tracker/reports/ReportsCharts.tsx
+    - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+    - src/lib/time-tracker/store.ts (see above)
+  - src/components/time-tracker/reports/ReportsFilterBar.tsx
+    - src/components/time-tracker/analytics/AnalyticsFilterBar.tsx
+      - src/components/time-tracker/analytics/analytics.utils.ts (see above)
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/popover.tsx (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/ui/popover.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/utils.ts (see above)
+  - src/components/time-tracker/reports/ReportsMemberBreakdown.tsx
+    - src/lib/time-tracker/billing.ts
+  - src/components/time-tracker/reports/ReportsSummaryCards.tsx
+    - src/lib/time-tracker/export-utils.ts
+    - src/lib/time-tracker/store.ts (see above)
+  - src/components/time-tracker/reports/WeeklyPresets.tsx
+  - src/components/time-tracker/reports/member-stats.ts
+  - src/components/time-tracker/shared/BulkExportDialog.tsx
+    - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+      - src/components/ui/calendar.tsx (see above)
+    - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/time-tracker/export-ongoing-tasks.ts
+    - src/components/time-tracker/shared/ExportSortControls.tsx
+      - src/lib/time-tracker/export-sort.ts (see above)
+    - src/components/time-tracker/shared/export-dialog-footer.tsx
+      - src/components/time-tracker/shared/export-dialog-state.ts
+        - src/lib/toast.ts
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+    - src/components/ui/combobox.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/bulk-report-export.ts
+      - src/lib/time-tracker/entry-source.ts
+        - src/lib/time-tracker/types.ts (see above)
+      - src/lib/time-tracker/export-utils.ts (see above)
+    - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+    - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/shared/MemberExportDialog.tsx
+    - src/components/time-tracker/shared/ExportDateRangePicker.tsx (see above)
+    - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx (see above)
+    - src/components/time-tracker/shared/ExportSortControls.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-footer.tsx (see above)
+    - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+    - src/lib/time-tracker/export-sort.ts (see above)
+    - src/lib/time-tracker/member-report-export.ts
+      - src/lib/time-tracker/bulk-report-export.ts (see above)
+  - src/lib/server/tracker.ts (see above)
+  - src/lib/time-tracker/export-utils.ts (see above)
+  - src/lib/time-tracker/notifications.tsx
+    - src/lib/toast.ts (see above)
+  - src/lib/time-tracker/overlap-confirmation.tsx
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/dialog.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/toast.ts (see above)
+  - src/lib/time-tracker/query-keys.ts
+    - src/lib/time-tracker/types.ts (see above)
+  - src/lib/time-tracker/store.ts (see above)
+  - src/lib/time-tracker/types.ts (see above)
+  - src/lib/toast.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts
+      - src/db/schema.ts
+
+## /app/calendar
+
+Entry: src/routes/app/calendar.tsx
+Dependencies:
+
+- src/components/time-tracker/calendar/CalendarScreen.tsx
+  - src/components/time-tracker/calendar/CalendarGrid.tsx
+    - src/components/time-tracker/analytics/department/DepartmentMemberActivitySheet.tsx
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx
+          - src/lib/utils.ts
+        - src/components/ui/overlay-portal-context.ts
+        - src/lib/utils.ts (see above)
+      - src/lib/server/tracker.ts
+        - src/lib/server/tracker/shared/schemas.ts
+        - src/lib/time-tracker/export-sort.ts
+    - src/components/time-tracker/calendar/CalendarDayCell.tsx
+      - src/components/time-tracker/calendar/CalendarEntryChip.tsx
+        - src/components/time-tracker/dashboard/hooks/useNowTick.ts
+        - src/lib/time-tracker/useTimeFormat.ts
+          - src/lib/time-tracker/time-format.ts
+            - src/lib/time-tracker/store.ts
+    - src/components/time-tracker/calendar/calendar.utils.ts
+  - src/components/time-tracker/calendar/CalendarHeader.tsx
+    - src/components/time-tracker/calendar/calendar.utils.ts (see above)
+    - src/components/ui/button.tsx (see above)
+  - src/components/time-tracker/calendar/CalendarMemberSwitcher.tsx
+    - src/components/ui/combobox.tsx
+      - src/components/ui/popover.tsx
+        - src/components/ui/overlay-portal-context.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/lib/utils.ts (see above)
+  - src/components/time-tracker/calendar/calendar.utils.ts (see above)
+  - src/lib/time-tracker/useTimeFormat.ts (see above)
+- src/components/time-tracker/calendar/calendar-navigation.ts
+- src/components/time-tracker/calendar/calendar.utils.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts
+  - src/lib/time-tracker/types.ts
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts
+      - src/db/schema.ts
+
+## /app/workspace/members
+
+Entry: src/routes/app/workspace/members.tsx
+Dependencies:
+
+- src/components/time-tracker/WorkspaceScreens.tsx
+  - src/components/time-tracker/screens/MembersScreen/MembersScreen.tsx
+    - src/components/time-tracker/InviteMemberDialog.tsx
+      - src/components/ui/button.tsx
+        - src/lib/utils.ts
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/overlay-portal-context.ts
+        - src/lib/utils.ts (see above)
+      - src/lib/server/workspace-invites.ts
+      - src/lib/time-tracker/types.ts
+      - src/lib/toast.ts
+    - src/components/time-tracker/MembersTable.tsx
+      - src/components/time-tracker/MemberRow.tsx
+        - src/components/time-tracker/MemberAnalyticsRow.tsx
+          - src/components/time-tracker/MembersTable.tsx (see above)
+          - src/components/ui/table.tsx
+            - src/lib/utils.ts (see above)
+          - src/lib/time-tracker/store.ts
+            - src/lib/time-tracker/types.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+        - src/components/time-tracker/MembersTable.tsx (see above)
+        - src/components/time-tracker/shared/MemberExportDialog.tsx
+          - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+            - src/components/ui/calendar.tsx
+          - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+            - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/components/time-tracker/shared/ExportSortControls.tsx
+            - src/lib/time-tracker/export-sort.ts
+          - src/components/time-tracker/shared/export-dialog-footer.tsx
+            - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+          - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/lib/toast.ts (see above)
+          - src/components/ui/dialog.tsx (see above)
+          - src/lib/server/tracker.ts
+            - src/lib/server/tracker/shared/schemas.ts
+            - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/member-report-export.ts
+            - src/lib/time-tracker/bulk-report-export.ts
+        - src/components/time-tracker/useMemberRow.ts
+          - src/lib/server/tracker.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+          - src/lib/toast.ts (see above)
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/components/ui/dropdown-menu.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/input.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/table.tsx (see above)
+        - src/lib/rbac/authorization.ts
+          - src/db/schema.ts
+          - src/lib/rbac/permissions.ts
+            - src/db/schema.ts (see above)
+        - src/lib/server/tracker.ts (see above)
+        - src/lib/time-tracker/billing.ts
+        - src/lib/time-tracker/store.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/toast.ts (see above)
+      - src/components/ui/pagination.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/table.tsx (see above)
+      - src/lib/rbac/authorization.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/PendingInvitesPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/workspace-invites.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceBillingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/select.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/billing.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceMembersSummary.tsx
+      - src/components/time-tracker/MembersTable.tsx (see above)
+      - src/lib/time-tracker/store.ts (see above)
+    - src/components/time-tracker/screens/MembersScreen/MembersFilterBar.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx
+    - src/components/time-tracker/shared/BulkExportDialog.tsx
+      - src/components/time-tracker/shared/ExportDateRangePicker.tsx (see above)
+      - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx (see above)
+      - src/components/time-tracker/shared/ExportSortControls.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-footer.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+      - src/components/ui/combobox.tsx
+        - src/components/ui/popover.tsx
+          - src/components/ui/overlay-portal-context.ts (see above)
+          - src/lib/utils.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/bulk-report-export.ts
+        - src/lib/time-tracker/entry-source.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/export-utils.ts
+      - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+      - src/lib/time-tracker/export-sort.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/lib/rbac/authorization.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/ProfileScreen/ProfileScreen.tsx
+    - src/components/time-tracker/BirthdayCelebration.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/confetti.tsx
+        - src/components/ui/button.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ChangePasswordDialog.tsx
+      - src/components/auth/PasswordStrengthChecklist.tsx
+        - src/lib/auth-validation.ts
+        - src/lib/utils.ts (see above)
+      - src/components/ui/password-input.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/auth-client.ts
+      - src/lib/auth-validation.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileForm.tsx
+      - src/components/time-tracker/screens/ProfileScreen/BirthdayDialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/calendar.tsx
+          - src/components/ui/button.tsx (see above)
+          - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ImageUploader.tsx
+        - src/lib/server/tracker.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ProfileSelect.tsx
+        - src/components/ui/label.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/select.tsx (see above)
+      - src/components/time-tracker/screens/ProfileScreen/types.ts
+      - src/components/time-tracker/screens/shared/SectionCard.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/label.tsx (see above)
+      - src/components/ui/select.tsx (see above)
+      - src/lib/profile-validation.ts
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileSidebar.tsx
+      - src/components/settings/ThemeSection.tsx
+        - src/lib/theme.ts
+        - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/shared/Info.tsx
+      - src/components/time-tracker/screens/shared/MemberStatusBadge.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/components/time-tracker/screens/shared/SectionCard.tsx (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/confetti.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/SettingsScreen/SettingsScreen.tsx
+    - src/components/time-tracker/screens/SettingsScreen/LocationTrackingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/query-keys.ts
+        - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/ResendTestPanel.tsx
+      - src/lib/server/resend-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SettingsTabList.tsx
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SmtpTestPanel.tsx
+      - src/lib/server/smtp-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/TrackingExpectationsPanel.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/payroll-periods.ts
+        - src/lib/time-tracker/timesheet.ts
+      - src/lib/time-tracker/timesheet.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceApiKeysPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/integrations/api-keys.ts
+        - src/lib/server/integrations/api-keys.shared.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceInfoPanel.tsx
+      - src/components/time-tracker/screens/shared/Info.tsx (see above)
+      - src/components/ui/TimezoneSelect.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/utils.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts (see above)
+
+## /app/workspace/catalogs/projects
+
+Entry: src/routes/app/workspace/catalogs.projects.tsx
+Dependencies:
+
+- src/components/time-tracker/catalogs/ProjectsTablePage.tsx
+  - src/components/time-tracker/TaskSyncCoordinator.tsx
+    - src/lib/server/tracker.ts
+      - src/lib/server/tracker/shared/schemas.ts
+      - src/lib/time-tracker/export-sort.ts
+    - src/lib/time-tracker/task-sync.ts
+    - src/lib/time-tracker/tracker-pulse.ts
+  - src/components/time-tracker/catalogs/CatalogTableLayout.tsx
+    - src/components/time-tracker/catalogs/CatalogFormDialog.tsx
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx
+          - src/lib/utils.ts
+        - src/components/ui/overlay-portal-context.ts
+        - src/lib/utils.ts (see above)
+    - src/components/ui/combobox.tsx
+      - src/components/ui/popover.tsx
+        - src/components/ui/overlay-portal-context.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/ui/pagination.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/ui/table.tsx
+      - src/lib/utils.ts (see above)
+  - src/components/time-tracker/catalogs/EditProjectForm.tsx
+    - src/components/time-tracker/TaskSyncCoordinator.tsx (see above)
+    - src/components/time-tracker/catalogs/CatalogFormParts.tsx
+      - src/components/ui/combobox.tsx (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/types.ts
+    - src/lib/toast.ts
+  - src/components/time-tracker/catalogs/ProjectForm.tsx
+    - src/components/time-tracker/TaskSyncCoordinator.tsx (see above)
+    - src/components/time-tracker/catalogs/CatalogFormParts.tsx (see above)
+    - src/components/time-tracker/catalogs/catalog-form.utils.ts
+      - src/lib/toast.ts (see above)
+    - src/lib/server/tracker.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/toast.ts (see above)
+  - src/components/ui/dropdown-menu.tsx
+    - src/lib/utils.ts (see above)
+  - src/lib/server/tracker.ts (see above)
+  - src/lib/time-tracker/billing.ts
+  - src/lib/toast.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/server/workspace-access.ts
+  - src/lib/rbac/permissions.ts
+    - src/db/schema.ts
+
+## /app/workspace/settings
+
+Entry: src/routes/app/workspace/settings.tsx
+Dependencies:
+
+- src/components/time-tracker/WorkspaceScreens.tsx
+  - src/components/time-tracker/screens/MembersScreen/MembersScreen.tsx
+    - src/components/time-tracker/InviteMemberDialog.tsx
+      - src/components/ui/button.tsx
+        - src/lib/utils.ts
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/overlay-portal-context.ts
+        - src/lib/utils.ts (see above)
+      - src/lib/server/workspace-invites.ts
+      - src/lib/time-tracker/types.ts
+      - src/lib/toast.ts
+    - src/components/time-tracker/MembersTable.tsx
+      - src/components/time-tracker/MemberRow.tsx
+        - src/components/time-tracker/MemberAnalyticsRow.tsx
+          - src/components/time-tracker/MembersTable.tsx (see above)
+          - src/components/ui/table.tsx
+            - src/lib/utils.ts (see above)
+          - src/lib/time-tracker/store.ts
+            - src/lib/time-tracker/types.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+        - src/components/time-tracker/MembersTable.tsx (see above)
+        - src/components/time-tracker/shared/MemberExportDialog.tsx
+          - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+            - src/components/ui/calendar.tsx
+          - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+            - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/components/time-tracker/shared/ExportSortControls.tsx
+            - src/lib/time-tracker/export-sort.ts
+          - src/components/time-tracker/shared/export-dialog-footer.tsx
+            - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+          - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/lib/toast.ts (see above)
+          - src/components/ui/dialog.tsx (see above)
+          - src/lib/server/tracker.ts
+            - src/lib/server/tracker/shared/schemas.ts
+            - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/member-report-export.ts
+            - src/lib/time-tracker/bulk-report-export.ts
+        - src/components/time-tracker/useMemberRow.ts
+          - src/lib/server/tracker.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+          - src/lib/toast.ts (see above)
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/components/ui/dropdown-menu.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/input.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/table.tsx (see above)
+        - src/lib/rbac/authorization.ts
+          - src/db/schema.ts
+          - src/lib/rbac/permissions.ts
+            - src/db/schema.ts (see above)
+        - src/lib/server/tracker.ts (see above)
+        - src/lib/time-tracker/billing.ts
+        - src/lib/time-tracker/store.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/toast.ts (see above)
+      - src/components/ui/pagination.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/table.tsx (see above)
+      - src/lib/rbac/authorization.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/PendingInvitesPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/workspace-invites.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceBillingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/select.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/billing.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceMembersSummary.tsx
+      - src/components/time-tracker/MembersTable.tsx (see above)
+      - src/lib/time-tracker/store.ts (see above)
+    - src/components/time-tracker/screens/MembersScreen/MembersFilterBar.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx
+    - src/components/time-tracker/shared/BulkExportDialog.tsx
+      - src/components/time-tracker/shared/ExportDateRangePicker.tsx (see above)
+      - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx (see above)
+      - src/components/time-tracker/shared/ExportSortControls.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-footer.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+      - src/components/ui/combobox.tsx
+        - src/components/ui/popover.tsx
+          - src/components/ui/overlay-portal-context.ts (see above)
+          - src/lib/utils.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/bulk-report-export.ts
+        - src/lib/time-tracker/entry-source.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/export-utils.ts
+      - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+      - src/lib/time-tracker/export-sort.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/lib/rbac/authorization.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/ProfileScreen/ProfileScreen.tsx
+    - src/components/time-tracker/BirthdayCelebration.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/confetti.tsx
+        - src/components/ui/button.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ChangePasswordDialog.tsx
+      - src/components/auth/PasswordStrengthChecklist.tsx
+        - src/lib/auth-validation.ts
+        - src/lib/utils.ts (see above)
+      - src/components/ui/password-input.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/auth-client.ts
+      - src/lib/auth-validation.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileForm.tsx
+      - src/components/time-tracker/screens/ProfileScreen/BirthdayDialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/calendar.tsx
+          - src/components/ui/button.tsx (see above)
+          - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ImageUploader.tsx
+        - src/lib/server/tracker.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ProfileSelect.tsx
+        - src/components/ui/label.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/select.tsx (see above)
+      - src/components/time-tracker/screens/ProfileScreen/types.ts
+      - src/components/time-tracker/screens/shared/SectionCard.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/label.tsx (see above)
+      - src/components/ui/select.tsx (see above)
+      - src/lib/profile-validation.ts
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileSidebar.tsx
+      - src/components/settings/ThemeSection.tsx
+        - src/lib/theme.ts
+        - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/shared/Info.tsx
+      - src/components/time-tracker/screens/shared/MemberStatusBadge.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/components/time-tracker/screens/shared/SectionCard.tsx (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/confetti.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/SettingsScreen/SettingsScreen.tsx
+    - src/components/time-tracker/screens/SettingsScreen/LocationTrackingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/query-keys.ts
+        - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/ResendTestPanel.tsx
+      - src/lib/server/resend-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SettingsTabList.tsx
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SmtpTestPanel.tsx
+      - src/lib/server/smtp-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/TrackingExpectationsPanel.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/payroll-periods.ts
+        - src/lib/time-tracker/timesheet.ts
+      - src/lib/time-tracker/timesheet.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceApiKeysPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/integrations/api-keys.ts
+        - src/lib/server/integrations/api-keys.shared.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceInfoPanel.tsx
+      - src/components/time-tracker/screens/shared/Info.tsx (see above)
+      - src/components/ui/TimezoneSelect.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/utils.ts (see above)
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/workspace-authorization.ts
+  - src/lib/server/workspace-access.ts
+    - src/lib/rbac/permissions.ts (see above)
+
+## /app/profile
+
+Entry: src/routes/app/profile.tsx
+Dependencies:
+
+- src/components/time-tracker/WorkspaceScreens.tsx
+  - src/components/time-tracker/screens/MembersScreen/MembersScreen.tsx
+    - src/components/time-tracker/InviteMemberDialog.tsx
+      - src/components/ui/button.tsx
+        - src/lib/utils.ts
+      - src/components/ui/dialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/overlay-portal-context.ts
+        - src/lib/utils.ts (see above)
+      - src/lib/server/workspace-invites.ts
+      - src/lib/time-tracker/types.ts
+      - src/lib/toast.ts
+    - src/components/time-tracker/MembersTable.tsx
+      - src/components/time-tracker/MemberRow.tsx
+        - src/components/time-tracker/MemberAnalyticsRow.tsx
+          - src/components/time-tracker/MembersTable.tsx (see above)
+          - src/components/ui/table.tsx
+            - src/lib/utils.ts (see above)
+          - src/lib/time-tracker/store.ts
+            - src/lib/time-tracker/types.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+        - src/components/time-tracker/MembersTable.tsx (see above)
+        - src/components/time-tracker/shared/MemberExportDialog.tsx
+          - src/components/time-tracker/shared/ExportDateRangePicker.tsx
+            - src/components/ui/calendar.tsx
+          - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+            - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/components/time-tracker/shared/ExportSortControls.tsx
+            - src/lib/time-tracker/export-sort.ts
+          - src/components/time-tracker/shared/export-dialog-footer.tsx
+            - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/components/ui/button.tsx (see above)
+            - src/components/ui/dialog.tsx (see above)
+          - src/components/time-tracker/shared/export-dialog-state.ts
+            - src/lib/toast.ts (see above)
+          - src/components/ui/dialog.tsx (see above)
+          - src/lib/server/tracker.ts
+            - src/lib/server/tracker/shared/schemas.ts
+            - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/export-ongoing-tasks.ts
+          - src/lib/time-tracker/export-sort.ts
+          - src/lib/time-tracker/member-report-export.ts
+            - src/lib/time-tracker/bulk-report-export.ts
+        - src/components/time-tracker/useMemberRow.ts
+          - src/lib/server/tracker.ts (see above)
+          - src/lib/time-tracker/types.ts (see above)
+          - src/lib/toast.ts (see above)
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/dialog.tsx (see above)
+        - src/components/ui/dropdown-menu.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/input.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/table.tsx (see above)
+        - src/lib/rbac/authorization.ts
+          - src/db/schema.ts
+          - src/lib/rbac/permissions.ts
+            - src/db/schema.ts (see above)
+        - src/lib/server/tracker.ts (see above)
+        - src/lib/time-tracker/billing.ts
+        - src/lib/time-tracker/store.ts (see above)
+        - src/lib/time-tracker/types.ts (see above)
+        - src/lib/toast.ts (see above)
+      - src/components/ui/pagination.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/table.tsx (see above)
+      - src/lib/rbac/authorization.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/PendingInvitesPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/workspace-invites.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceBillingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/select.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/billing.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/WorkspaceMembersSummary.tsx
+      - src/components/time-tracker/MembersTable.tsx (see above)
+      - src/lib/time-tracker/store.ts (see above)
+    - src/components/time-tracker/screens/MembersScreen/MembersFilterBar.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx
+    - src/components/time-tracker/shared/BulkExportDialog.tsx
+      - src/components/time-tracker/shared/ExportDateRangePicker.tsx (see above)
+      - src/components/time-tracker/shared/ExportOngoingTasksDialog.tsx (see above)
+      - src/components/time-tracker/shared/ExportSortControls.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-footer.tsx (see above)
+      - src/components/time-tracker/shared/export-dialog-state.ts (see above)
+      - src/components/ui/combobox.tsx
+        - src/components/ui/popover.tsx
+          - src/components/ui/overlay-portal-context.ts (see above)
+          - src/lib/utils.ts (see above)
+        - src/lib/utils.ts (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/bulk-report-export.ts
+        - src/lib/time-tracker/entry-source.ts
+          - src/lib/time-tracker/types.ts (see above)
+        - src/lib/time-tracker/export-utils.ts
+      - src/lib/time-tracker/export-ongoing-tasks.ts (see above)
+      - src/lib/time-tracker/export-sort.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+    - src/lib/rbac/authorization.ts (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/ProfileScreen/ProfileScreen.tsx
+    - src/components/time-tracker/BirthdayCelebration.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/confetti.tsx
+        - src/components/ui/button.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ChangePasswordDialog.tsx
+      - src/components/auth/PasswordStrengthChecklist.tsx
+        - src/lib/auth-validation.ts
+        - src/lib/utils.ts (see above)
+      - src/components/ui/password-input.tsx
+        - src/lib/utils.ts (see above)
+      - src/lib/auth-client.ts
+      - src/lib/auth-validation.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileForm.tsx
+      - src/components/time-tracker/screens/ProfileScreen/BirthdayDialog.tsx
+        - src/components/ui/button.tsx (see above)
+        - src/components/ui/calendar.tsx
+          - src/components/ui/button.tsx (see above)
+          - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ImageUploader.tsx
+        - src/lib/server/tracker.ts (see above)
+      - src/components/time-tracker/screens/ProfileScreen/ProfileSelect.tsx
+        - src/components/ui/label.tsx
+          - src/lib/utils.ts (see above)
+        - src/components/ui/select.tsx (see above)
+      - src/components/time-tracker/screens/ProfileScreen/types.ts
+      - src/components/time-tracker/screens/shared/SectionCard.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/components/ui/label.tsx (see above)
+      - src/components/ui/select.tsx (see above)
+      - src/lib/profile-validation.ts
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/ProfileScreen/ProfileSidebar.tsx
+      - src/components/settings/ThemeSection.tsx
+        - src/lib/theme.ts
+        - src/lib/utils.ts (see above)
+      - src/components/time-tracker/screens/shared/Info.tsx
+      - src/components/time-tracker/screens/shared/MemberStatusBadge.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+    - src/components/time-tracker/screens/ProfileScreen/types.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/components/time-tracker/screens/shared/SectionCard.tsx (see above)
+    - src/components/ui/button.tsx (see above)
+    - src/components/ui/confetti.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+  - src/components/time-tracker/screens/SettingsScreen/SettingsScreen.tsx
+    - src/components/time-tracker/screens/SettingsScreen/LocationTrackingPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/query-keys.ts
+        - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/ResendTestPanel.tsx
+      - src/lib/server/resend-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SettingsTabList.tsx
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/SmtpTestPanel.tsx
+      - src/lib/server/smtp-test.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/TrackingExpectationsPanel.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/payroll-periods.ts
+        - src/lib/time-tracker/timesheet.ts
+      - src/lib/time-tracker/timesheet.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+      - src/lib/utils.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceApiKeysPanel.tsx
+      - src/components/ui/button.tsx (see above)
+      - src/components/ui/dialog.tsx (see above)
+      - src/components/ui/input.tsx (see above)
+      - src/lib/server/integrations/api-keys.ts
+        - src/lib/server/integrations/api-keys.shared.ts
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/SettingsScreen/WorkspaceInfoPanel.tsx
+      - src/components/time-tracker/screens/shared/Info.tsx (see above)
+      - src/components/ui/TimezoneSelect.tsx
+      - src/lib/server/tracker.ts (see above)
+      - src/lib/time-tracker/types.ts (see above)
+      - src/lib/toast.ts (see above)
+    - src/components/time-tracker/screens/shared/Page.tsx (see above)
+    - src/lib/time-tracker/types.ts (see above)
+    - src/lib/utils.ts (see above)
+- src/components/ui/button.tsx (see above)
+- src/lib/server/tracker.ts (see above)
+
+## /app/my-performance
+
+Entry: src/routes/app/my-performance.tsx
+Dependencies:
+
+- src/components/time-tracker/performance/PerformancePage.tsx
+  - src/components/time-tracker/performance/LeaderboardDrawer.tsx
+    - src/components/time-tracker/performance/performance.utils.ts
+    - src/components/ui/drawer.tsx
+      - src/lib/utils.ts
+    - src/lib/server/tracker.ts
+      - src/lib/server/tracker/shared/schemas.ts
+      - src/lib/time-tracker/export-sort.ts
+    - src/lib/time-tracker/query-keys.ts
+      - src/lib/time-tracker/types.ts
+    - src/lib/utils.ts (see above)
+  - src/components/time-tracker/performance/PerformanceActivityTable.tsx
+    - src/components/time-tracker/performance/performance.utils.ts (see above)
+    - src/lib/time-tracker/entry-source.ts
+      - src/lib/time-tracker/types.ts (see above)
+    - src/lib/time-tracker/performance-kpi.ts
+      - src/lib/time-tracker/timesheet.ts
+  - src/components/time-tracker/performance/PerformanceBadgeCard.tsx
+    - src/components/time-tracker/performance/PerformanceScoreCalculation.tsx
+      - src/components/time-tracker/performance/performance.utils.ts (see above)
+      - src/lib/time-tracker/performance-kpi.ts (see above)
+    - src/components/time-tracker/performance/performance.utils.ts (see above)
+  - src/components/time-tracker/performance/PerformanceCharts.tsx
+    - src/components/time-tracker/performance/performance.utils.ts (see above)
+    - src/lib/utils.ts (see above)
+  - src/components/time-tracker/performance/PerformanceHeatmap.tsx
+    - src/components/time-tracker/performance/performance.utils.ts (see above)
+  - src/components/time-tracker/performance/PerformanceHistory.tsx
+    - src/components/time-tracker/performance/PerformanceScoreCalculation.tsx (see above)
+    - src/components/time-tracker/performance/performance.utils.ts (see above)
+  - src/components/time-tracker/performance/PerformanceScoreCalculation.tsx (see above)
+  - src/components/time-tracker/performance/ShareLinkPanel.tsx
+    - src/lib/server/tracker.ts (see above)
+  - src/components/time-tracker/performance/performance.utils.ts (see above)
+  - src/lib/time-tracker/timesheet.ts (see above)
+- src/lib/brand.ts
+- src/lib/server/tracker.ts (see above)
+- src/lib/time-tracker/query-keys.ts (see above)

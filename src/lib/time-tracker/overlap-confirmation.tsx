@@ -52,7 +52,7 @@ function showOverlapConfirmation(
 
     root.render(
       <Dialog open onOpenChange={(open) => !open && finish(false)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Overlapping time detected</DialogTitle>
             <DialogDescription>

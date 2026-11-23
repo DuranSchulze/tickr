@@ -62,6 +62,12 @@ export type AuditAction =
   | 'EXPORT_BULK_REPORT'
   // Security
   | 'SUSPICIOUS_LOGIN_ALERT'
+  // Automated emails (also the delivery ledger for daily reports)
+  | 'DAILY_REPORT_EMAIL'
+  | 'DAILY_REPORT_EMAIL_FAILED'
+  // Attendance answers from the morning check-in
+  | 'DAY_LEAVE_DECLARED'
+  | 'DAY_LEAVE_WITHDRAWN'
 
 export interface CreateAuditLogInput {
   workspaceId: string

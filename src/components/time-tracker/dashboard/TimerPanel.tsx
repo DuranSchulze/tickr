@@ -219,30 +219,57 @@ export function TimerPanel({
 
   return (
     <div className="grid min-w-0 gap-3">
-      {/* Unified Clockify-style bar: description | client/project | tags | $ |
-          presets | start-stop — one continuous control with thin dividers
-          instead of separate boxed inputs. */}
-      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-        {/* The bar carries the theme's card radius so it matches the entry card
-            it sits in (24px) and the running-entry panel below it (20px) —
-            matching the pill-shaped Start button beside it. Fields are inset
-            by their own padding, so nothing needs clipping. */}
-        <div className="flex h-10 min-w-0 flex-1 items-stretch rounded-xl border border-stone bg-eggshell transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)] sm:grid sm:h-auto sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] lg:flex lg:h-12">
-          <div className="min-w-0 flex-[1.2] sm:col-span-full sm:h-11 sm:border-b sm:border-stone lg:h-auto lg:border-b-0">
-            <DescriptionAutocomplete
-              value={description}
-              onChange={onDescriptionChange}
-              onBlur={onDescriptionBlur}
-              suggestions={descriptionSuggestions}
-              onApplySuggestion={onApplySuggestion}
-              onSubmit={activeEntry ? onStop : onStart}
-              bare
-              dropdownUp={descriptionDropdownUp}
-            />
+      <div className="grid min-w-0 gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-11 min-w-0 flex-1 items-stretch rounded-xl border border-stone bg-eggshell transition-shadow focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-primary)_12%,transparent)]">
+            <div className="min-w-0 flex-1">
+              <DescriptionAutocomplete
+                value={description}
+                onChange={onDescriptionChange}
+                onBlur={onDescriptionBlur}
+                suggestions={descriptionSuggestions}
+                onApplySuggestion={onApplySuggestion}
+                onSubmit={activeEntry ? onStop : onStart}
+                bare
+                dropdownUp={descriptionDropdownUp}
+              />
+            </div>
           </div>
 
-          <div className="my-2.5 hidden w-px bg-stone lg:block" />
-          <div className="hidden min-h-11 min-w-0 flex-[1] sm:flex">
+          {/* Hidden on phones — the full-width button in TimerMobileControls handles it. */}
+          <div className="hidden shrink-0 items-center sm:flex">
+            <button
+              type="button"
+              onClick={activeEntry ? onStop : onStart}
+              disabled={activeEntry ? stopPending || stopBlocked : startPending}
+              title={stopBlocked ? stopBlockedReason : undefined}
+              className={`inline-flex h-11 min-w-[8.5rem] items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke ${
+                activeEntry
+                  ? 'bg-destructive text-destructive-foreground'
+                  : 'bg-primary-action text-primary-action-foreground hover:bg-primary-action/85'
+              }`}
+            >
+              {activeEntry ? (
+                stopPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Square className="size-4 fill-current" />
+                )
+              ) : startPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Play className="size-4" />
+              )}
+              {activeEntry ? 'Stop timer' : 'Start timer'}
+              <Kbd className="hidden bg-white/20 text-white/80 lg:inline-flex">
+                ↵
+              </Kbd>
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden min-w-0 flex-wrap items-center gap-2 sm:flex">
+          <div className="flex h-9 min-w-0 max-w-md flex-[1_1_16rem] overflow-hidden rounded-full border border-stone bg-eggshell">
             <ClientProjectPicker
               clients={selectableClients}
               projects={projects}
@@ -261,7 +288,7 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="hidden min-h-11 min-w-0 flex-[0.7] border-l border-stone sm:flex lg:border-l-0">
+          <div className="flex h-9 min-w-0 max-w-xs flex-[0_1_13rem] overflow-hidden rounded-full border border-stone bg-eggshell">
             <TagPicker
               tags={tags}
               value={tagIds}
@@ -272,12 +299,11 @@ export function TimerPanel({
             />
           </div>
 
-          <div className="my-2.5 hidden w-px bg-stone lg:block" />
-          <div className="hidden items-center gap-0.5 border-l border-stone px-1.5 md:flex lg:border-l-0">
+          <div className="flex h-9 shrink-0 items-center gap-0.5 rounded-full border border-stone bg-eggshell px-1">
             <BillableToggleButton
               pressed={billable}
               onPressedChange={onBillableChange}
-              className="size-9 border-0 shadow-none"
+              className="size-8 border-0 shadow-none"
             />
             <PresetDropdown
               workspaceId={workspaceId}
@@ -294,38 +320,6 @@ export function TimerPanel({
               bare
             />
           </div>
-        </div>
-
-        {/* Start / Stop — anchored outside the bar so it never shifts.
-            Hidden on mobile — the full-width button below handles it. */}
-        <div className="hidden shrink-0 items-center sm:flex">
-          <button
-            type="button"
-            onClick={activeEntry ? onStop : onStart}
-            disabled={activeEntry ? stopPending || stopBlocked : startPending}
-            title={stopBlocked ? stopBlockedReason : undefined}
-            className={`inline-flex h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:bg-warm-taupe disabled:text-smoke min-w-[120px] ${
-              activeEntry
-                ? 'bg-destructive text-destructive-foreground'
-                : 'bg-primary-action text-primary-action-foreground hover:bg-primary-action/85'
-            }`}
-          >
-            {activeEntry ? (
-              stopPending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Square className="size-4 fill-current" />
-              )
-            ) : startPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Play className="size-4" />
-            )}
-            {activeEntry ? 'Stop' : 'Start'}
-            <Kbd className="bg-white/20 text-white/80 hidden lg:inline-flex">
-              ↵
-            </Kbd>
-          </button>
         </div>
       </div>
 

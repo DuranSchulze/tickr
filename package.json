@@ -14,7 +14,7 @@
     "build": "vite build",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"mobile/**\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src perf --ext .ts,.tsx --max-warnings 0",
     "lint:commit": "commitlint",
@@ -106,6 +106,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
+    "@electric-sql/pglite": "^0.5.15",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-event-client": "latest",
     "@tanstack/devtools-vite": "latest",
@@ -137,7 +138,8 @@
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^8.0.0",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "fake-indexeddb": "6.2.5"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

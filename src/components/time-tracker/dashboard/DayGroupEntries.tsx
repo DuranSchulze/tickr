@@ -12,6 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from '#/components/ui/table'
+import {
+  getDayKind,
+  minimumSecondsFor,
+  readDailyReportConfig,
+} from '#/lib/time-tracker/daily-report'
 import { EntryCard } from './EntryCard'
 import { EntryRow } from './EntryRow'
 import type { DayGroup, TaskGroup } from './entries-grouping'
@@ -150,12 +155,53 @@ async function copyDayDtrRow(group: DayGroup, runningEntry?: TimeEntry | null) {
   }
 }
 
+const DAY_RULES = readDailyReportConfig({})
+const NO_HOLIDAYS = new Set<string>()
+
+function todayKey() {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
+/**
+ * Weekday status against the daily minimum. Today is left to the header's
+ * progress strip, and weekends stay quiet because Saturday only counts for
+ * people who worked the previous Saturday.
+ */
+function DayStatusPill({
+  dateKey,
+  completedSeconds,
+  expectedDailyHours,
+}: {
+  dateKey: string
+  completedSeconds: number
+  expectedDailyHours: number
+}) {
+  if (getDayKind(dateKey, NO_HOLIDAYS) !== 'weekday') return null
+  const minimum = minimumSecondsFor('weekday', DAY_RULES, expectedDailyHours)
+  const met = completedSeconds >= minimum
+  if (minimum === 0 || (!met && dateKey === todayKey())) return null
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        met
+          ? 'bg-emerald-600/10 text-emerald-700 dark:text-emerald-400'
+          : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+      }`}
+    >
+      {met ? 'Complete' : 'Short'}
+    </span>
+  )
+}
+
 function DayGroupHeaderRow({
   group,
   view,
   entryCount,
   dayCollapsed,
   runningEntry,
+  expectedDailyHours,
   formatTime,
   onToggle,
 }: {
@@ -163,6 +209,7 @@ function DayGroupHeaderRow({
   view?: ViewMode
   entryCount: number
   dayCollapsed: boolean
+  expectedDailyHours: number
   runningEntry?: TimeEntry | null
   formatTime: (seconds: number) => string
   onToggle: () => void
@@ -171,18 +218,18 @@ function DayGroupHeaderRow({
     <button
       type="button"
       onClick={() => void copyDayDtrRow(group, runningEntry)}
-      className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-stone text-smoke transition-colors hover:bg-accent hover:text-foreground"
+      className="inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-stone text-smoke transition-colors hover:bg-accent hover:text-foreground max-sm:absolute max-sm:end-3 max-sm:top-3 sm:size-8"
       title="Copy DTR row for Google Sheets"
       aria-label="Copy DTR row for Google Sheets"
     >
-      <Copy className="size-3.5" />
+      <Copy aria-hidden="true" className="size-3.5" />
     </button>
   )
 
   if (view === 'day') {
     return (
-      <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="relative grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3 max-sm:min-h-11 max-sm:me-14">
           <span className="min-w-0 truncate text-sm font-bold text-foreground">
             {group.label}
           </span>
@@ -190,7 +237,12 @@ function DayGroupHeaderRow({
             {entryCount} {entryCount === 1 ? 'entry' : 'entries'}
           </span>
         </div>
-        <div className="flex min-w-0 items-center justify-between gap-2 min-[520px]:justify-end">
+        <div className="flex min-w-0 items-center justify-end gap-2">
+          <DayStatusPill
+            dateKey={group.dateKey}
+            completedSeconds={group.completedSeconds}
+            expectedDailyHours={expectedDailyHours}
+          />
           {copyButton}
           <LiveGroupTotal
             completedSeconds={group.completedSeconds}
@@ -203,11 +255,11 @@ function DayGroupHeaderRow({
   }
 
   return (
-    <div className="grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 transition-colors hover:bg-warm-taupe/50 min-[520px]:grid-cols-[minmax(0,1fr)_auto] min-[520px]:items-center sm:px-4">
+    <div className="relative grid w-full min-w-0 grid-cols-1 gap-2 bg-warm-taupe/30 px-3 py-3 transition-colors hover:bg-warm-taupe/50 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-4">
       <button
         type="button"
         onClick={onToggle}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left max-sm:me-14 sm:min-h-6"
       >
         <span className="shrink-0">
           {dayCollapsed ? (
@@ -228,7 +280,12 @@ function DayGroupHeaderRow({
           )}
         </span>
       </button>
-      <div className="flex min-w-0 items-center justify-between gap-2 min-[520px]:justify-end">
+      <div className="flex min-w-0 items-center justify-end gap-2">
+        <DayStatusPill
+          dateKey={group.dateKey}
+          completedSeconds={group.completedSeconds}
+          expectedDailyHours={expectedDailyHours}
+        />
         {copyButton}
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
@@ -336,7 +393,7 @@ function TaskGroupHeaderRow({
       onClick={onToggle}
     >
       {/* Task details + count + expand toggle */}
-      <td className="px-4 py-3 w-[56%]">
+      <td className="px-4 py-3 w-[44%]">
         <div className="flex min-w-0 items-start gap-2">
           <button
             type="button"
@@ -406,19 +463,19 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Billable */}
-      <td className="px-3 py-3 w-[5%] text-center">
+      <td className="px-2 py-3 w-[6%] text-center">
         {group.billable && (
           <span className="text-xs font-bold text-primary">$</span>
         )}
       </td>
 
       {/* Time (per-entry only) */}
-      <td className="px-4 py-3 w-[22%] text-center">
+      <td className="px-2 py-3 w-[28%] text-center">
         <GroupTimeSummary group={group} />
       </td>
 
       {/* Duration */}
-      <td className="px-3 py-3 w-[7%] text-right">
+      <td className="px-2 py-3 w-[12%] text-right">
         <LiveGroupTotal
           completedSeconds={group.completedSeconds}
           runningEntry={group.runningEntry}
@@ -427,7 +484,7 @@ function TaskGroupHeaderRow({
       </td>
 
       {/* Resume */}
-      <td className="px-4 py-3 w-[10%]" onClick={(e) => e.stopPropagation()}>
+      <td className="px-2 py-3 w-[10%]" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-end">
           <button
             type="button"
@@ -579,19 +636,19 @@ function EntryTableHeader() {
   return (
     <TableHeader className="bg-warm-taupe/50 [&_tr]:border-b-0">
       <TableRow className="border-b-0 text-xs uppercase tracking-wide text-smoke hover:bg-transparent">
-        <TableHead className="px-4 py-2.5 w-[56%] text-smoke font-medium">
+        <TableHead className="px-4 py-2.5 w-[44%] text-smoke font-medium">
           Task / Client / Tags
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[5%] text-center text-smoke font-medium">
+        <TableHead className="px-2 py-2.5 w-[6%] text-center text-smoke font-medium">
           Billable
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[22%] text-center text-smoke font-medium">
+        <TableHead className="px-2 py-2.5 w-[28%] text-center text-smoke font-medium">
           Time
         </TableHead>
-        <TableHead className="px-3 py-2.5 w-[7%] text-right text-smoke font-medium">
+        <TableHead className="px-2 py-2.5 w-[12%] text-right text-smoke font-medium">
           Duration
         </TableHead>
-        <TableHead className="px-4 py-2.5 w-[10%]" />
+        <TableHead className="px-2 py-2.5 w-[10%]" />
       </TableRow>
     </TableHeader>
   )
@@ -611,6 +668,7 @@ export function DayGroupsList({
   pendingEntryIds,
   deletingEntryId,
   formatTime,
+  expectedDailyHours = 8,
   isDayCollapsed,
   toggleDayGroup,
   isTaskGroupExpanded,
@@ -634,6 +692,7 @@ export function DayGroupsList({
   pendingEntryIds?: Set<string>
   deletingEntryId?: string | null
   formatTime: (seconds: number) => string
+  expectedDailyHours?: number
   isDayCollapsed: (dateKey: string) => boolean
   toggleDayGroup: (dateKey: string) => void
   isTaskGroupExpanded: (dateKey: string, groupKey: string) => boolean
@@ -773,6 +832,7 @@ export function DayGroupsList({
               view={view}
               entryCount={entryCount}
               dayCollapsed={dayCollapsed}
+              expectedDailyHours={expectedDailyHours}
               runningEntry={
                 group.runningEntry ?? (isPinnedGroup ? activeEntry : null)
               }

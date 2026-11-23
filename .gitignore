@@ -59,3 +59,9 @@ mcp-todos.json
 
 # Apps Script local secrets (bound-script API key)
 appscript/Secrets.gs
+
+# Graphify knowledge graph (generated)
+graphify-out/
+
+# Superdesign temporary component HTML
+.superdesign/tmp/

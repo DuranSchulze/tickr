@@ -52,7 +52,7 @@ export function DepartmentSectionFrame({
       </section>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="grid h-[92vh] w-[96vw] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-none">
+        <DialogContent className="grid h-[92dvh] w-[calc(100vw-1rem)] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-none">
           <DialogHeader className="border-b border-stone px-5 py-4 pr-14">
             <DialogTitle className="text-lg font-bold text-foreground">
               {title}

@@ -155,6 +155,24 @@ const ACTION_META: Record<string, ActionMeta> = {
     label: 'Analytics exported',
     color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
   },
+  // Automated emails
+  DAILY_REPORT_EMAIL: {
+    label: 'Daily report emailed',
+    color: 'bg-teal-500/10 text-teal-600 dark:text-teal-400',
+  },
+  DAILY_REPORT_EMAIL_FAILED: {
+    label: 'Daily report email failed',
+    color: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  },
+  // Attendance
+  DAY_LEAVE_DECLARED: {
+    label: 'Leave declared',
+    color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+  },
+  DAY_LEAVE_WITHDRAWN: {
+    label: 'Leave withdrawn',
+    color: 'bg-gray-500/10 text-gray-600 dark:text-gray-400',
+  },
 }
 
 const TARGET_LABELS: Record<string, string> = {
@@ -168,6 +186,7 @@ const TARGET_LABELS: Record<string, string> = {
   department: 'Department',
   role: 'Role',
   cohort: 'Cohort',
+  mailbox: 'Mailbox',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -364,13 +383,13 @@ export function AuditLogsScreen({
 
         {/* Pagination */}
         {result.totalPages > 1 && (
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm text-smoke">
               Showing {currentPage * 25 + 1}–
               {Math.min((currentPage + 1) * 25, result.totalCount)} of{' '}
               {result.totalCount} events
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <button
                 type="button"
                 disabled={currentPage === 0}

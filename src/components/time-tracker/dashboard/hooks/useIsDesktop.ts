@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-// The entry table needs room for its editable task, time, duration, and action
-// columns. Measuring the list itself (instead of the viewport) also accounts
-// for the expanded app sidebar.
-const MIN_TABLE_WIDTH = 1120
+// The narrowest list width at which every editable column still fits: the
+// time column (28%) must hold two 6.75rem time inputs, the duration column
+// (12%) a 6rem input. Measuring the list itself (instead of the viewport)
+// also accounts for the expanded app sidebar.
+const MIN_TABLE_WIDTH = 940
 
 // Layout effects don't run on the server; choosing useEffect there keeps the
 // client-only measurement synchronous (before paint) without an SSR warning.

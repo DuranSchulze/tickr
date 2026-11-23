@@ -1,0 +1,1403 @@
+# Theme
+
+## Part 1 — Token summary
+
+Design language: **editorial** — warm cream paper stack (eggshell → warm-taupe → stone, never pure white for chrome), ink type, pill buttons, whisper elevation. Docs: `DESIGN.md`, `docs/ui-design-system.md`. Tailwind v4 `@theme inline` maps these to utilities (`bg-eggshell`, `bg-warm-taupe`, `border-stone`, `text-smoke`, `text-graphite`, `text-ink`, `bg-primary-action`, …). Dark mode via `.dark` class (`@custom-variant dark`). Users can pick accent colour and font (`[data-font]`).
+
+### Fonts
+
+- `--font-sans`: Roboto Variable (default); alternatives via `[data-font]`: dm-sans, inter, nunito, work-sans
+- `--font-heading`: DM Sans Variable
+
+### Colors — light (`:root`)
+
+- `--tabs-pill-bg`: `var(--eggshell)`
+- `--eggshell`: `#fdfcfc`
+- `--warm-taupe`: `#f5f3f1`
+- `--stone`: `#ebe8e4`
+- `--app-surface`: `#ffffff`
+- `--ink`: `#000000`
+- `--graphite`: `#44403b`
+- `--smoke`: `#777169`
+- `--ash`: `#a59f97`
+- `--hairline`: `#e5e5e5`
+- `--violet-spark`: `#0447ff`
+- `--ember-orange`: `#ff4704`
+- `--primary-action`: `var(--ink)`
+- `--primary-action-foreground`: `var(--eggshell)`
+- `--background`: `var(--eggshell)`
+- `--foreground`: `var(--ink)`
+- `--card`: `var(--eggshell)`
+- `--card-foreground`: `var(--ink)`
+- `--primary`: `oklch(0.496 0.265 301.924)`
+- `--primary-foreground`: `oklch(0.977 0.014 308.299)`
+- `--secondary`: `var(--warm-taupe)`
+- `--secondary-foreground`: `var(--graphite)`
+- `--muted`: `var(--warm-taupe)`
+- `--muted-foreground`: `var(--smoke)`
+- `--accent-foreground`: `var(--ink)`
+- `--destructive`: `oklch(0.577 0.245 27.325)`
+- `--destructive-foreground`: `oklch(0.99 0 0)`
+- `--border`: `var(--stone)`
+- `--input`: `var(--stone)`
+- `--ring`: `var(--ink)`
+- `--chart-1`: `oklch(0.78 0.09 168)`
+- `--chart-2`: `oklch(0.66 0.11 196)`
+- `--chart-3`: `oklch(0.55 0.13 249)`
+- `--chart-4`: `oklch(0.58 0.154 35)`
+- `--chart-5`: `oklch(0.46 0.13 302)`
+- `--elevation-whisper`: `rgba(0, 0, 0, 0.4) 0 0 1px 0, rgba(0, 0, 0, 0.04) 0 1px 1px 0,
+  rgba(0, 0, 0, 0.04) 0 2px 4px 0`
+- `--elevation-hairline`: `rgba(0, 0, 0, 0.075) 0 0 0 0.5px inset`
+- `--elevation-plate`: `rgba(0, 0, 0, 0.1) 0 0 0 1px inset`
+- `--shadow-subtle-3`: `rgba(0, 0, 0, 0.1) 0 0 0 0.5px inset`
+- `--shadow-subtle-6`: `rgba(255, 255, 255, 0.6) 0 0 0 1px inset`
+- `--shadow-subtle-7`: `var(--stone) 0 0 0 0.5px inset`
+- `--shadow-glow`: `0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent)`
+- `--popover`: `var(--eggshell)`
+- `--popover-foreground`: `var(--ink)`
+- `--sidebar`: `var(--warm-taupe)`
+- `--sidebar-foreground`: `var(--ink)`
+- `--sidebar-primary`: `oklch(0.558 0.288 302.321)`
+- `--sidebar-primary-foreground`: `oklch(0.977 0.014 308.299)`
+- `--sidebar-accent`: `var(--stone)`
+- `--sidebar-accent-foreground`: `var(--ink)`
+- `--sidebar-border`: `var(--stone)`
+- `--sidebar-ring`: `var(--ink)`
+
+### Colors — dark (`.dark`)
+
+- `--eggshell`: `#1d1a18`
+- `--warm-taupe`: `#262220`
+- `--stone`: `#35302b`
+- `--app-surface`: `#23201e`
+- `--ink`: `#f5f3f1`
+- `--graphite`: `#cfc9c1`
+- `--smoke`: `#a8a29a`
+- `--ash`: `#6f6a63`
+- `--hairline`: `#35302b`
+- `--primary-action`: `#f5f3f1`
+- `--primary-action-foreground`: `#161412`
+- `--background`: `#161412`
+- `--foreground`: `#f5f3f1`
+- `--card`: `#1d1a18`
+- `--card-foreground`: `#f5f3f1`
+- `--popover`: `#1d1a18`
+- `--popover-foreground`: `#f5f3f1`
+- `--primary`: `oklch(0.438 0.218 303.724)`
+- `--primary-foreground`: `oklch(0.977 0.014 308.299)`
+- `--secondary`: `#262220`
+- `--secondary-foreground`: `#f5f3f1`
+- `--muted`: `#262220`
+- `--muted-foreground`: `#a59f97`
+- `--accent`: `#2a2523`
+- `--accent-foreground`: `#f5f3f1`
+- `--destructive`: `oklch(0.704 0.191 22.216)`
+- `--border`: `#35302b`
+- `--input`: `#35302b`
+- `--ring`: `#f5f3f1`
+- `--chart-1`: `oklch(0.82 0.1 168)`
+- `--chart-2`: `oklch(0.74 0.12 196)`
+- `--chart-3`: `oklch(0.68 0.13 249)`
+- `--chart-4`: `oklch(0.7 0.16 38)`
+- `--chart-5`: `oklch(0.62 0.14 302)`
+- `--elevation-whisper`: `rgba(0, 0, 0, 0.5) 0 0 1px 0, rgba(0, 0, 0, 0.25) 0 2px 4px 0`
+- `--elevation-hairline`: `rgba(255, 255, 255, 0.08) 0 0 0 0.5px inset`
+- `--elevation-plate`: `rgba(255, 255, 255, 0.1) 0 0 0 1px inset`
+- `--shadow-subtle-3`: `rgba(255, 255, 255, 0.1) 0 0 0 0.5px inset`
+- `--shadow-subtle-6`: `rgba(255, 255, 255, 0.06) 0 0 0 1px inset`
+- `--shadow-subtle-7`: `#35302b 0 0 0 0.5px inset`
+- `--sidebar`: `#12100e`
+- `--sidebar-foreground`: `#f5f3f1`
+- `--sidebar-primary`: `oklch(0.627 0.265 303.9)`
+- `--sidebar-primary-foreground`: `oklch(0.977 0.014 308.299)`
+- `--sidebar-accent`: `#262220`
+- `--sidebar-accent-foreground`: `#f5f3f1`
+- `--sidebar-border`: `#35302b`
+- `--sidebar-ring`: `#f5f3f1`
+
+### Radius, shadows, motion
+
+- `--duration-stagger`: `40ms`
+- `--duration-micro`: `80ms`
+- `--duration-quick`: `150ms`
+- `--duration-fast`: `250ms`
+- `--duration-medium`: `350ms`
+- `--duration-slow`: `400ms`
+- `--duration-very-slow`: `500ms`
+- `--ease-smooth-out`: `cubic-bezier(0.22, 1, 0.36, 1)`
+- `--ease-in-out`: `ease-in-out`
+- `--ease-out`: `ease-out`
+- `--ease-linear`: `linear`
+- `--ease-bounce`: `cubic-bezier(0.34, 1.36, 0.64, 1)`
+- `--ease-bounce-strong`: `cubic-bezier(0.34, 3.85, 0.64, 1)`
+- `--radius-xs`: `2px`
+- `--radius-input`: `4px`
+- `--radius-card`: `20px`
+- `--radius-card-lg`: `24px`
+- `--radius-button`: `9999px`
+- `--radius`: `0.25rem`
+- `--shadow-xs`: `var(--elevation-whisper)`
+- `--shadow-sm`: `var(--elevation-whisper)`
+- `--shadow-md`: `var(--elevation-whisper)`
+- `--shadow-lg`: `var(--elevation-whisper)`
+- `--shadow-xl`: `var(--elevation-whisper)`
+- `--shadow-2xl`: `var(--elevation-whisper)`
+- `--shadow-subtle`: `var(--elevation-whisper)`
+- `--shadow-subtle-2`: `var(--elevation-hairline)`
+- `--shadow-subtle-3`: `rgba(0, 0, 0, 0.1) 0 0 0 0.5px inset`
+- `--shadow-subtle-4`: `var(--elevation-plate)`
+- `--shadow-subtle-5`: `var(--elevation-whisper)`
+- `--shadow-subtle-6`: `rgba(255, 255, 255, 0.6) 0 0 0 1px inset`
+- `--shadow-subtle-7`: `var(--stone) 0 0 0 0.5px inset`
+- `--shadow-glow`: `0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent)`
+
+### Breakpoints
+
+Tailwind v4 defaults: `sm` 40rem (640px), `md` 48rem (768px), `lg` 64rem (1024px), `xl` 80rem (1280px), `2xl` 96rem (1536px). Shell switches sidebar ↔ mobile nav at `lg`.
+
+## Part 2 — Raw source
+
+### `src/styles.css`
+
+```css
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import '@fontsource-variable/roboto';
+@import '@fontsource-variable/dm-sans';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/nunito';
+@import '@fontsource-variable/work-sans';
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+body {
+  @apply m-0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing motion identity: corporate, calm, and purposeful. */
+.landing-page {
+  --landing-ease: cubic-bezier(0.2, 0, 0, 1);
+  --landing-quick: 140ms;
+  --landing-standard: 360ms;
+  --landing-slow: 620ms;
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--border) 18%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 96px 100%;
+}
+
+.landing-page > header {
+  animation: landing-nav-enter 440ms var(--landing-ease) both;
+}
+
+.landing-hero-stage {
+  animation: landing-hero-enter 720ms var(--landing-ease) 80ms both;
+  transform-origin: 50% 20%;
+}
+
+.landing-scroll-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  pointer-events: none;
+  /* Accent is banned from UI chrome — the progress bar is ink at low alpha. */
+  background: color-mix(in oklab, var(--ink) 70%, transparent);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+@supports (animation-timeline: scroll()) {
+  .landing-scroll-progress {
+    animation: landing-scroll-progress linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+.landing-reveal {
+  opacity: 0;
+  transition:
+    opacity var(--landing-standard) var(--landing-ease),
+    transform var(--landing-slow) var(--landing-ease);
+  will-change: opacity, transform;
+}
+
+.landing-reveal[data-direction='up'] {
+  transform: translate3d(0, 24px, 0) scale(0.995);
+}
+
+.landing-reveal[data-direction='left'] {
+  transform: translate3d(-18px, 18px, 0) scale(0.995);
+}
+
+.landing-reveal[data-direction='right'] {
+  transform: translate3d(18px, 18px, 0) scale(0.995);
+}
+
+.landing-reveal[data-visible='true'] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  will-change: auto;
+}
+
+.landing-stats-stage {
+  transition-delay: 100ms;
+}
+
+.landing-ambient-layer {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing-ambient-dot {
+  position: absolute;
+  display: block;
+  /* Decorative ambience, not product chrome — ink at low alpha instead of the
+     accent (DESIGN.md §Don't: accent is decoration-only, never UI chrome). */
+  border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
+  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  opacity: 0.7;
+  animation: landing-ambient-drift 11s ease-in-out infinite alternate;
+}
+
+.landing-ambient-dot-one {
+  top: 18%;
+  right: 4%;
+  width: 14px;
+  height: 14px;
+}
+
+.landing-ambient-dot-two {
+  top: 46%;
+  left: 3%;
+  width: 10px;
+  height: 10px;
+  animation-duration: 14s;
+  animation-delay: -4s;
+}
+
+.landing-ambient-dot-three {
+  top: 72%;
+  right: 7%;
+  width: 18px;
+  height: 18px;
+  animation-duration: 16s;
+  animation-delay: -8s;
+}
+
+.landing-page :where(a, button) {
+  transition-duration: var(--landing-quick);
+  transition-timing-function: var(--landing-ease);
+}
+
+.landing-page :where(a, button):active {
+  transform: scale(0.98);
+}
+
+@keyframes landing-nav-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landing-hero-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes landing-scroll-progress {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes landing-ambient-drift {
+  from {
+    transform: translate3d(-4px, -8px, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(8px, 10px, 0) scale(1.02);
+  }
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--border) 55%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--border) 55%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse at 50% 35%, black 22%, transparent 72%);
+}
+
+.landing-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 760px;
+}
+
+.landing-orb {
+  animation: landing-float 8s ease-in-out infinite alternate;
+}
+
+@keyframes landing-float {
+  from {
+    transform: translate3d(0, -8px, 0) scale(0.98);
+  }
+  to {
+    transform: translate3d(18px, 12px, 0) scale(1.04);
+  }
+}
+
+code {
+  font-family:
+    source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* ─── Font presets ──────────────────────────────────────────────────────── */
+/* Inter is the editorial default face (A5): DESIGN.md's Waldenburg substitute.
+   Every preset still works; the fallback chain keeps Inter in front so the
+   system default is editorial rather than a generic sans. */
+:root,
+[data-font='roboto'] {
+  --font-sans: 'Roboto Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
+}
+
+[data-font='dm-sans'] {
+  --font-sans: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'DM Sans Variable', 'Inter Variable', system-ui, sans-serif;
+}
+
+[data-font='inter'] {
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'Inter Variable', system-ui, sans-serif;
+}
+
+[data-font='nunito'] {
+  --font-sans: 'Nunito Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'Nunito Variable', 'Inter Variable', system-ui, sans-serif;
+}
+
+[data-font='work-sans'] {
+  --font-sans: 'Work Sans Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-heading: 'Work Sans Variable', 'Inter Variable', system-ui, sans-serif;
+}
+
+:root {
+  /* Shared motion scale — keep component timing and easing consistent. */
+  --duration-stagger: 40ms;
+  --duration-micro: 80ms;
+  --duration-quick: 150ms;
+  --duration-fast: 250ms;
+  --duration-medium: 350ms;
+  --duration-slow: 400ms;
+  --duration-very-slow: 500ms;
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: ease-in-out;
+  --ease-out: ease-out;
+  --ease-linear: linear;
+  --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-bounce-strong: cubic-bezier(0.34, 3.85, 0.64, 1);
+  --distance-micro: 4px;
+  --distance-small: 6px;
+  --distance-base: 8px;
+  --distance-medium: 12px;
+  --distance-large: 30px;
+  --scale-large: 0.96;
+  --scale-medium: 0.97;
+  --scale-small: 0.98;
+  --scale-tiny: 0.99;
+  --blur-small: 2px;
+  --blur-medium: 3px;
+  --blur-large: 8px;
+
+  --panel-open-dur: 400ms;
+  --panel-close-dur: 350ms;
+  --panel-translate-y: 100px;
+  --panel-blur: 2px;
+  --panel-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --dropdown-open-dur: var(--duration-fast);
+  --dropdown-close-dur: var(--duration-quick);
+  --dropdown-pre-scale: var(--scale-medium);
+  --dropdown-closing-scale: var(--scale-tiny);
+  --dropdown-ease: var(--ease-smooth-out);
+  --modal-open-dur: var(--duration-fast);
+  --modal-close-dur: var(--duration-quick);
+  --modal-scale: var(--scale-large);
+  --modal-ease: var(--ease-smooth-out);
+  --icon-swap-dur: var(--duration-fast);
+  --icon-swap-blur: var(--blur-small);
+  --icon-swap-start-scale: 0.25;
+  --icon-swap-ease: var(--ease-in-out);
+  --acc-expand: var(--duration-fast);
+  --acc-collapse: var(--duration-fast);
+  --acc-chevron: var(--duration-fast);
+  --acc-ease: var(--ease-smooth-out);
+
+  /* Sliding tab pill — sourced from the shared motion scale so the segmented
+     control tweens on the same curve as the rest of the app. */
+  --tabs-dur: var(--duration-fast);
+  --tabs-ease: var(--ease-smooth-out);
+  --tabs-pill-bg: var(--eggshell); /* overridden per theme below */
+
+  /* Staggered text reveal */
+  --stagger-dur: var(--duration-slow);
+  --stagger-delay: var(--duration-stagger);
+  --stagger-ease: var(--ease-smooth-out);
+
+  /* ─── Editorial raw palette (DESIGN.md §Tokens—Colors) ─────────────────── */
+  /* Warm cream paper stack: eggshell → taupe → stone. Never pure white.     */
+  --eggshell: #fdfcfc;
+  --warm-taupe: #f5f3f1;
+  --stone: #ebe8e4;
+  /* Workspace content plane — a step brighter than eggshell paper so the
+     app shell's <main> separates from the taupe frame/sidebar. Light mode
+     uses white (eggshell is already near-white, leaving no warmer headroom). */
+  --app-surface: #ffffff;
+  --ink: #000000;
+  --graphite: #44403b;
+  --smoke: #777169;
+  --ash: #a59f97;
+  --hairline: #e5e5e5; /* button borders, per DESIGN.md §Components */
+  /* Product-visual sparks. Decoration only — never buttons, links, or badges. */
+  --violet-spark: #0447ff;
+  --ember-orange: #ff4704;
+
+  /* Ink is the only CTA fill in the editorial hierarchy (DESIGN.md §Do). */
+  --primary-action: var(--ink);
+  --primary-action-foreground: var(--eggshell);
+
+  --background: var(--eggshell);
+  --foreground: var(--ink);
+
+  --card: var(--eggshell);
+  --card-foreground: var(--ink);
+
+  /* Accent presets (html[data-primary]) override these; accent drives rings,
+     active states, links, running glow, and charts — not CTA fills. */
+  --primary: oklch(0.496 0.265 301.924);
+  --primary-foreground: oklch(0.977 0.014 308.299);
+
+  --secondary: var(--warm-taupe);
+  --secondary-foreground: var(--graphite);
+
+  --muted: var(--warm-taupe);
+  --muted-foreground: var(--smoke);
+
+  /* Accent is the *surface* companion to --primary: shadcn pairs them as
+     bg-accent / text-accent-foreground, which the app uses 160+ times as a
+     hover and active wash. A saturated accent fill would make the palette
+     ~97% achromatic everywhere else and unreadable in dark mode, so the
+     surface stays a quiet warm wash while --primary (preset) carries the
+     spark: rings, active indicators, links, running glow, charts. */
+  --accent: var(--warm-taupe);
+  --accent-foreground: var(--ink);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: var(--stone);
+  --input: var(--stone);
+  --ring: var(--ink);
+
+  /* Charts are the sanctioned "product visual" colour exception (A9): kept
+     chromatic so series stay legible, re-tuned toward warmer editorial hues.
+     Ordered light → deep so sequential ramps still read as a ramp. */
+  --chart-1: oklch(0.78 0.09 168);
+  --chart-2: oklch(0.66 0.11 196);
+  --chart-3: oklch(0.55 0.13 249);
+  --chart-4: oklch(0.58 0.154 35);
+  --chart-5: oklch(0.46 0.13 302);
+
+  /* ─── Editorial radius (DESIGN.md §Spacing & Shapes) ──────────────────── */
+  /* Named radii drive intent; the standard radius scale is re-pointed at the
+     editorial values so existing `rounded-md/lg/xl` call sites land on the
+     right shape without editing 700+ sites.
+       inputs / small elements  4px  → rounded-md, rounded-sm
+       small elements          10px  → rounded-lg
+       cards / dialogs         20px  → rounded-card, rounded-xl
+       large feature cards     24px  → rounded-card-lg, rounded-3xl
+       buttons / tags / pills  9999px */
+  --radius-xs: 2px;
+  --radius-input: 4px;
+  --radius-card: 20px;
+  --radius-card-lg: 24px;
+  --radius-button: 9999px;
+  /* Legacy base kept for compatibility; derived radii below are explicit. */
+  --radius: 0.25rem;
+
+  /* ─── Editorial elevation (DESIGN.md §Shadows / §Elevation) ───────────── */
+  /* Buttons + elevated cards: 1px hard edge + 1px blur + 4px blur @ 4%.     */
+  --elevation-whisper:
+    rgba(0, 0, 0, 0.4) 0 0 1px 0, rgba(0, 0, 0, 0.04) 0 1px 1px 0,
+    rgba(0, 0, 0, 0.04) 0 2px 4px 0;
+  /* Inset hairline used for focus halos and quiet plates. */
+  --elevation-hairline: rgba(0, 0, 0, 0.075) 0 0 0 0.5px inset;
+  --elevation-plate: rgba(0, 0, 0, 0.1) 0 0 0 1px inset;
+  /* Legacy Tailwind shadow utilities are re-pointed at whisper elevation so
+     heavy drop shadows cannot survive anywhere in the app. */
+  --shadow-xs: var(--elevation-whisper);
+  --shadow-sm: var(--elevation-whisper);
+  --shadow-md: var(--elevation-whisper);
+  --shadow-lg: var(--elevation-whisper);
+  --shadow-xl: var(--elevation-whisper);
+  --shadow-2xl: var(--elevation-whisper);
+  --shadow-subtle: var(--elevation-whisper);
+  --shadow-subtle-2: var(--elevation-hairline);
+  --shadow-subtle-3: rgba(0, 0, 0, 0.1) 0 0 0 0.5px inset;
+  --shadow-subtle-4: var(--elevation-plate);
+  --shadow-subtle-5: var(--elevation-whisper);
+  --shadow-subtle-6: rgba(255, 255, 255, 0.6) 0 0 0 1px inset;
+  --shadow-subtle-7: var(--stone) 0 0 0 0.5px inset;
+  --shadow-glow: 0 0 0 3px color-mix(in oklab, var(--primary) 22%, transparent);
+
+  --popover: var(--eggshell);
+  --popover-foreground: var(--ink);
+
+  /* Sidebar sits one step deeper than the canvas. */
+  --sidebar: var(--warm-taupe);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: oklch(0.558 0.288 302.321);
+  --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
+  --sidebar-accent: var(--stone);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--stone);
+  --sidebar-ring: var(--ink);
+}
+
+/* Anchored surfaces: dropdowns, popovers, and select menus. */
+.t-dropdown {
+  transform-origin: top left;
+  transform: scale(var(--dropdown-pre-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-open-dur) var(--dropdown-ease),
+    opacity var(--dropdown-open-dur) var(--dropdown-ease);
+  will-change: transform, opacity;
+}
+.t-dropdown[data-origin='top-right'] {
+  transform-origin: top right;
+}
+.t-dropdown[data-origin='top-center'] {
+  transform-origin: top center;
+}
+.t-dropdown[data-origin='bottom-left'] {
+  transform-origin: bottom left;
+}
+.t-dropdown[data-origin='bottom-center'] {
+  transform-origin: bottom center;
+}
+.t-dropdown[data-origin='bottom-right'] {
+  transform-origin: bottom right;
+}
+
+.t-dropdown.is-open {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+}
+.t-dropdown.is-closing {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+/* Radix keeps closed content mounted until its exit transition completes. */
+.t-dropdown[data-state='open'] {
+  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
+  animation: t-dropdown-open var(--dropdown-open-dur) var(--dropdown-ease);
+}
+.t-dropdown[data-state='closed'] {
+  transform: scale(var(--dropdown-closing-scale));
+  opacity: 0;
+  pointer-events: none;
+  animation: t-dropdown-close var(--dropdown-close-dur) var(--dropdown-ease);
+  transition:
+    transform var(--dropdown-close-dur) var(--dropdown-ease),
+    opacity var(--dropdown-close-dur) var(--dropdown-ease);
+}
+
+[data-slot='dropdown-menu-content'].t-dropdown,
+[data-slot='dropdown-menu-sub-content'].t-dropdown {
+  transform-origin: var(
+    --radix-dropdown-menu-content-transform-origin,
+    top left
+  );
+}
+[data-slot='popover-content'].t-dropdown {
+  transform-origin: var(--radix-popover-content-transform-origin, top left);
+}
+[data-slot='select-content'].t-dropdown {
+  transform-origin: var(--radix-select-content-transform-origin, top left);
+}
+
+@keyframes t-dropdown-open {
+  from {
+    transform: scale(var(--dropdown-pre-scale));
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes t-dropdown-close {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(var(--dropdown-closing-scale));
+    opacity: 0;
+  }
+}
+
+/* Centered modal surfaces preserve their positioning transform and animate scale. */
+.t-modal-surface {
+  opacity: 0;
+  scale: var(--modal-scale);
+  transition:
+    scale var(--modal-open-dur) var(--modal-ease),
+    opacity var(--modal-open-dur) var(--modal-ease);
+  will-change: scale, opacity;
+}
+.t-modal-surface[data-state='open'] {
+  opacity: 1;
+  scale: 1;
+  animation: t-modal-open var(--modal-open-dur) var(--modal-ease);
+}
+.t-modal-surface[data-state='closed'] {
+  opacity: 0;
+  scale: var(--modal-scale);
+  animation: t-modal-close var(--modal-close-dur) var(--modal-ease);
+  transition-duration: var(--modal-close-dur);
+}
+.t-overlay-surface {
+  opacity: 0;
+  transition: opacity var(--modal-open-dur) var(--modal-ease);
+}
+.t-overlay-surface[data-state='open'] {
+  opacity: 1;
+  animation: t-overlay-open var(--modal-open-dur) var(--modal-ease);
+}
+.t-overlay-surface[data-state='closed'] {
+  opacity: 0;
+  animation: t-overlay-close var(--modal-close-dur) var(--modal-ease);
+  transition-duration: var(--modal-close-dur);
+}
+
+@keyframes t-modal-open {
+  from {
+    opacity: 0;
+    scale: var(--modal-scale);
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+@keyframes t-modal-close {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: var(--modal-scale);
+  }
+}
+@keyframes t-overlay-open {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes t-overlay-close {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.t-icon-swap {
+  position: relative;
+  display: inline-grid;
+}
+.t-icon-swap .t-icon {
+  grid-area: 1 / 1;
+  transition:
+    opacity var(--icon-swap-dur) var(--icon-swap-ease),
+    filter var(--icon-swap-dur) var(--icon-swap-ease),
+    transform var(--icon-swap-dur) var(--icon-swap-ease);
+  will-change: opacity, filter, transform;
+}
+.t-icon-swap[data-state='a'] .t-icon[data-icon='a'],
+.t-icon-swap[data-state='b'] .t-icon[data-icon='b'] {
+  opacity: 1;
+  filter: blur(0);
+  transform: scale(1);
+}
+.t-icon-swap[data-state='a'] .t-icon[data-icon='b'],
+.t-icon-swap[data-state='b'] .t-icon[data-icon='a'] {
+  opacity: 0;
+  filter: blur(var(--icon-swap-blur));
+  transform: scale(var(--icon-swap-start-scale));
+}
+
+/* grid-template-rows 0fr → 1fr gives a clean height animation
+   with no JS measurement; the inner element clips overflow. */
+.t-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--acc-collapse) var(--acc-ease);
+}
+.t-acc[data-open='true'] .t-acc-panel {
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--acc-expand) var(--acc-ease);
+}
+.t-acc-panel-inner {
+  overflow: hidden;
+  opacity: 0;
+  filter: blur(2px);
+  transition:
+    opacity var(--acc-collapse) var(--acc-ease),
+    filter var(--acc-collapse) var(--acc-ease);
+}
+.t-acc[data-open='true'] .t-acc-panel-inner {
+  opacity: 1;
+  filter: blur(0);
+  transition:
+    opacity var(--acc-expand) var(--acc-ease),
+    filter var(--acc-expand) var(--acc-ease);
+}
+.t-acc-chevron {
+  display: inline-flex;
+  transform: scaleY(1);
+  transform-origin: center;
+  transition: transform var(--acc-chevron) var(--acc-ease);
+}
+.t-acc-chevron path {
+  vector-effect: non-scaling-stroke;
+}
+.t-acc[data-open='true'] .t-acc-chevron {
+  transform: scaleY(-1);
+}
+
+.t-panel-slide {
+  transform: translateY(var(--panel-translate-y));
+  opacity: 0;
+  filter: blur(var(--panel-blur));
+  pointer-events: none;
+  transition:
+    transform var(--panel-close-dur) var(--panel-ease),
+    opacity var(--panel-close-dur) var(--panel-ease),
+    filter var(--panel-close-dur) var(--panel-ease);
+  will-change: transform, opacity, filter;
+}
+.t-panel-slide[data-open='true'] {
+  transform: translateY(0);
+  opacity: 1;
+  filter: blur(0);
+  pointer-events: auto;
+  transition:
+    transform var(--panel-open-dur) var(--panel-ease),
+    opacity var(--panel-open-dur) var(--panel-ease),
+    filter var(--panel-open-dur) var(--panel-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-panel-slide {
+    transition: none !important;
+  }
+}
+
+/* Pulsing glow for the currently running entry (table row + card). The inset
+   shadow keeps the glow inside the element so it isn't clipped by the card's
+   overflow-hidden rounded container. */
+.running-glow {
+  animation: running-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes running-glow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklab, var(--primary) 0%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 7%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklab, var(--primary) 60%, transparent),
+      inset 0 0 24px 6px color-mix(in oklab, var(--primary) 30%, transparent);
+    background-color: color-mix(in oklab, var(--primary) 13%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .running-glow {
+    animation: none;
+  }
+  .t-dropdown,
+  .t-modal-surface,
+  .t-overlay-surface {
+    animation: none !important;
+    transition: none !important;
+  }
+  .t-icon-swap .t-icon {
+    transition: none !important;
+  }
+  .t-acc-panel,
+  .t-acc-panel-inner,
+  .t-acc-chevron {
+    transition: none !important;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-action: var(--primary-action);
+  --color-primary-action-foreground: var(--primary-action-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Editorial palette exposed as utilities: bg-eggshell, text-smoke, etc. */
+  --color-eggshell: var(--eggshell);
+  --color-warm-taupe: var(--warm-taupe);
+  --color-stone: var(--stone);
+  --color-app-surface: var(--app-surface);
+  --color-ink: var(--ink);
+  --color-graphite: var(--graphite);
+  --color-smoke: var(--smoke);
+  --color-ash: var(--ash);
+  --color-hairline: var(--hairline);
+  --color-violet-spark: var(--violet-spark);
+  --color-ember-orange: var(--ember-orange);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ─── Fonts ────────────────────────────────────────────────────────────── */
+  /* --font-sans / --font-heading are set by the [data-font] presets above.   */
+  --font-display: var(--font-heading);
+  --font-inter:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+
+  /* ─── Type scale (DESIGN.md §Type Scale) ──────────────────────────────── */
+  --text-display: 48px;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+  --text-heading: 36px;
+  --text-heading--line-height: 1.17;
+  --text-heading--letter-spacing: -0.02em;
+  --text-heading-sm: 32px;
+  --text-heading-sm--line-height: 1.13;
+  --text-heading-sm--letter-spacing: -0.02em;
+  --text-subheading: 18px;
+  --text-subheading--line-height: 1.6;
+  --text-body-lg: 20px;
+  --text-body-lg--line-height: 1.35;
+  --font-weight-light: 300;
+
+  /* ─── Editorial radius + elevation utilities ──────────────────────────── */
+  --radius-sm: 4px; /* small elements, kbd, menu items          */
+  --radius-md: 4px; /* inputs, textareas, combobox triggers     */
+  --radius-lg: 10px; /* small-elements upper bound              */
+  --radius-xl: 20px; /* cards, dialogs, drawers, popovers       */
+  --radius-2xl: 16px; /* medium plates                           */
+  --radius-3xl: 24px; /* large feature cards                     */
+  --radius-4xl: 28px;
+  /* --shadow-* are set in :root / .dark. */
+  --shadow-whisper: var(--elevation-whisper);
+  --shadow-inset-hairline: var(--elevation-hairline);
+  --shadow-inset-plate: var(--elevation-plate);
+}
+
+/* ─── Editorial display voice ───────────────────────────────────────────── */
+/* DESIGN.md §Typography: Waldenburg 300 substitutes to Inter 300 at -0.02em.
+   Apply to page, section, and hero titles — never to body copy.            */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+
+  /* Editorial display voice at the document level. Component titles that set
+     their own font-weight keep it; this only sets the default for headings. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ─── t-tabs: sliding segmented control ─────────────────────────────────── */
+/* Two mutually-exclusive options with a pill that slides between them.
+   JS writes the active tab's offsetLeft / offsetWidth onto the pill; CSS owns
+   the tween. The layout (grid/flex, sizing) stays with the component utility
+   classes — these rules own the pill and the stacking. */
+.t-tabs {
+  position: relative;
+}
+.t-tab {
+  position: relative;
+  z-index: 1;
+}
+/* The pill sits behind the labels and is measured from the real DOM, so the
+   transition always tweens between the previous and next positions. */
+.t-tabs-pill {
+  position: absolute;
+  /* The track's p-1 is 4px; the tab is h-9 (36px). These are the pill's own
+     box because Tailwind never sees this aria-hidden, childless span. */
+  top: 4px;
+  left: 0;
+  width: 0;
+  height: 36px;
+  background: var(--tabs-pill-bg);
+  border-radius: var(--radius-button);
+  box-shadow: var(--shadow-whisper);
+  transform: translateX(0);
+  transition:
+    transform var(--tabs-dur) var(--tabs-ease),
+    width var(--tabs-dur) var(--tabs-ease);
+  will-change: transform, width;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ─── t-stagger: staggered cross-blur for stacked text ──────────────────── */
+/* Each direct child re-enters with a blurred rise, offset by its index. The
+   component sets --stagger-i on each child and re-keys/mounts the group to
+   replay. Used for the auth form when the mode switches. */
+.t-stagger > * {
+  opacity: 0;
+  transform: translateY(var(--distance-medium));
+  filter: blur(var(--blur-medium));
+  animation: t-stagger-in var(--stagger-dur) var(--stagger-ease) forwards;
+  animation-delay: calc(var(--stagger-i, 0) * var(--stagger-delay));
+}
+
+@keyframes t-stagger-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .t-tab,
+  .t-tabs-pill {
+    transition: none !important;
+  }
+  .t-stagger > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .landing-reveal,
+  .landing-reveal[data-direction] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .landing-scroll-progress,
+  .landing-ambient-layer {
+    display: none;
+  }
+}
+
+/* ─── Editorial hover lift ──────────────────────────────────────────────── */
+/* DESIGN.md §Don't: no heavy drop shadows. A 2px lift plus whisper elevation. */
+.card-hover {
+  transition:
+    transform var(--duration-fast) var(--ease-smooth-out),
+    box-shadow var(--duration-fast) var(--ease-smooth-out);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-whisper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover:hover {
+    transform: none;
+  }
+}
+
+/* ─── Dark palette — "graphite editorial" ───────────────────────────────── */
+/* DESIGN.md is light-only; this is the Trackly adaptation (PLAN.md §3.2).   */
+/* Same warm hue family as the light palette, but surfaces step *up* from the */
+/* canvas into the light instead of down.                                     */
+.dark {
+  /* The palette names are SURFACE names, so they flip with the mode:
+     `bg-eggshell` is always "the paper", `bg-ink` is always "the filled-ink
+     chip". Text uses the semantic tokens (text-foreground / text-muted-
+     foreground) or the raw text tones below, which lift for legibility. */
+  --eggshell: #1d1a18; /* "paper" is the warm near-black card in dark   */
+  --warm-taupe: #262220;
+  --stone: #35302b;
+  /* Workspace content plane — lifts the app <main> above the eggshell card
+     tone while staying below warm-taupe so hover/secondary washes still read. */
+  --app-surface: #23201e;
+  --ink: #f5f3f1; /* filled-ink chip becomes the light chip in dark */
+  /* Text tones lift so they stay legible on the dark warm surfaces. */
+  --graphite: #cfc9c1;
+  --smoke: #a8a29a;
+  --ash: #6f6a63;
+  --hairline: #35302b;
+
+  --primary-action: #f5f3f1;
+  --primary-action-foreground: #161412;
+
+  --background: #161412;
+  --foreground: #f5f3f1;
+  --card: #1d1a18;
+  --card-foreground: #f5f3f1;
+  --popover: #1d1a18;
+  --popover-foreground: #f5f3f1;
+  --primary: oklch(0.438 0.218 303.724);
+  --primary-foreground: oklch(0.977 0.014 308.299);
+  --secondary: #262220;
+  --secondary-foreground: #f5f3f1;
+  --muted: #262220;
+  --muted-foreground: #a59f97;
+  --accent: #2a2523;
+  --accent-foreground: #f5f3f1;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #35302b;
+  --input: #35302b;
+  --ring: #f5f3f1;
+  /* Same warm hues, lifted for the dark canvas. */
+  --chart-1: oklch(0.82 0.1 168);
+  --chart-2: oklch(0.74 0.12 196);
+  --chart-3: oklch(0.68 0.13 249);
+  --chart-4: oklch(0.7 0.16 38);
+  --chart-5: oklch(0.62 0.14 302);
+  /* Shadows must read on a dark canvas. */
+  --elevation-whisper:
+    rgba(0, 0, 0, 0.5) 0 0 1px 0, rgba(0, 0, 0, 0.25) 0 2px 4px 0;
+  --elevation-hairline: rgba(255, 255, 255, 0.08) 0 0 0 0.5px inset;
+  --elevation-plate: rgba(255, 255, 255, 0.1) 0 0 0 1px inset;
+  --shadow-subtle-3: rgba(255, 255, 255, 0.1) 0 0 0 0.5px inset;
+  --shadow-subtle-6: rgba(255, 255, 255, 0.06) 0 0 0 1px inset;
+  --shadow-subtle-7: #35302b 0 0 0 0.5px inset;
+  /* Sidebar sits deeper than the canvas (inverted vs light). */
+  --sidebar: #12100e;
+  --sidebar-foreground: #f5f3f1;
+  --sidebar-primary: oklch(0.627 0.265 303.9);
+  --sidebar-primary-foreground: oklch(0.977 0.014 308.299);
+  --sidebar-accent: #262220;
+  --sidebar-accent-foreground: #f5f3f1;
+  --sidebar-border: #35302b;
+  --sidebar-ring: #f5f3f1;
+}
+
+/* ─── Print styles ───────────────────────────────────────────────────────── */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  /* Let the main content area expand to fill the full page */
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure colors render in print */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+/* ─── Primary color presets ──────────────────────────────────────────────── */
+/* Each preset overrides --primary / --accent / --ring / --sidebar-primary   */
+/* in both light and dark modes so the whole UI picks up the new accent.     */
+
+html[data-primary='teal'] {
+  --primary: oklch(0.58 0.12 185);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.58 0.12 185);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.58 0.12 185);
+  --sidebar-primary: oklch(0.58 0.12 185);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='teal'].dark {
+  --primary: oklch(0.7 0.12 185);
+  --primary-foreground: oklch(0.12 0.02 185);
+  --accent: oklch(0.7 0.12 185);
+  --accent-foreground: oklch(0.12 0.02 185);
+  --ring: oklch(0.7 0.12 185);
+  --sidebar-primary: oklch(0.7 0.12 185);
+  --sidebar-primary-foreground: oklch(0.12 0.02 185);
+}
+
+html[data-primary='violet'] {
+  --primary: oklch(0.55 0.22 295);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.55 0.22 295);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.55 0.22 295);
+  --sidebar-primary: oklch(0.55 0.22 295);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='violet'].dark {
+  --primary: oklch(0.68 0.2 295);
+  --primary-foreground: oklch(0.15 0.05 295);
+  --accent: oklch(0.68 0.2 295);
+  --accent-foreground: oklch(0.15 0.05 295);
+  --ring: oklch(0.68 0.2 295);
+  --sidebar-primary: oklch(0.68 0.2 295);
+  --sidebar-primary-foreground: oklch(0.15 0.05 295);
+}
+
+html[data-primary='blue'] {
+  --primary: oklch(0.55 0.18 250);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.55 0.18 250);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.55 0.18 250);
+  --sidebar-primary: oklch(0.55 0.18 250);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='blue'].dark {
+  --primary: oklch(0.7 0.16 245);
+  --primary-foreground: oklch(0.15 0.04 250);
+  --accent: oklch(0.7 0.16 245);
+  --accent-foreground: oklch(0.15 0.04 250);
+  --ring: oklch(0.7 0.16 245);
+  --sidebar-primary: oklch(0.7 0.16 245);
+  --sidebar-primary-foreground: oklch(0.15 0.04 250);
+}
+
+html[data-primary='emerald'] {
+  --primary: oklch(0.6 0.14 155);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.6 0.14 155);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.6 0.14 155);
+  --sidebar-primary: oklch(0.6 0.14 155);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='emerald'].dark {
+  --primary: oklch(0.72 0.15 155);
+  --primary-foreground: oklch(0.14 0.03 155);
+  --accent: oklch(0.72 0.15 155);
+  --accent-foreground: oklch(0.14 0.03 155);
+  --ring: oklch(0.72 0.15 155);
+  --sidebar-primary: oklch(0.72 0.15 155);
+  --sidebar-primary-foreground: oklch(0.14 0.03 155);
+}
+
+html[data-primary='rose'] {
+  --primary: oklch(0.62 0.2 15);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.62 0.2 15);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.62 0.2 15);
+  --sidebar-primary: oklch(0.62 0.2 15);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='rose'].dark {
+  --primary: oklch(0.72 0.2 15);
+  --primary-foreground: oklch(0.15 0.05 15);
+  --accent: oklch(0.72 0.2 15);
+  --accent-foreground: oklch(0.15 0.05 15);
+  --ring: oklch(0.72 0.2 15);
+  --sidebar-primary: oklch(0.72 0.2 15);
+  --sidebar-primary-foreground: oklch(0.15 0.05 15);
+}
+
+html[data-primary='orange'] {
+  --primary: oklch(0.62 0.19 45);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.62 0.19 45);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.62 0.19 45);
+  --sidebar-primary: oklch(0.62 0.19 45);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='orange'].dark {
+  --primary: oklch(0.72 0.16 45);
+  --primary-foreground: oklch(0.18 0.04 45);
+  --accent: oklch(0.72 0.16 45);
+  --accent-foreground: oklch(0.18 0.04 45);
+  --ring: oklch(0.72 0.16 45);
+  --sidebar-primary: oklch(0.72 0.16 45);
+  --sidebar-primary-foreground: oklch(0.18 0.04 45);
+}
+html[data-primary='amber'] {
+  --primary: oklch(0.72 0.17 75);
+  --primary-foreground: oklch(0.2 0.04 75);
+  --accent: oklch(0.72 0.17 75);
+  --accent-foreground: oklch(0.2 0.04 75);
+  --ring: oklch(0.72 0.17 75);
+  --sidebar-primary: oklch(0.72 0.17 75);
+  --sidebar-primary-foreground: oklch(0.2 0.04 75);
+}
+html[data-primary='amber'].dark {
+  --primary: oklch(0.82 0.15 75);
+  --primary-foreground: oklch(0.18 0.04 75);
+  --accent: oklch(0.82 0.15 75);
+  --accent-foreground: oklch(0.18 0.04 75);
+  --ring: oklch(0.82 0.15 75);
+  --sidebar-primary: oklch(0.82 0.15 75);
+  --sidebar-primary-foreground: oklch(0.18 0.04 75);
+}
+
+html[data-primary='pink'] {
+  --primary: oklch(0.72 0.16 350);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.72 0.16 350);
+  --accent-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.72 0.16 350);
+  --sidebar-primary: oklch(0.72 0.16 350);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+}
+html[data-primary='pink'].dark {
+  --primary: oklch(0.82 0.14 350);
+  --primary-foreground: oklch(0.15 0.05 350);
+  --accent: oklch(0.82 0.14 350);
+  --accent-foreground: oklch(0.15 0.05 350);
+  --ring: oklch(0.82 0.14 350);
+  --sidebar-primary: oklch(0.82 0.14 350);
+  --sidebar-primary-foreground: oklch(0.15 0.05 350);
+}
+
+/* Accent *surfaces* always resolve to the quiet warm wash; only the preset
+   `--primary`/`--ring`/`--sidebar-primary` carry the user's chosen hue. This
+   rule follows every preset block so it wins on equal specificity, in both
+   light and dark mode ([data-primary] presets also set `.dark` variants). */
+html[data-primary] {
+  --accent: var(--warm-taupe);
+  --accent-foreground: var(--ink);
+}
+
+/* ── MapLibre (mapcn) theme overrides ───────────────────────────────────── */
+@layer base {
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
+  .maplibregl-ctrl-attrib {
+    @apply bg-background! text-muted-foreground! border-border! rounded-md! border! shadow-sm!;
+  }
+  .maplibregl-ctrl-attrib a {
+    @apply text-muted-foreground!;
+  }
+  .maplibregl-ctrl-attrib a:hover {
+    @apply text-foreground!;
+  }
+  .maplibregl-ctrl-attrib-button {
+    @apply bg-transparent! dark:invert;
+  }
+}
+```

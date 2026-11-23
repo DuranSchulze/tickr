@@ -76,8 +76,10 @@ pnpm test
 Or invoke Vitest directly (equivalent, bypasses pnpm):
 
 ```bash
-./node_modules/.bin/vitest run
+./node_modules/.bin/vitest run --exclude "mobile/**"
 ```
+
+Run the Android configuration and APK export tests with `pnpm --dir mobile test`.
 
 Expected shape of a healthy run:
 

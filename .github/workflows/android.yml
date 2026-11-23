@@ -1,0 +1,55 @@
+name: android
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/android.yml'
+  push:
+    branches: [main, mobile]
+    paths:
+      - 'mobile/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      MOBILE_SERVER_URL: ${{ vars.TRACKLY_ANDROID_SERVER_URL || 'https://trackly.ph' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir mobile test
+      - run: pnpm --dir mobile build:apk
+      - name: Run Android unit tests
+        working-directory: mobile/android
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+      - name: Compile device test APK
+        working-directory: mobile/android
+        run: ./gradlew :app:assembleDebugAndroidTest --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trackly-android-debug
+          path: mobile/dist/
+          if-no-files-found: error
+          retention-days: 7

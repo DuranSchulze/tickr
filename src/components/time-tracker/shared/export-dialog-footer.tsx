@@ -18,7 +18,7 @@ export function ExportActionsFooter({
   onExport,
 }: ExportActionsFooterProps) {
   return (
-    <DialogFooter>
+    <DialogFooter className="shrink-0">
       <DialogClose asChild>
         <Button variant="outline" disabled={exporting !== null}>
           Cancel
