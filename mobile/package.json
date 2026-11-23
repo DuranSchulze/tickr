@@ -1,0 +1,34 @@
+{
+  "name": "trackly-android",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.10.0",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test:device": "pnpm sync && pnpm gradle connectedDebugAndroidTest",
+    "test:restart": "pnpm build:debug && pnpm gradle assembleDebugAndroidTest && node scripts/test-restart.mjs",
+    "test:signout": "pnpm build:debug && pnpm gradle assembleDebugAndroidTest && node scripts/test-restart.mjs --signout",
+    "spike:server": "node scripts/spike-server.mjs",
+    "doctor": "dotenv -e .env -- node scripts/doctor.mjs",
+    "sync": "dotenv -e .env -- cap sync android",
+    "open": "dotenv -e .env -- cap open android",
+    "gradle": "dotenv -e .env -- node --experimental-strip-types scripts/gradle.mjs",
+    "build:debug": "pnpm sync && pnpm gradle assembleDebug",
+    "build:apk": "pnpm build:debug && node scripts/export-debug-apk.mjs",
+    "build:release": "pnpm sync && pnpm gradle bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/geolocation": "8.2.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "typescript": "5.9.3"
+  }
+}

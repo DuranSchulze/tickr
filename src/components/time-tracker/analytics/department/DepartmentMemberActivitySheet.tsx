@@ -549,7 +549,7 @@ function ActivityEntryDetailsDialog({
 
   return (
     <Dialog open={entry !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain sm:max-w-md">
         {entry && (
           <>
             <DialogHeader>
@@ -666,6 +666,15 @@ export function DepartmentMemberActivitySheet({
   // with a fade + cross-blur (panel reveal), open slower than close.
   const closedPosition = isDesktop ? { x: '100%', y: 0 } : { x: 0, y: '100%' }
 
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   return (
     <MotionConfig reducedMotion="user">
       <AnimatePresence>
@@ -687,6 +696,11 @@ export function DepartmentMemberActivitySheet({
               }}
             />
             <motion.aside
+              role="dialog"
+              aria-modal="true"
+              aria-label={
+                memberName ? `${memberName} activity` : 'Member activity'
+              }
               className="relative flex h-[92dvh] w-full max-w-xl min-w-0 flex-col overflow-hidden rounded-t-2xl border border-stone bg-eggshell shadow-[var(--shadow-whisper)] sm:h-full sm:rounded-xl sm:border-y-0 sm:border-r-0"
               initial={{
                 ...closedPosition,

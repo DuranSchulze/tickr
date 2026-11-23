@@ -94,7 +94,7 @@ export function CalendarGrid({
         </div>
 
         <div className="overflow-x-auto">
-          <div className={view === 'week' ? 'min-w-[820px]' : 'min-w-[960px]'}>
+          <div className={view === 'week' ? 'min-w-[760px]' : 'min-w-[880px]'}>
             <div className="grid grid-cols-7 border-b border-stone/70 bg-warm-taupe/40">
               {weekdays.map((weekday) => (
                 <div

@@ -42,7 +42,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          't-dropdown z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-stone bg-popover p-1 text-popover-foreground shadow-[var(--shadow-whisper)] data-[state=closed]:overflow-hidden',
+          't-dropdown z-50 max-h-(--radix-dropdown-menu-content-available-height) w-max max-w-[calc(100vw-1rem)] min-w-[max(8rem,var(--radix-dropdown-menu-trigger-width))] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border border-stone bg-popover p-1 text-popover-foreground shadow-[var(--shadow-whisper)] data-[state=closed]:overflow-hidden',
           className,
         )}
         {...props}

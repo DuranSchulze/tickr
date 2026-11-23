@@ -259,7 +259,8 @@ export const updateDepartmentSchema = z.object({
   name: z.string().trim().min(1).max(120),
   description: z.string().trim().optional(),
   color: z.string().optional(),
-  headMemberId: z.string().optional(),
+  /** Empty string clears the head; omitted leaves it unchanged. */
+  headMemberId: z.string().max(30).optional(),
 })
 
 export const createCohortSchema = z.object({

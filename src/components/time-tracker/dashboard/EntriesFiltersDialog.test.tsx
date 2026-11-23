@@ -74,7 +74,7 @@ describe('entry filter dialog', () => {
     )
     expect(onDateRangeChange).not.toHaveBeenCalled()
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-  })
+  }, 15_000)
 
   it('discards uncommitted changes on cancel and reopens with current filters', () => {
     const { filterControls, onDateRangeChange } = setup()

@@ -77,9 +77,9 @@ describe('dashboard timer consistency', () => {
                   </div>
                   <div data-testid="header">
                     <DashboardHeader
-                      workspaceName="Workspace"
                       userName="User"
                       userRoleName="Member"
+                      expectedDailyHours={8}
                       entries={[...completed, running]}
                       formatTime={formatTime}
                     />
@@ -97,7 +97,7 @@ describe('dashboard timer consistency', () => {
           container.querySelector('[data-testid="group"]')?.textContent,
         ).toBe(formatTime(elapsed + 3))
         expect(
-          container.querySelector('[data-testid="header"] p:last-child')
+          container.querySelector('[data-testid="header"] [data-today-total]')
             ?.textContent,
         ).toBe(formatTime(elapsed + 3))
       }

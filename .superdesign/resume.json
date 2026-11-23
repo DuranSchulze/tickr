@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/app/time-tracker": {
+      "targetKind": "existing-ui",
+      "projectId": "3090df16-1d5b-455d-aeb3-5c6f6c841e32",
+      "baselineDraftId": "a220c2ac-abb0-46d9-b06b-b60ea7f3b259",
+      "activeDraftId": "a220c2ac-abb0-46d9-b06b-b60ea7f3b259",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": ["public-Logo-Black.png"],
+      "brandAssets": {
+        "logo": {
+          "assetKey": "public-Logo-Black.png",
+          "url": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/3090df16-1d5b-455d-aeb3-5c6f6c841e32/brand-assets/public-Logo-Black.png/Logo-Black.png",
+          "sourcePath": "public/Logo-Black.png"
+        }
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md:1:153",
+        "src/components/time-tracker/AppShell.tsx:221",
+        "src/components/time-tracker/dashboard/TimeTrackerDashboard.tsx:681:720",
+        "src/components/time-tracker/dashboard/DashboardHeader.tsx",
+        "src/components/time-tracker/dashboard/InputSection.tsx:173",
+        "src/components/time-tracker/dashboard/TimerPanel.tsx:220",
+        "src/components/time-tracker/dashboard/RunningTimer.tsx",
+        "src/components/time-tracker/dashboard/BillableToggleButton.tsx",
+        "src/components/time-tracker/dashboard/AllEntriesSection.tsx:146",
+        "src/components/time-tracker/dashboard/EntriesFilters.tsx",
+        "src/components/time-tracker/dashboard/DayGroupEntries.tsx:153:347",
+        "src/components/time-tracker/dashboard/DayGroupEntries.tsx:578:870",
+        "src/components/time-tracker/dashboard/EntryRow.tsx:55:200",
+        "src/components/time-tracker/dashboard/EntryRow.tsx:462",
+        "src/components/ui/button.tsx",
+        "src/components/ui/input.tsx"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "b8a66c182b39e1b64a2b4741b31e44eb06cd05bec7f39ffbcfbcfc09207e6afb",
+        ".superdesign/init/theme.md": "d73761146422f70dbf9a10132050f2d0a621d577909bbb45c1ed5ce82bafe817",
+        "public/Logo-Black.png": "68d40d265416f71e715b7ddab4b54de548b9055a3bdf618d8ea8c14d2e9afc81",
+        "src/components/time-tracker/AppShell.tsx": "b06fdbca6f088df41c1e5141273ac365ca09f0fb692f9d91a844efdc1abd293c",
+        "src/components/time-tracker/AppSidebar.tsx": "b7876b0c0e90924e4bcf11d9bdf79bc4d703d16ccd4f3763abbe7d9a46c4e16b",
+        "src/components/time-tracker/Navbar.tsx": "5256ffdae4db505884830c534913cbf6a4fc35d66924e30895794ffe3453f3e9",
+        "src/components/time-tracker/dashboard/AllEntriesSection.tsx": "88ecb3adf595939af1c01c3b8aa600ee5ce3e16c9cdca5642aa713b47b2fce6a",
+        "src/components/time-tracker/dashboard/BillableToggleButton.tsx": "e2f8daca5784fc92aa35432c63bde9306e1d7f0baa131d8d01c41579ec17b2c7",
+        "src/components/time-tracker/dashboard/DashboardHeader.tsx": "18a6d66d141e6166d0109426173ed641c68bf0a23059747597500c447bb3cb7e",
+        "src/components/time-tracker/dashboard/DayGroupEntries.tsx": "596cb55864d778b25afd8093255780f93241fada5572db2e90005cb5de55019b",
+        "src/components/time-tracker/dashboard/EntriesFilters.tsx": "5833d0e1555635751c7744bccf3b6cd9ef8bb17abaa010a246676106d86ac3a9",
+        "src/components/time-tracker/dashboard/EntryRow.tsx": "96b8bea459df8a8caa86b89bfa53698629fc0a6e420b6a8924f916c3991b541c",
+        "src/components/time-tracker/dashboard/InputSection.tsx": "63412e32597b6256507ae2d7f587b5c2872cd3ba94eb60ffb6be40008c89cd54",
+        "src/components/time-tracker/dashboard/RunningTimer.tsx": "97b921211f59dd645da807aa7c52b28202a1fe91aa5da2b755dfeb846a9dfb35",
+        "src/components/time-tracker/dashboard/TimeTrackerDashboard.tsx": "526666f66b83b3a9b9a6cdcd33372bd0155ac9e9095805b72444a7f0d3ba5357",
+        "src/components/time-tracker/dashboard/TimerPanel.tsx": "c068ebd1fb16d7d36c3dc83881096dca7c0f0a388615eda278b3fcd61ed3538f",
+        "src/components/ui/button.tsx": "8f855254b83f579089e5f35b7c10c228509f54daede682262c55d7f20f1ac4a5",
+        "src/components/ui/input.tsx": "a4560aa8a28420d780b18aea7ce429fbc72def52531930c6748346ac4de0e985"
+      },
+      "components": [
+        {
+          "name": "AppSidebar",
+          "id": "f407050c-8b7e-4965-9477-fbba4f532c6a",
+          "sourcePath": "src/components/time-tracker/AppSidebar.tsx",
+          "logoAssetKey": "public-Logo-Black.png"
+        },
+        {
+          "name": "Navbar",
+          "id": "dabcb691-f1a3-4dc0-a870-b35a136fb17b",
+          "sourcePath": "src/components/time-tracker/Navbar.tsx",
+          "logoAssetKey": "public-Logo-Black.png"
+        }
+      ],
+      "drafts": {
+        "a220c2ac-abb0-46d9-b06b-b60ea7f3b259": {
+          "title": "Current — Time tracker dashboard (desktop)",
+          "visualDirection": "faithful reproduction (baseline)",
+          "model": "gemini-3.1-pro",
+          "device": "desktop",
+          "currentVersion": 1
+        },
+        "4d25af8b-12d2-432f-b17f-74c33ee00c7f": {
+          "title": "Clarity refresh (desktop)",
+          "visualDirection": "Clarity refresh — daily and weekly progress, a single Log time panel with Timer and Manual entry, and compact day-grouped entries at desktop and phone widths",
+          "parentDraftId": "a220c2ac-abb0-46d9-b06b-b60ea7f3b259",
+          "model": "gemini-3.1-pro",
+          "device": "desktop",
+          "currentVersion": 2
+        }
+      },
+      "userDecisions": {
+        "style": "refine current editorial",
+        "firstPage": "/app/time-tracker",
+        "bugAreas": [
+          "dialogs & drawers",
+          "pickers & dropdowns",
+          "timer & entry editing",
+          "tables & filters"
+        ],
+        "devices": "phone and desktop equally"
+      },
+      "pendingSelection": "4d25af8b-12d2-432f-b17f-74c33ee00c7f version 2 (awaiting user review; baseline stays active until selected)",
+      "updatedAt": "2026-11-23T05:06:48.769Z"
+    }
+  }
+}

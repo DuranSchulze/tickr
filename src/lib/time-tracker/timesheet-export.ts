@@ -14,6 +14,8 @@ export const TIMESHEET_EXPORT_HEADERS = [
   'Total Seconds',
   'Entry Count',
   'Status',
+  'Confirmation start',
+  'Confirmation end',
 ] as const
 
 type TimesheetExportRow = {
@@ -27,7 +29,9 @@ type TimesheetExportRow = {
   totalHours: string
   totalSeconds: number
   entryCount: number
-  status: 'WORK' | 'RUNNING' | 'NO_TIME'
+  status: 'WORK' | 'RUNNING' | 'NO_TIME' | 'N/A'
+  confirmationStart: string
+  confirmationEnd: string
 }
 
 // Cached per timezone: one formatter per row is wasteful across a timesheet.
@@ -73,6 +77,8 @@ export function buildTimesheetExportRows(
       totalSeconds: day.snapshotSeconds,
       entryCount: day.entryCount,
       status: day.status,
+      confirmationStart: day.status === 'N/A' ? '08:00' : '',
+      confirmationEnd: day.status === 'N/A' ? '17:00' : '',
     })),
   )
 }
@@ -94,6 +100,8 @@ export function downloadTimesheetCsv(payload: TimesheetExportPayload): void {
         row.totalSeconds,
         row.entryCount,
         row.status,
+        row.confirmationStart,
+        row.confirmationEnd,
       ]),
     ]),
     `timesheet-${payload.weekStart}-to-${payload.weekEnd}.csv`,
@@ -125,6 +133,12 @@ export async function buildTimesheetExcelWorkbook(
     { header: TIMESHEET_EXPORT_HEADERS[8], key: 'totalSeconds', width: 15 },
     { header: TIMESHEET_EXPORT_HEADERS[9], key: 'entryCount', width: 13 },
     { header: TIMESHEET_EXPORT_HEADERS[10], key: 'status', width: 13 },
+    {
+      header: TIMESHEET_EXPORT_HEADERS[11],
+      key: 'confirmationStart',
+      width: 22,
+    },
+    { header: TIMESHEET_EXPORT_HEADERS[12], key: 'confirmationEnd', width: 22 },
   ]
 
   const header = sheet.getRow(1)
@@ -136,7 +150,7 @@ export async function buildTimesheetExcelWorkbook(
     fgColor: { argb: 'FF1F2937' },
   }
   header.alignment = { vertical: 'middle' }
-  sheet.autoFilter = 'A1:K1'
+  sheet.autoFilter = 'A1:M1'
 
   for (const row of buildTimesheetExportRows(payload)) {
     const worksheetRow = sheet.addRow({

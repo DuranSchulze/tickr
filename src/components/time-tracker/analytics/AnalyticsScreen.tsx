@@ -162,7 +162,7 @@ function AnalyticsScreenContent({
 
           <div className="flex min-w-0 flex-col gap-3 sm:items-start xl:items-end">
             {analytics.availableScopes.length > 1 && (
-              <div className="no-print grid w-full grid-cols-1 gap-1 rounded-full border border-stone bg-eggshell p-1 min-[420px]:grid-cols-3 sm:w-auto sm:flex sm:flex-wrap">
+              <div className="no-print grid w-full grid-cols-1 gap-1 rounded-2xl border border-stone bg-eggshell p-1 min-[420px]:grid-cols-3 min-[420px]:rounded-full sm:w-auto sm:flex sm:flex-wrap">
                 {analytics.availableScopes.map((scope) => (
                   <button
                     key={scope}

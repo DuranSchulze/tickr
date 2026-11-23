@@ -170,6 +170,10 @@ than choosing between duplicate child play buttons.
   so the loader does not reuse still-fresh cached state.
 - All Entries is local component state, not route-loader state. Mutations that
   affect the paginated list should call the dashboard's `refreshAllEntries()`.
+  It merges the newest page into the rows already loaded (by id) instead of
+  reloading from page one, so pages the user fetched with "Load more" survive
+  timer stops, mutations, and cross-tab/cross-device syncs. Only a date-range
+  change or clearing the filters resets the list (`loadAllEntries(true)`).
 - When adding timer behavior, preserve the one-running-timer invariant. The
   client may switch quickly, but the server still stops the current timer before
   starting the next.

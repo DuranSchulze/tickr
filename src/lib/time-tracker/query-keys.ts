@@ -14,7 +14,12 @@ export const trackerKeys = {
   /** Reports dashboard, keyed by the resolved query (date range + filters). */
   reports: (deps: unknown) => ['reports', deps] as const,
   /** Weekly DTR grid, keyed by week, filters, and member page. */
-  timesheet: (deps: unknown) => ['timesheet', deps] as const,
+  timesheets: ['timesheet'] as const,
+  timesheet: (deps: unknown) => [...trackerKeys.timesheets, deps] as const,
+  missingWeekdays: (workspaceId: string) =>
+    ['missing-weekday', workspaceId] as const,
+  missingWeekday: (workspaceId: string, userId: string) =>
+    [...trackerKeys.missingWeekdays(workspaceId), userId] as const,
   /** Simplified analytics overview, keyed by scope/date. */
   analyticsOverview: (deps: unknown) => ['analytics-overview', deps] as const,
   /** Department dashboard, keyed by the resolved date range. */

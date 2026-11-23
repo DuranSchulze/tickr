@@ -231,7 +231,7 @@ export function LocationTrackingPanel({
       )}
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
           <DialogHeader>
             <DialogTitle>Erase location history?</DialogTitle>
             <DialogDescription>

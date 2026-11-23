@@ -14,6 +14,7 @@ import {
 } from '#/lib/time-tracker/timesheet'
 import type { TimesheetDayCell } from '#/lib/time-tracker/timesheet'
 import { requireWorkspaceAccess } from '../workspace-access.server'
+import { overlapsLocalDay } from './missing-weekday.server'
 import { getWorkspaceDateRange } from './shared/dates'
 import type { timesheetQuerySchema } from './shared/schemas'
 
@@ -36,6 +37,7 @@ export type TimesheetPayload = {
   weekStart: string
   weekEnd: string
   timezone: string
+  viewer?: { workspaceId: string; userId: string; memberId: string }
   permissionLevel: string
   snapshotAt: string
   dates: Array<{ date: string; shortLabel: string; dayLabel: string }>
@@ -254,6 +256,32 @@ async function loadTimesheet(
           )
           .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
 
+  const confirmations =
+    memberIds.length === 0
+      ? []
+      : (
+          await db.execute<{
+            member_id: string
+            local_date: string
+          }>(sql`
+    select c.member_id, c.local_date::text from weekday_confirmations c
+    where c.workspace_id = ${access.workspace.id}
+      and c.member_id in (${sql.join(
+        memberIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})
+      and c.local_date between ${weekStart}::date and ${weekEnd}::date
+      and not exists (
+        select 1 from time_entries t where t.workspace_id = c.workspace_id
+          and t.workspace_member_id = c.member_id
+          and ${overlapsLocalDay(
+            sql`c.local_date::timestamp at time zone ${timezone}`,
+            sql`(c.local_date + 1)::timestamp at time zone ${timezone}`,
+          )}
+      )
+  `)
+        ).rows
+
   const snapshot = new Date()
   const cellsByMember = aggregateTimesheetEntries(
     memberIds,
@@ -262,6 +290,12 @@ async function loadTimesheet(
     timezone,
     snapshot,
   )
+  for (const confirmation of confirmations) {
+    const day = cellsByMember
+      .get(confirmation.member_id)
+      ?.find((cell) => cell.date === confirmation.local_date)
+    if (day?.status === 'NO_TIME') day.status = 'N/A'
+  }
   const dailyTotals = Array(7).fill(0) as number[]
   let weeklyTotalSeconds = 0
   const members = memberRows.map<TimesheetMember>((member) => {
@@ -289,6 +323,11 @@ async function loadTimesheet(
     weekStart,
     weekEnd,
     timezone,
+    viewer: {
+      workspaceId: access.workspace.id,
+      userId: access.session.user.id,
+      memberId: access.member.id,
+    },
     permissionLevel: level,
     snapshotAt: snapshot.toISOString(),
     dates: dateKeys.map((date) => ({

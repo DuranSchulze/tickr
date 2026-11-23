@@ -29,6 +29,7 @@ import { EditEntryDrawer } from './EditEntryDrawer'
 import { SubsecondStopDialog } from './SubsecondStopDialog'
 import { useTrackerMutations } from './hooks/useTrackerMutations'
 import { useEntriesFilterSort } from './hooks/useEntriesFilterSort'
+import { mergeEntriesPage } from './entries-merge'
 import { useDraftAndEdit } from './hooks/useDraftAndEdit'
 import { useTimerCore } from './hooks/useTimerCore'
 import { useRemoteTaskDataSync } from './hooks/useRemoteTaskDataSync'
@@ -45,15 +46,22 @@ import {
   loadOfflineQueue,
   removeOfflineQueueItem,
 } from '#/lib/time-tracker/offline-queue'
-import { invalidateTrackerState } from '#/lib/time-tracker/query-keys'
+import {
+  invalidateTrackerState,
+  trackerKeys,
+} from '#/lib/time-tracker/query-keys'
 import { useQueryClient } from '@tanstack/react-query'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { FeedbackFloatingPanel } from './FeedbackForm'
+import { RunningTimer } from './RunningTimer'
 import {
   publishTaskDataChange,
   subscribeToTaskSyncCompleted,
 } from '#/lib/time-tracker/task-sync'
+
+// Rows requested per page from getPaginatedEntriesFn (server clamps to 100).
+const ALL_ENTRIES_PAGE_SIZE = 50
 
 export function TimeTrackerDashboard({
   state,
@@ -99,6 +107,7 @@ export function TimeTrackerDashboard({
     useState<EntriesDateRange | null>(null)
   const allEntriesInitialized = useRef(false)
   const allEntriesRequestId = useRef(0)
+  const allEntriesRefreshId = useRef(0)
 
   const loadAllEntries = useCallback(
     async (
@@ -113,7 +122,7 @@ export function TimeTrackerDashboard({
         const result = await getPaginatedEntriesFn({
           data: {
             cursor,
-            limit: 50,
+            limit: ALL_ENTRIES_PAGE_SIZE,
             startDate: range?.startDate,
             endDate: range?.endDate,
           },
@@ -137,13 +146,36 @@ export function TimeTrackerDashboard({
     [allEntriesLoading, allEntriesCursor, entriesDateRange],
   )
 
-  // After a mutation, refresh the "all" view's locally-paginated list (it isn't
-  // backed by the route loader, so router.invalidate alone leaves it stale).
+  // After a mutation or a cross-tab change, refresh the "all" view's
+  // locally-paginated list (it isn't backed by the route loader, so
+  // router.invalidate alone leaves it stale).
   const refreshAllEntries = useCallback(() => {
-    if (allEntriesInitialized.current) {
-      void loadAllEntries(true)
-    }
-  }, [loadAllEntries])
+    if (!allEntriesInitialized.current) return
+    const loadGeneration = allEntriesRequestId.current
+    const refreshId = ++allEntriesRefreshId.current
+
+    void (async () => {
+      try {
+        const result = await getPaginatedEntriesFn({
+          data: {
+            limit: ALL_ENTRIES_PAGE_SIZE,
+            startDate: entriesDateRange?.startDate,
+            endDate: entriesDateRange?.endDate,
+          },
+        })
+        // A reset (date range change) or a newer refresh superseded this one.
+        if (
+          refreshId !== allEntriesRefreshId.current ||
+          loadGeneration !== allEntriesRequestId.current
+        ) {
+          return
+        }
+        setAllEntries((prev) => mergeEntriesPage(prev, result.entries))
+      } catch {
+        // Keep the rows already loaded; the next sync or mutation retries.
+      }
+    })()
+  }, [entriesDateRange])
 
   useEffect(
     () =>
@@ -152,10 +184,10 @@ export function TimeTrackerDashboard({
           event.workspaceId === state.workspace.id &&
           allEntriesInitialized.current
         ) {
-          void loadAllEntries(true)
+          refreshAllEntries()
         }
       }),
-    [loadAllEntries, state.workspace.id],
+    [refreshAllEntries, state.workspace.id],
   )
 
   // Independent refresh leg for the locally-paginated list: reacts to the
@@ -370,6 +402,10 @@ export function TimeTrackerDashboard({
       if (replayedAny) {
         publishTaskDataChange(state.workspace.id)
         void invalidateTrackerState(queryClient)
+        void queryClient.invalidateQueries({ queryKey: trackerKeys.timesheets })
+        void queryClient.invalidateQueries({
+          queryKey: trackerKeys.missingWeekdays(state.workspace.id),
+        })
         void router.invalidate()
       }
     }
@@ -634,14 +670,17 @@ export function TimeTrackerDashboard({
           memberId={state.currentMemberId}
           label="Export my time"
         />
-        <WeeklyReportEmailsButton memberId={state.currentMemberId} />
+        {(currentUser.permissionLevel === 'OWNER' ||
+          currentUser.permissionLevel === 'ADMIN') && (
+          <WeeklyReportEmailsButton memberId={state.currentMemberId} />
+        )}
       </div>
     ),
-    [state.currentMemberId],
+    [state.currentMemberId, currentUser.permissionLevel],
   )
 
   return (
-    <div className="grid min-w-0 gap-6">
+    <div className="grid min-w-0 gap-6 max-sm:pb-24">
       {!isOnline && (
         <output
           aria-live="polite"
@@ -652,9 +691,9 @@ export function TimeTrackerDashboard({
         </output>
       )}
       <DashboardHeader
-        workspaceName={state.workspace.name}
         userName={currentUser.name}
         userRoleName={currentUser.roleName}
+        expectedDailyHours={state.workspace.expectedDailyHours}
         entries={summaryEntries}
         formatTime={formatTime}
         trailing={exportButton}
@@ -686,6 +725,7 @@ export function TimeTrackerDashboard({
         pendingEntryIds={pendingEntryIds}
         deletingEntryId={mutations.deletingEntryId}
         formatTime={formatTime}
+        expectedDailyHours={state.workspace.expectedDailyHours}
         onStartEdit={startEdit}
         onUpdate={handleInlineUpdate}
         onResume={resumeEntry}
@@ -723,35 +763,60 @@ export function TimeTrackerDashboard({
         onDiscard={discardSubsecondEntry}
       />
 
-      {/* Mobile: floating action button */}
-      <button
-        type="button"
-        onClick={() => {
-          if (activeEntry && !stopBlocked) {
-            stopTimer()
-          } else {
-            setMobileTimerOpen(true)
-          }
-        }}
-        aria-label={
-          activeEntry
-            ? stopBlocked
-              ? 'Timer running – tap to complete missing fields'
-              : 'Stop timer'
-            : 'Start timer'
-        }
-        className={`fixed bottom-20 right-4 z-50 flex size-14 items-center justify-center rounded-full shadow-[var(--shadow-whisper)] transition-colors sm:hidden ${
-          activeEntry
-            ? 'bg-destructive text-destructive-foreground'
-            : 'bg-primary-action text-primary-action-foreground'
-        }`}
-      >
+      {/* Phones: sticky timer bar above the Android gesture area. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone bg-eggshell/95 px-3 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] backdrop-blur sm:hidden">
         {activeEntry ? (
-          <Square className="size-5 fill-current" />
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileTimerOpen(true)}
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-1 py-1 text-left"
+              aria-label="Open running timer"
+            >
+              <span
+                aria-hidden="true"
+                className="size-2.5 shrink-0 animate-pulse rounded-full bg-primary"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold text-foreground">
+                  {activeEntry.description || 'No description'}
+                </span>
+                <span className="block font-mono text-xs tabular-nums text-smoke">
+                  <RunningTimer
+                    entry={activeEntry}
+                    formatTime={formatTime}
+                    inline
+                  />
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                stopBlocked ? setMobileTimerOpen(true) : stopTimer()
+              }
+              className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-destructive px-5 text-sm font-semibold text-destructive-foreground"
+            >
+              <Square className="size-4 fill-current" />
+              {stopBlocked ? 'Finish' : 'Stop'}
+            </button>
+          </div>
         ) : (
-          <Play className="size-5" />
+          <button
+            type="button"
+            onClick={() => setMobileTimerOpen(true)}
+            className="flex h-12 w-full items-center gap-3 rounded-full bg-primary-action pr-2 pl-5 text-left text-primary-action-foreground"
+          >
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+              What are you working on?
+            </span>
+            <span className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-sm font-semibold">
+              <Play className="size-4" />
+              Track time
+            </span>
+          </button>
         )}
-      </button>
+      </div>
 
       {/* Mobile: full-screen dialog for timer / manual entry */}
       <Dialog open={mobileTimerOpen} onOpenChange={setMobileTimerOpen}>

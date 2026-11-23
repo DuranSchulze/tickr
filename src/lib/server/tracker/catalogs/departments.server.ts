@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 import { db } from '#/db'
-import { departments } from '#/db/schema'
+import { departments, workspaceMembers } from '#/db/schema'
 import { and, eq, ilike } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../../workspace-access.server'
 import { assertCanManageCatalogs } from '../shared/role-gates.server'
@@ -56,6 +56,23 @@ export async function updateDepartment(
 ) {
   const access = await requireWorkspaceAccess()
   assertCanManageCatalogs(access)
+
+  // A head from another workspace would leak membership across tenants.
+  if (data.headMemberId) {
+    const [head] = await db
+      .select({ id: workspaceMembers.id })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.id, data.headMemberId),
+          eq(workspaceMembers.workspaceId, access.workspace.id),
+          eq(workspaceMembers.status, 'ACTIVE'),
+        ),
+      )
+      .limit(1)
+    if (!head)
+      throw new Error('The department head must be an active workspace member.')
+  }
 
   await db
     .update(departments)
