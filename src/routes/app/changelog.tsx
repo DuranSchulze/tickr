@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { BRAND } from '#/lib/brand'
-import { ArrowUpCircle, Sparkles } from 'lucide-react'
+import { ArrowUpCircle, Shield, Sparkles } from 'lucide-react'
 import manifestData from '#/features/announcements/manifest.json'
 import type { FeatureManifest } from '#/features/announcements/types'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 const manifest = manifestData as FeatureManifest
 
@@ -30,8 +30,7 @@ function ChangelogRoute() {
         </div>
         <h1 className="m-0 font-display text-heading-sm">What's new</h1>
         <p className="m-0 mt-2 max-w-xl text-sm leading-6 text-smoke">
-          Follow along with every update, improvement, and fix shipped to{' '}
-          {BRAND.name}.
+          Product updates, fixes, and notices from {BRAND.name}.
         </p>
       </div>
 
@@ -50,7 +49,11 @@ function ChangelogRoute() {
         )}
 
         {updates.map((entry) => (
-          <div key={entry.version} className="relative pl-9">
+          <div
+            key={entry.kind === 'notice' ? entry.id : entry.version}
+            id={entry.kind === 'notice' ? entry.id : undefined}
+            className="relative scroll-mt-4 pl-9"
+          >
             {/* Dot on the timeline */}
             <div
               aria-hidden
@@ -64,7 +67,17 @@ function ChangelogRoute() {
               {/* Version badge + date */}
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                  <ArrowUpCircle className="size-3.5" />v{entry.version}
+                  {entry.kind === 'notice' ? (
+                    <>
+                      <Shield aria-hidden="true" className="size-3.5" />
+                      Security notice
+                    </>
+                  ) : (
+                    <>
+                      <ArrowUpCircle aria-hidden="true" className="size-3.5" />v
+                      {entry.version}
+                    </>
+                  )}
                 </span>
                 {entry.publishedAt && (
                   <span className="text-xs text-smoke">
@@ -87,10 +100,19 @@ function ChangelogRoute() {
                   {entry.features.map((feature, i) => (
                     <div
                       key={i}
-                      className="rounded-xl border border-stone bg-warm-taupe p-4"
+                      className={
+                        entry.kind === 'notice'
+                          ? 'border-t border-stone pt-4'
+                          : 'rounded-xl border border-stone bg-warm-taupe p-4'
+                      }
                     >
                       <h3 className="m-0 flex items-center gap-2 text-sm font-bold">
-                        <ArrowUpCircle className="size-4 shrink-0 text-primary" />
+                        {entry.kind !== 'notice' && (
+                          <ArrowUpCircle
+                            aria-hidden="true"
+                            className="size-4 shrink-0 text-primary"
+                          />
+                        )}
                         {feature.title}
                       </h3>
                       {feature.description && (
@@ -112,7 +134,7 @@ function ChangelogRoute() {
 
 function formatDate(dateStr: string): string {
   try {
-    return format(new Date(dateStr), 'MMMM d, yyyy')
+    return format(parseISO(dateStr), 'MMMM d, yyyy')
   } catch {
     return dateStr
   }
