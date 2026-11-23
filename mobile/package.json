@@ -9,15 +9,17 @@
   "packageManager": "pnpm@10.10.0",
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "test:device": "pnpm sync && node scripts/gradle.mjs connectedDebugAndroidTest",
-    "test:restart": "pnpm build:debug && node scripts/gradle.mjs assembleDebugAndroidTest && node scripts/test-restart.mjs",
-    "test:signout": "pnpm build:debug && node scripts/gradle.mjs assembleDebugAndroidTest && node scripts/test-restart.mjs --signout",
+    "test:device": "pnpm sync && pnpm gradle connectedDebugAndroidTest",
+    "test:restart": "pnpm build:debug && pnpm gradle assembleDebugAndroidTest && node scripts/test-restart.mjs",
+    "test:signout": "pnpm build:debug && pnpm gradle assembleDebugAndroidTest && node scripts/test-restart.mjs --signout",
     "spike:server": "node scripts/spike-server.mjs",
-    "doctor": "node scripts/doctor.mjs",
-    "sync": "cap sync android",
-    "open": "cap open android",
-    "build:debug": "pnpm sync && node scripts/gradle.mjs assembleDebug",
-    "build:release": "pnpm sync && node scripts/gradle.mjs bundleRelease"
+    "doctor": "dotenv -e .env -- node scripts/doctor.mjs",
+    "sync": "dotenv -e .env -- cap sync android",
+    "open": "dotenv -e .env -- cap open android",
+    "gradle": "dotenv -e .env -- node --experimental-strip-types scripts/gradle.mjs",
+    "build:debug": "pnpm sync && pnpm gradle assembleDebug",
+    "build:apk": "pnpm build:debug && node scripts/export-debug-apk.mjs",
+    "build:release": "pnpm sync && pnpm gradle bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "8.6.0",

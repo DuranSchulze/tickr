@@ -24,9 +24,12 @@ const dateLabel = new Intl.DateTimeFormat('en', {
 export function MissingWeekdayDialog({
   workspaceId,
   userId,
+  skipDate,
 }: {
   workspaceId: string
   userId: string
+  /** A date the morning check-in already asked about this session. */
+  skipDate?: string
 }) {
   const { isOnline } = useNetworkStatus()
   const queryClient = useQueryClient()
@@ -57,7 +60,13 @@ export function MissingWeekdayDialog({
   })
   const date = candidate.data?.date
   const dismissalKey = `${workspaceId}:${userId}:${date}`
-  if (!isOnline || !date || dismissed.includes(dismissalKey)) return null
+  if (
+    !isOnline ||
+    !date ||
+    date === skipDate ||
+    dismissed.includes(dismissalKey)
+  )
+    return null
   const label = dateLabel.format(new Date(date))
   function dismiss() {
     if (confirmation.isPending) return
@@ -71,7 +80,7 @@ export function MissingWeekdayDialog({
         if (!open) dismiss()
       }}
     >
-      <DialogContent>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle>No time entries on {label}</DialogTitle>
           <DialogDescription>

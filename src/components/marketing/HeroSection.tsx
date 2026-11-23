@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   CircleDollarSign,
+  Download,
   Pencil,
   Play,
   Sparkles,
@@ -16,6 +17,8 @@ import { HERO } from '#/lib/landing-content'
 import { BRAND } from '#/lib/brand'
 
 const PixelBlast = lazy(() => import('#/components/PixelBlast'))
+const androidPreviewApk =
+  'https://github.com/DuranSchulze/tickr/releases/download/v0.1.1/Tickr-0.1.1-debug.apk'
 
 export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
@@ -72,6 +75,20 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
             >
               {HERO.secondaryCta}
             </a>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <a
+              href={androidPreviewApk}
+              className="group inline-flex min-h-11 items-center gap-2.5 rounded-full border border-stone bg-eggshell/80 py-1 pl-1 pr-4 text-sm font-semibold text-foreground no-underline shadow-[var(--shadow-whisper)] transition-colors hover:border-graphite hover:bg-warm-taupe focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                <Download className="size-4" aria-hidden="true" />
+              </span>
+              Download Android APK
+            </a>
+            <span className="rounded-full border border-stone/70 bg-warm-taupe/60 px-3 py-1.5 text-xs font-semibold text-graphite">
+              Internal test build · Android 10+
+            </span>
           </div>
           <ul
             className="mt-7 flex flex-wrap gap-x-5 gap-y-2 p-0 text-sm text-smoke"

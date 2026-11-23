@@ -150,8 +150,8 @@ jobs:
         run: |
           set -euo pipefail
           pnpm --dir mobile sync
-          pnpm --dir mobile exec node scripts/gradle.mjs assembleRelease
-          pnpm --dir mobile exec node scripts/gradle.mjs bundleRelease
+          pnpm --dir mobile gradle assembleRelease
+          pnpm --dir mobile gradle bundleRelease
 
       - name: Build debug test APK
         if: steps.signing.outputs.signed != 'true'

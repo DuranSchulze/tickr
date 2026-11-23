@@ -14,7 +14,7 @@
     "build": "vite build",
     "start": "node .output/server/index.mjs",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --exclude \"mobile/**\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint src perf --ext .ts,.tsx --max-warnings 0",
     "lint:commit": "commitlint",

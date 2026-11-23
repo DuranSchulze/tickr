@@ -198,7 +198,7 @@ export function WorkspaceSwitcher({
         open={showCreate}
         onOpenChange={(open) => !creating && setShowCreate(open)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Create a new workspace</DialogTitle>
             <DialogDescription>

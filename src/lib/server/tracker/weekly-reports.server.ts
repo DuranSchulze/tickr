@@ -23,6 +23,7 @@ import {
   WeeklyEmailError,
 } from '../mailer'
 import type { SendEmailInput } from '../mailer'
+import { reserveSend } from './resend-throttle.server'
 
 export function weeklyReportsEnabled() {
   return process.env.WEEKLY_REPORT_EMAILS_ENABLED === 'true'
@@ -188,14 +189,6 @@ async function release(job: Job, next: Date, error: string | null) {
     where id = ${job.id} and lease_token = ${job.lease_token} and status = 'processing'`)
 }
 
-/** Cross-invocation rate reservation, never an unbounded in-memory queue. */
-async function reserveSend(): Promise<number | null> {
-  const result = await db.execute<{ wait_ms: number }>(sql`
-    update weekly_report_throttle set next_allowed_at = greatest(next_allowed_at, now()) + interval '1 second'
-    where id = 'resend' and next_allowed_at < now() + interval '5 seconds'
-    returning greatest(0, extract(epoch from (next_allowed_at - interval '1 second' - now())) * 1000)::int as wait_ms`)
-  return result.rows[0]?.wait_ms ?? null
-}
 const attachmentBudget = 10 * 1024 * 1024
 const maxAttachmentMembers = 100
 

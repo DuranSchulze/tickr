@@ -168,7 +168,7 @@ const DurationCell = memo(function DurationCell({
         }}
         aria-label="Duration"
         placeholder="1:30 or 1h 30m"
-        className="h-9 w-28 rounded-md border-2 border-stone bg-warm-taupe/30 px-2 font-mono text-sm font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15"
+        className="h-9 w-24 rounded-md border-2 border-stone bg-warm-taupe/30 px-2 font-mono text-sm font-semibold tabular-nums text-foreground outline-none transition-colors focus:border-primary focus:bg-eggshell focus:ring-2 focus:ring-primary/15"
       />
       {parseError && (
         <p className="m-0 text-[11px] font-semibold leading-tight text-destructive">
@@ -473,7 +473,7 @@ export const EntryRow = memo(function EntryRow({
         .join(' ')}
     >
       {/* Task — description, client/project, and tag controls */}
-      <TableCell className="py-3 px-4 w-[56%]">
+      <TableCell className="py-3 px-4 w-[44%]">
         <div className={`grid min-w-0 gap-2 ${isSubEntry ? 'pl-5' : ''}`}>
           <div className="flex min-w-0 items-center gap-2">
             {isSubEntry && (
@@ -624,7 +624,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Billable */}
-      <TableCell className="py-3 px-3 w-[5%] text-center">
+      <TableCell className="py-3 px-2 w-[6%] text-center">
         <BillableToggleButton
           pressed={entry.billable}
           onPressedChange={(b) => update({ billable: b })}
@@ -633,7 +633,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Time — start/end with calendar date picker */}
-      <TableCell className="py-3 px-4 w-[22%] text-center">
+      <TableCell className="py-3 px-2 w-[28%] text-center">
         <EntryTimeCell
           entry={entry}
           onUpdate={update}
@@ -642,7 +642,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Duration */}
-      <TableCell className="py-3 px-3 w-[7%] text-right">
+      <TableCell className="py-3 px-2 w-[12%] text-right">
         <DurationCell
           entry={entry}
           formatTime={formatTime}
@@ -652,7 +652,7 @@ export const EntryRow = memo(function EntryRow({
       </TableCell>
 
       {/* Actions */}
-      <TableCell className="py-3 px-4 w-[10%]">
+      <TableCell className="py-3 px-2 w-[10%]">
         {isDeleting ? (
           <div className="flex items-center justify-end gap-1.5">
             <Loader2 className="size-4 animate-spin text-smoke" />

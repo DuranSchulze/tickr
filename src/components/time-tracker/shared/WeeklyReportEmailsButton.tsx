@@ -22,6 +22,13 @@ import {
   getWeeklyReportPreferencesFn,
   updateWeeklyReportPreferencesFn,
 } from '#/lib/server/weekly-report-preferences'
+import { DailyReportEmailsSection } from './DailyReportEmailsSection'
+
+type ReportTab = 'daily' | 'weekly'
+const REPORT_TABS: Array<{ id: ReportTab; label: string }> = [
+  { id: 'daily', label: 'Daily' },
+  { id: 'weekly', label: 'Weekly' },
+]
 
 type Preferences = Awaited<ReturnType<typeof getWeeklyReportPreferencesFn>>
 
@@ -249,12 +256,14 @@ function WeeklyDeliverySettings({
 
 export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
   const [open, setOpen] = useState(false)
+  const [tab, setTab] = useState<ReportTab>('daily')
+  const tabsId = useId()
   const client = useQueryClient()
   const queryKey = ['weekly-report-preferences', memberId]
   const preferences = useQuery({
     queryKey,
     queryFn: () => getWeeklyReportPreferencesFn(),
-    enabled: open,
+    enabled: open && tab === 'weekly',
     staleTime: 0,
   })
   const mutation = useMutation({
@@ -279,7 +288,7 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
         className="no-print gap-1.5 px-3 font-semibold"
       >
         <Mail className="size-4" aria-hidden="true" />
-        Weekly emails
+        Report emails
       </Button>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden rounded-[24px] p-0 sm:max-w-[460px]">
@@ -293,14 +302,34 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
               </span>
               <div className="space-y-1.5">
                 <DialogTitle className="text-[22px] font-normal leading-tight tracking-tight">
-                  Weekly report emails
+                  Report emails
                 </DialogTitle>
                 <DialogDescription className="text-[13px] leading-5">
-                  Your department’s weekly time report, delivered to your inbox.
+                  What Trackly sends automatically, to whom, and when.
                 </DialogDescription>
               </div>
             </div>
-            {data && (
+            <div
+              role="tablist"
+              aria-label="Report schedule"
+              className="grid grid-cols-2 gap-1 rounded-full border border-stone bg-warm-taupe p-1"
+            >
+              {REPORT_TABS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  id={`${tabsId}-${item.id}-tab`}
+                  aria-selected={tab === item.id}
+                  aria-controls={`${tabsId}-${item.id}-panel`}
+                  onClick={() => setTab(item.id)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${tab === item.id ? 'bg-eggshell text-foreground shadow-sm' : 'text-smoke hover:text-foreground'}`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {tab === 'weekly' && data && (
               <p
                 className="m-0 truncate text-xs font-medium text-graphite"
                 title={data.workspaceName}
@@ -315,7 +344,24 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
               </p>
             )}
           </DialogHeader>
-          <div className="min-h-0 overflow-y-auto px-6 pb-4 sm:px-7">
+          <div
+            role="tabpanel"
+            id={`${tabsId}-daily-panel`}
+            aria-labelledby={`${tabsId}-daily-tab`}
+            hidden={tab !== 'daily'}
+            className="min-h-0 overflow-y-auto px-6 pb-6 sm:px-7"
+          >
+            {tab === 'daily' && (
+              <DailyReportEmailsSection memberId={memberId} enabled={open} />
+            )}
+          </div>
+          <div
+            role="tabpanel"
+            id={`${tabsId}-weekly-panel`}
+            aria-labelledby={`${tabsId}-weekly-tab`}
+            hidden={tab !== 'weekly'}
+            className="min-h-0 overflow-y-auto px-6 pb-4 sm:px-7"
+          >
             {preferences.isPending && (
               <div
                 role="status"
@@ -378,7 +424,9 @@ export function WeeklyReportEmailsButton({ memberId }: { memberId: string }) {
           </div>
           <div className="flex shrink-0 items-center justify-between gap-4 border-t border-stone bg-warm-taupe/50 px-6 py-4 sm:px-7">
             <p className="m-0 max-w-64 text-[11px] leading-5 text-smoke">
-              Reports include every day of the week, including weekends.
+              {tab === 'daily'
+                ? 'Daily emails are managed for the whole workspace.'
+                : 'Weekly reports include every day, including weekends.'}
             </p>
             <DialogClose asChild>
               <Button type="button" className="px-5">

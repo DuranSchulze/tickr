@@ -8,7 +8,16 @@ export function findJavaHome(env = process.env) {
     env.JAVA_HOME,
     '/Applications/Android Studio.app/Contents/jbr/Contents/Home',
   ]
-  return candidates.find((path) => path && existsSync(join(path, 'bin/java')))
+  const configured = candidates.find(
+    (path) => path && existsSync(join(path, 'bin/java')),
+  )
+  if (configured || process.platform !== 'darwin') return configured
+
+  const result = spawnSync('/usr/libexec/java_home', ['-F', '-v', '21'], {
+    encoding: 'utf8',
+  })
+  const javaHome = result.stdout?.trim()
+  return result.status === 0 && javaHome ? javaHome : undefined
 }
 
 export function findSdk(env = process.env) {

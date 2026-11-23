@@ -12,7 +12,7 @@ pnpm build
 export MOBILE_SERVER_URL=http://localhost:3008
 export MOBILE_ALLOW_LOCAL_HTTP=1
 pnpm --dir mobile build:debug
-pnpm --dir mobile exec node scripts/gradle.mjs assembleDebugAndroidTest
+pnpm --dir mobile gradle assembleDebugAndroidTest
 ```
 
 Start these two servers in separate terminals. Only the first loads local

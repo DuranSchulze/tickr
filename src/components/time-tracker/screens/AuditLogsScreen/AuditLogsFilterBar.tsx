@@ -70,6 +70,23 @@ const ACTION_GROUPS = [
       { value: 'EXPORT_ANALYTICS', label: 'Analytics exported (CSV)' },
     ],
   },
+  {
+    label: 'Automated emails',
+    actions: [
+      { value: 'DAILY_REPORT_EMAIL', label: 'Daily report emailed' },
+      {
+        value: 'DAILY_REPORT_EMAIL_FAILED',
+        label: 'Daily report email failed',
+      },
+    ],
+  },
+  {
+    label: 'Attendance',
+    actions: [
+      { value: 'DAY_LEAVE_DECLARED', label: 'Leave declared' },
+      { value: 'DAY_LEAVE_WITHDRAWN', label: 'Leave withdrawn' },
+    ],
+  },
 ]
 
 function toIsoDate(d: Date) {
@@ -190,7 +207,7 @@ export function AuditLogsFilterBar({
         </select>
 
         {/* Quick date range */}
-        <div className="flex items-center gap-1 rounded-full border border-stone bg-eggshell p-1">
+        <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-stone bg-eggshell p-1">
           <CalendarDays className="ml-1.5 size-3.5 text-smoke" />
           {(
             [

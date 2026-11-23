@@ -20,6 +20,7 @@ function PopoverContent({
   className,
   align = 'center',
   sideOffset = 4,
+  collisionPadding = 8,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   const portalContainer = useOverlayPortalContainer()
@@ -30,8 +31,9 @@ function PopoverContent({
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
         className={cn(
-          't-dropdown z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-4 rounded-xl border border-stone bg-popover p-4 text-sm text-popover-foreground shadow-[var(--shadow-whisper)] outline-hidden',
+          't-dropdown z-50 flex w-72 max-w-[calc(100vw-1rem)] origin-(--radix-popover-content-transform-origin) flex-col gap-4 rounded-xl border border-stone bg-popover p-4 text-sm text-popover-foreground shadow-[var(--shadow-whisper)] outline-hidden',
           className,
         )}
         {...props}

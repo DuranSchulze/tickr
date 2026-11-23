@@ -1,5 +1,5 @@
 import { notifyTracker } from '#/lib/time-tracker/notifications'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '#/lib/toast'
@@ -204,18 +204,33 @@ export function useTimerCore({
   const isApplyingPresetRef = useRef(false)
 
   // Combine activeEntryBase with local input overrides to get final activeEntry.
-  const activeEntry =
-    activeEntryBase && lastSyncedEntryIdRef.current === activeEntryBase.id
-      ? {
-          ...activeEntryBase,
-          description: timerDescription,
-          projectId: timerProjectId,
-          taskId: timerTaskId || null,
-          tagIds: singleTagIds(timerTagIds),
-          billable: timerBillable,
-          ...(timerStartedAt ? { startedAt: timerStartedAt } : {}),
-        }
-      : activeEntryBase
+  // Memoised on the primitive timer fields so unrelated dashboard renders
+  // (pending flags, dialogs, filter UI) keep the same object — this value feeds
+  // the entries list's merge, filter/sort, and grouping, which would otherwise
+  // redo that work on every render while a timer runs.
+  const activeEntry = useMemo(() => {
+    if (!activeEntryBase) return undefined
+    if (lastSyncedEntryIdRef.current !== activeEntryBase.id) {
+      return activeEntryBase
+    }
+    return {
+      ...activeEntryBase,
+      description: timerDescription,
+      projectId: timerProjectId,
+      taskId: timerTaskId || null,
+      tagIds: singleTagIds(timerTagIds),
+      billable: timerBillable,
+      ...(timerStartedAt ? { startedAt: timerStartedAt } : {}),
+    }
+  }, [
+    activeEntryBase,
+    timerBillable,
+    timerDescription,
+    timerProjectId,
+    timerStartedAt,
+    timerTagIds,
+    timerTaskId,
+  ])
 
   const stopBlocked =
     !!activeEntry &&

@@ -21,11 +21,13 @@ import { cn } from '#/lib/utils'
 import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { getSessionFn } from '#/lib/server/session'
 import { weeklyDepartmentReportId } from '#/lib/time-tracker/weekly-department-report'
+import { dailyReportToken } from '#/lib/time-tracker/daily-report-link'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 type AuthSearch = {
   invite?: string
   weeklyReport?: string
+  dailyReport?: string
   email?: string
   plan?: 'team' | 'business'
 }
@@ -33,6 +35,7 @@ type AuthSearch = {
 export const Route = createFileRoute('/auth/')({
   validateSearch: (search: Record<string, unknown>): AuthSearch => ({
     weeklyReport: weeklyDepartmentReportId.safeParse(search.weeklyReport).data,
+    dailyReport: dailyReportToken.safeParse(search.dailyReport).data,
     invite: typeof search.invite === 'string' ? search.invite : undefined,
     email: typeof search.email === 'string' ? search.email : undefined,
     plan:
@@ -44,6 +47,7 @@ export const Route = createFileRoute('/auth/')({
     invite: search.invite,
     plan: search.plan,
     weeklyReport: search.weeklyReport,
+    dailyReport: search.dailyReport,
   }),
   loader: async ({ deps }) => {
     const session = await getSessionFn()
@@ -58,6 +62,12 @@ export const Route = createFileRoute('/auth/')({
         throw redirect({
           to: '/weekly-department-report/$reportId',
           params: { reportId: deps.weeklyReport },
+        })
+      }
+      if (deps.dailyReport) {
+        throw redirect({
+          to: '/daily-report',
+          search: { t: deps.dailyReport },
         })
       }
       let hasWorkspaceAccess = false
@@ -213,6 +223,11 @@ function AuthPage() {
         await navigate({
           to: '/weekly-department-report/$reportId',
           params: { reportId: search.weeklyReport },
+        })
+      } else if (search.dailyReport) {
+        await navigate({
+          to: '/daily-report',
+          search: { t: search.dailyReport },
         })
       } else {
         await router.invalidate()

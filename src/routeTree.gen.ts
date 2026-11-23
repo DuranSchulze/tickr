@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoungeRouteImport } from './routes/lounge'
+import { Route as DailyReportRouteImport } from './routes/daily-report'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
@@ -60,6 +61,7 @@ import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
 import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
 import { Route as ApiCronWeeklyReportsRouteImport } from './routes/api/cron/weekly-reports'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
+import { Route as ApiCronDailyReportsRouteImport } from './routes/api/cron/daily-reports'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppWorkspaceMembersMemberIdRouteImport } from './routes/app/workspace/members.$memberId'
 import { Route as AppWorkspaceCatalogsTagsRouteImport } from './routes/app/workspace/catalogs.tags'
@@ -73,6 +75,7 @@ import { Route as ApiV1AuthSignInRouteImport } from './routes/api/v1/auth/sign-i
 import { Route as ApiV1AuthRegisterRouteImport } from './routes/api/v1/auth/register'
 import { Route as ApiV1AuthLoginRouteImport } from './routes/api/v1/auth/login'
 import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
+import { Route as ApiReportsDailyFormatRouteImport } from './routes/api/reports/daily.$format'
 import { Route as AppWorkspaceCatalogsProjectsProjectIdRouteImport } from './routes/app/workspace/catalogs_.projects_.$projectId'
 import { Route as AppWorkspaceCatalogsClientsClientIdRouteImport } from './routes/app/workspace/catalogs.clients.$clientId'
 import { Route as ApiReportsWeeklyDepartmentReportIdFormatRouteImport } from './routes/api/reports/weekly-department.$reportId.$format'
@@ -90,6 +93,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const LoungeRoute = LoungeRouteImport.update({
   id: '/lounge',
   path: '/lounge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DailyReportRoute = DailyReportRouteImport.update({
+  id: '/daily-report',
+  path: '/daily-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -335,6 +343,11 @@ const ApiCronTimerRemindersRoute = ApiCronTimerRemindersRouteImport.update({
   path: '/api/cron/timer-reminders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCronDailyReportsRoute = ApiCronDailyReportsRouteImport.update({
+  id: '/api/cron/daily-reports',
+  path: '/api/cron/daily-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -408,6 +421,11 @@ const ApiV1AuthDeveloperSignInRoute =
     path: '/api/v1/auth/developer-sign-in',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiReportsDailyFormatRoute = ApiReportsDailyFormatRouteImport.update({
+  id: '/api/reports/daily/$format',
+  path: '/api/reports/daily/$format',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppWorkspaceCatalogsProjectsProjectIdRoute =
   AppWorkspaceCatalogsProjectsProjectIdRouteImport.update({
     id: '/workspace/catalogs_/projects_/$projectId',
@@ -430,6 +448,7 @@ const ApiReportsWeeklyDepartmentReportIdFormatRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/daily-report': typeof DailyReportRoute
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -453,6 +472,7 @@ export interface FileRoutesByFullPath {
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-reports': typeof ApiCronDailyReportsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
@@ -480,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
@@ -499,6 +520,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/daily-report': typeof DailyReportRoute
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -522,6 +544,7 @@ export interface FileRoutesByTo {
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-reports': typeof ApiCronDailyReportsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
@@ -549,6 +572,7 @@ export interface FileRoutesByTo {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
+  '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
@@ -569,6 +593,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/daily-report': typeof DailyReportRoute
   '/lounge': typeof LoungeRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
@@ -592,6 +617,7 @@ export interface FileRoutesById {
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/cron/daily-reports': typeof ApiCronDailyReportsRoute
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
@@ -619,6 +645,7 @@ export interface FileRoutesById {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
   '/api/v1/auth/register': typeof ApiV1AuthRegisterRoute
@@ -640,6 +667,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/daily-report'
     | '/lounge'
     | '/onboarding'
     | '/pricing'
@@ -663,6 +691,7 @@ export interface FileRouteTypes {
     | '/weekly-department-report/$reportId'
     | '/auth/'
     | '/api/auth/$'
+    | '/api/cron/daily-reports'
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
@@ -690,6 +719,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
     | '/api/v1/auth/register'
@@ -709,6 +739,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app'
+    | '/daily-report'
     | '/lounge'
     | '/onboarding'
     | '/pricing'
@@ -732,6 +763,7 @@ export interface FileRouteTypes {
     | '/weekly-department-report/$reportId'
     | '/auth'
     | '/api/auth/$'
+    | '/api/cron/daily-reports'
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
@@ -759,6 +791,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker'
+    | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
     | '/api/v1/auth/register'
@@ -778,6 +811,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/daily-report'
     | '/lounge'
     | '/onboarding'
     | '/pricing'
@@ -801,6 +835,7 @@ export interface FileRouteTypes {
     | '/weekly-department-report/$reportId'
     | '/auth/'
     | '/api/auth/$'
+    | '/api/cron/daily-reports'
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
@@ -828,6 +863,7 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
     | '/api/v1/auth/register'
@@ -848,6 +884,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  DailyReportRoute: typeof DailyReportRoute
   LoungeRoute: typeof LoungeRoute
   OnboardingRoute: typeof OnboardingRoute
   PricingRoute: typeof PricingRoute
@@ -861,6 +898,7 @@ export interface RootRouteChildren {
   WeeklyDepartmentReportReportIdRoute: typeof WeeklyDepartmentReportReportIdRoute
   AuthIndexRoute: typeof AuthIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiCronDailyReportsRoute: typeof ApiCronDailyReportsRoute
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
   ApiCronWeeklyReportsRoute: typeof ApiCronWeeklyReportsRoute
   ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
@@ -875,6 +913,7 @@ export interface RootRouteChildren {
   ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
   ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
+  ApiReportsDailyFormatRoute: typeof ApiReportsDailyFormatRoute
   ApiV1AuthDeveloperSignInRoute: typeof ApiV1AuthDeveloperSignInRoute
   ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
   ApiV1AuthRegisterRoute: typeof ApiV1AuthRegisterRoute
@@ -903,6 +942,13 @@ declare module '@tanstack/react-router' {
       path: '/lounge'
       fullPath: '/lounge'
       preLoaderRoute: typeof LoungeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/daily-report': {
+      id: '/daily-report'
+      path: '/daily-report'
+      fullPath: '/daily-report'
+      preLoaderRoute: typeof DailyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -1241,6 +1287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCronTimerRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/daily-reports': {
+      id: '/api/cron/daily-reports'
+      path: '/api/cron/daily-reports'
+      fullPath: '/api/cron/daily-reports'
+      preLoaderRoute: typeof ApiCronDailyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -1330,6 +1383,13 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/auth/developer-sign-in'
       fullPath: '/api/v1/auth/developer-sign-in'
       preLoaderRoute: typeof ApiV1AuthDeveloperSignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/reports/daily/$format': {
+      id: '/api/reports/daily/$format'
+      path: '/api/reports/daily/$format'
+      fullPath: '/api/reports/daily/$format'
+      preLoaderRoute: typeof ApiReportsDailyFormatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/workspace/catalogs_/projects_/$projectId': {
@@ -1468,6 +1528,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  DailyReportRoute: DailyReportRoute,
   LoungeRoute: LoungeRoute,
   OnboardingRoute: OnboardingRoute,
   PricingRoute: PricingRoute,
@@ -1481,6 +1542,7 @@ const rootRouteChildren: RootRouteChildren = {
   WeeklyDepartmentReportReportIdRoute: WeeklyDepartmentReportReportIdRoute,
   AuthIndexRoute: AuthIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiCronDailyReportsRoute: ApiCronDailyReportsRoute,
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
   ApiCronWeeklyReportsRoute: ApiCronWeeklyReportsRoute,
   ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
@@ -1495,6 +1557,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
   ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
+  ApiReportsDailyFormatRoute: ApiReportsDailyFormatRoute,
   ApiV1AuthDeveloperSignInRoute: ApiV1AuthDeveloperSignInRoute,
   ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
   ApiV1AuthRegisterRoute: ApiV1AuthRegisterRoute,

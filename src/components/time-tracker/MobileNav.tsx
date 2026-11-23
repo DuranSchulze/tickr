@@ -1,15 +1,22 @@
 import { memo, useState } from 'react'
 import type { ComponentType } from 'react'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   BarChart3,
   BriefcaseBusiness,
   CalendarDays,
   ChevronDown,
   Cog,
+  LogOut,
   Menu,
+  Palette,
+  Sparkles,
   Timer,
+  UserCircle,
 } from 'lucide-react'
+import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
+import { authClient } from '#/lib/auth-client'
 import { Button } from '#/components/ui/button'
 import {
   Drawer,
@@ -56,10 +63,28 @@ export const MobileNav = memo(function ({
   settingsChildren: readonly NavItem[]
 }) {
   const [open, setOpen] = useState(false)
+  const [appearanceOpen, setAppearanceOpen] = useState(false)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   function close() {
     setOpen(false)
   }
+
+  function handleSignOut() {
+    close()
+    void authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          queryClient.clear()
+          void navigate({ to: '/auth' })
+        },
+      },
+    })
+  }
+
+  const footerItemClass =
+    'flex h-10 w-full items-center gap-3 rounded-full px-3 text-sm font-semibold text-smoke no-underline transition-colors hover:bg-warm-taupe hover:text-foreground'
 
   const hasAnalyticsChildren = analyticsChildren.length > 0
   const hasSettingsChildren = settingsChildren.length > 0
@@ -226,7 +251,37 @@ export const MobileNav = memo(function ({
           </nav>
         </div>
 
-        <div className="border-t border-stone p-2">
+        <div className="grid gap-0.5 border-t border-stone p-2">
+          <Link to="/app/profile" onClick={close} className={footerItemClass}>
+            <UserCircle className="size-4" />
+            Profile
+          </Link>
+          <Link to="/app/changelog" onClick={close} className={footerItemClass}>
+            <Sparkles className="size-4" />
+            What&apos;s new
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              close()
+              setAppearanceOpen(true)
+            }}
+            className={footerItemClass}
+          >
+            <Palette className="size-4" />
+            Appearance
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className={`${footerItemClass} hover:bg-destructive/10 hover:text-destructive`}
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </button>
+        </div>
+
+        <div className="border-t border-stone p-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]">
           <DrawerClose asChild>
             <button
               type="button"
@@ -237,6 +292,10 @@ export const MobileNav = memo(function ({
           </DrawerClose>
         </div>
       </DrawerContent>
+      <AppearanceDialog
+        open={appearanceOpen}
+        onOpenChange={setAppearanceOpen}
+      />
     </Drawer>
   )
 })

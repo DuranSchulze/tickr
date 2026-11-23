@@ -22,19 +22,27 @@ manual dispatch path.
 Requires Node 22+, pnpm 10.10.0, Java 21 (Android Studio's bundled JDK works),
 Android SDK Platform 36 and platform/build tools. Minimum device: Android 10.
 
-From the repository root:
+Set `MOBILE_SERVER_URL` in `mobile/.env` to your Trackly HTTPS origin. You can
+also set `JAVA_HOME` there if the Android doctor needs a JDK path. Run these
+commands from the repository root.
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm --dir mobile run doctor
 pnpm --dir mobile test
-export MOBILE_SERVER_URL=https://your-trackly-domain.example
-pnpm --dir mobile build:debug
+pnpm --dir mobile build:apk
 ```
 
-The debug APK is `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
-Use `pnpm --dir mobile open` for Android Studio. Supply the server URL in your
-environment; `.env` files are deliberately not loaded or packaged automatically.
+Share `mobile/dist/Tickr-debug.apk` with internal testers. The command prints
+its absolute path and writes `mobile/dist/SHA256SUMS.txt` alongside it. To
+verify the exported APK on macOS, run
+`(cd mobile/dist && shasum -a 256 -c SHA256SUMS.txt)`.
+Install on a connected test device with `adb install -r mobile/dist/Tickr-debug.apk`.
+Gradle also leaves the original at
+`mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
+Use `pnpm --dir mobile open` for Android Studio. These commands load
+`mobile/.env` automatically, and exported shell variables take precedence.
+The APK contains the resolved server URL.
 Keep the origin under your control: remote scripts can access native plugins.
 
 For an Android emulator only:
@@ -42,7 +50,7 @@ For an Android emulator only:
 ```sh
 export MOBILE_SERVER_URL=http://10.0.2.2:3000
 export MOBILE_ALLOW_LOCAL_HTTP=1
-pnpm --dir mobile build:debug
+pnpm --dir mobile build:apk
 ```
 
 Release builds reject HTTP, including direct Gradle invocations after sync.

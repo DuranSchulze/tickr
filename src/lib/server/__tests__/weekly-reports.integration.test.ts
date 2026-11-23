@@ -674,4 +674,165 @@ describe('weekly reports against PostgreSQL', () => {
       (await prepareDepartmentReportDownload(reportId, 'pdf')).status,
     ).toBe(404)
   })
+
+  it('selects Friday after local midnight on Monday', () => {
+    expect(
+      latestCompletedWeekday(new Date('2026-10-25T16:00:00Z'), 'Asia/Manila'),
+    ).toBe('2026-10-23')
+  })
+  it('splits work using the correct local midnight across a timezone offset change', async () => {
+    await pool.query(`update workspace_members
+      set created_at = '2026-03-01', department_assigned_at = '2026-03-01' where id = 'm1';
+      insert into time_entries values ('w1','m1','2026-03-26T21:30Z','2026-03-26T22:30Z',false);`)
+    const rows = await buildDepartmentReport(
+      {
+        id: 'report',
+        department_id: 'd1',
+        department_name: 'Operations',
+        workspace_id: 'w1',
+        workspace_name: 'Workspace One',
+        week_start: '2026-03-22',
+        week_end: '2026-03-28',
+        timezone: 'Asia/Jerusalem',
+      },
+      20,
+    )
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          local_date: '2026-03-26',
+          worked_seconds: 1800,
+        }),
+        expect.objectContaining({
+          local_date: '2026-03-27',
+          worked_seconds: 1800,
+        }),
+      ]),
+    )
+  })
+  it('writes one confirmation, supports undo, and rejects overnight overlap', async () => {
+    const date = '2026-10-23'
+    expect(await getMissingWeekday('w1')).toMatchObject({ date })
+    expect(await getMissingWeekday('w2')).toBeNull()
+    await expect(confirmMissingWeekday('w1', date, 'u2')).rejects.toThrow()
+    expect(
+      await Promise.all([
+        confirmMissingWeekday('w1', date, 'u1'),
+        confirmMissingWeekday('w1', date, 'u1'),
+      ]),
+    ).toEqual(['confirmed', 'confirmed'])
+    expect(
+      (await pool.query('select count(*)::int n from weekday_confirmations'))
+        .rows[0].n,
+    ).toBe(1)
+    await undoMissingWeekday('w1', date, 'u1')
+    expect(await getMissingWeekday('w1')).toMatchObject({ date })
+    await pool.query(
+      "insert into time_entries values ('w1','m1','2026-10-22T15:30Z','2026-10-22T16:30Z',true)",
+    )
+    expect(await confirmMissingWeekday('w1', date, 'u1')).toBe('ineligible')
+    await pool.query('update time_entries set ended_at = null')
+    expect(await getMissingWeekday('w1')).toBeNull()
+  })
+
+  it('splits overnight work, includes weekend rows, and suppresses a late confirmation', async () => {
+    await confirmMissingWeekday('w1', '2026-10-23', 'u1')
+    await pool.query(`insert into time_entries values
+      ('w1','m1','2026-10-22T15:30Z','2026-10-22T16:30Z',true),
+      ('w1','m1','2026-10-23T22:00Z','2026-10-23T23:00Z',false),
+      ('w2','m2','2026-10-23T22:00Z','2026-10-23T23:00Z',true);
+      insert into weekday_confirmations values ('w1','staff','2026-10-21',now());`)
+    await runWeeklyReports()
+    expect(mocks.pdf.mock.calls[0][1]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          local_date: '2026-10-18',
+          status: 'NO_TIME',
+        }),
+        expect.objectContaining({
+          local_date: '2026-10-22',
+          member_id: 'm1',
+          worked_seconds: 1800,
+          billable_seconds: 1800,
+        }),
+        expect.objectContaining({
+          local_date: '2026-10-23',
+          member_id: 'm1',
+          status: 'WORK',
+          worked_seconds: 1800,
+        }),
+        expect.objectContaining({
+          local_date: '2026-10-24',
+          member_id: 'm1',
+          status: 'WORK',
+          worked_seconds: 3600,
+          billable_seconds: 0,
+        }),
+        expect.objectContaining({
+          local_date: '2026-10-21',
+          member_id: 'staff',
+          status: 'N/A',
+          worked_seconds: 0,
+          time_in: null,
+        }),
+      ]),
+    )
+  })
+
+  it('clears a frozen PDF when its roster has changed before retry', async () => {
+    mocks.send.mockRejectedValueOnce(new WeeklyEmailError('retryable'))
+    await runWeeklyReports()
+    await pool.query(`update workspace_members set department_id = 'other' where id = 'staff';
+      update weekly_report_jobs set next_attempt_at=now();
+      update weekly_report_throttle set next_allowed_at=now();`)
+    await runWeeklyReports()
+    expect(await job()).toMatchObject({
+      status: 'skipped',
+      attachment_roster: null,
+      error: 'recipient_or_roster_changed',
+    })
+    expect(mocks.send).toHaveBeenCalledTimes(1)
+  })
+
+  it('serves both formats privately and checks current role, department, and expiry', async () => {
+    await runWeeklyReports()
+    const reportId = (await job()).report_id as string
+    const pdf = await prepareDepartmentReportDownload(reportId, 'pdf')
+    expect(pdf.status).toBe(200)
+    expect(pdf.headers.get('cache-control')).toBe('private, no-store')
+    expect(await pdf.text()).toBe('%PDF-test')
+    const excel = await prepareDepartmentReportDownload(reportId, 'xlsx')
+    expect(excel.headers.get('content-disposition')).toContain('.xlsx')
+    expect(new Uint8Array(await excel.arrayBuffer()).slice(0, 2)).toEqual(
+      Uint8Array.of(80, 75),
+    )
+    mocks.session.mockResolvedValue({ user: { id: 'u2' } })
+    expect(
+      (await prepareDepartmentReportDownload(reportId, 'pdf')).status,
+    ).toBe(404)
+    mocks.session.mockResolvedValue(null)
+    expect(await getAccessibleDepartmentReport(reportId)).toEqual({
+      status: 'signed_out',
+    })
+    mocks.session.mockResolvedValue({ user: { id: 'u1' } })
+    await pool.query(
+      "update workspace_members set workspace_role_id = 'employee' where id = 'm1'",
+    )
+    expect(
+      (await prepareDepartmentReportDownload(reportId, 'xlsx')).status,
+    ).toBe(404)
+    await expect(getWeeklyReportPreferences()).rejects.toThrow()
+    await pool.query(
+      "update workspace_members set workspace_role_id = 'r1', department_id = 'other' where id = 'm1'",
+    )
+    expect(
+      (await prepareDepartmentReportDownload(reportId, 'pdf')).status,
+    ).toBe(404)
+    await pool.query(`update workspace_members set department_id = 'd1' where id = 'm1';
+      update weekly_department_reports set expires_at = now();`)
+    vi.stubEnv('WEEKLY_REPORT_EMAILS_ENABLED', 'false')
+    expect(
+      (await prepareDepartmentReportDownload(reportId, 'pdf')).status,
+    ).toBe(404)
+  })
 })

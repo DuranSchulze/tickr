@@ -136,7 +136,7 @@ export function MemberExportDialog({
           handleOpenChange(nextOpen)
         }}
       >
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-[68rem]">
+        <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-4 sm:max-w-[min(68rem,calc(100%-2rem))]">
           <DialogHeader>
             <DialogTitle>Export Time Report</DialogTitle>
             <DialogDescription>
@@ -154,22 +154,24 @@ export function MemberExportDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] lg:items-start">
-            <div className="min-w-0">
-              <ExportDateRangePicker
-                startDate={startDate}
-                endDate={endDate}
-                onChangeRange={setRange}
-              />
-            </div>
+          <div className="-mx-6 grid min-h-0 flex-1 gap-4 overflow-y-auto overscroll-contain px-6">
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] lg:items-start">
+              <div className="min-w-0">
+                <ExportDateRangePicker
+                  startDate={startDate}
+                  endDate={endDate}
+                  onChangeRange={setRange}
+                />
+              </div>
 
-            <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
-              <ExportSortControls
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSortByChange={setSortBy}
-                onSortOrderChange={setSortOrder}
-              />
+              <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
+                <ExportSortControls
+                  sortBy={sortBy}
+                  sortOrder={sortOrder}
+                  onSortByChange={setSortBy}
+                  onSortOrderChange={setSortOrder}
+                />
+              </div>
             </div>
           </div>
 

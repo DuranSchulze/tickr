@@ -420,7 +420,7 @@ function TimesheetScopePicker({
                   })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <Building2 className="size-4 text-smoke" />
                   <SelectValue placeholder="View department" />
                 </SelectTrigger>
@@ -518,12 +518,12 @@ export function TimesheetGrid({
       aria-label="Weekly DTR grid"
       tabIndex={0}
     >
-      <table className="w-full min-w-[1180px] border-collapse text-sm sm:min-w-[1260px] xl:min-w-[1400px]">
+      <table className="w-full min-w-[1180px] border-collapse text-sm sm:min-w-[1260px]">
         <thead>
           <tr className="border-b border-stone bg-warm-taupe">
             <th
               scope="col"
-              className="sticky left-0 z-30 w-40 min-w-40 bg-warm-taupe px-3 py-3 text-left shadow-[1px_0_0_var(--stone)] sm:w-52 sm:min-w-52 sm:px-4"
+              className="sticky left-0 z-30 w-28 min-w-28 bg-warm-taupe px-3 py-3 text-left shadow-[1px_0_0_var(--stone)] sm:w-52 sm:min-w-52 sm:px-4"
             >
               <span className="text-xs font-bold uppercase tracking-[0.12em] text-smoke">
                 Member
@@ -533,7 +533,7 @@ export function TimesheetGrid({
               <th
                 key={date.date}
                 scope="col"
-                className="min-w-32 px-2 py-3 text-left sm:min-w-36 sm:px-3 xl:min-w-40"
+                className="min-w-32 px-2 py-3 text-left sm:min-w-36 sm:px-3"
               >
                 <span className="block text-xs font-black uppercase tracking-[0.14em] text-foreground">
                   {date.dayLabel}
@@ -566,7 +566,7 @@ export function TimesheetGrid({
               >
                 <th
                   scope="row"
-                  className="sticky left-0 z-20 max-w-40 bg-eggshell px-3 py-4 text-left shadow-[1px_0_0_var(--stone)] sm:max-w-52 sm:px-4"
+                  className="sticky left-0 z-20 max-w-28 bg-eggshell px-3 py-4 text-left shadow-[1px_0_0_var(--stone)] sm:max-w-52 sm:px-4"
                 >
                   <div className="min-w-0">
                     <p className="m-0 truncate font-bold text-foreground">

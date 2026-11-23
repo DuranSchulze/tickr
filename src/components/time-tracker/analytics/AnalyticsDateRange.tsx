@@ -10,7 +10,7 @@ import {
 import type { AnalyticsRange } from './analytics.utils'
 import { formatRange, parseDateKey } from './analytics.utils'
 
-const DESKTOP_QUERY = '(min-width: 640px)'
+const DESKTOP_QUERY = '(min-width: 768px)'
 
 const presets = [
   { label: '7D', days: 6 },
@@ -173,16 +173,16 @@ export function AnalyticsDateRange({
         <PopoverContent
           align={isDesktop ? 'end' : 'center'}
           sideOffset={8}
-          className="max-h-[min(82vh,680px)] w-[calc(100vw-1rem)] max-w-[430px] gap-0 overflow-hidden rounded-xl p-0 shadow-[var(--shadow-whisper)] sm:w-auto sm:max-w-[760px]"
+          className="flex max-h-[min(var(--radix-popover-content-available-height),680px)] w-[calc(100vw-1rem)] max-w-[430px] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-[var(--shadow-whisper)] sm:w-auto sm:max-w-[760px]"
         >
-          <div className="border-b border-stone px-4 py-3">
+          <div className="shrink-0 border-b border-stone px-4 py-3">
             <p className="m-0 text-sm font-bold text-foreground">
               Custom range
             </p>
             <p className="m-0 mt-1 text-xs text-smoke">{draftLabel}</p>
           </div>
 
-          <div className="max-h-[min(58vh,500px)] overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <Calendar
               mode="range"
               selected={draft}
@@ -200,7 +200,7 @@ export function AnalyticsDateRange({
             />
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-stone bg-eggshell p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex shrink-0 flex-col gap-3 border-t border-stone bg-eggshell p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 text-xs text-smoke">
               <span className="inline-flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-primary" />

@@ -107,7 +107,7 @@ export function RolePermissionsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(48rem,calc(100%-2rem))]">
         <DialogHeader className="shrink-0 border-b border-stone px-6 py-5 pr-14">
           <div className="flex items-start gap-3">
             <span

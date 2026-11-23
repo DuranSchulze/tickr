@@ -12,7 +12,13 @@ downloadable asset.
   builds the Capacitor shell and attaches the APK (and AAB when signing is
   configured) to the GitHub Release.
 - CI check (not a release): [`.github/workflows/android.yml`](../.github/workflows/android.yml)
-  compiles the debug APK on `mobile/**` changes.
+  compiles the debug APK on `mobile/**` changes. Download the
+  `trackly-android-debug` artifact from the workflow run for the APK and
+  checksum. It uses `https://trackly.ph` by default, with the same
+  `TRACKLY_ANDROID_SERVER_URL` override as tagged releases.
+
+To extract the APK from a specific CI run with the GitHub CLI, substitute the
+run ID in `gh run download RUN_ID --name trackly-android-debug --dir mobile/dist`.
 
 ## Cut a release
 
@@ -33,8 +39,8 @@ the default branch (`main`); tag pushes work from any branch's commit.
 
 The workflow exports:
 
-- `Tickr-vX.Y.Z.apk` and `Tickr-vX.Y.Z.aab` when signing secrets are configured.
-- `Tickr-vX.Y.Z-debug.apk` (pre-release) when they are not.
+- `Tickr-X.Y.Z.apk` and `Tickr-X.Y.Z.aab` when signing secrets are configured.
+- `Tickr-X.Y.Z-debug.apk` (pre-release) when they are not.
 - `SHA256SUMS.txt` with checksums for every attached file.
 
 Versioning rules:
@@ -93,7 +99,7 @@ existing installs can no longer be upgraded in place; the same key must sign
 every update for a given application id.
 
 When all four secrets exist, the workflow builds `assembleRelease` +
-`bundleRelease` and publishes `Tickr-vX.Y.Z.apk` / `.aab` instead of the debug
+`bundleRelease` and publishes `Tickr-X.Y.Z.apk` / `.aab` instead of the debug
 APK. The `applicationId` is `com.trackly.internal` (debug builds use
 `.debug`).
 
@@ -116,6 +122,9 @@ APK. The `applicationId` is `com.trackly.internal` (debug builds use
 - Install the APK on a test device and confirm it loads the expected origin and
   the app version matches the tag (`0.1.0`).
 - Confirm the version code increased versus the previous release.
+- When promoting a new Android preview on the homepage, update the pinned APK
+  URL in `src/components/marketing/HeroSection.tsx` after the asset is published
+  and verified. The homepage links directly to the versioned GitHub asset.
 
 ## Rollback and retries
 

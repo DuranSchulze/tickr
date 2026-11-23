@@ -49,6 +49,7 @@ export function AllEntriesSection({
   pendingEntryIds,
   deletingEntryId,
   formatTime,
+  expectedDailyHours = 8,
   onStartEdit,
   onUpdate,
   onResume,
@@ -84,6 +85,7 @@ export function AllEntriesSection({
   pendingEntryIds?: Set<string>
   deletingEntryId?: string | null
   formatTime: (seconds: number) => string
+  expectedDailyHours?: number
   onStartEdit: (entry: TimeEntry) => void
   onUpdate: (entryId: string, patch: InlinePatch) => void
   onResume: (entry: TimeEntry) => void
@@ -161,7 +163,7 @@ export function AllEntriesSection({
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="text-xs font-semibold text-destructive hover:underline"
+                  className="text-xs font-semibold text-smoke hover:text-foreground hover:underline"
                 >
                   Clear
                 </button>
@@ -226,6 +228,7 @@ export function AllEntriesSection({
         pendingEntryIds={pendingEntryIds}
         deletingEntryId={deletingEntryId}
         formatTime={formatTime}
+        expectedDailyHours={expectedDailyHours}
         isDayCollapsed={(dateKey) => collapsedDates.has(dateKey)}
         toggleDayGroup={toggleDayGroup}
         isTaskGroupExpanded={isTaskGroupExpanded}

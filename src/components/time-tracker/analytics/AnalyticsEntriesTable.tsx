@@ -359,7 +359,7 @@ function DesktopEntriesTable({
       aria-label="Time entries table"
       tabIndex={0}
     >
-      <table className="w-full min-w-[1480px] table-fixed text-sm">
+      <table className="w-full min-w-[1240px] table-fixed text-sm">
         <thead>
           <tr className="border-b border-stone bg-warm-taupe">
             {hasBulkDelete && (
@@ -383,19 +383,19 @@ function DesktopEntriesTable({
             <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Start – End
             </th>
-            <th className="w-[150px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
+            <th className="w-[140px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Member
             </th>
-            <th className="w-[190px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
+            <th className="w-[160px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Project / Client
             </th>
-            <th className="w-[180px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
+            <th className="w-[140px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Tags
             </th>
-            <th className="w-[320px] whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
+            <th className="w-auto whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-smoke">
               Description
             </th>
-            <th className="w-[130px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
+            <th className="w-[100px] whitespace-nowrap px-4 py-2.5 text-right text-xs font-semibold uppercase tracking-wide text-smoke">
               Duration
             </th>
             <th className="w-[92px] whitespace-nowrap px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-smoke">

@@ -130,9 +130,18 @@ export function InputSection({
     [draft, setDraft],
   )
 
+  const modeTabClass = (selected: boolean, disabled = false) =>
+    `inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+      disabled
+        ? 'cursor-not-allowed text-smoke/50'
+        : selected
+          ? 'bg-eggshell text-foreground ring-1 ring-stone'
+          : 'text-smoke hover:text-foreground'
+    }`
+
   const modeToggle = (
     <div
-      className="flex shrink-0 flex-row items-center justify-center gap-1 border-stone/60 max-sm:border-t max-sm:pt-2 sm:flex-col sm:border-l sm:pl-2"
+      className="inline-flex shrink-0 items-center rounded-full border border-stone bg-warm-taupe p-1"
       role="tablist"
       aria-label="Entry mode"
     >
@@ -141,124 +150,108 @@ export function InputSection({
         onClick={() => setMode('timer')}
         role="tab"
         aria-selected={effectiveMode === 'timer'}
-        title="Timer"
-        className={`grid size-8 place-items-center rounded-full transition-colors ${
-          effectiveMode === 'timer'
-            ? 'bg-primary/10 text-primary'
-            : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
-        }`}
+        className={modeTabClass(effectiveMode === 'timer')}
       >
-        <Play className="size-4" />
+        <Play aria-hidden="true" className="size-3.5" />
+        Timer
       </button>
       <button
         type="button"
         onClick={() => setMode('manual')}
         role="tab"
         aria-selected={effectiveMode === 'manual'}
-        title={activeEntry ? 'Stop the timer first' : 'Manual entry'}
+        title={activeEntry ? 'Stop the timer first' : undefined}
         disabled={!!activeEntry}
-        className={`grid size-8 place-items-center rounded-full transition-colors ${
-          activeEntry
-            ? 'cursor-not-allowed text-smoke/40'
-            : effectiveMode === 'manual'
-              ? 'bg-primary/10 text-primary'
-              : 'text-smoke hover:bg-warm-taupe hover:text-foreground'
-        }`}
+        className={modeTabClass(effectiveMode === 'manual', !!activeEntry)}
       >
-        <Pencil className="size-4" />
+        <Pencil aria-hidden="true" className="size-3.5" />
+        Manual entry
       </button>
     </div>
   )
 
   return (
-    // Elevated above the rest of the page (shadow + ring) so the entry point
-    // for tracking time is the first thing the eye lands on — Clockify-style
-    // single bar with a compact timer/manual toggle on the right edge.
-    <section className="min-w-0 rounded-3xl border border-stone bg-eggshell p-3 shadow-[var(--shadow-whisper)]">
-      <div className="flex min-w-0 gap-2 max-sm:flex-col sm:items-stretch">
-        {/* justify-center keeps the h-12 bar vertically centered against the
-            taller mode-toggle column instead of pinned to the card's top. */}
-        <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <AnimatePresence mode="wait">
-            {effectiveMode === 'timer' && (
-              <motion.div
-                key="timer"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: 'easeInOut' }}
-              >
-                <TimerPanel
-                  workspaceId={workspaceId}
-                  clients={clients}
-                  projects={projects}
-                  tags={tags}
-                  description={description}
-                  onDescriptionChange={onDescriptionChange}
-                  onDescriptionBlur={onDescriptionBlur}
-                  descriptionSuggestions={descriptionSuggestions}
-                  onApplySuggestion={onApplySuggestion}
-                  clientId={clientId}
-                  onClientIdChange={onClientIdChange}
-                  projectId={projectId}
-                  onProjectIdChange={onProjectIdChange}
-                  taskId={taskId}
-                  onTaskIdChange={onTaskIdChange}
-                  projectTasks={projectTasks}
-                  tagIds={tagIds}
-                  onTagIdsChange={onTagIdsChange}
-                  billable={billable}
-                  onBillableChange={onBillableChange}
-                  onCreateTask={onCreateTask}
-                  onDeleteTask={onDeleteTask}
-                  onCreateTag={onCreateTag}
-                  canManageCatalog={canManageCatalog}
-                  activeEntry={activeEntry}
-                  startPending={startPending}
-                  stopPending={stopPending}
-                  formatTime={formatTime}
-                  onApplyPreset={onApplyPreset}
-                  onStart={onStart}
-                  onStop={onStop}
-                  onDiscard={onDiscard}
-                  onUpdateStartedAt={onUpdateStartedAt}
-                  locationStatus={locationStatus}
-                  descriptionDropdownUp={descriptionDropdownUp}
-                />
-              </motion.div>
-            )}
+    <section className="min-w-0 rounded-xl border border-stone bg-eggshell p-3 sm:p-4">
+      <div className="mb-3 flex min-w-0 justify-center">{modeToggle}</div>
+      <div className="min-w-0">
+        <AnimatePresence mode="wait">
+          {effectiveMode === 'timer' && (
+            <motion.div
+              key="timer"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeInOut' }}
+            >
+              <TimerPanel
+                workspaceId={workspaceId}
+                clients={clients}
+                projects={projects}
+                tags={tags}
+                description={description}
+                onDescriptionChange={onDescriptionChange}
+                onDescriptionBlur={onDescriptionBlur}
+                descriptionSuggestions={descriptionSuggestions}
+                onApplySuggestion={onApplySuggestion}
+                clientId={clientId}
+                onClientIdChange={onClientIdChange}
+                projectId={projectId}
+                onProjectIdChange={onProjectIdChange}
+                taskId={taskId}
+                onTaskIdChange={onTaskIdChange}
+                projectTasks={projectTasks}
+                tagIds={tagIds}
+                onTagIdsChange={onTagIdsChange}
+                billable={billable}
+                onBillableChange={onBillableChange}
+                onCreateTask={onCreateTask}
+                onDeleteTask={onDeleteTask}
+                onCreateTag={onCreateTag}
+                canManageCatalog={canManageCatalog}
+                activeEntry={activeEntry}
+                startPending={startPending}
+                stopPending={stopPending}
+                formatTime={formatTime}
+                onApplyPreset={onApplyPreset}
+                onStart={onStart}
+                onStop={onStop}
+                onDiscard={onDiscard}
+                onUpdateStartedAt={onUpdateStartedAt}
+                locationStatus={locationStatus}
+                descriptionDropdownUp={descriptionDropdownUp}
+              />
+            </motion.div>
+          )}
 
-            {effectiveMode === 'manual' && (
-              <motion.div
-                key="manual"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: 'easeInOut' }}
-              >
-                <ManualEntryPanel
-                  workspaceId={workspaceId}
-                  draft={draft}
-                  setDraft={setDraft}
-                  clients={clients}
-                  projects={projects}
-                  projectTasks={projectTasks}
-                  tags={tags}
-                  onCreateClient={onCreateClient}
-                  onCreateProject={onCreateProject}
-                  onCreateTask={onCreateTask}
-                  onDeleteTask={onDeleteTask}
-                  onCreateTag={onCreateTag}
-                  onApplyPreset={applyPresetToDraft}
-                  canManageCatalog={canManageCatalog}
-                  pending={pending}
-                  onSubmit={onAddManual}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-        {modeToggle}
+          {effectiveMode === 'manual' && (
+            <motion.div
+              key="manual"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: 'easeInOut' }}
+            >
+              <ManualEntryPanel
+                workspaceId={workspaceId}
+                draft={draft}
+                setDraft={setDraft}
+                clients={clients}
+                projects={projects}
+                projectTasks={projectTasks}
+                tags={tags}
+                onCreateClient={onCreateClient}
+                onCreateProject={onCreateProject}
+                onCreateTask={onCreateTask}
+                onDeleteTask={onDeleteTask}
+                onCreateTag={onCreateTag}
+                onApplyPreset={applyPresetToDraft}
+                canManageCatalog={canManageCatalog}
+                pending={pending}
+                onSubmit={onAddManual}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   )

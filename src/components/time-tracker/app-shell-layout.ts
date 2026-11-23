@@ -15,7 +15,7 @@ export function getAppShellLayout(pathname: string, isEmbed: boolean) {
       : `min-w-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl bg-app-surface sm:rounded-2xl ${
           isEmbed
             ? 'm-1 p-2'
-            : 'mt-1 mr-1 mb-1 ml-0 p-4 sm:mt-2 sm:mr-2 sm:mb-2 sm:p-6'
+            : 'mt-1 mr-1 mb-1 ml-1 p-4 sm:mt-2 sm:mr-2 sm:mb-2 sm:ml-2 sm:p-6 lg:ml-0'
         }`,
   }
 }

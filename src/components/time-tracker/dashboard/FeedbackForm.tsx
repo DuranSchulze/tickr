@@ -20,10 +20,10 @@ export function FeedbackFloatingPanel() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Close feedback' : 'Give feedback'}
         title={open ? 'Close feedback' : 'Give feedback'}
-        className={`fixed bottom-6 right-6 z-40 flex size-12 items-center justify-center rounded-full shadow-[var(--shadow-whisper)] transition-all duration-200 hover:scale-105 active:scale-95 ${
+        className={`fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-40 flex size-10 items-center justify-center rounded-full border border-stone shadow-[var(--shadow-whisper)] transition-all duration-200 hover:scale-105 active:scale-95 sm:right-6 sm:bottom-6 sm:size-12 ${
           open
-            ? 'bg-warm-taupe text-smoke shadow-none ring-1 ring-stone'
-            : 'bg-primary-action text-primary-action-foreground'
+            ? 'bg-warm-taupe text-smoke shadow-none'
+            : 'bg-eggshell text-graphite hover:text-foreground'
         }`}
       >
         {open ? <X className="size-5" /> : <MessageSquare className="size-5" />}

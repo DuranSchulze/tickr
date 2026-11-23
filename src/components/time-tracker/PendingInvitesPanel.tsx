@@ -92,8 +92,8 @@ export function PendingInvitesPanel() {
               View invitations
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[80vh] max-w-lg overflow-hidden p-0">
-            <DialogHeader className="border-b border-stone p-4">
+          <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+            <DialogHeader className="shrink-0 border-b border-stone p-4 pr-12">
               <DialogTitle className="text-left text-lg">
                 Pending invitations ({invites.length})
               </DialogTitle>
@@ -103,7 +103,7 @@ export function PendingInvitesPanel() {
               </DialogDescription>
             </DialogHeader>
 
-            <ul className="m-0 max-h-[60vh] list-none overflow-y-auto p-0">
+            <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto overscroll-contain p-0">
               {invites.map((invite) => {
                 const expires = new Date(invite.expiresAt)
                 const isExpired = expires < new Date()

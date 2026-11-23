@@ -14,46 +14,52 @@
       "computedHash": "a6ed33cfbfc0259c39f42ad69cc55ace984da805c4f4197df437770cf7c1b671"
     },
     "harness-bug": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-bug/SKILL.md",
-      "computedHash": "b46f3b22326a976230b8747d37c3e1ca100a79303a6247740f01da83d14ac616"
+      "computedHash": "bb7fe9b1cd55c6dc72cf246a74365eabe9818f9053faf397797830c015f64a28"
     },
     "harness-execute": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-execute/SKILL.md",
-      "computedHash": "742e0fe63cb36c4cea3a40b7ee4779b1ced5a4b20cd48d5f3a7871f510b06e7a"
+      "computedHash": "125bc00c8a46c7a6c5eb28919b516e53d84fb45b3f0286f68bbcdd910c39877a"
     },
     "harness-qa": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-qa/SKILL.md",
-      "computedHash": "ab9fdfe683f08c71a6cacebe835f711178b6b28b59e55d238be11812056372d4"
+      "computedHash": "7bdba8ab221a79f1f323f3d41921ab781afda858c0f54ff1730d454d0743945f"
     },
     "harness-review": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-review/SKILL.md",
-      "computedHash": "e4d684aba9d997996b1ac1322b0bff1ef8784334a8c1850892ea31ed7aeeac39"
+      "computedHash": "ffa4a7f546a0b2e36de35e4c919010287be9cce7621d551a46b150b9e08a2c23"
     },
     "harness-spec": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-spec/SKILL.md",
-      "computedHash": "fc5beb15a3dfc27b272515a3957edd34d3fc24f3e5297f88266c7a6d2f98d269"
+      "computedHash": "eaf71048b32e2b4c67c63049d930496dcf903b3d62f58cc4d2f53aabae136a60"
     },
     "harness-workflow": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-workflow/SKILL.md",
-      "computedHash": "2af0e03aa227ab695cd8725ad2d461201967709050cf2951571bb9e8a29e90f1"
+      "computedHash": "38bbe0ed2a6173bc391b3399e1bf03bde81ac3799b8cd5bae09e221dcf0794af"
     },
     "react-performance-optimization": {
       "source": "nickcrew/claude-ctx-plugin",
       "sourceType": "github",
       "skillPath": "skills/react-performance-optimization/SKILL.md",
       "computedHash": "8338b086e8e166e0b32ec3493a6b0f80c2e388cb5d3da10bcecaa1f2ce34d43d"
+    },
+    "superdesign": {
+      "source": "superdesigndev/superdesign-skill",
+      "sourceType": "github",
+      "skillPath": "skills/superdesign/SKILL.md",
+      "computedHash": "e98daea73371b2cdcc333025a993f6b0c2781c692382a9dcf132c7094a014fdf"
     },
     "tanstack-query-best-practices": {
       "source": "deckardger/tanstack-agent-skills",
@@ -67,11 +73,17 @@
       "skillPath": "skills/tanstack-start/SKILL.md",
       "computedHash": "8b073187405a10f9997158f9139a9664cc801595d2fe63d542a0bac9bf2152f5"
     },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "c0a42a031832ef356aa550855ab608eb36f919d0e6460bbca6958f516b022424"
+    },
     "web-research": {
-      "source": "zafajardo9/agentic-worflow-factory",
+      "source": "zafajardo9/agentic-workflow-factory",
       "sourceType": "github",
       "skillPath": "skills/web-research/SKILL.md",
-      "computedHash": "2c9661959b38bbccf98da7d510ecb233162f2fddbb452f3588413f0466206a93"
+      "computedHash": "dcd3513e763172af039a552fb08540091ce3535df5936fc5d46ffaf292813f3f"
     }
   }
 }

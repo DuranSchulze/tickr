@@ -34,6 +34,41 @@ Internal time tracking platform for Duran File Pino. Designed for professional s
 - **Forms** — TanStack Form + Zod
 - **Email** — Resend (primary) with Nodemailer SMTP fallback
 - **Package manager** — pnpm
+- **Hosting & deployment** — DigitalOcean App Platform from [`.do/app.yaml`](#hosting--deployment), with GitHub Actions CI
+
+---
+
+## Hosting & Deployment
+
+Production runs on **DigitalOcean App Platform** (the `tickr` app) from the app spec in [`.do/app.yaml`](.do/app.yaml), and the database lives in **Neon**. GitHub Actions runs the checks; DigitalOcean builds and deploys the app.
+
+| Piece         | How it works                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Hosting       | DigitalOcean App Platform, app `tickr`, a single `web` service (Node.js, HTTP port `3000`, `apps-s-1vcpu-1gb`) that runs `node .output/server/index.mjs`                                                                       |
+| Domains       | `https://trackly.ph` (primary, also the Better Auth base URL) and `https://time-track.buildvault.live`                                                                                                                         |
+| Database      | Neon Postgres, managed separately from the host and reached through `DATABASE_URL` (`DIRECT_URL` for drizzle-kit)                                                                                                              |
+| CI            | GitHub Actions on every pull request and push to `main`                                                                                                                                                                        |
+| CD            | App Platform auto-deploys the `web` service whenever `main` moves; the build command comes from `.do/app.yaml`. The GitHub repository connection and branch are configured in the App Platform dashboard, not in the spec file |
+| Configuration | Non-secret settings live in `.do/app.yaml`; secrets (`BETTER_AUTH_SECRET`, database URLs, `RESEND_API_KEY`, `VITE_SENTRY_DSN`, Google service-account keys) live in the App Platform dashboard                                 |
+
+### What GitHub Actions runs
+
+| Workflow                                                 | Trigger                         | What it checks                                                                                                                |
+| -------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| [`check.yml`](.github/workflows/check.yml)               | Pull requests, pushes to `main` | `typecheck`, `lint`, `test`, and `build`, plus a separate `performance` job that enforces the bundle budgets (`pnpm perf:ci`) |
+| [`commitlint.yml`](.github/workflows/commitlint.yml)     | Pull requests                   | Conventional Commit messages                                                                                                  |
+| [`react-doctor.yml`](.github/workflows/react-doctor.yml) | Pull requests, pushes to `main` | React security, performance, correctness, and accessibility scan                                                              |
+| [`android.yml`](.github/workflows/android.yml)           | Changes under `mobile/**`       | Builds the Android app                                                                                                        |
+| [`release.yml`](.github/workflows/release.yml)           | A `v*` tag or manual run        | Publishes the Android APK/AAB to a GitHub Release                                                                             |
+
+### Deploying
+
+1. Merge to `main` once the checks are green. App Platform deploys whatever lands on `main` and does **not** wait for GitHub Actions, so the checks are the merge gate, not the deploy trigger.
+2. DigitalOcean runs the build command from `.do/app.yaml` (`pnpm install --frozen-lockfile && pnpm build`) and restarts the `web` service. Build and deploy status is in **DigitalOcean → Apps → tickr → Activity**.
+3. Verify the deploy with `curl -sS https://trackly.ph/api/health`. It returns `{"status":"ok",...}` only when the app can reach Neon.
+4. To roll back, redeploy the last known-good build from the **Activity** tab. An app rollback never touches database data — see [docs/backup-monitoring-recovery.md](docs/backup-monitoring-recovery.md).
+
+The Android app ships separately through GitHub Releases and is not part of the web deploy. See [mobile/RELEASING.md](mobile/RELEASING.md).
 
 ---
 
@@ -93,6 +128,35 @@ pnpm dev
 ```
 
 The app runs at **http://localhost:3000**.
+
+---
+
+## Build an Android APK
+
+Install Node.js 22+, pnpm 10.10.0, JDK 21, and Android SDK Platform 36 with the
+platform and build tools. Run `pnpm install --frozen-lockfile` from the repository
+root.
+
+Create `mobile/.env` with the HTTPS origin the app should open. Use your
+deployment's origin if it differs from this example.
+
+```dotenv
+MOBILE_SERVER_URL=https://timetrackly.com
+```
+
+Check the toolchain and compile the debug APK from the repository root. The
+commands load `mobile/.env` automatically. Exported shell variables take
+precedence.
+
+```sh
+pnpm --dir mobile run doctor
+pnpm --dir mobile build:apk
+```
+
+The build exports `mobile/dist/Tickr-debug.apk` and `mobile/dist/SHA256SUMS.txt`.
+Install the APK on a connected Android 10+ test device with
+`adb install -r mobile/dist/Tickr-debug.apk`. See the [Android setup guide](mobile/README.md)
+for emulator builds and the [release guide](mobile/RELEASING.md) for production signing.
 
 ---
 
