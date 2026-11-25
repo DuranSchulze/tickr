@@ -14,40 +14,40 @@
       "computedHash": "a6ed33cfbfc0259c39f42ad69cc55ace984da805c4f4197df437770cf7c1b671"
     },
     "harness-bug": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-bug/SKILL.md",
-      "computedHash": "bb7fe9b1cd55c6dc72cf246a74365eabe9818f9053faf397797830c015f64a28"
+      "computedHash": "bf052933ce63a50f9664b91e6bdb492a7ed5d727f499009d250f6d7a4c95f059"
     },
     "harness-execute": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-execute/SKILL.md",
-      "computedHash": "125bc00c8a46c7a6c5eb28919b516e53d84fb45b3f0286f68bbcdd910c39877a"
+      "computedHash": "aa9f70498efff4303f370e4b32364d1df815d328a58f6e36a9b965cb2b1220b0"
     },
     "harness-qa": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-qa/SKILL.md",
-      "computedHash": "7bdba8ab221a79f1f323f3d41921ab781afda858c0f54ff1730d454d0743945f"
+      "computedHash": "9e8aad4e132fcf54e29581b76f78f3ec31fd5b516edf3789954168e39f549bd7"
     },
     "harness-review": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-review/SKILL.md",
-      "computedHash": "ffa4a7f546a0b2e36de35e4c919010287be9cce7621d551a46b150b9e08a2c23"
+      "computedHash": "ce29d653ef2f515d2667113b077a344055bae32559401620c411179dc766b189"
     },
     "harness-spec": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-spec/SKILL.md",
-      "computedHash": "eaf71048b32e2b4c67c63049d930496dcf903b3d62f58cc4d2f53aabae136a60"
+      "computedHash": "fc506bff43c5d1ef56740b15f545384238e63e68d9bfc4b731bfbe108ab08766"
     },
     "harness-workflow": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/harness-workflow/SKILL.md",
-      "computedHash": "38bbe0ed2a6173bc391b3399e1bf03bde81ac3799b8cd5bae09e221dcf0794af"
+      "computedHash": "c81b4d761dac412abe91e6c0d9f6ad29e89d3a2243da62aa8460f97bfade4991"
     },
     "react-performance-optimization": {
       "source": "nickcrew/claude-ctx-plugin",
@@ -80,10 +80,10 @@
       "computedHash": "c0a42a031832ef356aa550855ab608eb36f919d0e6460bbca6958f516b022424"
     },
     "web-research": {
-      "source": "zafajardo9/agentic-workflow-factory",
+      "source": "zafajardo9/agentic-worflow-factory",
       "sourceType": "github",
       "skillPath": "skills/web-research/SKILL.md",
-      "computedHash": "dcd3513e763172af039a552fb08540091ce3535df5936fc5d46ffaf292813f3f"
+      "computedHash": "4000d24a10beb58427d5b0a23b655068f410ee26b7fd762a368d0950a15453af"
     }
   }
 }

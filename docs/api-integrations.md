@@ -572,9 +572,9 @@ Common status codes:
 - API keys are not user session tokens and cannot access the authenticated app UI.
 - API responses are always scoped to the workspace that created the key.
 
-## 7. MCP (read-only pilot)
+## 7. MCP (pilot)
 
-Tickr exposes one read-only [Model Context Protocol](https://modelcontextprotocol.io) tool so an AI client (MCP Inspector, Codex, Claude) can read the signed-in user's own tracked time. It is **off by default** and admits only pilot users. Spec and evidence: `.harness/tickr-mcp-read-only/`.
+Tickr exposes [Model Context Protocol](https://modelcontextprotocol.io) tools so an AI client (MCP Inspector, Codex, Claude) can read the signed-in user's own tracked time and, if the user approves write access, start/stop their timer and log time. It is **off by default** and admits only pilot users. Spec and evidence: `.harness/tickr-mcp-read-only/`.
 
 ### Endpoint and discovery
 
@@ -583,8 +583,9 @@ Tickr exposes one read-only [Model Context Protocol](https://modelcontextprotoco
 | MCP endpoint                  | `POST {BETTER_AUTH_URL}/api/mcp` (Streamable HTTP, stateless; `GET`/`DELETE` return 405)     |
 | Protected resource metadata   | `{BETTER_AUTH_URL}/.well-known/oauth-protected-resource/api/mcp`                             |
 | Authorization server (issuer) | `{BETTER_AUTH_URL}/api/auth`, metadata at `/.well-known/oauth-authorization-server/api/auth` |
-| Scope                         | `time_entries:read` (plus `offline_access` for refresh)                                      |
-| Tool                          | `list_my_time_entries`                                                                       |
+| Scopes                        | `time_entries:read` (always required), `time_entries:write` (optional), `offline_access`     |
+| Read tools                    | `list_my_time_entries`, `list_my_catalog`                                                    |
+| Write tools                   | `start_timer`, `stop_timer`, `create_time_entry` (listed only for `time_entries:write`)      |
 
 A client only needs the endpoint URL. An unauthenticated call returns `401` with `WWW-Authenticate: Bearer resource_metadata="…"`; the client then registers itself (dynamic client registration), sends the user through Tickr sign-in and the consent page (`/oauth/consent`), and exchanges the code with PKCE (S256).
 
@@ -600,9 +601,31 @@ A client only needs the endpoint URL. An unauthenticated call returns `401` with
 
 Arguments (all optional): `date` (`YYYY-MM-DD`), `workspaceId`, `startDate` + `endDate` (ISO 8601 with offset; requires `workspaceId`; max 31 days), `page` (default 1), `limit` (default 50, max 100). Unknown arguments such as `userId` are rejected with `invalid_arguments`.
 
-Output (`structuredContent`): `entries[]` (workspace, project name, start, end, duration, running), `dailyTotals[]` (workspace, date, duration, count, running), `pagination`, `generatedAt`. Notes, descriptions, client names, tags, other people and internal IDs are never returned.
+Output (`structuredContent`): `entries[]` (workspace, project name, task name, start, end, duration, running), `dailyTotals[]` (workspace, date, duration, count, running), `pagination`, `generatedAt`. Notes, descriptions, client names, tags, other people and internal IDs are never returned.
 
-Errors are tool results with `isError: true` and a JSON body `{ error, message, retryable }`: `invalid_arguments`, `workspace_filter_required`, `workspace_not_accessible`, `temporarily_unavailable` (retryable). HTTP `429` with `Retry-After` after 60 calls per minute per app and user.
+### Tool contract — `list_my_catalog`
+
+Arguments (all optional): `workspaceId` (optional when the user has one active workspace), `search` (project or client name), `page`, `limit` (max 100). Returns `workspaces[]`, the selected `workspace`, `projects[]` (id, name, `client { id, name, status }`, `tasks[]`), `tags[]` (max 200) and `pagination`. It lists exactly what the timer picker offers: archived projects, tasks and tags and projects of **INACTIVE** clients are left out; **SUSPENDED** clients are included with their status. These IDs are the only way write tools pick a project, task or tag; names are never matched.
+
+### Write tools (`time_entries:write`)
+
+The consent page shows write access separately and offers **Allow read only**, which grants the requested scopes minus `time_entries:write`. A token without the write scope never sees the write tools. Write tools reuse the app's own write paths (`startTimerFor`, `stopTimerFor`, `createManualEntryFor`) and rules, plus a few stricter MCP-only checks:
+
+| Rule                                                                                                                                       | Source                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
+| Project in the workspace and not archived; task under that project; tags in the workspace                                                  | App (`assertWorkspaceCatalogs`)    |
+| Workspace subscription allows writes                                                                                                       | App (`assertWorkspaceWriteAccess`) |
+| One running timer; stopping needs description, project and a tag                                                                           | App (timer service)                |
+| Project's client is not INACTIVE                                                                                                           | MCP (matches the picker)           |
+| `start_timer` / `stop_timer` act **now**; no backdating                                                                                    | MCP                                |
+| `create_time_entry` needs description, project and ≥1 tag; ends in the past; ≤ 24 h; must not overlap any entry, including a running timer | MCP                                |
+| No IP, user agent or location is stored (the request comes from the AI host, not the user's device)                                        | MCP                                |
+
+Write tools return `entry` (workspace, project, client, task and tag names, billable, start, end, duration, running); entry IDs and notes are not returned. `create_time_entry` writes the same `ENTRY_CREATE` audit log row as the app.
+
+Errors are tool results with `isError: true` and a JSON body `{ error, message, retryable }`: `invalid_arguments`, `workspace_filter_required`, `workspace_required` (several workspaces, none named; the message lists them), `workspace_not_accessible`, `workspace_read_only`, `rule_violation`, `no_running_timer`, `overlapping_entry`, `temporarily_unavailable` (retryable) and `outcome_unknown` (a write may have landed; check `list_my_time_entries` before retrying). HTTP `429` with `Retry-After` after 60 calls per minute per app and user.
+
+Apps registered before `time_entries:write` existed are limited to the scopes they registered with; re-register (in Claude Code: `/mcp` → the server → clear authentication) to request write. No migration is needed: scopes are stored as text arrays.
 
 ### Enable, disable, roll back
 
@@ -621,4 +644,4 @@ MCP_ENABLED=true MCP_PILOT_USER_IDS=<your user id> BETTER_AUTH_URL=http://localh
 npx @modelcontextprotocol/inspector@2.16.0
 ```
 
-In Inspector set the transport to Streamable HTTP and the URL to `http://localhost:3000/api/mcp`, then **Connect**. Sign in, approve, list tools and call `list_my_time_entries`. Then disconnect in **Profile → Connected apps** and confirm the next call is refused.
+In Inspector set the transport to Streamable HTTP and the URL to `http://localhost:3000/api/mcp`, then **Connect**. Sign in, approve, list tools and call `list_my_time_entries`. To test writes, approve **Allow read and logging**, call `list_my_catalog`, then `start_timer` / `stop_timer` or `create_time_entry` with IDs from it. Then disconnect in **Profile → Connected apps** and confirm the next call is refused.

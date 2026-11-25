@@ -39,12 +39,33 @@ const listMyTimeEntries = vi.fn()
 vi.mock('../integrations/mcp-time-entries.server', () => ({
   listMyTimeEntries: (...args: unknown[]) => listMyTimeEntries(...args),
 }))
+const listMyCatalog = vi.fn()
+vi.mock('../integrations/mcp-catalog.server', () => ({
+  listMyCatalog: (...args: unknown[]) => listMyCatalog(...args),
+}))
+const mcpStartTimer = vi.fn()
+vi.mock('../integrations/mcp-write.server', () => ({
+  mcpStartTimer: (...args: unknown[]) => mcpStartTimer(...args),
+  mcpStopTimer: vi.fn(),
+  mcpCreateTimeEntry: vi.fn(),
+}))
 
-const { handleMcpPost, callWithTimeout, MCP_TOOL_NAME } =
-  await import('../integrations/mcp-server.server')
+const {
+  handleMcpPost,
+  callWithTimeout,
+  runTool,
+  MCP_TOOL_NAME,
+  MCP_CATALOG_TOOL,
+  MCP_WRITE_TOOLS,
+} = await import('../integrations/mcp-server.server')
 const { McpAuthError } = await import('../integrations/mcp-auth.server')
 
-const GRANT = { userId: 'pilot-user', clientId: 'client-1', tokenId: 't1' }
+const GRANT = {
+  userId: 'pilot-user',
+  clientId: 'client-1',
+  tokenId: 't1',
+  canWrite: false,
+}
 const OUTPUT = {
   entries: [],
   dailyTotals: [
@@ -81,6 +102,8 @@ beforeEach(() => {
   counter.count = 1
   counter.fail = false
   listMyTimeEntries.mockReset()
+  listMyCatalog.mockReset()
+  mcpStartTimer.mockReset()
   info = vi.spyOn(console, 'info').mockImplementation(() => {})
 })
 afterEach(() => {
@@ -89,16 +112,84 @@ afterEach(() => {
 })
 
 describe('handleMcpPost · MCP exchange', () => {
-  it('lists exactly one read-only tool', async () => {
+  it('lists only the two read-only tools without the write scope', async () => {
     const response = await handleMcpPost(rpc('tools/list'))
     expect(response.status).toBe(200)
     const body = await response.json()
-    expect(body.result.tools).toHaveLength(1)
-    expect(body.result.tools[0]).toMatchObject({
-      name: MCP_TOOL_NAME,
-      annotations: { readOnlyHint: true, destructiveHint: false },
+    const tools = body.result.tools as Array<{
+      name: string
+      annotations: { readOnlyHint: boolean }
+      outputSchema?: unknown
+    }>
+    expect(tools.map((t) => t.name).sort()).toEqual(
+      [MCP_CATALOG_TOOL, MCP_TOOL_NAME].sort(),
+    )
+    for (const tool of tools) {
+      expect(tool.annotations).toMatchObject({
+        readOnlyHint: true,
+        destructiveHint: false,
+      })
+      expect(tool.outputSchema).toBeDefined()
+    }
+  })
+
+  it('adds the write tools when the grant can write', async () => {
+    grantOutcome.current = { ...GRANT, canWrite: true }
+    const body = await (await handleMcpPost(rpc('tools/list'))).json()
+    const tools = body.result.tools as Array<{
+      name: string
+      annotations: { readOnlyHint: boolean; destructiveHint: boolean }
+    }>
+    expect(tools).toHaveLength(2 + MCP_WRITE_TOOLS.length)
+    for (const name of MCP_WRITE_TOOLS) {
+      expect(tools.find((t) => t.name === name)?.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: false,
+      })
+    }
+  })
+
+  it('refuses a write tool call from a read-only grant', async () => {
+    const body = await (
+      await handleMcpPost(
+        rpc('tools/call', { name: 'start_timer', arguments: {} }),
+      )
+    ).json()
+    expect(mcpStartTimer).not.toHaveBeenCalled()
+    expect(body.error ?? body.result?.isError).toBeTruthy()
+  })
+
+  it('runs a write tool for the grant user only', async () => {
+    grantOutcome.current = { ...GRANT, canWrite: true }
+    mcpStartTimer.mockResolvedValue({
+      ok: true,
+      structuredContent: {
+        entry: {
+          workspace: { id: 'w1', name: 'Acme', timezone: 'Asia/Manila' },
+          projectName: 'Website',
+          clientName: 'Acme',
+          taskName: null,
+          tagNames: [],
+          billable: false,
+          startedAt: '2026-11-25T10:00:00.000Z',
+          endedAt: null,
+          durationSeconds: 0,
+          running: true,
+        },
+      },
     })
-    expect(body.result.tools[0].outputSchema).toBeDefined()
+    const body = await (
+      await handleMcpPost(
+        rpc('tools/call', {
+          name: 'start_timer',
+          arguments: { projectId: 'p1' },
+        }),
+      )
+    ).json()
+    expect(body.result.isError).toBeFalsy()
+    expect(mcpStartTimer).toHaveBeenCalledWith('pilot-user', {
+      projectId: 'p1',
+    })
   })
 
   it('returns structured content for the caller only', async () => {
@@ -171,6 +262,19 @@ describe('handleMcpPost · C10 failure modes', () => {
     expect(JSON.parse(text)).toMatchObject({
       error: 'temporarily_unavailable',
       retryable: true,
+    })
+  })
+
+  it('reports a slow write as outcome unknown, never as retryable', async () => {
+    const result = await runTool(() => new Promise(() => {}), {
+      write: true,
+      timeoutMs: 5,
+    })
+    const [first] = result.content
+    const text = first?.type === 'text' ? first.text : ''
+    expect(JSON.parse(text)).toMatchObject({
+      error: 'outcome_unknown',
+      retryable: false,
     })
   })
 

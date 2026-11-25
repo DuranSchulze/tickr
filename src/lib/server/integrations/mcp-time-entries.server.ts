@@ -45,6 +45,7 @@ export type McpTimeEntriesOutput = {
   entries: Array<{
     workspace: McpWorkspace
     projectName: string | null
+    taskName: string | null
     startedAt: string
     endedAt: string | null
     durationSeconds: number
@@ -65,6 +66,12 @@ export type McpToolErrorCode =
   | 'invalid_arguments'
   | 'workspace_filter_required'
   | 'workspace_not_accessible'
+  | 'workspace_required'
+  | 'workspace_read_only'
+  | 'rule_violation'
+  | 'no_running_timer'
+  | 'overlapping_entry'
+  | 'outcome_unknown'
   | 'temporarily_unavailable'
 
 /** Transport-neutral result; the MCP route maps it to the SDK tool result. */
@@ -72,7 +79,7 @@ export type McpToolResult<T> =
   | { ok: true; structuredContent: T }
   | { ok: false; code: McpToolErrorCode; message: string; retryable: boolean }
 
-function failure(
+export function failure(
   code: McpToolErrorCode,
   message: string,
   retryable = false,
@@ -80,11 +87,14 @@ function failure(
   return { ok: false, code, message, retryable }
 }
 
-function validationMessage(error: z.ZodError): string {
+export function validationMessage(
+  error: z.ZodError,
+  allowed = 'date, workspaceId, startDate, endDate, page, limit',
+): string {
   const issue = error.issues[0]
   if (!issue) return 'Invalid arguments.'
   if (issue.code === 'unrecognized_keys')
-    return `Unsupported argument(s): ${issue.keys.join(', ')}. Allowed: date, workspaceId, startDate, endDate, page, limit.`
+    return `Unsupported argument(s): ${issue.keys.join(', ')}. Allowed: ${allowed}.`
   const field = issue.path.join('.')
   return field ? `${field}: ${issue.message}` : issue.message
 }
@@ -102,6 +112,7 @@ function projectEntry(entry: PersonalTimeEntry, generatedAt: Date) {
   return {
     workspace: projectWorkspace(entry.workspace),
     projectName: entry.projectName,
+    taskName: entry.taskName,
     startedAt: entry.startedAt,
     endedAt: entry.endedAt,
     // A running entry's stored duration is stale; use the response timestamp

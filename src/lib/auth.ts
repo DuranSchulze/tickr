@@ -23,6 +23,7 @@ import {
   MCP_ACCESS_TOKEN_PREFIX,
   MCP_READ_SCOPE,
   MCP_REFRESH_TOKEN_PREFIX,
+  MCP_WRITE_SCOPE,
   hashMcpToken,
 } from '#/lib/server/integrations/mcp-token.server'
 
@@ -207,12 +208,13 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    // Read-only MCP pilot. Opaque tokens are looked up on every call so a
+    // MCP pilot: read always, write only when the user approves
+    // time_entries:write on the consent page. Opaque tokens are looked up on every call so a
     // disconnect takes effect on the next request (spec REQ-2, Q1).
     oauthProvider({
       loginPage: '/api/oauth/login',
       consentPage: '/api/oauth/consent',
-      scopes: [MCP_READ_SCOPE, 'offline_access'],
+      scopes: [MCP_READ_SCOPE, MCP_WRITE_SCOPE, 'offline_access'],
       validAudiences: [MCP_RESOURCE],
       disableJwtPlugin: true,
       storeTokens: { hash: (token) => hashMcpToken(token) },

@@ -17,6 +17,20 @@ export function parseOAuthQuery(value: unknown): string | undefined {
   return value
 }
 
+/** Scope that lets an MCP app start/stop the timer and log time. */
+export const OAUTH_WRITE_SCOPE = 'time_entries:write'
+
+/**
+ * Scopes the app asked for, for display and for building a narrower grant.
+ * Null when the query names none: the provider then requests every scope the
+ * client may use, so callers must treat null as "includes write".
+ */
+export function oauthQueryScopes(query: string): string[] | null {
+  const scope = new URLSearchParams(query).get('scope')
+  if (!scope) return null
+  return scope.split(' ').filter(Boolean)
+}
+
 /** Client ID named by a validated query, for display lookups only. */
 export function oauthQueryClientId(query: string): string {
   return new URLSearchParams(query).get('client_id') ?? ''

@@ -6,6 +6,7 @@ import { isMcpPilotUser } from './mcp-config.server'
 import {
   MCP_ACCESS_TOKEN_PREFIX,
   MCP_READ_SCOPE,
+  MCP_WRITE_SCOPE,
   hashMcpToken,
 } from './mcp-token.server'
 
@@ -31,13 +32,19 @@ export function mcpProtectedResourceMetadata() {
   return {
     resource: mcpResourceUrl(),
     authorization_servers: [mcpAuthorizationServerUrl()],
-    scopes_supported: [MCP_READ_SCOPE],
+    scopes_supported: [MCP_READ_SCOPE, MCP_WRITE_SCOPE],
     bearer_methods_supported: ['header'],
     resource_name: 'Tickr',
   }
 }
 
-export type McpGrant = { userId: string; clientId: string; tokenId: string }
+export type McpGrant = {
+  userId: string
+  clientId: string
+  tokenId: string
+  /** The token carries `time_entries:write`; only then are write tools listed. */
+  canWrite: boolean
+}
 
 /**
  * Why a request was refused. Never carries the token. `status` and the
@@ -114,7 +121,12 @@ export async function requireMcpGrant(
     )
   }
 
-  return { userId: row.userId, clientId: row.clientId, tokenId: row.id }
+  return {
+    userId: row.userId,
+    clientId: row.clientId,
+    tokenId: row.id,
+    canWrite: row.scopes.includes(MCP_WRITE_SCOPE),
+  }
 }
 
 /** RFC 6750 / RFC 9728 challenge response. */

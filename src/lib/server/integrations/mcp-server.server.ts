@@ -8,6 +8,13 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { db } from '#/db'
 import { authAbuseCounters } from '#/db/schema'
 import { listMyTimeEntries } from './mcp-time-entries.server'
+import type { McpToolResult } from './mcp-time-entries.server'
+import { listMyCatalog } from './mcp-catalog.server'
+import {
+  mcpCreateTimeEntry,
+  mcpStartTimer,
+  mcpStopTimer,
+} from './mcp-write.server'
 import {
   McpAuthError,
   mcpAuthErrorResponse,
@@ -16,6 +23,12 @@ import {
 import type { McpGrant } from './mcp-auth.server'
 
 export const MCP_TOOL_NAME = 'list_my_time_entries'
+export const MCP_CATALOG_TOOL = 'list_my_catalog'
+export const MCP_WRITE_TOOLS = [
+  'start_timer',
+  'stop_timer',
+  'create_time_entry',
+] as const
 export const MCP_CALL_TIMEOUT_MS = 10_000
 export const MCP_RATE_LIMIT = 60
 export const MCP_RATE_WINDOW_SECONDS = 60
@@ -57,6 +70,7 @@ const outputShape = z.object({
     z.object({
       workspace: workspaceShape,
       projectName: z.string().nullable(),
+      taskName: z.string().nullable(),
       startedAt: z.string(),
       endedAt: z.string().nullable(),
       durationSeconds: z.number(),
@@ -76,6 +90,87 @@ const outputShape = z.object({
   generatedAt: z.string(),
 })
 
+const catalogInput = z.looseObject({
+  workspaceId: z
+    .string()
+    .optional()
+    .describe('Workspace to list. Optional when you belong to only one.'),
+  search: z
+    .string()
+    .optional()
+    .describe('Filter projects by project or client name.'),
+  page: z.number().optional().describe('Project page, from 1.'),
+  limit: z.number().optional().describe('Projects per page, 1–100.'),
+})
+
+const catalogOutput = z.object({
+  workspaces: z.array(workspaceShape),
+  workspace: workspaceShape,
+  projects: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      client: z.object({
+        id: z.string(),
+        name: z.string(),
+        status: z.string(),
+      }),
+      tasks: z.array(z.object({ id: z.string(), name: z.string() })),
+    }),
+  ),
+  tags: z.array(z.object({ id: z.string(), name: z.string() })),
+  pagination: z.looseObject({}),
+})
+
+const writeFields = {
+  workspaceId: z
+    .string()
+    .optional()
+    .describe('Workspace ID. Optional when you belong to only one.'),
+  description: z.string().optional().describe('What you are working on.'),
+  projectId: z.string().optional().describe('Project ID from list_my_catalog.'),
+  taskId: z
+    .string()
+    .optional()
+    .describe('Task ID from list_my_catalog; must belong to the project.'),
+  tagIds: z
+    .array(z.string())
+    .optional()
+    .describe('Tag IDs from list_my_catalog.'),
+  billable: z.boolean().optional(),
+}
+
+const timerInput = z.looseObject(writeFields)
+
+const createEntryInput = z.looseObject({
+  ...writeFields,
+  description: z.string().describe('What you worked on. Required.'),
+  projectId: z.string().describe('Project ID from list_my_catalog. Required.'),
+  tagIds: z
+    .array(z.string())
+    .describe('At least one tag ID from list_my_catalog.'),
+  startedAt: z.string().describe('Start, ISO 8601 with UTC offset.'),
+  endedAt: z
+    .string()
+    .describe('End, ISO 8601 with UTC offset. Not in the future; max 24h.'),
+  notes: z.string().optional(),
+})
+
+const writtenEntryOutput = z.object({
+  entry: z.object({
+    workspace: workspaceShape,
+    projectName: z.string().nullable(),
+    clientName: z.string().nullable(),
+    taskName: z.string().nullable(),
+    tagNames: z.array(z.string()),
+    billable: z.boolean(),
+    startedAt: z.string(),
+    endedAt: z.string().nullable(),
+    durationSeconds: z.number(),
+    running: z.boolean(),
+  }),
+})
+
 function errorResult(code: string, message: string, retryable: boolean) {
   return {
     isError: true,
@@ -88,32 +183,42 @@ function errorResult(code: string, message: string, retryable: boolean) {
   } satisfies CallToolResult
 }
 
-export async function callWithTimeout(
-  grant: McpGrant,
-  args: unknown,
-  timeoutMs: number = MCP_CALL_TIMEOUT_MS,
+/**
+ * Runs one tool call under the deadline. A read that times out is safe to
+ * retry; a write may still land after the deadline, so it reports
+ * `outcome_unknown` and tells the assistant to check before retrying.
+ */
+export async function runTool<T>(
+  call: () => Promise<McpToolResult<T>>,
+  options: { write: boolean; timeoutMs?: number } = { write: false },
 ): Promise<CallToolResult> {
   let timer: ReturnType<typeof setTimeout> | undefined
   const timeout = new Promise<'timeout'>((resolve) => {
-    timer = setTimeout(() => resolve('timeout'), timeoutMs)
+    timer = setTimeout(
+      () => resolve('timeout'),
+      options.timeoutMs ?? MCP_CALL_TIMEOUT_MS,
+    )
   })
   try {
-    const result = await Promise.race([
-      listMyTimeEntries(grant.userId, args),
-      timeout,
-    ])
+    const result = await Promise.race([call(), timeout])
     if (result === 'timeout') {
-      return errorResult(
-        'temporarily_unavailable',
-        'Tickr took too long to respond. Please try again shortly.',
-        true,
-      )
+      return options.write
+        ? errorResult(
+            'outcome_unknown',
+            'Tickr took too long to confirm the change. Check list_my_time_entries before trying again.',
+            false,
+          )
+        : errorResult(
+            'temporarily_unavailable',
+            'Tickr took too long to respond. Please try again shortly.',
+            true,
+          )
     }
     if (!result.ok) {
       return errorResult(result.code, result.message, result.retryable)
     }
     return {
-      structuredContent: result.structuredContent,
+      structuredContent: result.structuredContent as Record<string, unknown>,
       content: [
         { type: 'text', text: JSON.stringify(result.structuredContent) },
       ],
@@ -121,6 +226,30 @@ export async function callWithTimeout(
   } finally {
     clearTimeout(timer)
   }
+}
+
+export function callWithTimeout(
+  grant: McpGrant,
+  args: unknown,
+  timeoutMs: number = MCP_CALL_TIMEOUT_MS,
+): Promise<CallToolResult> {
+  return runTool(() => listMyTimeEntries(grant.userId, args), {
+    write: false,
+    timeoutMs,
+  })
+}
+
+const READ_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  idempotentHint: true,
+  openWorldHint: false,
+}
+const WRITE_ANNOTATIONS = {
+  readOnlyHint: false,
+  destructiveHint: false,
+  idempotentHint: false,
+  openWorldHint: false,
 }
 
 /** One server per request: the transport is stateless. */
@@ -134,14 +263,60 @@ export function buildMcpServer(grant: McpGrant): McpServer {
         "Read your own tracked time in Tickr: daily totals and paged entries for your active workspaces. Defaults to today in each workspace's time zone. Read-only.",
       inputSchema: advertisedInput,
       outputSchema: outputShape,
-      annotations: {
-        readOnlyHint: true,
-        destructiveHint: false,
-        idempotentHint: true,
-        openWorldHint: false,
-      },
+      annotations: READ_ANNOTATIONS,
     },
     (args) => callWithTimeout(grant, args),
+  )
+  server.registerTool(
+    MCP_CATALOG_TOOL,
+    {
+      title: 'List my projects and tags',
+      description:
+        'The projects (with client and tasks) and tags you can log time against in one workspace. Use these IDs with the write tools; names are never matched. Archived projects, tasks and tags and projects of inactive clients are left out. Read-only.',
+      inputSchema: catalogInput,
+      outputSchema: catalogOutput,
+      annotations: READ_ANNOTATIONS,
+    },
+    (args) => runTool(() => listMyCatalog(grant.userId, args)),
+  )
+  if (!grant.canWrite) return server
+
+  server.registerTool(
+    'start_timer',
+    {
+      title: 'Start my timer',
+      description:
+        'Start a running timer now in one workspace. Fails if a timer is already running. Project, task and tag IDs must come from list_my_catalog.',
+      inputSchema: timerInput,
+      outputSchema: writtenEntryOutput,
+      annotations: WRITE_ANNOTATIONS,
+    },
+    (args) => runTool(() => mcpStartTimer(grant.userId, args), { write: true }),
+  )
+  server.registerTool(
+    'stop_timer',
+    {
+      title: 'Stop my timer',
+      description:
+        'Stop your running timer now. Fields you pass replace the timer’s before it stops. A stopped entry needs a description, a project and at least one tag; IDs come from list_my_catalog.',
+      inputSchema: timerInput,
+      outputSchema: writtenEntryOutput,
+      annotations: WRITE_ANNOTATIONS,
+    },
+    (args) => runTool(() => mcpStopTimer(grant.userId, args), { write: true }),
+  )
+  server.registerTool(
+    'create_time_entry',
+    {
+      title: 'Log time',
+      description:
+        'Log a finished block of time (max 24 hours, not in the future). Needs a description, a project and at least one tag from list_my_catalog. Refused if it overlaps time you already logged.',
+      inputSchema: createEntryInput,
+      outputSchema: writtenEntryOutput,
+      annotations: WRITE_ANNOTATIONS,
+    },
+    (args) =>
+      runTool(() => mcpCreateTimeEntry(grant.userId, args), { write: true }),
   )
   return server
 }

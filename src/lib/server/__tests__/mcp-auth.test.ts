@@ -70,7 +70,28 @@ describe('requireMcpGrant · C4 credential matrix', () => {
       userId: 'pilot-user',
       clientId: 'client-1',
       tokenId: 'tok1',
+      canWrite: false,
     })
+  })
+
+  it('marks a token with the write scope as able to write', async () => {
+    rows.current = [
+      {
+        ...validRow,
+        scopes: ['time_entries:read', 'time_entries:write', 'offline_access'],
+      },
+    ]
+    await expect(
+      requireMcpGrant(request('Bearer tmcp_at_abc'), NOW),
+    ).resolves.toMatchObject({ canWrite: true })
+  })
+
+  it('refuses a write-only token: read is always required', async () => {
+    rows.current = [{ ...validRow, scopes: ['time_entries:write'] }]
+    const error = await rejection(
+      requireMcpGrant(request('Bearer tmcp_at_abc'), NOW),
+    )
+    expect(error.code).toBe('insufficient_scope')
   })
 
   it('challenges a request with no credentials without an error code', async () => {

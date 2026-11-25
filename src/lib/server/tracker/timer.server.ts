@@ -19,6 +19,18 @@ import type {
   updateActiveTimerSchema,
 } from './shared/schemas'
 import { CLOCK_SKEW_TOLERANCE_MS } from './shared/schemas'
+import { EntryRuleError } from './shared/entry-rules'
+
+/**
+ * Who is writing, and where. The web app gets it from the session cookie via
+ * `requireWorkspaceMembership()`; the MCP adapter builds it from a verified
+ * OAuth grant. Both must have passed the subscription write gate.
+ */
+export type EntryWriteAccess = {
+  workspace: { id: string; locationTrackingEnabled: boolean }
+  member: { id: string }
+  user: { id: string; email: string }
+}
 
 async function getEntryTags(entryId: string) {
   return db
@@ -74,7 +86,13 @@ function serializeTimeEntry(
 }
 
 export async function startTimer(data: z.infer<typeof startTimerSchema>) {
-  const access = await requireWorkspaceMembership()
+  return startTimerFor(await requireWorkspaceMembership(), data)
+}
+
+export async function startTimerFor(
+  access: EntryWriteAccess,
+  data: z.infer<typeof startTimerSchema>,
+) {
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
@@ -98,7 +116,9 @@ export async function startTimer(data: z.infer<typeof startTimerSchema>) {
   ])
 
   if (activeRows[0]) {
-    throw new Error('Stop your current timer before starting a new one.')
+    throw new EntryRuleError(
+      'Stop your current timer before starting a new one.',
+    )
   }
 
   // Offline replay sends the real start time; clamp so it can't be in the
@@ -251,7 +271,13 @@ export async function updateActiveTimer(
 }
 
 export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
-  const access = await requireWorkspaceMembership()
+  return stopTimerFor(await requireWorkspaceMembership(), data)
+}
+
+export async function stopTimerFor(
+  access: EntryWriteAccess,
+  data: z.infer<typeof stopTimerSchema>,
+) {
   // Entry and its current tags are independent reads — one round trip wave.
   const [entryRows, existingTags] = await Promise.all([
     db
@@ -289,13 +315,17 @@ export async function stopTimer(data: z.infer<typeof stopTimerSchema>) {
     data.taskId !== undefined ? data.taskId || null : entry.taskId
 
   if (!effectiveDescription) {
-    throw new Error('Add a task description before stopping the timer.')
+    throw new EntryRuleError(
+      'Add a task description before stopping the timer.',
+    )
   }
   if (!effectiveProjectId) {
-    throw new Error('Pick a client and project before stopping the timer.')
+    throw new EntryRuleError(
+      'Pick a client and project before stopping the timer.',
+    )
   }
   if (effectiveTagIds.length === 0) {
-    throw new Error('Add at least one tag before stopping the timer.')
+    throw new EntryRuleError('Add at least one tag before stopping the timer.')
   }
   await assertWorkspaceCatalogs(
     access.workspace.id,

@@ -1,5 +1,6 @@
 import '@tanstack/react-start/server-only'
 import { createHash } from 'node:crypto'
+import { OAUTH_WRITE_SCOPE } from '#/lib/oauth-query'
 
 /**
  * Prefixes the OAuth provider adds to the tokens it returns. The prefix is not
@@ -10,8 +11,15 @@ export const MCP_ACCESS_TOKEN_PREFIX = 'tmcp_at_'
 export const MCP_REFRESH_TOKEN_PREFIX = 'tmcp_rt_'
 export const MCP_TOKEN_FAMILY_PREFIX = 'tmcp_'
 
-/** The only scope an MCP client can use to read data. */
+/** Required on every MCP call: read your own time and catalog. */
 export const MCP_READ_SCOPE = 'time_entries:read'
+
+/**
+ * Optional, on top of read: start/stop your timer and log time. Tokens without
+ * it never see the write tools, so an app approved for read stays read-only
+ * until the user approves write on the consent page.
+ */
+export const MCP_WRITE_SCOPE = OAUTH_WRITE_SCOPE
 
 /**
  * Digest stored for opaque access and refresh tokens. Shared by
