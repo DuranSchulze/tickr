@@ -12,6 +12,8 @@ import { assertWorkspaceCatalogs } from './shared/catalogs.server'
 import { captureEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { createAuditLog } from './audit/audit-logger.server'
+import { EntryRuleError } from './shared/entry-rules'
+import type { EntryWriteAccess } from './timer.server'
 import { memberScopeCondition } from './shared/member-scope.server'
 import {
   entryRollupTarget,
@@ -73,7 +75,7 @@ function serializeManualTimeEntry(
 function parseEntryDate(value: string, label: string): Date {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
-    throw new Error(`${label} is invalid.`)
+    throw new EntryRuleError(`${label} is invalid.`)
   }
   return date
 }
@@ -82,7 +84,7 @@ function parseEntryTimes(data: { startedAt: string; endedAt: string | null }) {
   const startedAt = parseEntryDate(data.startedAt, 'Start time')
   const endedAt = data.endedAt ? parseEntryDate(data.endedAt, 'End time') : null
   if (endedAt && endedAt <= startedAt) {
-    throw new Error('End time must be after start time.')
+    throw new EntryRuleError('End time must be after start time.')
   }
   return { startedAt, endedAt }
 }
@@ -90,7 +92,13 @@ function parseEntryTimes(data: { startedAt: string; endedAt: string | null }) {
 export async function createManualEntry(
   data: z.infer<typeof entryInputSchema>,
 ): Promise<TimeEntry> {
-  const access = await requireWorkspaceMembership()
+  return createManualEntryFor(await requireWorkspaceMembership(), data)
+}
+
+export async function createManualEntryFor(
+  access: EntryWriteAccess,
+  data: z.infer<typeof entryInputSchema>,
+): Promise<TimeEntry> {
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null

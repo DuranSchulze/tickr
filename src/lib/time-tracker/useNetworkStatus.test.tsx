@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from 'react'
+import { act, useEffect } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -91,6 +91,8 @@ function NetworkStatusProbe({
   onStatusChange: (isOnline: boolean) => void
 }) {
   const { isOnline } = useNetworkStatus()
-  onStatusChange(isOnline)
+  useEffect(() => {
+    onStatusChange(isOnline)
+  }, [isOnline, onStatusChange])
   return null
 }

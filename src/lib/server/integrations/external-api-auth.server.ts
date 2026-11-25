@@ -11,6 +11,7 @@ import { readClientIp } from '../client-ip.server'
 import { createAuditLog } from '../tracker/audit/audit-logger.server'
 import { hashApiKey } from './api-keys.server'
 import { looksLikeJwt, verifyExternalApiJwt } from './external-api-jwt.server'
+import { MCP_TOKEN_FAMILY_PREFIX } from './mcp-token.server'
 import {
   resolveTracklyWorkspaceMembership,
   verifyTracklyUserCredentials,
@@ -257,6 +258,10 @@ export async function authenticateApiKeyCredential(
   credential: string,
   request?: Request,
 ): Promise<ExternalApiContext> {
+  // MCP OAuth tokens only authorize /api/mcp; reject them before any lookup.
+  if (credential.startsWith(MCP_TOKEN_FAMILY_PREFIX)) {
+    throw new ExternalApiError(401, 'invalid_api_key', 'Invalid API key.')
+  }
   if (looksLikeJwt(credential)) {
     const payload = await verifyExternalApiJwt(credential)
     if (!payload) {

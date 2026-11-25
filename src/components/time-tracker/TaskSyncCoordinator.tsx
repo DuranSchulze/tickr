@@ -30,6 +30,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from 'react'
 import type { ReactNode } from 'react'
@@ -70,7 +71,9 @@ export function TaskSyncCoordinator({
   const queryClient = useQueryClient()
   const router = useRouter()
   const pathnameRef = useRef(pathname)
-  pathnameRef.current = pathname
+  useLayoutEffect(() => {
+    pathnameRef.current = pathname
+  })
   const publishChange = useCallback(
     () => publishTaskDataChange(workspaceId),
     [workspaceId],
