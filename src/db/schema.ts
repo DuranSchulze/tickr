@@ -194,6 +194,140 @@ export const rateLimits = pgTable('rate_limit', {
   lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 })
 
+// ── OAuth provider (read-only MCP) ───────────────────────────────────────────
+// Owned by `@better-auth/oauth-provider@1.6.18`. Property names must match the
+// plugin's `schema` fields exactly; `scopes` and the URI lists are native
+// `text[]` because the Drizzle adapter reports `supportsArrays` for `pg`.
+// Tokens are stored as `hashMcpToken` digests, never raw.
+// See .harness/tickr-mcp-read-only/workflow.md step 3.
+
+export const oauthClients = pgTable(
+  'oauth_clients',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    clientId: varchar('client_id', { length: 255 }).notNull().unique(),
+    clientSecret: text('client_secret'),
+    disabled: boolean('disabled').default(false),
+    skipConsent: boolean('skip_consent'),
+    enableEndSession: boolean('enable_end_session'),
+    subjectType: text('subject_type'),
+    scopes: text('scopes').array(),
+    userId: varchar('user_id', { length: 30 }).references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+    name: text('name'),
+    uri: text('uri'),
+    icon: text('icon'),
+    contacts: text('contacts').array(),
+    tos: text('tos'),
+    policy: text('policy'),
+    softwareId: text('software_id'),
+    softwareVersion: text('software_version'),
+    softwareStatement: text('software_statement'),
+    redirectUris: text('redirect_uris').array().notNull(),
+    postLogoutRedirectUris: text('post_logout_redirect_uris').array(),
+    tokenEndpointAuthMethod: text('token_endpoint_auth_method'),
+    grantTypes: text('grant_types').array(),
+    responseTypes: text('response_types').array(),
+    public: boolean('public'),
+    type: text('type'),
+    requirePKCE: boolean('require_pkce'),
+    referenceId: text('reference_id'),
+    metadata: jsonb('metadata'),
+  },
+  (table) => [index('oauth_clients_user_id_idx').on(table.userId)],
+)
+
+export const oauthRefreshTokens = pgTable(
+  'oauth_refresh_tokens',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    token: text('token').notNull().unique(),
+    clientId: varchar('client_id', { length: 255 })
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    sessionId: varchar('session_id', { length: 255 }).references(
+      () => sessions.id,
+      { onDelete: 'set null' },
+    ),
+    userId: varchar('user_id', { length: 30 })
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    referenceId: text('reference_id'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+    revoked: timestamp('revoked', { withTimezone: true }),
+    authTime: timestamp('auth_time', { withTimezone: true }),
+    scopes: text('scopes').array().notNull(),
+  },
+  (table) => [
+    index('oauth_refresh_tokens_client_id_idx').on(table.clientId),
+    index('oauth_refresh_tokens_session_id_idx').on(table.sessionId),
+    index('oauth_refresh_tokens_user_client_idx').on(
+      table.userId,
+      table.clientId,
+    ),
+  ],
+)
+
+export const oauthAccessTokens = pgTable(
+  'oauth_access_tokens',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    token: text('token').unique(),
+    clientId: varchar('client_id', { length: 255 })
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    sessionId: varchar('session_id', { length: 255 }).references(
+      () => sessions.id,
+      { onDelete: 'set null' },
+    ),
+    userId: varchar('user_id', { length: 30 }).references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    referenceId: text('reference_id'),
+    refreshId: varchar('refresh_id', { length: 255 }).references(
+      () => oauthRefreshTokens.id,
+      { onDelete: 'cascade' },
+    ),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+    scopes: text('scopes').array().notNull(),
+  },
+  (table) => [
+    index('oauth_access_tokens_client_id_idx').on(table.clientId),
+    index('oauth_access_tokens_session_id_idx').on(table.sessionId),
+    index('oauth_access_tokens_refresh_id_idx').on(table.refreshId),
+    index('oauth_access_tokens_user_client_idx').on(
+      table.userId,
+      table.clientId,
+    ),
+  ],
+)
+
+export const oauthConsents = pgTable(
+  'oauth_consents',
+  {
+    id: varchar('id', { length: 255 }).primaryKey(),
+    clientId: varchar('client_id', { length: 255 })
+      .notNull()
+      .references(() => oauthClients.clientId, { onDelete: 'cascade' }),
+    userId: varchar('user_id', { length: 30 }).references(() => users.id, {
+      onDelete: 'cascade',
+    }),
+    referenceId: text('reference_id'),
+    scopes: text('scopes').array().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }),
+  },
+  (table) => [
+    index('oauth_consents_client_id_idx').on(table.clientId),
+    index('oauth_consents_user_client_idx').on(table.userId, table.clientId),
+  ],
+)
+
 /**
  * Authentication abuse counters — our own throttling state for every password
  * path (browser sign-in, public-API login, developer login, registration).

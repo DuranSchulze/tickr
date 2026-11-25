@@ -571,3 +571,54 @@ Common status codes:
 - Use HTTPS in production.
 - API keys are not user session tokens and cannot access the authenticated app UI.
 - API responses are always scoped to the workspace that created the key.
+
+## 7. MCP (read-only pilot)
+
+Tickr exposes one read-only [Model Context Protocol](https://modelcontextprotocol.io) tool so an AI client (MCP Inspector, Codex, Claude) can read the signed-in user's own tracked time. It is **off by default** and admits only pilot users. Spec and evidence: `.harness/tickr-mcp-read-only/`.
+
+### Endpoint and discovery
+
+| What                          | Value                                                                                        |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| MCP endpoint                  | `POST {BETTER_AUTH_URL}/api/mcp` (Streamable HTTP, stateless; `GET`/`DELETE` return 405)     |
+| Protected resource metadata   | `{BETTER_AUTH_URL}/.well-known/oauth-protected-resource/api/mcp`                             |
+| Authorization server (issuer) | `{BETTER_AUTH_URL}/api/auth`, metadata at `/.well-known/oauth-authorization-server/api/auth` |
+| Scope                         | `time_entries:read` (plus `offline_access` for refresh)                                      |
+| Tool                          | `list_my_time_entries`                                                                       |
+
+A client only needs the endpoint URL. An unauthenticated call returns `401` with `WWW-Authenticate: Bearer resource_metadata="…"`; the client then registers itself (dynamic client registration), sends the user through Tickr sign-in and the consent page (`/oauth/consent`), and exchanges the code with PKCE (S256).
+
+### Authentication model
+
+- OAuth 2.1 via `@better-auth/oauth-provider@1.6.18` (pinned to `better-auth` 1.6.x). Users sign in with their normal email and password.
+- Access tokens are **opaque**, prefixed `tmcp_at_`, valid 15 minutes, and stored only as SHA-256 hashes (`hashMcpToken`). Refresh tokens are prefixed `tmcp_rt_`.
+- `/api/mcp` looks the token up on every call (`requireMcpGrant`), so disconnecting takes effect on the next request. It also re-checks the pilot list on every call.
+- MCP tokens never work on `/api/v1/*`, and REST JWTs, workspace API keys and session cookies never work on `/api/mcp`.
+- Disconnecting in **Profile → Connected apps** deletes the app's access tokens, refresh tokens and consent. Signing out of Tickr does **not** disconnect apps.
+
+### Tool contract — `list_my_time_entries`
+
+Arguments (all optional): `date` (`YYYY-MM-DD`), `workspaceId`, `startDate` + `endDate` (ISO 8601 with offset; requires `workspaceId`; max 31 days), `page` (default 1), `limit` (default 50, max 100). Unknown arguments such as `userId` are rejected with `invalid_arguments`.
+
+Output (`structuredContent`): `entries[]` (workspace, project name, start, end, duration, running), `dailyTotals[]` (workspace, date, duration, count, running), `pagination`, `generatedAt`. Notes, descriptions, client names, tags, other people and internal IDs are never returned.
+
+Errors are tool results with `isError: true` and a JSON body `{ error, message, retryable }`: `invalid_arguments`, `workspace_filter_required`, `workspace_not_accessible`, `temporarily_unavailable` (retryable). HTTP `429` with `Retry-After` after 60 calls per minute per app and user.
+
+### Enable, disable, roll back
+
+1. Apply migration `drizzle/0029_mcp_oauth_provider.sql` (creates `oauth_clients`, `oauth_access_tokens`, `oauth_refresh_tokens`, `oauth_consents`). Production requires explicit confirmation and a Neon rollback point first.
+2. Set `MCP_ENABLED=true` and `MCP_PILOT_USER_IDS=<comma-separated user IDs>`. An empty list admits nobody.
+3. `BETTER_AUTH_URL` must be the exact public origin clients reach (for local testing, `http://localhost:3000`; not `https://localhost`).
+4. **Disable:** set `MCP_ENABLED=false` and restart. `/api/mcp`, the `.well-known` routes and every `/api/auth/oauth2/*` endpoint return 404; sign-in and the REST API keep working.
+5. **Block one user:** remove their ID from `MCP_PILOT_USER_IDS`; their existing tokens fail on the next call.
+6. **Roll back code:** the four tables are additive and become inert; drop them later with a reviewed migration.
+
+### Local test with MCP Inspector
+
+```bash
+# .env (or shell): a non-production database, then
+MCP_ENABLED=true MCP_PILOT_USER_IDS=<your user id> BETTER_AUTH_URL=http://localhost:3000 pnpm dev
+npx @modelcontextprotocol/inspector@2.16.0
+```
+
+In Inspector set the transport to Streamable HTTP and the URL to `http://localhost:3000/api/mcp`, then **Connect**. Sign in, approve, list tools and call `list_my_time_entries`. Then disconnect in **Profile → Connected apps** and confirm the next call is refused.

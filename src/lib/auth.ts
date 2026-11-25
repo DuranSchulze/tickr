@@ -1,5 +1,10 @@
 import { betterAuth } from 'better-auth'
-import { APIError, createAuthMiddleware } from 'better-auth/api'
+import {
+  APIError,
+  createAuthMiddleware,
+  getSessionFromCtx,
+} from 'better-auth/api'
+import { oauthProvider } from '@better-auth/oauth-provider'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { db } from '#/db'
@@ -10,10 +15,27 @@ import { renderResetPasswordEmail } from '#/lib/server/email-templates/reset-pas
 import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { checkAndSendSuspiciousLoginAlert } from '#/lib/server/auth-security.server'
 import { getTrustedOrigins } from '#/lib/server/trusted-origins.server'
+import {
+  isMcpEnabled,
+  isMcpPilotUser,
+} from '#/lib/server/integrations/mcp-config.server'
+import {
+  MCP_ACCESS_TOKEN_PREFIX,
+  MCP_READ_SCOPE,
+  MCP_REFRESH_TOKEN_PREFIX,
+  hashMcpToken,
+} from '#/lib/server/integrations/mcp-token.server'
 
 const RESET_PASSWORD_EXPIRES_IN_SECONDS = 60 * 15
 const REMEMBERED_SESSION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 30
 const REMEMBERED_SESSION_UPDATE_AGE_SECONDS = 60 * 60 * 24
+/** MCP access tokens are short-lived; disconnect also deletes them outright. */
+const MCP_ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 15
+const MCP_RESOURCE = `${process.env.BETTER_AUTH_URL ?? ''}/api/mcp`
+
+function isOAuthProviderPath(path: string): boolean {
+  return path.startsWith('/oauth2/') || path.startsWith('/.well-known/')
+}
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET!,
@@ -28,6 +50,11 @@ export const auth = betterAuth({
       verification: schema.verifications,
       // Persistent limiter shared by all application instances.
       rateLimit: schema.rateLimits,
+      // OAuth provider for the read-only MCP pilot.
+      oauthClient: schema.oauthClients,
+      oauthRefreshToken: schema.oauthRefreshTokens,
+      oauthAccessToken: schema.oauthAccessTokens,
+      oauthConsent: schema.oauthConsents,
     },
   }),
   emailVerification: {
@@ -102,10 +129,44 @@ export const auth = betterAuth({
         window: 60,
         max: 5,
       },
+      // Unauthenticated MCP client registration creates rows; keep it scarce.
+      '/oauth2/register': {
+        window: 600,
+        max: 5,
+      },
+      '/oauth2/token': {
+        window: 60,
+        max: 20,
+      },
+      '/oauth2/authorize': {
+        window: 60,
+        max: 20,
+      },
     },
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      if (isOAuthProviderPath(ctx.path)) {
+        // The MCP pilot switch hides every OAuth provider endpoint.
+        if (!isMcpEnabled()) throw new APIError('NOT_FOUND')
+        if (
+          ctx.path === '/oauth2/consent' ||
+          ctx.path === '/oauth2/authorize'
+        ) {
+          const session = await getSessionFromCtx(ctx)
+          if (session && !isMcpPilotUser(session.user.id)) {
+            // Non-pilot users never get a grant. Consent is forced to "deny",
+            // which makes the plugin return a validated `access_denied`
+            // redirect; authorize is forced through the consent page so a
+            // stale consent cannot skip that step.
+            if (ctx.path === '/oauth2/consent') {
+              return { context: { body: { ...ctx.body, accept: false } } }
+            }
+            return { context: { query: { ...ctx.query, prompt: 'consent' } } }
+          }
+        }
+        return
+      }
       const field =
         ctx.path === '/sign-up/email' || ctx.path === '/set-password'
           ? 'password'
@@ -145,5 +206,27 @@ export const auth = betterAuth({
       },
     },
   },
-  plugins: [tanstackStartCookies()],
+  plugins: [
+    // Read-only MCP pilot. Opaque tokens are looked up on every call so a
+    // disconnect takes effect on the next request (spec REQ-2, Q1).
+    oauthProvider({
+      loginPage: '/api/oauth/login',
+      consentPage: '/api/oauth/consent',
+      scopes: [MCP_READ_SCOPE, 'offline_access'],
+      validAudiences: [MCP_RESOURCE],
+      disableJwtPlugin: true,
+      storeTokens: { hash: (token) => hashMcpToken(token) },
+      prefix: {
+        opaqueAccessToken: MCP_ACCESS_TOKEN_PREFIX,
+        refreshToken: MCP_REFRESH_TOKEN_PREFIX,
+      },
+      accessTokenExpiresIn: MCP_ACCESS_TOKEN_EXPIRES_IN_SECONDS,
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      // Served by src/routes/[.]well-known/oauth-authorization-server/api/auth.ts
+      silenceWarnings: { oauthAuthServerConfig: true },
+    }),
+    // Must stay last so Set-Cookie from other plugins' after-hooks is forwarded.
+    tanstackStartCookies(),
+  ],
 })
