@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import {
   LogOut,
   Palette,
@@ -11,10 +10,11 @@ import {
   UserCircle,
 } from 'lucide-react'
 import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
+import { SyncStatusPill } from '#/components/time-tracker/offline/SyncStatusPill'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
 import { InstallAppDialog } from '#/components/shared/InstallAppDialog'
-import { authClient } from '#/lib/auth-client'
+import { useSignOut } from '#/components/time-tracker/offline/useSignOut'
 import { usePwaInstall } from '#/hooks/usePwaInstall'
 import { Button } from '#/components/ui/button'
 import {
@@ -45,8 +45,7 @@ export function Navbar({
   birthdayCelebration?: ReactNode
   mobileMenuButton?: ReactNode
 }) {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const { signOut, dialog: signOutDialog } = useSignOut()
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const [installOpen, setInstallOpen] = useState(false)
   const { canPrompt, isInstalled, isIos, promptInstall } = usePwaInstall()
@@ -55,14 +54,7 @@ export function Navbar({
   const showInstallEntry = !isInstalled && (canPrompt || isIos)
 
   const handleSignOut = () => {
-    void authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          queryClient.clear()
-          void navigate({ to: '/auth' })
-        },
-      },
-    })
+    void signOut()
   }
 
   return (
@@ -83,6 +75,8 @@ export function Navbar({
             </span>
             Workspace live
           </div>
+
+          <SyncStatusPill workspaceId={workspace.id} />
 
           <WorkspaceSwitcher
             currentWorkspaceId={workspace.id}
@@ -181,6 +175,7 @@ export function Navbar({
           )}
         </div>
       </div>
+      {signOutDialog}
     </header>
   )
 }

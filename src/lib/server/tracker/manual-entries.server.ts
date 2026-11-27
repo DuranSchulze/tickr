@@ -13,6 +13,10 @@ import { captureEntryOrigin } from './shared/origin.server'
 import { calculateDuration, toIso } from './shared/dates'
 import { createAuditLog } from './audit/audit-logger.server'
 import { EntryRuleError } from './shared/entry-rules'
+import {
+  findEntryByClientMutationId,
+  isUniqueViolation,
+} from './shared/client-mutation.server'
 import type { EntryWriteAccess } from './timer.server'
 import { memberScopeCondition } from './shared/member-scope.server'
 import {
@@ -103,29 +107,58 @@ export async function createManualEntryFor(
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
   const { startedAt, endedAt } = parseEntryTimes(data)
+  const clientMutationId = data.clientMutationId ?? null
+
+  // Offline replay retry: return what the first attempt created, with no
+  // second insert, rollup refresh or audit log.
+  const replayed = async () => {
+    if (!clientMutationId) return null
+    const existing = await findEntryByClientMutationId(access, clientMutationId)
+    if (!existing) return null
+    const tags = await db
+      .select({ tagId: timeEntryTags.tagId })
+      .from(timeEntryTags)
+      .where(eq(timeEntryTags.timeEntryId, existing.id))
+    return serializeManualTimeEntry(
+      existing,
+      tags.map((tag) => tag.tagId),
+    )
+  }
+  const alreadyCreated = await replayed()
+  if (alreadyCreated) return alreadyCreated
 
   await assertWorkspaceCatalogs(access.workspace.id, projectId, taskId, tagIds)
 
-  const [entry] = await db
-    .insert(timeEntries)
-    .values({
-      workspaceId: access.workspace.id,
-      workspaceMemberId: access.member.id,
-      description: data.description,
-      projectId,
-      taskId,
-      billable: data.billable,
-      startedAt,
-      endedAt,
-      durationSeconds: calculateDuration(startedAt, endedAt),
-      entrySource: 'MANUAL',
-      notes: data.notes,
-      ...captureEntryOrigin({
-        trackingEnabled: access.workspace.locationTrackingEnabled,
-        deviceLocation: data.deviceLocation,
-      }),
-    })
-    .returning()
+  let entry: typeof timeEntries.$inferSelect
+  try {
+    ;[entry] = await db
+      .insert(timeEntries)
+      .values({
+        workspaceId: access.workspace.id,
+        workspaceMemberId: access.member.id,
+        description: data.description,
+        projectId,
+        taskId,
+        billable: data.billable,
+        startedAt,
+        endedAt,
+        durationSeconds: calculateDuration(startedAt, endedAt),
+        entrySource: 'MANUAL',
+        notes: data.notes,
+        clientMutationId,
+        ...captureEntryOrigin({
+          trackingEnabled: access.workspace.locationTrackingEnabled,
+          deviceLocation: data.deviceLocation,
+        }),
+      })
+      .returning()
+  } catch (err) {
+    if (clientMutationId && isUniqueViolation(err)) {
+      const existing = await replayed()
+      if (existing) return existing
+    }
+    throw err
+  }
 
   if (tagIds.length) {
     await db

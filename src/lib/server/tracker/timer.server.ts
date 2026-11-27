@@ -20,6 +20,10 @@ import type {
 } from './shared/schemas'
 import { CLOCK_SKEW_TOLERANCE_MS } from './shared/schemas'
 import { EntryRuleError } from './shared/entry-rules'
+import {
+  findEntryByClientMutationId,
+  isUniqueViolation,
+} from './shared/client-mutation.server'
 
 /**
  * Who is writing, and where. The web app gets it from the session cookie via
@@ -96,6 +100,17 @@ export async function startTimerFor(
   const tagIds = [...new Set(data.tagIds.filter(Boolean))]
   const projectId = data.projectId.trim() || null
   const taskId = data.taskId ?? null
+  const clientMutationId = data.clientMutationId ?? null
+
+  // Offline replay retry: the first attempt already created this entry. Must
+  // run before the active-timer pre-check, which would otherwise reject the
+  // retry because of the very timer it started.
+  if (clientMutationId) {
+    const existing = await findEntryByClientMutationId(access, clientMutationId)
+    if (existing) {
+      return serializeTimeEntry(existing, await getEntryTags(existing.id))
+    }
+  }
 
   // Both pre-checks are reads — run them in one round trip wave.
   const [activeRows] = await Promise.all([
@@ -116,6 +131,16 @@ export async function startTimerFor(
   ])
 
   if (activeRows[0]) {
+    // A concurrent duplicate of this same replay won the race.
+    if (
+      clientMutationId &&
+      activeRows[0].clientMutationId === clientMutationId
+    ) {
+      return serializeTimeEntry(
+        activeRows[0],
+        await getEntryTags(activeRows[0].id),
+      )
+    }
     throw new EntryRuleError(
       'Stop your current timer before starting a new one.',
     )
@@ -133,26 +158,41 @@ export async function startTimerFor(
       ? clientStartedAt
       : now
 
-  const [entry] = await db
-    .insert(timeEntries)
-    .values({
-      workspaceId: access.workspace.id,
-      workspaceMemberId: access.member.id,
-      description: data.description,
-      projectId,
-      taskId,
-      billable: data.billable,
-      startedAt,
-      endedAt: null,
-      durationSeconds: 0,
-      entrySource: 'TIMER',
-      notes: '',
-      ...captureEntryOrigin({
-        trackingEnabled: access.workspace.locationTrackingEnabled,
-        deviceLocation: data.deviceLocation,
-      }),
-    })
-    .returning()
+  let entry: typeof timeEntries.$inferSelect
+  try {
+    ;[entry] = await db
+      .insert(timeEntries)
+      .values({
+        workspaceId: access.workspace.id,
+        workspaceMemberId: access.member.id,
+        description: data.description,
+        projectId,
+        taskId,
+        billable: data.billable,
+        startedAt,
+        endedAt: null,
+        durationSeconds: 0,
+        entrySource: 'TIMER',
+        notes: '',
+        clientMutationId,
+        ...captureEntryOrigin({
+          trackingEnabled: access.workspace.locationTrackingEnabled,
+          deviceLocation: data.deviceLocation,
+        }),
+      })
+      .returning()
+  } catch (err) {
+    if (clientMutationId && isUniqueViolation(err)) {
+      const existing = await findEntryByClientMutationId(
+        access,
+        clientMutationId,
+      )
+      if (existing) {
+        return serializeTimeEntry(existing, await getEntryTags(existing.id))
+      }
+    }
+    throw err
+  }
 
   if (tagIds.length) {
     await db

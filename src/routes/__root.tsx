@@ -20,6 +20,24 @@ const Toaster = lazy(() =>
   import('sileo').then((mod) => ({ default: mod.Toaster })),
 )
 
+// Offline sync (offline-mode REQ-4) runs from the root shell on every route,
+// loaded after mount so it stays out of the initial bundle.
+const OfflineSyncCoordinator = lazy(
+  () => import('#/components/time-tracker/offline/OfflineSyncCoordinator'),
+)
+
+// oxlint-disable-next-line react/only-export-components
+function DeferredOfflineSync() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+  return (
+    <Suspense fallback={null}>
+      <OfflineSyncCoordinator />
+    </Suspense>
+  )
+}
+
 // oxlint-disable-next-line react/only-export-components
 function DeferredToaster() {
   const [mounted, setMounted] = useState(false)
@@ -46,11 +64,32 @@ function DeferredToaster() {
 // service worker would serve stale chunks across Vite HMR restarts.
 // oxlint-disable-next-line react/only-export-components
 function ServiceWorkerRegistrar() {
+  const [waiting, setWaiting] = useState<ServiceWorker | null>(null)
+  const [applying, setApplying] = useState(false)
+
   useEffect(() => {
     if (!import.meta.env.PROD) return
     if (!('serviceWorker' in navigator)) return
+    // A new worker waits for the user (offline-mode REQ-6), so it never
+    // reloads the page in the middle of an offline sync.
+    const watch = (registration: ServiceWorkerRegistration) => {
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        setWaiting(registration.waiting)
+      }
+      registration.addEventListener('updatefound', () => {
+        const installing = registration.installing
+        installing?.addEventListener('statechange', () => {
+          if (
+            installing.state === 'installed' &&
+            navigator.serviceWorker.controller
+          ) {
+            setWaiting(installing)
+          }
+        })
+      })
+    }
     const register = () => {
-      void navigator.serviceWorker.register('/sw.js')
+      void navigator.serviceWorker.register('/sw.js').then(watch)
     }
     if (document.readyState === 'complete') {
       register()
@@ -59,7 +98,48 @@ function ServiceWorkerRegistrar() {
     window.addEventListener('load', register, { once: true })
     return () => window.removeEventListener('load', register)
   }, [])
-  return null
+
+  async function applyUpdate() {
+    if (!waiting) return
+    setApplying(true)
+    // Wait for an offline sync in this browser to finish first.
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      // Web Locks are missing in some older WebViews.
+      const locks = (navigator as { locks?: LockManager }).locks
+      const held = locks
+        ? await locks
+            .query()
+            .then((snapshot) => snapshot.held ?? [])
+            .catch(() => [])
+        : []
+      if (!held.some((lock) => lock.name === 'trackly-offline-replay')) break
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+    }
+    navigator.serviceWorker.addEventListener(
+      'controllerchange',
+      () => window.location.reload(),
+      { once: true },
+    )
+    waiting.postMessage({ type: 'SKIP_WAITING' })
+  }
+
+  if (!waiting) return null
+  return (
+    <div
+      role="status"
+      className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-md items-center justify-between gap-3 rounded-xl border border-stone bg-eggshell p-3 text-sm font-semibold text-foreground shadow-[var(--shadow-whisper)]"
+    >
+      <span>A new version of {BRAND.name} is ready.</span>
+      <Button
+        size="sm"
+        className="min-h-11"
+        disabled={applying}
+        onClick={() => void applyUpdate()}
+      >
+        {applying ? 'Updating…' : 'Update'}
+      </Button>
+    </div>
+  )
 }
 
 // oxlint-disable-next-line react/only-export-components
@@ -192,6 +272,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         {children}
         <Monitoring />
         <ServiceWorkerRegistrar />
+        <DeferredOfflineSync />
         <DeferredToaster />
         <Scripts />
       </body>

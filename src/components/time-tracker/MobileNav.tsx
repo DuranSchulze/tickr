@@ -1,7 +1,6 @@
 import { memo, useState } from 'react'
 import type { ComponentType } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import {
   BarChart3,
   BriefcaseBusiness,
@@ -16,7 +15,7 @@ import {
   UserCircle,
 } from 'lucide-react'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
-import { authClient } from '#/lib/auth-client'
+import { useSignOut } from '#/components/time-tracker/offline/useSignOut'
 import { Button } from '#/components/ui/button'
 import {
   Drawer,
@@ -64,8 +63,7 @@ export const MobileNav = memo(function ({
 }) {
   const [open, setOpen] = useState(false)
   const [appearanceOpen, setAppearanceOpen] = useState(false)
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const { signOut, dialog: signOutDialog } = useSignOut()
 
   function close() {
     setOpen(false)
@@ -73,14 +71,7 @@ export const MobileNav = memo(function ({
 
   function handleSignOut() {
     close()
-    void authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          queryClient.clear()
-          void navigate({ to: '/auth' })
-        },
-      },
-    })
+    void signOut()
   }
 
   const footerItemClass =
@@ -296,6 +287,7 @@ export const MobileNav = memo(function ({
         open={appearanceOpen}
         onOpenChange={setAppearanceOpen}
       />
+      {signOutDialog}
     </Drawer>
   )
 })

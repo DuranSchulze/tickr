@@ -4,10 +4,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import { notifyTracker } from '#/lib/time-tracker/notifications'
 import { dateTimeLocalValue } from '#/lib/time-tracker/store'
 import {
+  editQueuedEntry,
   enqueueOfflineMutation,
   setOfflineEntryDeviceLocation,
 } from '#/lib/time-tracker/offline-queue'
+import { toast } from '#/lib/toast'
 import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
+import { reportOfflineSaveFailure } from '#/lib/time-tracker/offline-alerts'
 import { upsertTrackerStateEntry } from '#/lib/time-tracker/query-keys'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { calculateManualSeconds, emptyDraft, toEntryPayload } from '../utils'
@@ -91,48 +94,60 @@ export function useDraftAndEdit({
     const payload = toEntryPayload(draft)
 
     if (!isOnline) {
-      const optimisticId = `optimistic-manual-${crypto.randomUUID()}`
-      const queued = enqueueOfflineMutation(
-        state.workspace.id,
-        state.currentMemberId,
-        {
+      const workspaceId = state.workspace.id
+      const memberId = state.currentMemberId
+      const captureLocation = state.workspace.locationTrackingEnabled
+      // Save durably first; only a committed entry is shown as saved and
+      // clears the form (offline-mode REQ-1).
+      const saveOffline = async () => {
+        const optimisticId = `optimistic-manual-${crypto.randomUUID()}`
+        const queued = await enqueueOfflineMutation(workspaceId, memberId, {
           type: 'createManualEntry',
           optimisticId,
           payload,
-        },
-      )
-      if (state.workspace.locationTrackingEnabled) {
-        void captureDeviceLocation().then((deviceLocation) => {
-          if (!deviceLocation) return
-          setOfflineEntryDeviceLocation(
-            state.workspace.id,
-            state.currentMemberId,
-            queued.id,
-            deviceLocation,
-          )
         })
+        if (captureLocation) {
+          void captureDeviceLocation().then((deviceLocation) => {
+            if (!deviceLocation) return
+            void setOfflineEntryDeviceLocation(
+              workspaceId,
+              memberId,
+              queued.id,
+              deviceLocation,
+            ).catch(() => undefined)
+          })
+        }
+        onOfflineCreate?.({
+          id: optimisticId,
+          workspaceMemberId: memberId,
+          description: payload.description,
+          projectId: payload.projectId,
+          taskId: payload.taskId,
+          tagIds: payload.tagIds,
+          billable: payload.billable,
+          startedAt: payload.startedAt,
+          endedAt: payload.endedAt,
+          durationSeconds: payload.durationSeconds,
+          notes: payload.notes,
+          entrySource: 'MANUAL',
+        })
+        notifyTracker({
+          action: 'created',
+          task: payload.description,
+          durationSeconds: payload.durationSeconds,
+          offline: true,
+        })
+        resetDraft()
       }
-      onOfflineCreate?.({
-        id: optimisticId,
-        workspaceMemberId: state.currentMemberId,
-        description: payload.description,
-        projectId: payload.projectId,
-        taskId: payload.taskId,
-        tagIds: payload.tagIds,
-        billable: payload.billable,
-        startedAt: payload.startedAt,
-        endedAt: payload.endedAt,
-        durationSeconds: payload.durationSeconds,
-        notes: payload.notes,
-        entrySource: 'MANUAL',
-      })
-      notifyTracker({
-        action: 'created',
-        task: payload.description,
-        durationSeconds: payload.durationSeconds,
-        offline: true,
-      })
-      resetDraft()
+      const attempt = (): Promise<void> =>
+        saveOffline().catch((error: unknown) => {
+          reportOfflineSaveFailure({
+            title: 'Entry not saved',
+            error,
+            retry: attempt,
+          })
+        })
+      void attempt()
       return
     }
 
@@ -160,9 +175,83 @@ export function useDraftAndEdit({
     })
   }
 
+  /**
+   * Offline edits (offline-mode REQ-7): entries already on the server are
+   * read-only until reconnecting; entries still in the offline queue are
+   * edited in place so the corrected values are what syncs.
+   */
+  function applyOfflineEdit(original: TimeEntry, next: TimeEntry) {
+    if (!original.id.startsWith('optimistic-')) {
+      toast.error('Connect to edit synced entries', {
+        description:
+          'This entry is already saved on the server, so it can only be changed online. Nothing was changed.',
+      })
+      return
+    }
+    void editQueuedEntry(
+      state.workspace.id,
+      state.currentMemberId,
+      original.id,
+      {
+        description: next.description,
+        projectId: next.projectId,
+        taskId: next.taskId,
+        tagIds: next.tagIds,
+        billable: next.billable,
+        startedAt: next.startedAt,
+        endedAt: next.endedAt,
+        durationSeconds: next.durationSeconds,
+        notes: next.notes,
+      },
+    )
+      .then((edited) => {
+        if (!edited) {
+          toast.error('Connect to edit this entry', {
+            description: 'It has already synced. Nothing was changed.',
+          })
+          return
+        }
+        setEditingId(null)
+        if (next.endedAt) onOfflineCreate?.(next)
+        else patchEntryOptimistically(next)
+      })
+      .catch((error: unknown) => {
+        reportOfflineSaveFailure({
+          title: 'Edit not saved',
+          error,
+          retry: async () => applyOfflineEdit(original, next),
+        })
+      })
+  }
+
   function saveEdit() {
     if (!editingId || !editingDraft.description.trim() || !editingEntry) return
     const prev = editingEntry
+
+    if (!isOnline) {
+      const startedAt = new Date(editingDraft.startedAt)
+      if (isNaN(startedAt.getTime())) return
+      const fields = toEntryPayload(editingDraft)
+      applyOfflineEdit(
+        prev,
+        prev.endedAt
+          ? {
+              ...prev,
+              ...fields,
+              durationSeconds: calculateManualSeconds(editingDraft),
+            }
+          : {
+              ...prev,
+              description: editingDraft.description.trim(),
+              projectId: editingDraft.projectId,
+              taskId: editingDraft.taskId || null,
+              tagIds: editingDraft.tagIds.filter(Boolean),
+              billable: editingDraft.billable,
+              startedAt: startedAt.toISOString(),
+            },
+      )
+      return
+    }
 
     // Running entry — update without touching endedAt to keep the timer alive
     if (!prev.endedAt) {
@@ -233,6 +322,22 @@ export function useDraftAndEdit({
   ) {
     const entry = entries.find((e) => e.id === entryId)
     if (!entry) return
+
+    if (!isOnline) {
+      const next = { ...entry, ...patch }
+      next.description = next.description.trim()
+      if (!next.description) return
+      if (next.endedAt) {
+        next.durationSeconds = Math.max(
+          0,
+          Math.floor(
+            (Date.parse(next.endedAt) - Date.parse(next.startedAt)) / 1000,
+          ),
+        )
+      }
+      applyOfflineEdit(entry, next)
+      return
+    }
 
     // Running entry — route through updateActiveTimer so endedAt is never set
     if (!entry.endedAt) {

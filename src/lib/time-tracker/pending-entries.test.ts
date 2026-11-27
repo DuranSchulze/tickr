@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
+import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
+import { deleteOfflineDatabase } from './offline-db'
+import { flushWrites, resetOfflineStoreForTests } from './offline-store'
 import type { TimeEntry } from './types'
 import { enqueueOfflineMutation, getQueuedEntryIds } from './offline-queue'
 import {
@@ -30,7 +33,11 @@ function entry(id: string): TimeEntry {
 }
 
 describe('pending entry reconciliation', () => {
-  beforeEach(() => localStorage.clear())
+  beforeEach(async () => {
+    localStorage.clear()
+    resetOfflineStoreForTests()
+    await deleteOfflineDatabase()
+  })
 
   it('removes an orphan with no server row or queued action', () => {
     const orphan = entry('orphan-1')
@@ -50,10 +57,10 @@ describe('pending entry reconciliation', () => {
     expect(result.orphaned).toEqual([])
   })
 
-  it('preserves pending entries referenced by the scoped offline queue', () => {
+  it('preserves pending entries referenced by the scoped offline queue', async () => {
     const queued = entry('optimistic-1')
     replacePendingEntries(workspaceId, memberId, [queued])
-    enqueueOfflineMutation(workspaceId, memberId, {
+    await enqueueOfflineMutation(workspaceId, memberId, {
       type: 'createManualEntry',
       optimisticId: queued.id,
       payload: {
@@ -69,6 +76,7 @@ describe('pending entry reconciliation', () => {
       },
     })
 
+    await flushWrites(`${workspaceId}:${memberId}`)
     const pending = loadPendingEntries(workspaceId, memberId)
     const result = reconcilePendingEntries(
       pending,

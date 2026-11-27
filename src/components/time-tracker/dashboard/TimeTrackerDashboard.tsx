@@ -7,9 +7,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useRouter } from '@tanstack/react-router'
 import { Play, Square, X } from 'lucide-react'
-import { toast } from '#/lib/toast'
 import {
   formatDuration,
   getEntrySeconds,
@@ -42,30 +40,12 @@ import { useTimerCore } from './hooks/useTimerCore'
 import { useRemoteTaskDataSync } from './hooks/useRemoteTaskDataSync'
 import { useTimerKeyboard } from './hooks/useTimerKeyboard'
 import { useNetworkStatus } from '#/lib/time-tracker/useNetworkStatus'
-import {
-  createManualEntryFn,
-  startTimerFn,
-  stopTimerFn,
-  deleteEntryFn,
-  getPaginatedEntriesFn,
-} from '#/lib/server/tracker'
-import {
-  loadOfflineQueue,
-  removeOfflineQueueItem,
-} from '#/lib/time-tracker/offline-queue'
-import {
-  invalidateTrackerState,
-  trackerKeys,
-} from '#/lib/time-tracker/query-keys'
-import { useQueryClient } from '@tanstack/react-query'
+import { getPaginatedEntriesFn } from '#/lib/server/tracker'
 import { BRAND } from '#/lib/brand'
 import { MemberExportButton } from '#/components/time-tracker/shared/MemberExportDialog'
 import { FeedbackFloatingPanel } from './FeedbackForm'
 import { RunningTimer } from './RunningTimer'
-import {
-  publishTaskDataChange,
-  subscribeToTaskSyncCompleted,
-} from '#/lib/time-tracker/task-sync'
+import { subscribeToTaskSyncCompleted } from '#/lib/time-tracker/task-sync'
 
 // Rows requested per page from getPaginatedEntriesFn (server clamps to 100).
 const ALL_ENTRIES_PAGE_SIZE = 50
@@ -80,8 +60,6 @@ export function TimeTrackerDashboard({
   focusTimer?: boolean
   canManageCatalog?: boolean
 }) {
-  const router = useRouter()
-  const queryClient = useQueryClient()
   const mutations = useTrackerMutations(
     state.workspace.id,
     state.workspace.locationTrackingEnabled,
@@ -252,7 +230,6 @@ export function TimeTrackerDashboard({
     optimisticStoppedEntries,
     subsecondStopRequestedAt,
     upsertOptimisticStoppedEntry,
-    removeOptimisticStoppedEntry,
     isTimerStarting,
     isTimerStopping,
     descriptionSuggestions,
@@ -317,109 +294,6 @@ export function TimeTrackerDashboard({
       void loadAllEntries(true)
     }
   }, [loadAllEntries])
-
-  // When back online, drain any mutations that were queued while offline.
-  // Each replay carries its original client timestamps, so synced entries keep
-  // the times the user actually worked instead of the reconnect time.
-  const drainingRef = useRef(false)
-  useEffect(() => {
-    if (!isOnline || drainingRef.current) return
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return
-    const queue = loadOfflineQueue(state.workspace.id, state.currentMemberId)
-    if (queue.length === 0) return
-    drainingRef.current = true
-
-    // A fetch-level failure means we're effectively offline again; a server
-    // response with an error means the action itself was rejected.
-    function isNetworkError(err: unknown) {
-      if (typeof navigator !== 'undefined' && !navigator.onLine) return true
-      return err instanceof TypeError
-    }
-
-    async function drain() {
-      const idMap = new Map<string, string>()
-      const failedIds = new Set<string>()
-      let replayedAny = false
-
-      for (const item of queue) {
-        // Drop actions that depend on a start/create the server rejected —
-        // their target entry will never exist.
-        const dependsOn =
-          item.type === 'stopTimer' || item.type === 'discardTimer'
-            ? item.payload.id
-            : null
-        if (dependsOn && failedIds.has(dependsOn)) {
-          removeOfflineQueueItem(
-            state.workspace.id,
-            state.currentMemberId,
-            item.id,
-          )
-          removeOptimisticStoppedEntry(dependsOn)
-          continue
-        }
-
-        try {
-          if (item.type === 'startTimer') {
-            const entry = await startTimerFn({ data: item.payload })
-            idMap.set(item.optimisticId, entry.id)
-          } else if (item.type === 'createManualEntry') {
-            await createManualEntryFn({ data: item.payload })
-            removeOptimisticStoppedEntry(item.optimisticId)
-          } else if (item.type === 'stopTimer') {
-            const { id, ...overrides } = item.payload
-            const realId = idMap.get(id) ?? id
-            await stopTimerFn({ data: { id: realId, ...overrides } })
-            // The pending entry was stored under its optimistic id; the synced
-            // one arrives under the real id on the next invalidate.
-            if (realId !== id) removeOptimisticStoppedEntry(id)
-          } else {
-            const realId = idMap.get(item.payload.id) ?? item.payload.id
-            await deleteEntryFn({ data: { id: realId } })
-          }
-          removeOfflineQueueItem(
-            state.workspace.id,
-            state.currentMemberId,
-            item.id,
-          )
-          replayedAny = true
-        } catch (err) {
-          if (isNetworkError(err)) {
-            // Connection dropped again — keep the remaining items and retry
-            // on the next reconnect.
-            break
-          }
-          // Server rejected the action — drop it so one poisoned item can't
-          // stall the queue forever, and clean up its optimistic entry.
-          removeOfflineQueueItem(
-            state.workspace.id,
-            state.currentMemberId,
-            item.id,
-          )
-          if (item.type === 'startTimer' || item.type === 'createManualEntry') {
-            failedIds.add(item.optimisticId)
-            removeOptimisticStoppedEntry(item.optimisticId)
-          }
-          toast.error('Failed to sync offline action', {
-            description:
-              err instanceof Error ? err.message : 'Something went wrong.',
-          })
-        }
-      }
-
-      drainingRef.current = false
-      if (replayedAny) {
-        publishTaskDataChange(state.workspace.id)
-        void invalidateTrackerState(queryClient)
-        void queryClient.invalidateQueries({ queryKey: trackerKeys.timesheets })
-        void queryClient.invalidateQueries({
-          queryKey: trackerKeys.missingWeekdays(state.workspace.id),
-        })
-        void router.invalidate()
-      }
-    }
-
-    void drain()
-  }, [isOnline, state.currentMemberId, state.workspace.id])
 
   // Update the browser tab title and emit state to the Chrome extension side panel.
   // Owns its own interval so the dashboard doesn't re-render every second.

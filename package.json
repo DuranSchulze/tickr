@@ -21,6 +21,7 @@
     "format": "prettier --check .",
     "check": "prettier --write . && eslint --fix",
     "check-all": "pnpm typecheck && pnpm lint && pnpm test",
+    "test:e2e": "tsx e2e/offline.e2e.ts",
     "perf:bundle": "node perf/bundle-budget.mjs",
     "perf:bundle:json": "node perf/bundle-budget.mjs --json",
     "perf:ci": "pnpm build && pnpm perf:bundle",

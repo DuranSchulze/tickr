@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { FileDown } from 'lucide-react'
 import {
   Dialog,
@@ -9,6 +10,7 @@ import {
 } from '#/components/ui/dialog'
 import {
   getMemberMonthlyReportFn,
+  getMemberReportFilterOptionsFn,
   getMemberReportOngoingTaskSummaryFn,
 } from '#/lib/server/tracker'
 import {
@@ -20,6 +22,12 @@ import { ExportDateRangePicker } from './ExportDateRangePicker'
 import { ExportActionsFooter } from './export-dialog-footer'
 import { ExportOngoingTasksDialog } from './ExportOngoingTasksDialog'
 import { ExportSortControls } from './ExportSortControls'
+import {
+  EMPTY_EXPORT_FILTERS,
+  ExportFilterControls,
+  resolveExportFilters,
+} from './ExportFilterControls'
+import type { ExportFilterSelection } from './ExportFilterControls'
 import { useExportDialogState } from './export-dialog-state'
 import type { ExportFormat } from './export-dialog-state'
 import type {
@@ -63,6 +71,8 @@ export function MemberExportDialog({
   const [ongoingTaskSummary, setOngoingTaskSummary] =
     useState<ExportOngoingTaskSummary | null>(null)
   const [ongoingWarningOpen, setOngoingWarningOpen] = useState(false)
+  const [filters, setFilters] =
+    useState<ExportFilterSelection>(EMPTY_EXPORT_FILTERS)
   const {
     startDate,
     endDate,
@@ -78,8 +88,27 @@ export function MemberExportDialog({
     defaultEndDate,
   })
 
+  const filterOptionsQuery = useQuery({
+    queryKey: ['member-report-filter-options', memberId, startDate, endDate],
+    queryFn: () =>
+      getMemberReportFilterOptionsFn({
+        data: { memberId, startDate, endDate },
+      }),
+    enabled: open && !invalidRange,
+    staleTime: 60_000,
+  })
+
   function getReportPayload(range: { startDate: string; endDate: string }) {
-    return { memberId, ...range, sortBy, sortOrder }
+    const activeFilters = resolveExportFilters(filters, filterOptionsQuery.data)
+    return {
+      memberId,
+      ...range,
+      sortBy,
+      sortOrder,
+      clientIds: activeFilters.clientIds,
+      projectIds: activeFilters.projectIds,
+      tagIds: activeFilters.tagIds,
+    }
   }
 
   async function runMemberExport(format: ExportFormat) {
@@ -131,6 +160,7 @@ export function MemberExportDialog({
           if (!nextOpen) {
             setOngoingWarningOpen(false)
             setOngoingTaskSummary(null)
+            setFilters(EMPTY_EXPORT_FILTERS)
             pendingExportFormatRef.current = null
           }
           handleOpenChange(nextOpen)
@@ -140,7 +170,7 @@ export function MemberExportDialog({
           <DialogHeader>
             <DialogTitle>Export Time Report</DialogTitle>
             <DialogDescription>
-              Choose a date range to include in the report
+              Choose a date range and optional filters for the report
               {memberName ? (
                 <>
                   {' '}
@@ -164,13 +194,24 @@ export function MemberExportDialog({
                 />
               </div>
 
-              <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
-                <ExportSortControls
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSortByChange={setSortBy}
-                  onSortOrderChange={setSortOrder}
-                />
+              <div className="grid min-w-0 gap-4">
+                <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
+                  <ExportFilterControls
+                    options={filterOptionsQuery.data}
+                    loading={filterOptionsQuery.isFetching}
+                    error={filterOptionsQuery.isError}
+                    value={filters}
+                    onChange={setFilters}
+                  />
+                </div>
+                <div className="min-w-0 rounded-xl border border-stone bg-eggshell p-3">
+                  <ExportSortControls
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSortByChange={setSortBy}
+                    onSortOrderChange={setSortOrder}
+                  />
+                </div>
               </div>
             </div>
           </div>

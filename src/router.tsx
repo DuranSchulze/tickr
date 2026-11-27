@@ -12,6 +12,7 @@ import { getContext } from './integrations/tanstack-query/root-provider'
 import * as Sentry from '@sentry/react'
 import './sentry.client.config'
 import { installPreloadErrorRecovery } from '#/lib/preload-error-recovery'
+import { OfflineAwareErrorComponent } from '#/components/time-tracker/offline/OnlineRequired'
 
 installPreloadErrorRecovery()
 
@@ -65,6 +66,7 @@ export function getRouter() {
     defaultPendingMinMs: 200,
     defaultPendingComponent: DefaultPendingComponent,
     defaultNotFoundComponent: DefaultNotFoundComponent,
+    defaultErrorComponent: OfflineAwareErrorComponent,
   })
 
   setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient })
