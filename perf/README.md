@@ -49,7 +49,7 @@ deterministic: a clean rebuild reproduces identical hashes and identical byte co
 | Largest single chunk (`exceljs`) | 248.3 KB  | 400 KB  |
 | `/app/workspace/locations` route | 270.5 KB  | 300 KB  |
 | `/auth/` route                   | 145.4 KB  | 165 KB  |
-| `/app/time-tracker/` route       | 127.4 KB  | 150 KB  |
+| `/app/time-tracker/` route       | 154.8 KB¹ | 170 KB  |
 | maplibre-gl chunk                | 244.9 KB  | 270 KB  |
 | exceljs chunk                    | 248.3 KB  | 275 KB  |
 | jspdf chunk                      | 125.5 KB  | 140 KB  |
@@ -57,6 +57,13 @@ deterministic: a clean rebuild reproduces identical hashes and identical byte co
 | recharts chunk                   | 102.4 KB  | 115 KB  |
 
 There are 257 emitted JS/CSS assets across 38 routes.
+
+¹ Re-measured on 2026-11-27 for offline mode (`.harness/offline-mode`, REQ-1): the
+route was already at 149.9 KB against 150 KB on `staging` (`7d57ed1`), and the
+encrypted offline queue store (`offline-db.ts`, `offline-store.ts`,
+`offline-queue.ts`, `connectivity.ts`) adds 4.9 KB. It must load with the tracker so
+offline saves stay synchronous with the optimistic UI; the sync coordinator, pill
+drawer and replay engine are lazy-loaded and do not count here. Budget raised to 170 KB.
 
 ## What the baseline already tells us
 

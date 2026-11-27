@@ -151,11 +151,19 @@ const reportSortSchema = z.object({
   sortOrder: z.enum(exportSortOrderValues).optional(),
 })
 
-const memberMonthlyReportSchema = z
-  .object({
-    memberId: z.string().min(1),
-    startDate: z.string().date(), // YYYY-MM-DD
-    endDate: z.string().date(), // YYYY-MM-DD
+const memberReportRangeSchema = z.object({
+  memberId: z.string().min(1),
+  startDate: z.string().date(), // YYYY-MM-DD
+  endDate: z.string().date(), // YYYY-MM-DD
+})
+
+const reportFilterIdsSchema = z.array(z.string().min(1)).max(500).optional()
+
+const memberMonthlyReportSchema = memberReportRangeSchema
+  .extend({
+    clientIds: reportFilterIdsSchema,
+    projectIds: reportFilterIdsSchema,
+    tagIds: reportFilterIdsSchema,
   })
   .merge(reportSortSchema)
 
@@ -368,6 +376,15 @@ export const getMemberReportOngoingTaskSummaryFn = createServerFn({
     const { getMemberReportOngoingTaskSummary } =
       await import('./tracker.server')
     return getMemberReportOngoingTaskSummary(data)
+  })
+
+export const getMemberReportFilterOptionsFn = createServerFn({
+  method: 'GET',
+})
+  .inputValidator((input) => memberReportRangeSchema.parse(input))
+  .handler(async ({ data }) => {
+    const { getMemberReportFilterOptions } = await import('./tracker.server')
+    return getMemberReportFilterOptions(data)
   })
 
 export const getBulkReportFn = createServerFn({ method: 'GET' })

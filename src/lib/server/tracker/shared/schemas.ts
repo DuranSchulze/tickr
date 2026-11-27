@@ -37,8 +37,14 @@ const entryInputShape = z.object({
   notes: z.string().trim().default(''),
 })
 
+/** Offline replay idempotency key (the client queue item id). */
+const clientMutationIdSchema = z.string().uuid().optional()
+
 export const entryInputSchema = entryInputShape
-  .extend({ deviceLocation: deviceLocationSchema.optional() })
+  .extend({
+    deviceLocation: deviceLocationSchema.optional(),
+    clientMutationId: clientMutationIdSchema,
+  })
   .refine(entryTimesAreOrdered.check, entryTimesAreOrdered.params)
 
 export const startTimerSchema = z.object({
@@ -50,6 +56,7 @@ export const startTimerSchema = z.object({
   // Offline replay: the real client-side start time. Server clamps to now.
   startedAt: z.string().datetime().optional(),
   deviceLocation: deviceLocationSchema.optional(),
+  clientMutationId: clientMutationIdSchema,
 })
 
 /**

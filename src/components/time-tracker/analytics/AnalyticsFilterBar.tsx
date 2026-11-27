@@ -320,7 +320,7 @@ const ClientProjectFilter = memo(function ClientProjectFilter({
   )
 })
 
-const MultiSelectCombobox = memo(function MultiSelectCombobox({
+export const MultiSelectCombobox = memo(function MultiSelectCombobox({
   label,
   values,
   onChange,

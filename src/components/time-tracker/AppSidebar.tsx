@@ -1,7 +1,6 @@
 import { memo, useState } from 'react'
 import type { ComponentType } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import {
   BarChart3,
   BriefcaseBusiness,
@@ -21,7 +20,7 @@ import { WorkspaceSwitcher } from '#/components/layout/WorkspaceSwitcher'
 import { AppLogo } from '#/components/ui/AppLogo'
 import { AppearanceDialog } from '#/components/settings/AppearanceDialog'
 import { AnnouncementCard } from '#/features/announcements/AnnouncementCard'
-import { authClient } from '#/lib/auth-client'
+import { useSignOut } from '#/components/time-tracker/offline/useSignOut'
 import { Button } from '#/components/ui/button'
 
 type NavItem = {
@@ -68,8 +67,7 @@ export const AppSidebar = memo(function ({
   onToggleSettings: () => void
   settingsChildren: readonly NavItem[]
 }) {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const { signOut, dialog: signOutDialog } = useSignOut()
   const [appearanceOpen, setAppearanceOpen] = useState(false)
   const hasAnalyticsChildren = analyticsChildren.length > 0
   const firstAnalyticsChild = analyticsChildren[0]
@@ -77,14 +75,7 @@ export const AppSidebar = memo(function ({
   const firstSettingsChild = settingsChildren[0]
 
   const handleSignOut = () => {
-    void authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          queryClient.clear()
-          void navigate({ to: '/auth' })
-        },
-      },
-    })
+    void signOut()
   }
 
   const navLinkClass = (active: boolean) =>
@@ -378,6 +369,7 @@ export const AppSidebar = memo(function ({
           onOpenChange={setAppearanceOpen}
         />
       </div>
+      {signOutDialog}
     </aside>
   )
 })

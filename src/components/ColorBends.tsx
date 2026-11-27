@@ -206,11 +206,22 @@ export default function ColorBends({
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    const renderer = new THREE.WebGLRenderer({
-      antialias: false,
-      powerPreference: 'high-performance',
-      alpha: true,
-    })
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: false,
+        powerPreference: 'high-performance',
+        alpha: true,
+      })
+    } catch (err) {
+      // WebGL unavailable (disabled GPU, context limit, etc.). This is
+      // decorative background art, so degrade silently instead of crashing.
+      console.warn('ColorBends: WebGL unavailable, skipping background', err)
+      geometry.dispose()
+      material.dispose()
+      materialRef.current = null
+      return
+    }
     rendererRef.current = renderer
     ;(renderer as any).outputColorSpace = (THREE as any).SRGBColorSpace
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))

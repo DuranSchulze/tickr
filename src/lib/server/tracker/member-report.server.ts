@@ -15,13 +15,16 @@ import {
   and,
   asc,
   eq,
+  exists,
   gt,
   lt,
   inArray,
   isNotNull,
   isNull,
+  or,
   sql,
 } from 'drizzle-orm'
+import type { SQL } from 'drizzle-orm'
 import { requireWorkspaceAccess } from '../workspace-access.server'
 import {
   splitWorkIntervalByDay,
@@ -80,6 +83,51 @@ type MemberMonthlyReportInput = {
   endDate: string
   sortBy?: ExportSortBy
   sortOrder?: ExportSortOrder
+  clientIds?: string[]
+  projectIds?: string[]
+  tagIds?: string[]
+}
+
+export type MemberReportFilterOptions = {
+  clients: { id: string; name: string }[]
+  projects: {
+    id: string
+    name: string
+    color: string
+    clientId: string | null
+  }[]
+  tags: { id: string; name: string; color: string }[]
+}
+
+/**
+ * Optional client / project / tag narrowing. Filters combine with AND across
+ * types and OR within a type (e.g. "client A or B" AND "tag X or Y"). Every
+ * query using these conditions must left-join `projects` on the entry.
+ */
+function buildEntryFilterConditions(data: MemberMonthlyReportInput): SQL[] {
+  const conditions: SQL[] = []
+  if (data.clientIds?.length) {
+    conditions.push(inArray(projects.clientId, data.clientIds))
+  }
+  if (data.projectIds?.length) {
+    conditions.push(inArray(timeEntries.projectId, data.projectIds))
+  }
+  if (data.tagIds?.length) {
+    conditions.push(
+      exists(
+        db
+          .select({ one: sql`1` })
+          .from(timeEntryTags)
+          .where(
+            and(
+              eq(timeEntryTags.timeEntryId, timeEntries.id),
+              inArray(timeEntryTags.tagId, data.tagIds),
+            ),
+          ),
+      ),
+    )
+  }
+  return conditions
 }
 
 async function assertMemberReportAccess(data: MemberMonthlyReportInput) {
@@ -129,6 +177,7 @@ export async function getMemberReportOngoingTaskSummary(
     eq(timeEntries.workspaceMemberId, data.memberId),
     isNull(timeEntries.endedAt),
     lt(timeEntries.startedAt, range.endExclusive),
+    ...buildEntryFilterConditions(data),
   ]
 
   const [summary] = await db
@@ -137,6 +186,7 @@ export async function getMemberReportOngoingTaskSummary(
       memberCount: sql<number>`count(distinct ${timeEntries.workspaceMemberId})::int`,
     })
     .from(timeEntries)
+    .leftJoin(projects, eq(timeEntries.projectId, projects.id))
     .where(and(...entryConditions))
 
   const examples = await db
@@ -175,6 +225,69 @@ export async function getMemberReportOngoingTaskSummary(
       taskName: entry.taskName ?? null,
       description: entry.description,
     })),
+  }
+}
+
+/**
+ * Clients, projects and tags that appear on the member's entries (completed or
+ * running) within the range, so the export dialog only offers filters that
+ * can actually match something. Uses the same access rules as the report.
+ */
+export async function getMemberReportFilterOptions(
+  data: Pick<MemberMonthlyReportInput, 'memberId' | 'startDate' | 'endDate'>,
+): Promise<MemberReportFilterOptions> {
+  const access = await assertMemberReportAccess(data)
+  const timezone = access.workspace.timezone || 'UTC'
+  const range = getWorkspaceDateRange(data, timezone)
+
+  const entryConditions = and(
+    eq(timeEntries.workspaceId, access.workspace.id),
+    eq(timeEntries.workspaceMemberId, data.memberId),
+    lt(timeEntries.startedAt, range.endExclusive),
+    or(isNull(timeEntries.endedAt), gt(timeEntries.endedAt, range.start)),
+  )
+
+  const [projectRows, tagRows] = await Promise.all([
+    db
+      .selectDistinct({
+        projectId: projects.id,
+        projectName: projects.name,
+        projectColor: projects.color,
+        clientId: clients.id,
+        clientName: clients.name,
+      })
+      .from(timeEntries)
+      .innerJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(clients, eq(projects.clientId, clients.id))
+      .where(entryConditions),
+    db
+      .selectDistinct({ id: tags.id, name: tags.name, color: tags.color })
+      .from(timeEntries)
+      .innerJoin(timeEntryTags, eq(timeEntryTags.timeEntryId, timeEntries.id))
+      .innerJoin(tags, eq(timeEntryTags.tagId, tags.id))
+      .where(entryConditions),
+  ])
+
+  const byName = (a: { name: string }, b: { name: string }) =>
+    a.name.localeCompare(b.name)
+  const clientMap = new Map<string, { id: string; name: string }>()
+  for (const row of projectRows) {
+    if (row.clientId && row.clientName) {
+      clientMap.set(row.clientId, { id: row.clientId, name: row.clientName })
+    }
+  }
+
+  return {
+    clients: [...clientMap.values()].sort(byName),
+    projects: projectRows
+      .map((row) => ({
+        id: row.projectId,
+        name: row.projectName,
+        color: row.projectColor,
+        clientId: row.clientId ?? null,
+      }))
+      .sort(byName),
+    tags: tagRows.sort(byName),
   }
 }
 
@@ -266,6 +379,7 @@ export async function buildMemberReport(
         isNotNull(timeEntries.endedAt),
         lt(timeEntries.startedAt, range.endExclusive),
         gt(timeEntries.endedAt, range.start),
+        ...buildEntryFilterConditions(data),
       ),
     )
     .orderBy(asc(timeEntries.startedAt), asc(timeEntries.id))
