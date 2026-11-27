@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   resolve: {
@@ -10,6 +10,8 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   test: {
+    // Browser end-to-end checks run with `pnpm test:e2e`, not Vitest.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
     server: { deps: { inline: ['@tanstack/react-query', 'radix-ui'] } },
   },
 })

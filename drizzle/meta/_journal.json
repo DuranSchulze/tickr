@@ -211,6 +211,13 @@
       "when": 1795569557253,
       "tag": "0029_mcp_oauth_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795765449012,
+      "tag": "0030_offline_client_mutation_id",
+      "breakpoints": true
     }
   ]
 }

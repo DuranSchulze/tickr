@@ -153,6 +153,7 @@ export {
 export {
   getMemberReportOngoingTaskSummary,
   getMemberMonthlyReport,
+  getMemberReportFilterOptions,
   type MemberMonthlyReport,
   type MemberMonthlyReportEntry,
 } from './tracker/member-report.server'

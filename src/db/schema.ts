@@ -1244,6 +1244,9 @@ export const timeEntries = pgTable(
     // Radius in meters for device fixes; null for network-derived rows.
     locationAccuracyM: integer('location_accuracy_m'),
     userAgent: text('user_agent'),
+    // Offline replay idempotency key: the client's queue item id. Null for
+    // entries created online. See `findEntryByClientMutationId`.
+    clientMutationId: varchar('client_mutation_id', { length: 64 }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -1253,6 +1256,11 @@ export const timeEntries = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [
+    uniqueIndex('time_entries_member_mutation_unique').on(
+      table.workspaceId,
+      table.workspaceMemberId,
+      table.clientMutationId,
+    ),
     index('time_entries_workspace_member_started_idx').on(
       table.workspaceId,
       table.workspaceMemberId,

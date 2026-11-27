@@ -4,7 +4,6 @@ import { useRouter } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from '#/lib/toast'
 import {
-  loadPendingEntries,
   reconcilePendingEntries,
   removePendingEntry,
   replacePendingEntries,
@@ -18,6 +17,8 @@ import {
   setOfflineEntryDeviceLocation,
 } from '#/lib/time-tracker/offline-queue'
 import { captureDeviceLocation } from '#/lib/time-tracker/device-location'
+import { reportOfflineSaveFailure } from '#/lib/time-tracker/offline-alerts'
+import { useOfflineOwner } from '#/lib/time-tracker/useOfflineOwner'
 import type { TimeEntry, TrackerState } from '#/lib/time-tracker/types'
 import { confirmTimeEntryOverlap } from '#/lib/time-tracker/overlap-confirmation'
 import { deleteEntryFn, stopTimerFn } from '#/lib/server/tracker'
@@ -104,9 +105,19 @@ export function useTimerCore({
   // --- Optimistic entries ---
   const [optimisticActiveEntry, setOptimisticActiveEntry] =
     useState<TimeEntry | null>(null)
-  const [optimisticStoppedEntries, setOptimisticStoppedEntries] = useState<
-    TimeEntry[]
-  >(() => loadPendingEntries(state.workspace.id, state.currentMemberId))
+  // Display copies live in the encrypted offline store, so replay running
+  // from the root shell can clear them without this hook being involved.
+  const offlineOwner = useOfflineOwner(
+    state.workspace.id,
+    state.currentMemberId,
+  )
+  const optimisticStoppedEntries = useMemo(
+    () =>
+      offlineOwner.pendingDisplay.filter(
+        (entry) => entry.workspaceMemberId === state.currentMemberId,
+      ),
+    [offlineOwner.pendingDisplay, state.currentMemberId],
+  )
   const reconciledPendingScopeRef = useRef<string | null>(null)
 
   // A browser can retain optimistic display rows after an older request or app
@@ -114,25 +125,21 @@ export function useTimerCore({
   // workspace on load: queued work remains visible, while redundant confirmed
   // copies and un-replayable orphans are removed from this browser only.
   useEffect(() => {
+    // Wait until the stored queue and copies are loaded, or every copy would
+    // look like an orphan.
+    if (!offlineOwner.ready) return
     const scope = `${state.workspace.id}:${state.currentMemberId}`
     if (reconciledPendingScopeRef.current === scope) return
     reconciledPendingScopeRef.current = scope
 
-    const pendingEntries = loadPendingEntries(
-      state.workspace.id,
-      state.currentMemberId,
-    )
-    if (pendingEntries.length === 0) {
-      setOptimisticStoppedEntries([])
-      return
-    }
+    const pendingEntries = optimisticStoppedEntries
+    if (pendingEntries.length === 0) return
 
     const reconciliation = reconcilePendingEntries(
       pendingEntries,
       state.entries,
       getQueuedEntryIds(state.workspace.id, state.currentMemberId),
     )
-    setOptimisticStoppedEntries(reconciliation.retained)
     replacePendingEntries(
       state.workspace.id,
       state.currentMemberId,
@@ -154,6 +161,8 @@ export function useTimerCore({
       void router.invalidate()
     }
   }, [
+    offlineOwner.ready,
+    optimisticStoppedEntries,
     queryClient,
     router,
     state.currentMemberId,
@@ -162,15 +171,10 @@ export function useTimerCore({
   ])
 
   function upsertOptimisticStoppedEntry(entry: TimeEntry) {
-    setOptimisticStoppedEntries((prev) => [
-      ...prev.filter((e) => e.id !== entry.id),
-      entry,
-    ])
     savePendingEntry(state.workspace.id, state.currentMemberId, entry)
   }
 
   function removeOptimisticStoppedEntry(entryId: string) {
-    setOptimisticStoppedEntries((prev) => prev.filter((e) => e.id !== entryId))
     removePendingEntry(state.workspace.id, state.currentMemberId, entryId)
   }
 
@@ -286,9 +290,6 @@ export function useTimerCore({
       confirmedIds.has(e.id),
     )
     if (toRemove.length === 0) return
-    setOptimisticStoppedEntries((prev) =>
-      prev.filter((e) => !confirmedIds.has(e.id)),
-    )
     for (const entry of toRemove) {
       removePendingEntry(state.workspace.id, state.currentMemberId, entry.id)
     }
@@ -596,13 +597,34 @@ export function useTimerCore({
       })
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
+      void enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
         type: 'stopTimer',
         payload: {
           id: entryToStop.id,
           endedAt: stoppedEntry.endedAt!,
           ...fields,
         },
+      }).catch((error: unknown) => {
+        // Not saved: put the running timer back rather than show a stop
+        // that would never sync (offline-mode REQ-1).
+        removeOptimisticStoppedEntry(entryToStop.id)
+        const op = timerOperationRef.current
+        if (op.kind === 'stopping' && op.token === operationToken) {
+          setTimerOperation({ kind: 'idle' })
+          setOptimisticActiveEntry(entryToStop)
+        }
+        reportOfflineSaveFailure({
+          title: 'Timer stop not saved',
+          error,
+          retry: async () =>
+            performOptimisticStop(
+              entryToStop,
+              undefined,
+              fields,
+              requestedEndedAt,
+              false,
+            ),
+        })
       })
       return
     }
@@ -716,31 +738,44 @@ export function useTimerCore({
     }
 
     if (!isOnline) {
-      const queued = enqueueOfflineMutation(
-        state.workspace.id,
-        state.currentMemberId,
-        {
-          type: 'startTimer',
-          optimisticId: optimisticEntry.id,
-          payload: nextInput,
-        },
-      )
-      if (state.workspace.locationTrackingEnabled) {
-        void captureDeviceLocation().then((deviceLocation) => {
-          if (!deviceLocation) return
-          setOfflineEntryDeviceLocation(
-            state.workspace.id,
-            state.currentMemberId,
-            queued.id,
-            deviceLocation,
-          )
-        })
-      }
+      const workspaceId = state.workspace.id
+      const memberId = state.currentMemberId
+      const captureLocation = state.workspace.locationTrackingEnabled
       setTimerOperation({
         kind: 'runningOptimistic',
         token,
         entryId: optimisticEntry.id,
       })
+      void enqueueOfflineMutation(workspaceId, memberId, {
+        type: 'startTimer',
+        optimisticId: optimisticEntry.id,
+        payload: nextInput,
+      })
+        .then((queued) => {
+          if (!captureLocation) return
+          void captureDeviceLocation().then((deviceLocation) => {
+            if (!deviceLocation) return
+            void setOfflineEntryDeviceLocation(
+              workspaceId,
+              memberId,
+              queued.id,
+              deviceLocation,
+            ).catch(() => undefined)
+          })
+        })
+        .catch((error: unknown) => {
+          // Not saved: no running timer may appear. The timer inputs keep the
+          // user's description, project and tags for the retry.
+          if (operationHasToken(timerOperationRef.current, token)) {
+            setOptimisticActiveEntry(null)
+            setTimerOperation({ kind: 'idle' })
+          }
+          reportOfflineSaveFailure({
+            title: 'Timer not started',
+            error,
+            retry: async () => launchTimer(input, noticeAction),
+          })
+        })
       return
     }
 
@@ -878,11 +913,21 @@ export function useTimerCore({
       // If the start (and any stop) is still waiting in the offline queue,
       // drop those items — otherwise the drain would replay the start and
       // leave a ghost running timer on the server.
-      removeQueuedItemsForEntry(
-        state.workspace.id,
-        state.currentMemberId,
-        entryToDiscard.id,
-      )
+      const dropQueued = (): Promise<void> =>
+        removeQueuedItemsForEntry(
+          state.workspace.id,
+          state.currentMemberId,
+          entryToDiscard.id,
+        ).catch((error: unknown) => {
+          reportOfflineSaveFailure({
+            title: 'Discard not saved',
+            description:
+              'This device could not remove the queued timer, so it may still sync when you reconnect. Try again.',
+            error,
+            retry: dropQueued,
+          })
+        })
+      void dropQueued()
       notifyTracker({
         action: 'discarded',
         task: entryToDiscard.description,
@@ -906,9 +951,31 @@ export function useTimerCore({
     })
 
     if (!isOnline) {
-      enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
-        type: 'discardTimer',
-        payload: { id: entryToDiscard.id },
+      const queueDiscard = () =>
+        enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
+          type: 'discardTimer',
+          payload: { id: entryToDiscard.id },
+        })
+      void queueDiscard().catch((error: unknown) => {
+        // Not saved: the timer is still running on the server once synced.
+        const op = timerOperationRef.current
+        if (op.kind === 'discarding' && op.token === token) {
+          setTimerOperation({ kind: 'idle' })
+          setOptimisticActiveEntry(entryToDiscard)
+        }
+        reportOfflineSaveFailure({
+          title: 'Discard not saved',
+          error,
+          retry: async () => {
+            await queueDiscard()
+            setOptimisticActiveEntry(null)
+            setTimerOperation({
+              kind: 'discarding',
+              token: nextOperationToken(),
+              entryId: entryToDiscard.id,
+            })
+          },
+        })
       })
       return
     }
@@ -1005,13 +1072,43 @@ export function useTimerCore({
           entryToStop.id,
         )
       ) {
-        enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
-          type: 'stopTimer',
-          payload: {
-            id: entryToStop.id,
-            endedAt: stoppedEntry.endedAt!,
-            ...fields,
-          },
+        const queueStop = () =>
+          enqueueOfflineMutation(state.workspace.id, state.currentMemberId, {
+            type: 'stopTimer',
+            payload: {
+              id: entryToStop.id,
+              endedAt: stoppedEntry.endedAt!,
+              ...fields,
+            },
+          })
+        void queueStop().catch((error: unknown) => {
+          // Not saved: restore the running timer with its final details.
+          removeOptimisticStoppedEntry(entryToStop.id)
+          const op = timerOperationRef.current
+          if (op.kind === 'stopping' && op.token === token) {
+            setOptimisticActiveEntry({ ...entryToStop, ...fields })
+            setTimerOperation({
+              kind: 'runningOptimistic',
+              token,
+              entryId: entryToStop.id,
+            })
+          }
+          reportOfflineSaveFailure({
+            title: 'Timer stop not saved',
+            error,
+            retry: async () => {
+              await queueStop()
+              upsertOptimisticStoppedEntry(stoppedEntry)
+              setOptimisticActiveEntry(null)
+              setTimerOperation({
+                kind: 'stopping',
+                token: nextOperationToken(),
+                entryId: entryToStop.id,
+                endedAt: requestedEndedAt,
+                fields,
+              })
+            },
+          })
         })
       }
       clearTimerInputs()

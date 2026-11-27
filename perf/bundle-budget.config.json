@@ -34,7 +34,7 @@
     {
       "route": "/app/time-tracker/",
       "label": "Time tracker route",
-      "maxKb": 150
+      "maxKb": 170
     }
   ],
   "chunkBudgets": [

@@ -1,20 +1,30 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
+import {
+  getConnectivity,
+  isEffectivelyOnline,
+  startConnectivityListeners,
+  subscribeConnectivity,
+  syncBrowserOnline,
+} from './connectivity'
 
+// SSR and hydration assume online, so markup matches before the first check.
+const serverSnapshot = () => true
+
+/**
+ * Online when the browser has a network and the last server probe succeeded
+ * (offline-mode REQ-4). The sync coordinator runs the probes.
+ */
 export function useNetworkStatus() {
-  const [isOnline, setIsOnline] = useState(true)
+  const isOnline = useSyncExternalStore(
+    subscribeConnectivity,
+    () => isEffectivelyOnline(getConnectivity()),
+    serverSnapshot,
+  )
 
   useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine)
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-
-    updateOnlineStatus()
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
+    startConnectivityListeners()
+    // After the first commit, so the initial render matches the server markup.
+    queueMicrotask(syncBrowserOnline)
   }, [])
 
   return { isOnline }
