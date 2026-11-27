@@ -19,9 +19,8 @@ export const Route = createFileRoute('/daily-report')({
   validateSearch: (search: Record<string, unknown>): DailyReportSearch => ({
     t: dailyReportToken.safeParse(search.t).data,
   }),
-  headers: () => ({ 'Cache-Control': 'private, no-store' }),
-  staleTime: 0,
   loaderDeps: ({ search }) => ({ token: search.t }),
+  staleTime: 0,
   loader: async ({ deps }) => {
     if (!deps.token) return null
     const result = await getDailyReportFn({ data: deps.token })
@@ -32,6 +31,7 @@ export const Route = createFileRoute('/daily-report')({
       ? { report: result.report, token: deps.token }
       : null
   },
+  headers: () => ({ 'Cache-Control': 'private, no-store' }),
   component: DailyReportPage,
 })
 

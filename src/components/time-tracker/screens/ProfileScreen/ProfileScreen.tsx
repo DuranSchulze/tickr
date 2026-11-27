@@ -6,6 +6,7 @@ import { fireSideCannons } from '#/components/ui/confetti'
 import type { TrackerState } from '#/lib/time-tracker/types'
 import { Page } from '../shared/Page'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
+import { ConnectedAppsCard } from './ConnectedAppsCard'
 import { ProfileForm } from './ProfileForm'
 import { ProfileSidebar } from './ProfileSidebar'
 import { SectionCard } from '../shared/SectionCard'
@@ -101,6 +102,8 @@ export function ProfileScreen({
           onNameChange={setDisplayName}
         />
       </div>
+
+      <ConnectedAppsCard />
 
       {pwDialog && <ChangePasswordDialog onClose={() => setPwDialog(false)} />}
     </Page>

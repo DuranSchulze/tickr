@@ -22,6 +22,7 @@ import { allPasswordRulesPass, isBlockedDomain } from '#/lib/auth-validation'
 import { getSessionFn } from '#/lib/server/session'
 import { weeklyDepartmentReportId } from '#/lib/time-tracker/weekly-department-report'
 import { dailyReportToken } from '#/lib/time-tracker/daily-report-link'
+import { parseOAuthQuery, safeOAuthRedirect } from '#/lib/oauth-query'
 import { getWorkspaceAccessFn } from '#/lib/server/workspace-access'
 
 type AuthSearch = {
@@ -30,6 +31,8 @@ type AuthSearch = {
   dailyReport?: string
   email?: string
   plan?: 'team' | 'business'
+  /** Signed MCP authorization request to resume after sign-in. */
+  oauth?: string
 }
 
 export const Route = createFileRoute('/auth/')({
@@ -42,16 +45,26 @@ export const Route = createFileRoute('/auth/')({
       search.plan === 'team' || search.plan === 'business'
         ? search.plan
         : undefined,
+    oauth: parseOAuthQuery(search.oauth),
   }),
   loaderDeps: ({ search }) => ({
     invite: search.invite,
     plan: search.plan,
     weeklyReport: search.weeklyReport,
     dailyReport: search.dailyReport,
+    oauth: search.oauth,
   }),
   loader: async ({ deps }) => {
     const session = await getSessionFn()
     if (session?.user) {
+      // An MCP client is waiting: stay here and offer to continue as this user.
+      if (deps.oauth) {
+        return {
+          signedIn: true as const,
+          email: session.user.email,
+          name: session.user.name,
+        }
+      }
       if (deps.invite) {
         throw redirect({
           to: '/invite/$token',
@@ -181,6 +194,8 @@ function AuthPage() {
     }
 
     setLoading(true)
+    // The plugin verifies this signed query and answers with where to go next.
+    const oauthBody = search.oauth ? { oauth_query: search.oauth } : {}
 
     try {
       const result =
@@ -189,11 +204,13 @@ function AuthPage() {
               name: formName,
               email: formEmail,
               password,
+              ...oauthBody,
             })
           : await authClient.signIn.email({
               email: formEmail,
               password,
               rememberMe,
+              ...oauthBody,
             })
 
       if (result.error) {
@@ -212,6 +229,16 @@ function AuthPage() {
 
       // Clear all stale data from the previous user session
       router.options.context.queryClient.clear()
+
+      if (search.oauth) {
+        const next = safeOAuthRedirect(
+          (result.data as { url?: unknown } | null)?.url,
+        )
+        if (next) {
+          window.location.assign(next)
+          return
+        }
+      }
 
       if (search.invite) {
         await router.invalidate()
@@ -251,7 +278,36 @@ function AuthPage() {
     await authClient.signOut()
     queryClient.clear()
     await router.invalidate()
-    await navigate({ to: '/auth' })
+    // Keep a pending MCP authorization so another account can finish it.
+    await navigate({
+      to: '/auth',
+      search: search.oauth ? { oauth: search.oauth } : {},
+    })
+  }
+
+  async function handleOAuthContinue(): Promise<void> {
+    if (!search.oauth) return
+    setLoading(true)
+    try {
+      const { data, error } = await authClient.$fetch<{ url?: string }>(
+        '/oauth2/continue',
+        {
+          method: 'POST',
+          body: { selected: true, oauth_query: search.oauth },
+        },
+      )
+      const next = error ? null : safeOAuthRedirect(data.url)
+      if (!next) {
+        toast.error('Could not continue', {
+          description:
+            'The connection request expired. Start it again from your app.',
+        })
+        return
+      }
+      window.location.assign(next)
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleBack(): void {
@@ -351,7 +407,15 @@ function AuthPage() {
               <BrandLogo className="h-12 w-auto object-contain" />
             </Link>
 
-            {signedIn ? (
+            {signedIn && search.oauth ? (
+              <OAuthContinuePanel
+                name={name}
+                email={email}
+                loading={loading}
+                onContinue={() => void handleOAuthContinue()}
+                onSignOut={handleSignOut}
+              />
+            ) : signedIn ? (
               <SignedInPanel
                 name={name}
                 email={email}
@@ -482,6 +546,59 @@ function SignedInPanel({
           className="h-11 rounded-full border border-stone bg-eggshell text-sm font-semibold text-foreground transition-colors hover:bg-warm-taupe"
         >
           Sign out and use another email
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function OAuthContinuePanel({
+  name,
+  email,
+  loading,
+  onContinue,
+  onSignOut,
+}: {
+  name: string
+  email: string
+  loading: boolean
+  onContinue: () => void
+  onSignOut: () => void
+}) {
+  return (
+    <div className="mt-8 rounded-xl border border-stone bg-eggshell p-6 shadow-[var(--shadow-whisper)]">
+      <h1 className="m-0 font-display text-2xl text-foreground">
+        Connect an app to Tickr
+      </h1>
+      <p className="m-0 mt-2 text-sm leading-6 text-smoke">
+        An app is asking to read your tracked time. Continue with this account,
+        or sign out to use a different one.
+      </p>
+
+      <div className="mt-5 rounded-xl bg-warm-taupe p-4">
+        <p className="m-0 text-xs font-semibold uppercase tracking-wide text-smoke">
+          Signed in as
+        </p>
+        <p className="m-0 mt-1 text-base font-bold text-foreground">{name}</p>
+        <p className="m-0 text-sm text-smoke">{email}</p>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        <button
+          type="button"
+          onClick={onContinue}
+          disabled={loading}
+          className="h-11 rounded-full bg-primary-action text-sm font-bold text-primary-action-foreground transition-colors hover:bg-primary-action/85 disabled:opacity-60"
+        >
+          {loading ? 'Continuing…' : 'Continue'}
+        </button>
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={loading}
+          className="h-11 rounded-full border border-stone bg-eggshell text-sm font-semibold text-foreground transition-colors hover:bg-warm-taupe disabled:opacity-60"
+        >
+          Sign out and use another account
         </button>
       </div>
     </div>

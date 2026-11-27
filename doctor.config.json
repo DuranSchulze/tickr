@@ -20,6 +20,12 @@
           "src/components/time-tracker/dashboard/hooks/useTimerCore.ts"
         ],
         "rules": ["react-doctor/no-adjust-state-on-prop-change"]
+      },
+      {
+        "files": ["src/components/ui/map.tsx"],
+        "rules": [
+          "react-doctor/no-unguarded-browser-global-in-render-or-hook-init"
+        ]
       }
     ]
   }

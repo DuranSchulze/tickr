@@ -1,6 +1,7 @@
 import { db } from '#/db'
 import { projects, projectTasks, tags } from '#/db/schema'
 import { and, eq, inArray } from 'drizzle-orm'
+import { EntryRuleError } from './entry-rules'
 
 export async function assertWorkspaceCatalogs(
   workspaceId: string,
@@ -51,15 +52,17 @@ export async function assertWorkspaceCatalogs(
   ])
 
   if (projectId && !projectRow[0]) {
-    throw new Error('Selected project is not available in this workspace.')
+    throw new EntryRuleError(
+      'Selected project is not available in this workspace.',
+    )
   }
 
   if (taskId && !taskRows[0]) {
-    throw new Error('Selected task is not available for this project.')
+    throw new EntryRuleError('Selected task is not available for this project.')
   }
 
   if (tagRows.length !== new Set(tagIds).size) {
-    throw new Error(
+    throw new EntryRuleError(
       'One or more selected tags are not available in this workspace.',
     )
   }

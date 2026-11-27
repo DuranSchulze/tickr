@@ -159,7 +159,6 @@ export default function ColorBends({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
   const rafRef = useRef<number | null>(null)
   const materialRef = useRef<THREE.ShaderMaterial | null>(null)
-  const resizeObserverRef = useRef<ResizeObserver | null>(null)
   const rotationRef = useRef<number>(rotation)
   const autoRotateRef = useRef<number>(autoRotate)
   const pointerTargetRef = useRef<THREE.Vector2>(new THREE.Vector2(0, 0))
@@ -235,10 +234,10 @@ export default function ColorBends({
 
     handleResize()
 
+    let ro: ResizeObserver | null = null
     if ('ResizeObserver' in window) {
-      const ro = new ResizeObserver(handleResize)
+      ro = new ResizeObserver(handleResize)
       ro.observe(container)
-      resizeObserverRef.current = ro
     } else {
       ;(window as Window).addEventListener('resize', handleResize)
     }
@@ -267,8 +266,8 @@ export default function ColorBends({
 
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
-      if (resizeObserverRef.current) resizeObserverRef.current.disconnect()
-      else (window as Window).removeEventListener('resize', handleResize)
+      ro?.disconnect()
+      ;(window as Window).removeEventListener('resize', handleResize)
       geometry.dispose()
       material.dispose()
       renderer.dispose()

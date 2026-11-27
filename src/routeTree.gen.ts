@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthIndexRouteImport } from './routes/auth/index'
 import { Route as WeeklyDepartmentReportReportIdRouteImport } from './routes/weekly-department-report.$reportId'
 import { Route as PerformanceTokenRouteImport } from './routes/performance.$token'
+import { Route as OauthConsentRouteImport } from './routes/oauth/consent'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
@@ -32,6 +33,7 @@ import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppAuditLogsRouteImport } from './routes/app/audit-logs'
 import { Route as AppAnalyticsRouteImport } from './routes/app/analytics'
 import { Route as ApiOpenapiDotjsonRouteImport } from './routes/api/openapi[.]json'
+import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiDocsRouteImport } from './routes/api/docs'
 import { Route as AppTimeTrackerIndexRouteImport } from './routes/app/time-tracker/index'
@@ -58,6 +60,8 @@ import { Route as ApiV1MemberDayActivityRouteImport } from './routes/api/v1/memb
 import { Route as ApiV1DtrIntegrationRouteImport } from './routes/api/v1/dtr-integration'
 import { Route as ApiV1DepartmentsRouteImport } from './routes/api/v1/departments'
 import { Route as ApiV1ClientsRouteImport } from './routes/api/v1/clients'
+import { Route as ApiOauthLoginRouteImport } from './routes/api/oauth/login'
+import { Route as ApiOauthConsentRouteImport } from './routes/api/oauth/consent'
 import { Route as ApiNewsletterSubscribeRouteImport } from './routes/api/newsletter/subscribe'
 import { Route as ApiCronWeeklyReportsRouteImport } from './routes/api/cron/weekly-reports'
 import { Route as ApiCronTimerRemindersRouteImport } from './routes/api/cron/timer-reminders'
@@ -76,6 +80,8 @@ import { Route as ApiV1AuthRegisterRouteImport } from './routes/api/v1/auth/regi
 import { Route as ApiV1AuthLoginRouteImport } from './routes/api/v1/auth/login'
 import { Route as ApiV1AuthDeveloperSignInRouteImport } from './routes/api/v1/auth/developer-sign-in'
 import { Route as ApiReportsDailyFormatRouteImport } from './routes/api/reports/daily.$format'
+import { Route as DotwellKnownOauthProtectedResourceApiMcpRouteImport } from './routes/[.]well-known/oauth-protected-resource/api/mcp'
+import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
 import { Route as AppWorkspaceCatalogsProjectsProjectIdRouteImport } from './routes/app/workspace/catalogs_.projects_.$projectId'
 import { Route as AppWorkspaceCatalogsClientsClientIdRouteImport } from './routes/app/workspace/catalogs.clients.$clientId'
 import { Route as ApiReportsWeeklyDepartmentReportIdFormatRouteImport } from './routes/api/reports/weekly-department.$reportId.$format'
@@ -124,6 +130,11 @@ const WeeklyDepartmentReportReportIdRoute =
 const PerformanceTokenRoute = PerformanceTokenRouteImport.update({
   id: '/performance/$token',
   path: '/performance/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OauthConsentRoute = OauthConsentRouteImport.update({
+  id: '/oauth/consent',
+  path: '/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -194,6 +205,11 @@ const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
 const ApiOpenapiDotjsonRoute = ApiOpenapiDotjsonRouteImport.update({
   id: '/api/openapi.json',
   path: '/api/openapi.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -328,6 +344,16 @@ const ApiV1ClientsRoute = ApiV1ClientsRouteImport.update({
   path: '/api/v1/clients',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthLoginRoute = ApiOauthLoginRouteImport.update({
+  id: '/api/oauth/login',
+  path: '/api/oauth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOauthConsentRoute = ApiOauthConsentRouteImport.update({
+  id: '/api/oauth/consent',
+  path: '/api/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiNewsletterSubscribeRoute = ApiNewsletterSubscribeRouteImport.update({
   id: '/api/newsletter/subscribe',
   path: '/api/newsletter/subscribe',
@@ -426,6 +452,18 @@ const ApiReportsDailyFormatRoute = ApiReportsDailyFormatRouteImport.update({
   path: '/api/reports/daily/$format',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotwellKnownOauthProtectedResourceApiMcpRoute =
+  DotwellKnownOauthProtectedResourceApiMcpRouteImport.update({
+    id: '/.well-known/oauth-protected-resource/api/mcp',
+    path: '/.well-known/oauth-protected-resource/api/mcp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotwellKnownOauthAuthorizationServerApiAuthRoute =
+  DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
+    id: '/.well-known/oauth-authorization-server/api/auth',
+    path: '/.well-known/oauth-authorization-server/api/auth',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppWorkspaceCatalogsProjectsProjectIdRoute =
   AppWorkspaceCatalogsProjectsProjectIdRouteImport.update({
     id: '/workspace/catalogs_/projects_/$projectId',
@@ -454,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -468,6 +507,7 @@ export interface FileRoutesByFullPath {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/performance/$token': typeof PerformanceTokenRoute
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
@@ -476,6 +516,8 @@ export interface FileRoutesByFullPath {
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
+  '/api/oauth/consent': typeof ApiOauthConsentRoute
+  '/api/oauth/login': typeof ApiOauthLoginRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
@@ -500,6 +542,8 @@ export interface FileRoutesByFullPath {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -526,6 +570,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -540,6 +585,7 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/performance/$token': typeof PerformanceTokenRoute
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth': typeof AuthIndexRoute
@@ -548,6 +594,8 @@ export interface FileRoutesByTo {
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
+  '/api/oauth/consent': typeof ApiOauthConsentRoute
+  '/api/oauth/login': typeof ApiOauthLoginRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
@@ -572,6 +620,8 @@ export interface FileRoutesByTo {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker': typeof AppTimeTrackerIndexRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -599,6 +649,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/api/docs': typeof ApiDocsRoute
   '/api/health': typeof ApiHealthRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/openapi.json': typeof ApiOpenapiDotjsonRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/audit-logs': typeof AppAuditLogsRoute
@@ -613,6 +664,7 @@ export interface FileRoutesById {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/oauth/consent': typeof OauthConsentRoute
   '/performance/$token': typeof PerformanceTokenRoute
   '/weekly-department-report/$reportId': typeof WeeklyDepartmentReportReportIdRoute
   '/auth/': typeof AuthIndexRoute
@@ -621,6 +673,8 @@ export interface FileRoutesById {
   '/api/cron/timer-reminders': typeof ApiCronTimerRemindersRoute
   '/api/cron/weekly-reports': typeof ApiCronWeeklyReportsRoute
   '/api/newsletter/subscribe': typeof ApiNewsletterSubscribeRoute
+  '/api/oauth/consent': typeof ApiOauthConsentRoute
+  '/api/oauth/login': typeof ApiOauthLoginRoute
   '/api/v1/clients': typeof ApiV1ClientsRoute
   '/api/v1/departments': typeof ApiV1DepartmentsRoute
   '/api/v1/dtr-integration': typeof ApiV1DtrIntegrationRoute
@@ -645,6 +699,8 @@ export interface FileRoutesById {
   '/app/workspace/members': typeof AppWorkspaceMembersRouteWithChildren
   '/app/workspace/settings': typeof AppWorkspaceSettingsRoute
   '/app/time-tracker/': typeof AppTimeTrackerIndexRoute
+  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  '/.well-known/oauth-protected-resource/api/mcp': typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   '/api/reports/daily/$format': typeof ApiReportsDailyFormatRoute
   '/api/v1/auth/developer-sign-in': typeof ApiV1AuthDeveloperSignInRoute
   '/api/v1/auth/login': typeof ApiV1AuthLoginRoute
@@ -673,6 +729,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/docs'
     | '/api/health'
+    | '/api/mcp'
     | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
@@ -687,6 +744,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
+    | '/oauth/consent'
     | '/performance/$token'
     | '/weekly-department-report/$reportId'
     | '/auth/'
@@ -695,6 +753,8 @@ export interface FileRouteTypes {
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
+    | '/api/oauth/consent'
+    | '/api/oauth/login'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/dtr-integration'
@@ -719,6 +779,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
@@ -745,6 +807,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/docs'
     | '/api/health'
+    | '/api/mcp'
     | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
@@ -759,6 +822,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
+    | '/oauth/consent'
     | '/performance/$token'
     | '/weekly-department-report/$reportId'
     | '/auth'
@@ -767,6 +831,8 @@ export interface FileRouteTypes {
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
+    | '/api/oauth/consent'
+    | '/api/oauth/login'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/dtr-integration'
@@ -791,6 +857,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker'
+    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
@@ -817,6 +885,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/docs'
     | '/api/health'
+    | '/api/mcp'
     | '/api/openapi.json'
     | '/app/analytics'
     | '/app/audit-logs'
@@ -831,6 +900,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/reset-password'
     | '/invite/$token'
+    | '/oauth/consent'
     | '/performance/$token'
     | '/weekly-department-report/$reportId'
     | '/auth/'
@@ -839,6 +909,8 @@ export interface FileRouteTypes {
     | '/api/cron/timer-reminders'
     | '/api/cron/weekly-reports'
     | '/api/newsletter/subscribe'
+    | '/api/oauth/consent'
+    | '/api/oauth/login'
     | '/api/v1/clients'
     | '/api/v1/departments'
     | '/api/v1/dtr-integration'
@@ -863,6 +935,8 @@ export interface FileRouteTypes {
     | '/app/workspace/members'
     | '/app/workspace/settings'
     | '/app/time-tracker/'
+    | '/.well-known/oauth-authorization-server/api/auth'
+    | '/.well-known/oauth-protected-resource/api/mcp'
     | '/api/reports/daily/$format'
     | '/api/v1/auth/developer-sign-in'
     | '/api/v1/auth/login'
@@ -890,10 +964,12 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   ApiDocsRoute: typeof ApiDocsRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  ApiMcpRoute: typeof ApiMcpRoute
   ApiOpenapiDotjsonRoute: typeof ApiOpenapiDotjsonRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  OauthConsentRoute: typeof OauthConsentRoute
   PerformanceTokenRoute: typeof PerformanceTokenRoute
   WeeklyDepartmentReportReportIdRoute: typeof WeeklyDepartmentReportReportIdRoute
   AuthIndexRoute: typeof AuthIndexRoute
@@ -902,6 +978,8 @@ export interface RootRouteChildren {
   ApiCronTimerRemindersRoute: typeof ApiCronTimerRemindersRoute
   ApiCronWeeklyReportsRoute: typeof ApiCronWeeklyReportsRoute
   ApiNewsletterSubscribeRoute: typeof ApiNewsletterSubscribeRoute
+  ApiOauthConsentRoute: typeof ApiOauthConsentRoute
+  ApiOauthLoginRoute: typeof ApiOauthLoginRoute
   ApiV1ClientsRoute: typeof ApiV1ClientsRoute
   ApiV1DepartmentsRoute: typeof ApiV1DepartmentsRoute
   ApiV1DtrIntegrationRoute: typeof ApiV1DtrIntegrationRoute
@@ -913,6 +991,8 @@ export interface RootRouteChildren {
   ApiV1TimeEntriesRoute: typeof ApiV1TimeEntriesRoute
   ApiV1WorkspaceRoute: typeof ApiV1WorkspaceRoute
   ApiWebhooksXenditRoute: typeof ApiWebhooksXenditRoute
+  DotwellKnownOauthAuthorizationServerApiAuthRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
+  DotwellKnownOauthProtectedResourceApiMcpRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRoute
   ApiReportsDailyFormatRoute: typeof ApiReportsDailyFormatRoute
   ApiV1AuthDeveloperSignInRoute: typeof ApiV1AuthDeveloperSignInRoute
   ApiV1AuthLoginRoute: typeof ApiV1AuthLoginRoute
@@ -984,6 +1064,13 @@ declare module '@tanstack/react-router' {
       path: '/performance/$token'
       fullPath: '/performance/$token'
       preLoaderRoute: typeof PerformanceTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/oauth/consent': {
+      id: '/oauth/consent'
+      path: '/oauth/consent'
+      fullPath: '/oauth/consent'
+      preLoaderRoute: typeof OauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1082,6 +1169,13 @@ declare module '@tanstack/react-router' {
       path: '/api/openapi.json'
       fullPath: '/api/openapi.json'
       preLoaderRoute: typeof ApiOpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -1266,6 +1360,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1ClientsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/login': {
+      id: '/api/oauth/login'
+      path: '/api/oauth/login'
+      fullPath: '/api/oauth/login'
+      preLoaderRoute: typeof ApiOauthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/oauth/consent': {
+      id: '/api/oauth/consent'
+      path: '/api/oauth/consent'
+      fullPath: '/api/oauth/consent'
+      preLoaderRoute: typeof ApiOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/newsletter/subscribe': {
       id: '/api/newsletter/subscribe'
       path: '/api/newsletter/subscribe'
@@ -1390,6 +1498,20 @@ declare module '@tanstack/react-router' {
       path: '/api/reports/daily/$format'
       fullPath: '/api/reports/daily/$format'
       preLoaderRoute: typeof ApiReportsDailyFormatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource/api/mcp': {
+      id: '/.well-known/oauth-protected-resource/api/mcp'
+      path: '/.well-known/oauth-protected-resource/api/mcp'
+      fullPath: '/.well-known/oauth-protected-resource/api/mcp'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceApiMcpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-authorization-server/api/auth': {
+      id: '/.well-known/oauth-authorization-server/api/auth'
+      path: '/.well-known/oauth-authorization-server/api/auth'
+      fullPath: '/.well-known/oauth-authorization-server/api/auth'
+      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/workspace/catalogs_/projects_/$projectId': {
@@ -1534,10 +1656,12 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   ApiDocsRoute: ApiDocsRoute,
   ApiHealthRoute: ApiHealthRoute,
+  ApiMcpRoute: ApiMcpRoute,
   ApiOpenapiDotjsonRoute: ApiOpenapiDotjsonRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   InviteTokenRoute: InviteTokenRoute,
+  OauthConsentRoute: OauthConsentRoute,
   PerformanceTokenRoute: PerformanceTokenRoute,
   WeeklyDepartmentReportReportIdRoute: WeeklyDepartmentReportReportIdRoute,
   AuthIndexRoute: AuthIndexRoute,
@@ -1546,6 +1670,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCronTimerRemindersRoute: ApiCronTimerRemindersRoute,
   ApiCronWeeklyReportsRoute: ApiCronWeeklyReportsRoute,
   ApiNewsletterSubscribeRoute: ApiNewsletterSubscribeRoute,
+  ApiOauthConsentRoute: ApiOauthConsentRoute,
+  ApiOauthLoginRoute: ApiOauthLoginRoute,
   ApiV1ClientsRoute: ApiV1ClientsRoute,
   ApiV1DepartmentsRoute: ApiV1DepartmentsRoute,
   ApiV1DtrIntegrationRoute: ApiV1DtrIntegrationRoute,
@@ -1557,6 +1683,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1TimeEntriesRoute: ApiV1TimeEntriesRoute,
   ApiV1WorkspaceRoute: ApiV1WorkspaceRoute,
   ApiWebhooksXenditRoute: ApiWebhooksXenditRoute,
+  DotwellKnownOauthAuthorizationServerApiAuthRoute:
+    DotwellKnownOauthAuthorizationServerApiAuthRoute,
+  DotwellKnownOauthProtectedResourceApiMcpRoute:
+    DotwellKnownOauthProtectedResourceApiMcpRoute,
   ApiReportsDailyFormatRoute: ApiReportsDailyFormatRoute,
   ApiV1AuthDeveloperSignInRoute: ApiV1AuthDeveloperSignInRoute,
   ApiV1AuthLoginRoute: ApiV1AuthLoginRoute,
